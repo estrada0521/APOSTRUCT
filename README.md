@@ -120,8 +120,7 @@ isodistort serve --host 127.0.0.1 --port 8300
 ```
 
 <p align="center">
-  <img src="media/sample1-1.png" alt="ISODISTORT frontend selection view" width="49%">
-  <img src="media/sample1-2.png" alt="ISODISTORT frontend mode details view" width="49%">
+  <img src="media/distortropy.png" alt="Distortropy frontend" width="100%">
 </p>
 
 ## Validation
