@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ISODISTORT Assembled</title>
+  <link rel="stylesheet" href="theme.css?v=1">
+  <link rel="stylesheet" href="tool.css?v=44">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "./vendor/three.module.js",
+        "three/addons/": "./vendor/addons/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <main class="page">
+    <section class="block">
+      <p class="block-title">1. Begin by entering the structure of parent phase:</p>
+      <p>Import parent structure from a CIF structure file:
+        <input id="cif-file" type="file" accept=".cif,.mcif,.txt" hidden>
+        <button class="primary-action" id="choose-cif" type="button">Input CIF</button>
+        <span id="cif-name"></span>
+      </p>
+      <p id="parent-summary"></p>
+    </section>
+
+    <div id="error" class="error" hidden></div>
+
+    <section class="block" id="distortion-section" hidden>
+      <p class="block-title">2. Types of distortions to be considered <button class="primary-action" id="distortion-change" type="button">Change</button></p>
+      <table id="distortion-table">
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <section class="block" id="k-section" hidden>
+      <p class="block-title">3. search over specific k points : <button class="primary-action" id="k-ok" type="button">OK</button></p>
+      <p>
+        Change number of superposed IRs:
+        <input id="irrep-count" class="tiny-input" value="1">
+        <button class="primary-action" id="irrep-count-change" type="button">Change</button>
+      </p>
+      <p class="k-select-block">
+        <span>Specify k point:</span>
+        <span id="k-selectors"></span>
+      </p>
+    </section>
+
+    <section class="block" id="irrep-section" hidden>
+      <p class="block-title">4. Choose an IR: <button class="primary-action" id="irrep-ok" type="button">OK</button></p>
+      <p class="irrep-select-block">
+        <span>IR:</span>
+        <span id="irrep-selectors"></span>
+      </p>
+    </section>
+
+    <section class="block" id="opd-section" hidden>
+      <p class="block-title">5. Finish selecting the distortion mode by choosing an order parameter direction: <button class="primary-action" id="opd-ok" type="button">OK</button></p>
+      <div id="opd-options"></div>
+    </section>
+
+    <section class="block" id="mode-details-section" hidden>
+      <p class="block-title">6. Mode details:</p>
+      <label class="mode-details-view-switch">View:
+        <select id="mode-details-view-select">
+          <option value="text">Complete mode details</option>
+          <option value="viewer">Interactive viewer</option>
+        </select>
+      </label>
+      <div class="mode-details-layout">
+        <div id="mode-details-text-panel" role="tabpanel">
+          <pre id="mode-details-output" class="mode-details-output"></pre>
+        </div>
+        <section id="mode-details-viewer-panel" class="mode-viewer-shell" role="tabpanel" aria-label="Interactive mode viewer" hidden>
+          <div class="mode-viewer-workspace">
+            <aside class="mode-viewer-sidebar" aria-label="Mode amplitudes">
+              <div id="mode-viewer-controls" class="mode-viewer-controls"></div>
+            </aside>
+            <div class="mode-viewer-canvas-wrap">
+              <canvas id="mode-viewer-canvas"></canvas>
+              <div id="mode-viewer-empty" class="mode-viewer-empty">Calculate mode details to open the viewer</div>
+              <div class="mode-viewer-display-options">
+                <label><input id="mode-viewer-bonds" type="checkbox" checked> Bonds</label>
+                <label><input id="mode-viewer-polyhedra" type="checkbox" checked> Polyhedra</label>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <script type="module">
+    import { ModeStructureViewer } from "./mode3d.js?v=1";
+
+    const state = {
+      cif: "",
+      backendState: null,
+      kLabel: "GM",
+      kSelections: [{ label: "GM", params: { a: "", b: "", g: "" } }],
+      irrepIndex: 1,
+      irrepSelections: [1],
+      irrepCount: 1,
+      orderparamIndex: 1,
+      modeSet: "strain_displacive",
+      distortionSelection: null,
+      running: false,
+    };
+
+    const $ = id => document.getElementById(id);
+
+    const modeViewer = new ModeStructureViewer({
+      canvas: $("mode-viewer-canvas"),
+      empty: $("mode-viewer-empty"),
+      controls: $("mode-viewer-controls"),
+      bondsInput: $("mode-viewer-bonds"),
+      polyhedraInput: $("mode-viewer-polyhedra"),
+    });
+
+    function setModeDetailsView(view) {
+      const showViewer = view === "viewer";
+      $("mode-details-text-panel").hidden = showViewer;
+      $("mode-details-viewer-panel").hidden = !showViewer;
+      $("mode-details-view-select").value = showViewer ? "viewer" : "text";
+      if (showViewer) requestAnimationFrame(() => modeViewer.refreshLayout());
+    }
+
+    $("mode-details-view-select").addEventListener("change", event => setModeDetailsView(event.target.value));
+
+    function esc(value) {
+      return String(value ?? "").replace(/[&<>"']/g, ch => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      }[ch]));
+    }
+
+    function fmtNumber(value, digits = 5) {
+      if (value === null || value === undefined || value === "") return "";
+      const num = Number(value);
+      return Number.isFinite(num) ? num.toFixed(digits) : String(value);
+    }
+
+    function fmtCoord(value) {
+      if (value === null || value === undefined || value === "") return "";
+      const num = Number(value);
+      if (!Number.isFinite(num)) return String(value);
+      if (Math.abs(num) < 1e-10) return "0";
+      if (Math.abs(num - 0.5) < 1e-10) return "1/2";
+      if (Math.abs(num + 0.5) < 1e-10) return "-1/2";
+      if (Math.abs(num - 0.25) < 1e-10) return "1/4";
+      if (Math.abs(num - 0.75) < 1e-10) return "3/4";
+      if (Math.abs(num - 1) < 1e-10) return "1";
+      return num.toFixed(5);
+    }
+
+    function fmtParam(value) {
+      if (value === null || value === undefined || value === "") return "";
+      const num = Number(value);
+      return Number.isFinite(num) ? num.toFixed(5) : String(value);
+    }
+
+    function setError(message) {
+      const node = $("error");
+      if (!message) {
+        node.hidden = true;
+        node.textContent = "";
+        return;
+      }
+      node.hidden = false;
+      node.textContent = message;
+    }
+
+    async function postJSON(url, payload) {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || res.statusText);
+      return data;
+    }
+
+    function sameIrrep(left, right) {
+      if (!left || !right) return false;
+      const leftLabel = left.symbol ?? left.label ?? "";
+      const rightLabel = right.symbol ?? right.label ?? "";
+      return String(left.gid) === String(right.gid)
+        && Boolean(left.magnetic) === Boolean(right.magnetic)
+        && String(leftLabel) === String(rightLabel);
+    }
+
+    function selectedKLabel() {
+      const select = document.querySelector(".k-select");
+      return select ? select.value : state.kSelections[0]?.label || state.kLabel || "GM";
+    }
+
+    function normalizeIrrepCount(commitInput = false) {
+      const value = Number(commitInput ? $("irrep-count").value : state.irrepCount || 1);
+      const count = Math.max(1, Math.min(9, Number.isFinite(value) ? Math.floor(value) : 1));
+      $("irrep-count").value = String(count);
+      state.irrepCount = count;
+      while (state.kSelections.length < count) {
+        state.kSelections.push({ label: state.kSelections.at(-1)?.label || "GM", params: { a: "", b: "", g: "" } });
+      }
+      state.kSelections.length = count;
+      while (state.irrepSelections.length < count) state.irrepSelections.push(1);
+      state.irrepSelections.length = count;
+      return count;
+    }
+
+    function selectedKRows() {
+      normalizeIrrepCount();
+      const rows = Array.from(document.querySelectorAll(".k-row"));
+      if (!rows.length) return state.kSelections.slice(0, state.irrepCount);
+      return rows.map((row, index) => {
+        const params = {};
+        row.querySelectorAll(".k-param").forEach(input => {
+          params[input.dataset.param] = input.value;
+        });
+        return {
+          label: row.querySelector(".k-select")?.value || state.kSelections[index]?.label || "GM",
+          params,
+        };
+      });
+    }
+
+    function firstKParams() {
+      const rows = selectedKRows();
+      return rows[0]?.params || { a: "", b: "", g: "" };
+    }
+
+    function selectedSiteIndexes(prefix) {
+      return Array.from(document.querySelectorAll(`[id^='${prefix}']`))
+        .filter(node => node.id !== `${prefix}all` && node.id !== `${prefix}none` && node.checked)
+        .map(node => Number(node.id.slice(prefix.length)))
+        .filter(Number.isFinite);
+    }
+
+    function selectedDistortionSelection() {
+      const renderedSiteInputs = document.querySelectorAll(
+        "[id^='includedisplacive']:not(#includedisplaciveall):not(#includedisplacivenone), "
+        + "[id^='includemagnetic']:not(#includemagneticall):not(#includemagneticnone)",
+      );
+      if (!renderedSiteInputs.length) {
+        return state.distortionSelection || {
+          strain: true,
+          displacive_sites: "all",
+          magnetic_sites: [],
+        };
+      }
+      return {
+        strain: Boolean($("includestrain")?.checked),
+        displacive_sites: selectedSiteIndexes("includedisplacive"),
+        magnetic_sites: selectedSiteIndexes("includemagnetic"),
+      };
+    }
+
+    function selectedModeSet(selection = selectedDistortionSelection()) {
+      const includeMagnetic = selection.magnetic_sites.length > 0;
+      const includeStrain = selection.strain;
+      if (includeStrain && includeMagnetic) return "all";
+      if (includeMagnetic) return "magnetic";
+      if (includeStrain) return "strain_displacive";
+      return "displacive";
+    }
+
+    function selectedIrrepIndex() {
+      const select = document.querySelector(".irrep-select");
+      return Number(select ? select.value : state.irrepIndex || 1);
+    }
+
+    async function analyze(options = {}) {
+      if (state.running || !state.cif.trim()) return;
+      const includeOPD = Boolean(options.includeOPD);
+      const includeModeDetails = Boolean(options.includeModeDetails);
+      const requestedKSelections = selectedKRows();
+      const requestedK = requestedKSelections[0] || { label: state.kLabel || "GM", params: { a: "", b: "", g: "" } };
+      const requestedIrrepSelections = Array.from(document.querySelectorAll(".irrep-select")).map(select => Number(select.value || 1));
+      const requestedIrrepIndex = requestedIrrepSelections[0] || selectedIrrepIndex();
+      const selections = requestedKSelections.map((selection, index) => ({
+        k_label: selection.label || "GM",
+        k_params: selection.params || {},
+        irrep_index: requestedIrrepSelections[index] || state.irrepSelections[index] || 1,
+      }));
+      const distortionSelection = selectedDistortionSelection();
+      const modeSet = selectedModeSet(distortionSelection);
+      state.running = true;
+      setError("");
+      try {
+        const backendState = await postJSON("/api/isodistort/state", {
+          cif: state.cif,
+          mode_set: modeSet,
+          distortion_selection: distortionSelection,
+          k_label: requestedK.label || "GM",
+          k_params: requestedK.params || {},
+          irrep_index: requestedIrrepIndex,
+          selections,
+          orderparam_index: state.orderparamIndex,
+          include_opd: includeOPD,
+          include_mode_details: includeModeDetails,
+        });
+        state.backendState = backendState;
+        state.modeSet = backendState.mode_set || modeSet;
+        state.distortionSelection = backendState.distortion_selection || distortionSelection;
+        const selected = backendState.selected || {};
+        state.kLabel = selected.kpoint?.label || requestedK.label || "GM";
+        state.kSelections = requestedKSelections;
+        if (!state.kSelections.length) state.kSelections = [requestedK];
+        state.kSelections[0] = {
+          label: state.kLabel,
+          params: requestedK.params || {},
+        };
+        const selectedIrreps = selected.irreps || [];
+        const selectedIrrep = selected.irrep || selectedIrreps[requestedIrrepIndex - 1] || selectedIrreps[0] || null;
+        const irrepOffset = selectedIrrep ? selectedIrreps.findIndex(x => sameIrrep(x, selectedIrrep)) : -1;
+        state.irrepIndex = Math.max(1, irrepOffset + 1 || requestedIrrepIndex || 1);
+        state.irrepSelections = selections.map((selection, index) => (
+          index === 0 ? state.irrepIndex : Number(selection.irrep_index || 1)
+        ));
+        renderData(backendState);
+      } catch (err) {
+        setError(err.message || String(err));
+      } finally {
+        state.running = false;
+      }
+    }
+
+    function hideAfter(step) {
+      if (step < 2) $("distortion-section").hidden = true;
+      if (step < 3) $("k-section").hidden = true;
+      if (step < 4) $("irrep-section").hidden = true;
+      if (step < 5) $("opd-section").hidden = true;
+      if (step < 6) $("mode-details-section").hidden = true;
+    }
+
+    function renderData(backendState) {
+      renderParent(backendState);
+      renderDistortion(backendState);
+      renderK(backendState);
+      renderIrreps(backendState);
+      renderOPD(backendState);
+      renderModeDetails(backendState);
+    }
+
+    function renderParent(backendState) {
+      const input = backendState.input || {};
+      const sg = backendState.space_group || input.parent || {};
+      const lat = input.lattice || {};
+      const symbol = sg.symbol || input.parent?.symbol || "";
+      const materialName = String(input.block || "").trim();
+      const lines = [
+        [
+          `${esc(sg.number ?? input.parent?.number ?? "")} ${esc(symbol)}`.trim(),
+          materialName ? `<span class="material-name">${esc(materialName)}</span>` : "",
+        ].filter(Boolean).join(" "),
+        `a=${esc(fmtNumber(lat.a))}, b=${esc(fmtNumber(lat.b))}, c=${esc(fmtNumber(lat.c))}`,
+        `alpha=${esc(fmtNumber(lat.alpha))}, beta=${esc(fmtNumber(lat.beta))}, gamma=${esc(fmtNumber(lat.gamma))}`,
+        "",
+        ...(input.atom_sites || []).map(site => {
+          const fract = (site.fract || []).map(fmtCoord).join(",");
+          const wyckoff = [site.multiplicity, site.wyckoff].filter(Boolean).join("");
+          const formula = site.wyckoff_formula || `(${fract})`;
+          const params = Object.entries(site.wyckoff_params || {})
+            .map(([name, value]) => `${name}= ${fmtParam(value)}`)
+            .join(", ");
+          return `${esc(site.label || site.type || "")} ${esc(wyckoff || site.multiplicity || "")} ${esc(formula)}${params ? ", " + esc(params) : ""}`;
+        }),
+      ];
+      $("parent-summary").innerHTML = lines.filter(Boolean).join("<br>");
+    }
+
+    function renderDistortion(backendState) {
+      const atoms = backendState.input?.atom_sites || [];
+      const modeSet = backendState.mode_set || state.modeSet || "strain_displacive";
+      const selection = backendState.distortion_selection || state.distortionSelection || {
+        strain: modeSet === "strain_displacive" || modeSet === "all",
+        displacive_sites: atoms.map((_, index) => index + 1),
+        magnetic_sites: modeSet === "magnetic" || modeSet === "all" ? atoms.map((_, index) => index + 1) : [],
+      };
+      const selectableSites = new Set(selection.selectable_sites || atoms.map((_, index) => index + 1));
+      const siteTypes = selection.site_types || Array.from(new Set(atoms.map(site => site.type || site.label)));
+      const selectedFor = kind => new Set(selection[`${kind}_sites`] || []);
+      const siteBoxes = kind => siteTypes.map((siteType, i) => {
+        if (!selectableSites.has(i + 1)) return "";
+        const prefix = `include${kind}`;
+        const id = `${prefix}${String(i + 1).padStart(3, "0")}`;
+        const checked = selectedFor(kind).has(i + 1) ? "checked" : "";
+        return `${esc(siteType || ("site" + (i + 1)))}<input type="checkbox" id="${id}" ${checked}>`;
+      }).filter(Boolean).join(" ");
+      $("distortion-table").querySelector("tbody").innerHTML = `
+        <tr><td>Strain: <input type="checkbox" id="includestrain" ${selection.strain ? "checked" : ""}></td></tr>
+        <tr><td valign="TOP">Displacive: </td><td>all<input type="checkbox" id="includedisplaciveall"> none<input type="checkbox" id="includedisplacivenone"> ${siteBoxes("displacive")}</td></tr>
+        <tr><td valign="TOP">Magnetic: </td><td>all<input type="checkbox" id="includemagneticall"> none<input type="checkbox" id="includemagneticnone"> ${siteBoxes("magnetic")}</td></tr>
+      `;
+      $("distortion-table").querySelectorAll("input").forEach(input => {
+        input.addEventListener("change", () => {
+          for (const prefix of ["includedisplacive", "includemagnetic"]) {
+            if (input.id === `${prefix}all` && input.checked) {
+              document.querySelectorAll(`[id^='${prefix}']`).forEach(node => {
+                if (node.id !== `${prefix}none`) node.checked = true;
+              });
+              $(`${prefix}none`).checked = false;
+            } else if (input.id === `${prefix}none` && input.checked) {
+              document.querySelectorAll(`[id^='${prefix}']`).forEach(node => {
+                if (node.id !== `${prefix}none`) node.checked = false;
+              });
+            } else if (input.id.startsWith(prefix) && input.id !== `${prefix}all` && input.id !== `${prefix}none`) {
+              $(`${prefix}all`).checked = false;
+              $(`${prefix}none`).checked = false;
+            }
+          }
+          state.distortionSelection = selectedDistortionSelection();
+          state.modeSet = selectedModeSet(state.distortionSelection);
+          state.irrepSelections = state.kSelections.map(() => 1);
+          state.irrepIndex = 1;
+          state.orderparamIndex = 1;
+          $("irrep-section").hidden = true;
+          $("opd-section").hidden = true;
+          $("mode-details-section").hidden = true;
+        });
+      });
+    }
+
+    function renderK(backendState) {
+      const count = normalizeIrrepCount();
+      const optionsFor = selectedLabel => (backendState.kpoints || []).map(k => {
+        const selected = k.label === selectedLabel ? " selected" : "";
+        return `<option value="${esc(k.label)}"${selected}>${esc(k.label)}, k${esc(k.kid ?? k.kslot)} ${esc(k.isodistort_kvector || k.kvector)}</option>`;
+      }).join("");
+      $("k-selectors").innerHTML = state.kSelections.slice(0, count).map((selection, index) => {
+        const params = selection.params || {};
+        return `<span class="k-row" data-index="${index}">
+          <select class="k-select">${optionsFor(selection.label || backendState.selected?.kpoint?.label)}</select>
+          <span class="k-params">
+            <label>a=<input class="tiny-input k-param" data-param="a" value="${esc(params.a || "")}"></label>
+            <label>b=<input class="tiny-input k-param" data-param="b" value="${esc(params.b || "")}"></label>
+            <label>g=<input class="tiny-input k-param" data-param="g" value="${esc(params.g || "")}"></label>
+          </span>
+        </span>`;
+      }).join("");
+      const onKInput = () => {
+        state.kSelections = selectedKRows();
+        state.kLabel = state.kSelections[0]?.label || state.kLabel || "GM";
+        state.irrepSelections = state.kSelections.map(() => 1);
+        $("irrep-section").hidden = true;
+        $("opd-section").hidden = true;
+        $("mode-details-section").hidden = true;
+      };
+      document.querySelectorAll(".k-select").forEach(node => {
+        node.addEventListener("change", onKInput);
+      });
+      document.querySelectorAll(".k-param").forEach(node => {
+        node.addEventListener("input", onKInput);
+        node.addEventListener("change", onKInput);
+      });
+    }
+
+    function renderIrreps(backendState) {
+      const groups = backendState.irrep_catalog || [];
+      const count = normalizeIrrepCount();
+      const selectedGroups = state.kSelections.slice(0, count).map(selection => (
+        groups.find(group => group.k_label === selection.label) || groups[0]
+      )).filter(Boolean);
+      $("irrep-selectors").innerHTML = selectedGroups.map((group, groupIndex) => {
+        const options = (group.irreps || []).map((ir, i) => {
+          const selectedIndex = state.irrepSelections[groupIndex] || 1;
+          const selected = i + 1 === selectedIndex ? " selected" : "";
+          const kov = ir.kov_label || `k${group.kid ?? group.kslot}t${i + 1}`;
+          return `<option value="${i + 1}"${selected}>${esc(ir.symbol)}, ${esc(kov)}</option>`;
+        }).join("");
+        return `<span class="irrep-row"><select class="irrep-select" data-k="${esc(group.k_label)}">${options}</select></span>`;
+      }).join("");
+      document.querySelectorAll(".irrep-select").forEach((select, index) => {
+        select.addEventListener("change", () => {
+          state.irrepSelections[index] = Number(select.value || 1);
+          if (index === 0) state.irrepIndex = selectedIrrepIndex();
+          state.orderparamIndex = 1;
+          $("opd-section").hidden = true;
+          $("mode-details-section").hidden = true;
+        });
+      });
+    }
+
+    function renderOPD(backendState) {
+      const rows = backendState.selected?.opd_rows || [];
+      if (state.orderparamIndex > rows.length) state.orderparamIndex = 1;
+      $("opd-options").innerHTML = rows.map((item, index) => {
+        const iso = item.isotropy || {};
+        const dir = item.direction || {};
+        const subgroup = iso.subgroup || {};
+        const subgroupNumber = subgroup.display_label || subgroup.number;
+        const checked = index + 1 === state.orderparamIndex ? " checked" : "";
+        const label = [
+          dir.label ?? iso.direction_label ?? "",
+          iso.display_opd ?? iso.source_opd ?? dir.opd ?? iso.direction_opd ?? "",
+          subgroupNumber ? `#${subgroupNumber} ${subgroup.symbol}` : "",
+          opdMetadataSuffix(iso),
+        ].filter(Boolean).join(" ");
+        return `<label><input type="radio" name="orderparam" value="${index + 1}"${checked}>${esc(label)}</label><br>`;
+      }).join("");
+      document.querySelectorAll("input[name='orderparam']").forEach(radio => {
+        radio.addEventListener("change", () => {
+          state.orderparamIndex = Number(radio.value || 1);
+          $("mode-details-section").hidden = true;
+        });
+      });
+    }
+
+    function opdMetadataSuffix(iso) {
+      if (!iso || typeof iso !== "object") return "";
+      const parts = [];
+      const basis = iso.basis_text || fmtBasis(iso.basis);
+      const origin = fmtOrigin(iso.origin);
+      const size = iso.s ?? iso.arms ?? iso.det;
+      const index = iso.i ?? iso.index;
+      const kActive = iso.k_active ?? iso.k_active_text ?? (
+        Array.isArray(iso.k_active_vectors) ? iso.k_active_vectors.join(",") : ""
+      );
+      if (basis) parts.push(`basis=${basis}`);
+      if (origin) parts.push(`origin=${origin}`);
+      if (size !== null && size !== undefined && size !== "") parts.push(`s=${size}`);
+      if (index !== null && index !== undefined && index !== "") parts.push(`i=${index}`);
+      if (kActive) parts.push(`k-active= ${kActive}`);
+      return parts.length ? `, ${parts.join(", ")}` : "";
+    }
+
+    function fmtBasis(value) {
+      if (!Array.isArray(value)) return value ? String(value) : "";
+      const rows = value.filter(Array.isArray).map(row => `(${row.join(",")})`);
+      return rows.length ? `{${rows.join(",")}}` : String(value);
+    }
+
+    function fmtOrigin(value) {
+      if (!Array.isArray(value)) return value ? String(value) : "";
+      return `(${value.join(",")})`;
+    }
+
+    function renderModeDetails(backendState) {
+      const output = $("mode-details-output");
+      output.textContent = backendState.selected?.mode_detail_text || "";
+      const modeDetails = backendState.selected?.mode_details;
+      modeViewer.setData(modeDetails ? {
+        ...modeDetails,
+        viewer_parent: { lattice: backendState.input?.lattice || null },
+      } : null);
+      setModeDetailsView("text");
+    }
+
+    $("choose-cif").addEventListener("click", () => {
+      $("cif-file").value = "";
+      $("cif-file").click();
+    });
+    $("cif-file").addEventListener("change", async () => {
+      const file = $("cif-file").files && $("cif-file").files[0];
+      state.cif = file ? await file.text() : "";
+      $("cif-name").textContent = file ? file.name : "";
+      state.backendState = null;
+      state.kLabel = "GM";
+      state.kSelections = [{ label: "GM", params: { a: "", b: "", g: "" } }];
+      state.irrepIndex = 1;
+      state.irrepSelections = [1];
+      state.irrepCount = 1;
+      state.orderparamIndex = 1;
+      state.modeSet = "strain_displacive";
+      state.distortionSelection = null;
+      $("irrep-count").value = "1";
+      $("distortion-table").querySelector("tbody").replaceChildren();
+      $("k-selectors").replaceChildren();
+      $("irrep-selectors").replaceChildren();
+      $("opd-options").replaceChildren();
+      $("mode-details-output").textContent = "";
+      modeViewer.setData(null);
+      hideAfter(1);
+      await analyze({ includeOPD: false });
+      if (state.backendState) {
+        hideAfter(2);
+        $("distortion-section").hidden = false;
+      }
+    });
+    $("distortion-change").addEventListener("click", () => {
+      if (!state.backendState) return;
+      $("k-section").hidden = false;
+      hideAfter(3);
+    });
+    $("k-ok").addEventListener("click", async () => {
+      state.kSelections = selectedKRows();
+      state.irrepSelections = state.kSelections.map((_, index) => state.irrepSelections[index] || 1);
+      state.orderparamIndex = 1;
+      await analyze({ includeOPD: false });
+      if (!state.backendState) return;
+      $("irrep-section").hidden = false;
+      hideAfter(4);
+    });
+    $("irrep-ok").addEventListener("click", async () => {
+      state.irrepIndex = selectedIrrepIndex();
+      state.irrepSelections = Array.from(document.querySelectorAll(".irrep-select")).map(select => Number(select.value || 1));
+      state.orderparamIndex = 1;
+      await analyze({ includeOPD: true });
+      if (!state.backendState) return;
+      $("opd-section").hidden = false;
+      $("mode-details-section").hidden = true;
+    });
+    $("opd-ok").addEventListener("click", async () => {
+      const selected = document.querySelector("input[name='orderparam']:checked");
+      if (!selected) return;
+      state.orderparamIndex = Number(selected.value || 1);
+      await analyze({ includeOPD: true, includeModeDetails: true });
+      if (!state.backendState) return;
+      $("mode-details-section").hidden = false;
+    });
+    $("irrep-count-change").addEventListener("click", () => {
+      normalizeIrrepCount(true);
+      if (state.backendState) renderK(state.backendState);
+      $("irrep-section").hidden = true;
+      $("opd-section").hidden = true;
+      $("mode-details-section").hidden = true;
+    });
+  </script>
+</body>
+</html>
