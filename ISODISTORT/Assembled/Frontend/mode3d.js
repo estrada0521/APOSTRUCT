@@ -543,7 +543,7 @@ export class ModeStructureViewer {
     this.viewTween = null;
     this.viewCube = null;
 
-    loadElementStyles("/tools/cif_standardizer/vesta_elements.csv").then(() => this.updateScene());
+    loadElementStyles("./vesta_elements.csv").then(() => this.updateScene());
     this.bindControls();
     this.bindViewCube();
     this.resizeObserver = new ResizeObserver(() => {

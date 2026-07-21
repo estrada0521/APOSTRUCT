@@ -15,6 +15,7 @@ from ISODISTORT.Assembled import handle_api, handle_api_post
 
 FRONTEND_ROOT = Path(__file__).resolve().parent / "Frontend"
 CONTENT_TYPES = {
+    ".csv": "text/csv; charset=utf-8",
     ".css": "text/css; charset=utf-8",
     ".html": "text/html; charset=utf-8",
     ".js": "text/javascript; charset=utf-8",
