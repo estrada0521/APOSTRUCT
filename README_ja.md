@@ -1,23 +1,21 @@
 # Distortropy
 
-[日本語](README_ja.md)
+[English](README.md)
 
-**Distortropy** is a pure-Python, offline implementation of **ISODISTORT**.
+**Distortropy** は **ISODISTORT** の純 Python・オフライン実装です。
 
 ## Setup
 
-Clone the repository, then install its dependencies and the `isodistort`
-command in editable mode:
+リポジトリをcloneし、依存packageと`isodistort` commandをeditable installします。
 
 ```bash
 python -m pip install -e .
 ```
 
-Place the following nine group-theory table files in `Source/` at the
-repository root. They are distributed with the BYU ISOTROPY Software Suite
-<https://iso.byu.edu/>.
+群論テーブル 9 ファイルをリポジトリ直下の `Source/` に置いてください（BYU の ISOTROPY
+Software Suite <https://iso.byu.edu/> に含まれます）。
 
-```text
+```
 const.dat  data_isotropy.txt  data_irreps.txt  data_images.txt  data_little.txt
 data_magnetic.txt  data_space.txt  data_ssgmag.txt  data_wyckoff.txt
 ```
@@ -25,17 +23,17 @@ data_magnetic.txt  data_space.txt  data_ssgmag.txt  data_wyckoff.txt
 ## How to Use
 
 ```bash
-# 1. Enumerate k points for the parent space group
+# 1. 親空間群の k 点を列挙
 isodistort kpoints structure.cif
 
-# 2. Enumerate irreducible representations at selected k points
+# 2. 選択した k 点の既約表現を列挙
 isodistort irreps structure.cif \
   --k L \
   --k GP 1/3 1/4 2/5 \
   --k B 1/3 2/5 \
   --k W 1/4
 
-# 3. Enumerate order-parameter directions (OPDs) for selected irreps
+# 3. 選択した既約表現の OPD(秩序変数方向)を列挙
 isodistort opds structure.cif \
   --k L --irrep L1 \
   --k GP 1/3 1/4 2/5 --irrep GP1GQ1 \
@@ -43,7 +41,7 @@ isodistort opds structure.cif \
   --k W 1/4 --irrep W1WA1 \
   --displacive Sn Fe --magnetic O Fe --strain
 
-# 4. Compute complete mode details for a selection
+# 4. 選択に対するモード詳細を計算
 isodistort modes structure.cif \
   --k L --irrep L1 \
   --k GP 1/3 1/4 2/5 --irrep GP1GQ1 \
@@ -53,7 +51,7 @@ isodistort modes structure.cif \
   --opd 'P1(1)P3(1)C2(1)P2(1)'
 ```
 
-### JSON case input
+ケースを JSON に焼いて入力
 
 ```json
 { "structure": "structure.cif",
@@ -79,7 +77,7 @@ isodistort modes structure.cif \
 isodistort modes --case case.json
 ```
 
-### `.in` case input
+ケースを .in に焼いて入力
 
 ```text
 CIF structure.cif
@@ -105,15 +103,14 @@ isodistort modes --case case.in
 
 ## Output
 
-`kpoints`, `irreps`, and `opds` write JSON to standard output. For `modes`, a
-JSON case produces JSON, while a `.in` case or direct command-line selection
-produces complete mode-details text. Use `modes --format json|text` to override
-the format and `-o PATH` to save the result to a specific file. No output file
-is created unless `-o` is provided.
+`kpoints`、`irreps`、`opds` は JSON を標準出力します。`modes` は JSON caseでは
+JSON、`.in`または直接指定ではcomplete mode-details textを標準出力します。
+`modes --format json|text`で形式を指定でき、`-o PATH`で指定したファイルへ保存できます。
+`-o`を指定しない限りファイルは作成しません。
 
 ## Server
 
-Start the standalone local server to use the graphical interface:
+ローカルサーバーを起動して、本家と同じ使用感で利用可能です。
 
 ```bash
 isodistort serve --host 127.0.0.1 --port 8300
@@ -125,15 +122,13 @@ isodistort serve --host 127.0.0.1 --port 8300
 </p>
 
 ## Validation
+現在も検証を続けています。
+実用的な入力では本家と物理的に非等価な出力をすることは殆どありませんが、完全一致を保証するものではありません。
+（`How to Use`における入力例のような）重い非自明なケースでは差が出ることがあるため、ご注意下さい。
 
-Validation against the reference implementation is ongoing. For practical
-inputs, physically non-equivalent output is uncommon, but exact equivalence is
-not guaranteed. Differences are more likely for heavy, nontrivial cases such
-as the multi-k example above.
 
 ## Notice
 
-The original ISODISTORT software and the group-theory tables are the work of
-Harold T. Stokes, Dorian M. Hatch, and Branton J. Campbell at Brigham Young
-University. Please acknowledge their work when using Distortropy in research.
-See [NOTICE](NOTICE) for details.
+元になったISODISTORT・群論 table は Harold T. Stokes, Dorian M. Hatch,
+Branton J. Campbell（BYU）の成果です。
+研究で用いる場合は謝辞をお願いします（[NOTICE](NOTICE)）。
