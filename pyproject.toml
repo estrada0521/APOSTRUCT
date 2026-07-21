@@ -26,6 +26,7 @@ namespaces = true
 
 [tool.setuptools.package-data]
 "ISODISTORT.Assembled" = [
+  "Frontend/*.csv",
   "Frontend/*.css",
   "Frontend/*.html",
   "Frontend/*.js",
