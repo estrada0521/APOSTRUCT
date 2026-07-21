@@ -1,0 +1,27 @@
+NOTICE
+
+Distortropy is an independent, pure-Python reimplementation of the
+ISODISTORT algorithm from the ISOTROPY Software Suite. It is not the original
+ISOTROPY Software Suite and is not affiliated with or endorsed by its authors.
+
+The original ISODISTORT software and the group-theoretical data tables it uses
+are the work of:
+
+    Harold T. Stokes, Dorian M. Hatch, and Branton J. Campbell
+    Department of Physics and Astronomy
+    Brigham Young University
+    Provo, Utah, USA
+    ISOTROPY Software Suite: https://iso.byu.edu/
+
+The ISOTROPY documentation states that the software may be redistributed
+without restriction, but that research use resulting in publication should
+acknowledge H. T. Stokes, D. M. Hatch, and B. J. Campbell. Users of this
+reimplementation are asked to provide the same acknowledgement.
+
+Suggested citations:
+
+  - H. T. Stokes, D. M. Hatch, and B. J. Campbell, ISOTROPY Software Suite,
+    https://iso.byu.edu/.
+  - B. J. Campbell, H. T. Stokes, D. E. Tanner, and D. M. Hatch,
+    "ISODISPLACE: a web-based tool for exploring structural distortions,"
+    Journal of Applied Crystallography 39, 607-614 (2006).

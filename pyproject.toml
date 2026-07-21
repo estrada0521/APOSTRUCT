@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "distortropy"
+version = "0.1.0"
+description = "Pure-Python, offline ISODISTORT implementation"
+readme = "README.md"
+requires-python = ">=3.11"
+classifiers = [
+  "License :: Public Domain",
+]
+dependencies = [
+  "gemmi",
+  "numpy",
+  "sympy",
+]
+
+[project.scripts]
+isodistort = "ISODISTORT.Assembled.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["ISODISTORT*"]
+namespaces = true
+
+[tool.setuptools.package-data]
+"ISODISTORT.Assembled" = [
+  "Frontend/*.css",
+  "Frontend/*.html",
+  "Frontend/*.js",
+  "Frontend/vendor/*.js",
+  "Frontend/vendor/*.txt",
+  "Frontend/vendor/addons/controls/*.js",
+  "Frontend/vendor/addons/geometries/*.js",
+  "Frontend/vendor/addons/math/*.js",
+]

@@ -1,0 +1,13 @@
+# Upstream group-theory tables — user-provided, not redistributed here (see README.md)
+/Source/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+build/
+dist/
+
+# OS / editor
+.DS_Store
