@@ -55,10 +55,9 @@ class IsotropyKVectorMixin:
     def _first_little_gid_for_case(self, case: Case) -> int:
         """Return the first little-irrep row for the case's SG/k slot.
 
-        The final stdout k-vector line is printed once per k selection before
-        the irrep loop.  The binary uses the k-star attached to that selection;
-        all little-irrep rows for the same SG/k share the same first star arm,
-        so the first row is sufficient and avoids depending on a specific irrep.
+        The displayed k-vector is selected once before the irrep loop.  All
+        little-irrep rows for the same SG/k share the first Source star arm, so
+        the first row is sufficient and avoids choosing a specific irrep.
         """
 
         kslot = self.k_slot_for_label(case.sg, case.k_label)
@@ -85,13 +84,11 @@ class IsotropyKVectorMixin:
     def display_k_vector_from_case(self, case: Case) -> tuple[Fraction, Fraction, Fraction]:
         """Return the k-vector coordinates printed by mode-kernel stdout.
 
-        ``mode kernel.txt`` states that input labels follow Miller-Love, while the
-        printed coordinates are expressed in the reciprocal basis of the
-        conventional International Tables lattice.  The binary's stdout line is
-        reproduced by taking the first Miller-Love k-star arm and applying the
-        reciprocal-coordinate ``pml -> cinter`` setting transform.  Values are
-        intentionally not reduced modulo reciprocal lattice vectors; the binary
-        prints entries such as ``1`` and ``8/5``.
+        Input labels use Miller-Love coordinates, while displayed coordinates use
+        the reciprocal basis of the conventional International Tables lattice.
+        Apply the ``pml -> cinter`` reciprocal setting transform to the first
+        Miller-Love star arm.  Values remain unreduced modulo reciprocal lattice
+        vectors, preserving entries such as ``1`` and ``8/5``.
         """
 
         return self.reciprocal_setting_change_vector(
@@ -153,8 +150,8 @@ class IsotropyKVectorMixin:
         For parametric k labels, the first record is the evaluated k vector
         modulo reciprocal lattice vectors.  Following records are the individual
         parameter contributions `p_i * direction_i` without modulo reduction.
-        The binary passes exactly four records and normalizes unused zero rows
-        as `(0,0,0,1)`.
+        The interface carries exactly four records and normalizes unused zero
+        rows as `(0,0,0,1)`.
         """
 
         vectors = self.little_k_basis_vectors_for_case(case)
@@ -191,9 +188,9 @@ class IsotropyKVectorMixin:
         the sum of the runtime parameter contributions transformed by the
         per-SG/k ``little_k_star_conv2ml`` 4x4 row-vector matrix.  The following
         records retain the evaluated k and individual parameter contributions
-        in the Miller-Love basis.  This mirrors the entry buffer observed at
-        the binary boundary and keeps the upstream data available for the
-        surrounding subgroup-selection port.
+        in the Miller-Love basis.  This is the entry-buffer contract consumed by
+        subgroup selection and preserves the Source contributions for later
+        basis construction.
         """
 
         lattice = int(self.iso.space["ispace_lattice"][case.sg - 1])
@@ -251,9 +248,8 @@ class IsotropyKVectorMixin:
         In the decoded parametric-k branch, `find_isotropy_subgroup_` first
         builds the four `newlat_` records from `little_k` and runtime k
         parameters, calls `newlat_` with mode count 1, then passes the resulting
-        basis into `subgroup_to_orderparam_`.  Current GDB assets show the
-        returned basis remains this initial `newlat_` basis; later comparisons
-        should catch any case where the fallback search replaces it.
+        basis into `subgroup_to_orderparam_`. The returned basis remains this
+        initial `newlat_` basis unless the fallback search replaces it.
         """
 
         return self.newlat_basis(1, self.newlat_input_records_for_case(case))
@@ -264,11 +260,10 @@ class IsotropyKVectorMixin:
     ) -> tuple[tuple[int, int, int, int, int], ...]:
         """Return candidate subgroup operations in ``find_isotropy_subgroup_`` order.
 
-        After the initial parametric-k superlattice basis is built, the binary
-        enumerates internal supercell translations from that basis and adds
-        each of them to every non-identity generated space operation.  The
-        resulting records are the trial operations accumulated in
-        ``subgroup_to_orderparam_``'s final argument.
+        After the initial parametric-k superlattice basis is built, enumerate
+        internal supercell translations from that basis and add each to every
+        non-identity generated space operation.  These records form the trial
+        operations passed to ``subgroup_to_orderparam_``.
         """
 
         basis = self.find_isotropy_initial_basis_for_case(case)

@@ -14,8 +14,8 @@ from ISODISTORT.Assembled.Backend.modes.engine.project.mode_forms.normalization 
 def _regroup_repeated_component_modes(modes: list[list[list[float]]]) -> list[list[list[float]]]:
     """Match mode-kernel print order when a component block is split by another.
 
-    In the observed type-3 real-form path, MAIN__ prints paired modes by vector
-    component.  The local bridge loop can emit ``a,a,b,c,b,c`` when two site
+    In the guarded type-3 real-form path, paired modes are printed by vector
+    component.  The projection bridge can emit ``a,a,b,c,b,c`` when two site
     vector irreps share the same source row.  Re-group only that exact shape so
     alternating legitimate patterns such as ``a,b,a,b`` are left untouched.
     """
@@ -123,7 +123,7 @@ def _type3_parametric_scalar_plane_print_order(modes: list[list[list[float]]]) -
         return [modes[0], modes[1], modes[2], modes[4], modes[3], modes[5]]
     return modes
 def _type3_parametric_second_arm_phase(modes: list[list[list[float]]]) -> list[list[list[float]]]:
-    """Apply the binary's second-arm sign convention for paired type-3 modes."""
+    """Apply the second-arm sign convention for paired type-3 modes."""
 
     if len(modes) != 6:
         return modes
@@ -157,12 +157,11 @@ def _combine_modes(
 def _type3_parametric_kdim2_print_basis(modes: list[list[list[float]]]) -> list[list[list[float]]]:
     """Apply mode-kernel real-basis print convention for two-parameter k pairs.
 
-    The project-vector bridge already matches the binary at the routine
-    boundary.  For hexagonal/trigonal two-parameter k labels, MAIN__ then writes
-    a rotated real basis to ``vmode``: the first scalar/plane partners are kept,
+    For hexagonal/trigonal two-parameter k labels, the printed ``vmode`` basis
+    is rotated after project-vector expansion: the first scalar/plane partners are kept,
     while the following plane partners are mixed by ``2/sqrt(3)``.  This is the
-    same final-basis transform observed for C/D-family paired type-3 blocks; it
-    is intentionally guarded by the component patterns rather than SG labels.
+    same final-basis transform used by C/D-family paired type-3 blocks; it is
+    guarded by the component patterns rather than space-group labels.
     """
 
     components = [_dominant_mode_component(mode) for mode in modes]
@@ -199,32 +198,6 @@ def _type3_parametric_kdim2_print_basis(modes: list[list[list[float]]]) -> list[
             modes[11],
         ]
     return modes
-def _type3_parametric_kdim2_trim_mixed_tail(modes: list[list[list[float]]]) -> list[list[list[float]]]:
-    """Drop the carried first-arm component from kdim-2 type-3 tail modes.
-
-    After the kdim-2 real-basis transform, the binary prints the seventh and
-    eighth modes with only the second-arm support.  The preceding fifth and
-    sixth modes identify the carried first-arm support that must be removed.
-    """
-
-    if len(modes) != 12:
-        return modes
-    out = list(modes)
-    changed = False
-    for target_index, base_index in ((6, 4), (7, 5)):
-        base_active = _active_mode_indices(out[base_index])
-        target_active = _active_mode_indices(out[target_index])
-        if not base_active or not base_active < target_active:
-            continue
-        trimmed = []
-        for atom_index, vector in enumerate(out[target_index]):
-            if atom_index in base_active:
-                trimmed.append([0.0, 0.0, 0.0])
-            else:
-                trimmed.append([-float(component) for component in vector])
-        out[target_index] = _normalize_mode_vectors(trimmed)
-        changed = True
-    return out if changed else modes
 def _type1_parametric_scalar_plane_print_order(
     modes: list[list[list[float]]],
     *,

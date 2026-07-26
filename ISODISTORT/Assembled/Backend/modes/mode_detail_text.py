@@ -2,17 +2,15 @@
 
 from __future__ import annotations
 
-import ast
-from fractions import Fraction
 import math
 import re
 from typing import Any
 
-import gemmi
-
-from ISODISTORT.Assembled.Backend.modes.structure_runtime import (
-    _mode_rows_grouped_by_presentation_orbits,
+from ISODISTORT.Assembled.Backend.fraction_expression import (
+    evaluate_fraction_expression,
+    split_coordinate_expression3,
 )
+from ISODISTORT.Assembled.Backend.modes.common import _site_label
 
 
 def _fmt(value: object, digits: int = 5) -> str:
@@ -41,7 +39,10 @@ def _fmt_origin(value: object) -> str:
         x, y, z, den = value
         try:
             den = int(den)
-            vals = [str(int(item) // den) if int(item) % den == 0 else f"{int(item)}/{den}" for item in (x, y, z)]
+            vals = [
+                str(int(item) // den) if int(item) % den == 0 else f"{int(item)}/{den}"
+                for item in (x, y, z)
+            ]
             return "(" + ",".join(vals) + ")"
         except (TypeError, ValueError, ZeroDivisionError):
             pass
@@ -50,53 +51,18 @@ def _fmt_origin(value: object) -> str:
     return str(value or "")
 
 
-def _site_label(site: dict[str, Any]) -> str:
-    wyckoff = str(site.get("wyckoff") or "")
-    multiplicity = str(site.get("wyckoff_multiplicity") or site.get("multiplicity") or "")
-    if wyckoff and wyckoff[0].isdigit():
-        return wyckoff
-    return f"{multiplicity}{wyckoff}" if multiplicity or wyckoff else ""
-
-
-def _split_formula_xyz(formula: object) -> list[str] | None:
-    text = str(formula or "").strip()
-    if text.startswith("(") and text.endswith(")"):
-        text = text[1:-1]
-    parts = [part.strip() for part in text.split(",")]
-    return parts if len(parts) == 3 else None
-
-
 def _safe_eval_fraction_expr(expr: str, params: dict[str, Any]) -> float:
-    expr = re.sub(r"(?<![A-Za-z0-9_])([+-]?(?:\d+(?:/\d+)?|\d*\.\d+))([xyz])\b", r"\1*\2", expr)
-    tree = ast.parse(expr, mode="eval")
-
-    def visit(node: ast.AST) -> Fraction:
-        if isinstance(node, ast.Expression):
-            return visit(node.body)
-        if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
-            return Fraction(str(node.value))
-        if isinstance(node, ast.Name):
-            if node.id not in params:
-                raise ValueError(f"unknown Wyckoff parameter {node.id!r}")
-            return Fraction(str(params[node.id]))
-        if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.USub):
-            return -visit(node.operand)
-        if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.UAdd):
-            return visit(node.operand)
-        if isinstance(node, ast.BinOp):
-            left = visit(node.left)
-            right = visit(node.right)
-            if isinstance(node.op, ast.Add):
-                return left + right
-            if isinstance(node.op, ast.Sub):
-                return left - right
-            if isinstance(node.op, ast.Mult):
-                return left * right
-            if isinstance(node.op, ast.Div):
-                return left / right
-        raise ValueError(f"unsupported Wyckoff expression {expr!r}")
-
-    return float(visit(tree))
+    expr = re.sub(
+        r"(?<![A-Za-z0-9_])([+-]?(?:\d+(?:/\d+)?|\d*\.\d+))([xyz])\b", r"\1*\2", expr
+    )
+    return float(
+        evaluate_fraction_expression(
+            expr,
+            params,
+            "unknown Wyckoff parameter {name}",
+            f"unsupported Wyckoff expression {expr!r}",
+        )
+    )
 
 
 def parent_display_xyz(site: dict[str, Any]) -> list[float]:
@@ -108,7 +74,7 @@ def parent_display_xyz(site: dict[str, Any]) -> list[float]:
     available, then fall back to the raw CIF fraction.
     """
 
-    parts = _split_formula_xyz(site.get("wyckoff_formula"))
+    parts = split_coordinate_expression3(site.get("wyckoff_formula"))
     params = site.get("wyckoff_params") or {}
     if parts and isinstance(params, dict):
         try:
@@ -133,406 +99,60 @@ def _render_parent_atoms(
         )
 
 
-def _atoms_grouped_by_parent_site(
-    atoms: list[dict[str, Any]],
-    parent_sites: list[dict[str, Any]],
-) -> list[dict[str, Any]]:
-    """Group child rows by parent site and a proved presentation-grid order."""
-    labels = [str(site.get("label") or "") for site in parent_sites]
-    ranked = sorted(
-        ((label, index) for index, label in enumerate(labels) if label),
-        key=lambda item: len(item[0]),
-        reverse=True,
-    )
-
-    def parent_rank(atom: dict[str, Any]) -> int:
-        label = str(atom.get("label") or "")
-        return next(
-            (index for parent, index in ranked if label == parent or label.startswith(parent + "_")),
-            len(labels),
-        )
-
-    def site_key(atom: dict[str, Any], index: int) -> tuple[int, int, str, int]:
-        site = str(atom.get("site") or "").strip()
-        match = re.match(r"^(\d+)\s*([A-Za-z].*)?$", site)
-        if match is None:
-            return 1, 10**9, site.lower(), index
-        return 0, int(match.group(1)), str(match.group(2) or "").lower(), index
-
-    presentation_order: dict[int, int] = {}
-    for parent in range(len(labels)):
-        members = [
-            (index, atom)
-            for index, atom in enumerate(atoms)
-            if parent_rank(atom) == parent
-        ]
-        if not members:
-            continue
-        parsed = [
-            _atom_presentation_grid_partition(atom)
-            for _index, atom in members
-        ]
-        if any(item is None for item in parsed):
-            continue
-        partitions = [item for item in parsed if item is not None]
-        sizes = {size for size, _indices in partitions}
-        if len(sizes) != 1:
-            continue
-        size = sizes.pop()
-        flat = [index for _size, indices in partitions for index in indices]
-        if len(flat) != size or set(flat) != set(range(size)):
-            continue
-        for (source_index, _atom), (_size, indices) in zip(
-            members,
-            partitions,
-            strict=True,
-        ):
-            presentation_order[source_index] = min(indices)
-
-    ordered = [
-        atom
-        for _parent, _site, atom in sorted(
-            (
-                parent_rank(atom),
-                (
-                    (0, presentation_order[index], "", index)
-                    if index in presentation_order
-                    else (1, *site_key(atom, index)[1:])
-                ),
-                atom,
-            )
-            for index, atom in enumerate(atoms)
-        )
-    ]
-    counts: dict[int, int] = {}
-    out: list[dict[str, Any]] = []
-    for atom in ordered:
-        parent = parent_rank(atom)
-        if parent < len(labels) and labels[parent]:
-            counts[parent] = counts.get(parent, 0) + 1
-            atom = {**atom, "label": f"{labels[parent]}_{counts[parent]}"}
-        out.append(atom)
-    return out
-
-
-def _atom_presentation_grid_partition(
-    atom: dict[str, Any],
-) -> tuple[int, tuple[int, ...]] | None:
-    """Return one atom orbit's complete-grid index witness."""
-
-    raw_size = atom.get("_presentation_grid_size")
-    raw_indices = atom.get("_presentation_grid_indices")
-    if (
-        isinstance(raw_size, bool)
-        or not isinstance(raw_size, int)
-        or raw_size <= 0
-        or not isinstance(raw_indices, (list, tuple))
-        or not raw_indices
-    ):
-        return None
-    indices: list[int] = []
-    for raw_index in raw_indices:
-        if (
-            isinstance(raw_index, bool)
-            or not isinstance(raw_index, int)
-            or not 0 <= raw_index < raw_size
-        ):
-            return None
-        indices.append(raw_index)
-    if len(set(indices)) != len(indices):
-        return None
-    site_match = re.fullmatch(
-        r"\s*(\d+)\s*[A-Za-z].*",
-        str(atom.get("site") or ""),
-    )
-    if site_match is None or len(indices) != int(site_match.group(1)):
-        return None
-    return raw_size, tuple(sorted(indices))
-
-
-def _mode_rows_with_operation_labels(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Label the first supercell translation for each parent operation."""
-    counts: dict[str, int] = {}
-    seen: set[tuple[str, int]] = set()
-    out: list[dict[str, Any]] = []
-    for row in rows:
-        atom = str(row.get("atom") or "")
-        prefix = atom.rsplit("_", 1)[0] if "_" in atom else atom
-        record = row.get("_operation_record")
-        try:
-            operation = int(record[4])
-        except (TypeError, ValueError, IndexError):
-            out.append(row)
-            continue
-        key = (prefix, operation)
-        displayed = ""
-        if prefix and key not in seen:
-            seen.add(key)
-            counts[prefix] = counts.get(prefix, 0) + 1
-            displayed = f"{prefix}_{counts[prefix]}"
-        out.append({**row, "atom": displayed or None})
-    return out
-
-
-def _mode_rows_with_complete_label_runs(
-    rows: list[dict[str, Any]],
-    atoms: list[dict[str, Any]],
-    *,
-    atom_prefix: str | None,
-) -> list[dict[str, Any]] | None:
-    """Preserve a complete child-site label partition already carried by rows."""
-
-    expected_prefix = str(atom_prefix or "")
-    if not expected_prefix or not rows or not atoms:
-        return None
-
-    def label_prefix(value: object) -> str:
-        return re.sub(r"_\d+$", "", str(value or ""))
-
-    expected: list[tuple[str, int, int, tuple[int, ...]]] = []
-    for atom in atoms:
-        if not isinstance(atom, dict):
-            return None
-        label = atom.get("label")
-        if not isinstance(label, str) or label_prefix(label) != expected_prefix:
-            continue
-        site_match = re.fullmatch(r"\s*(\d+)\s*[A-Za-z].*", str(atom.get("site") or ""))
-        if site_match is None:
-            return None
-        multiplicity = int(site_match.group(1))
-        if multiplicity <= 0:
-            return None
-        partition = _atom_presentation_grid_partition(atom)
-        if partition is None:
-            return None
-        grid_size, grid_indices = partition
-        expected.append((label, multiplicity, grid_size, grid_indices))
-    if not expected or len({label for label, *_rest in expected}) != len(expected):
-        return None
-    grid_sizes = {grid_size for _label, _multiplicity, grid_size, _indices in expected}
-    if len(grid_sizes) != 1:
-        return None
-    grid_size = grid_sizes.pop()
-    expected_indices = [
-        index
-        for _label, _multiplicity, _size, indices in expected
-        for index in indices
-    ]
-    if len(expected_indices) != grid_size or set(expected_indices) != set(
-        range(grid_size)
-    ):
-        return None
-
-    starts: list[tuple[int, str]] = []
-    presentation_order: list[int] = []
-    for index, row in enumerate(rows):
-        if not isinstance(row, dict):
-            return None
-        presentation_index = row.get("_presentation_grid_index")
-        if isinstance(presentation_index, bool) or not isinstance(
-            presentation_index, int
-        ):
-            return None
-        presentation_order.append(presentation_index)
-        label = row.get("atom")
-        if label is None or label == "":
-            continue
-        if not isinstance(label, str):
-            return None
-        starts.append((index, label))
-    if len(rows) != grid_size or sorted(presentation_order) != list(range(grid_size)):
-        return None
-    if [label for _index, label in starts] != [label for label, *_rest in expected]:
-        return None
-    if not starts or starts[0][0] != 0:
-        return None
-
-    ends = [index for index, _label in starts[1:]] + [len(rows)]
-    if any(
-        end - start != multiplicity
-        for ((start, _label), end, (_expected_label, multiplicity, _size, _indices)) in zip(
-            starts, ends, expected, strict=True
-        )
-    ):
-        return None
-    for ((start, _label), end, (_expected_label, _multiplicity, _size, indices)) in zip(
-        starts,
-        ends,
-        expected,
-        strict=True,
-    ):
-        if {
-            presentation_order[index]
-            for index in range(start, end)
-        } != set(indices):
-            return None
-    return [dict(row) for row in rows]
-
-
 def _mode_rows_grouped_by_child_orbit(
     rows: list[dict[str, Any]],
     atoms: list[dict[str, Any]],
-    child_sg: int | None,
-    atom_prefix: str | None = None,
-    tol: float = 2e-4,
 ) -> list[dict[str, Any]]:
-    """Group complete-mode rows by the displayed child Wyckoff orbit."""
-    labeled_rows = _mode_rows_with_complete_label_runs(
-        rows,
-        atoms,
-        atom_prefix=atom_prefix,
-    )
-    if labeled_rows is not None:
-        return labeled_rows
-    representative_rows = _mode_rows_grouped_by_presentation_orbits(
-        rows,
-        atoms,
-        atom_prefix=atom_prefix,
-        child_sg=child_sg,
-        tol=tol,
-    )
-    if representative_rows is not None:
-        return representative_rows
-    if child_sg is None or not atoms:
-        return _mode_rows_with_operation_labels(rows)
-    try:
-        operations = list(gemmi.find_spacegroup_by_number(int(child_sg)).operations())
-    except Exception:
-        return _mode_rows_with_operation_labels(rows)
+    """Validate and render the child-site blocks already carried by mode rows."""
 
-    def same_point(left: list[float], right: list[float]) -> bool:
-        return all(abs(((left[axis] - right[axis] + 0.5) % 1.0) - 0.5) <= tol for axis in range(3))
-
-    def label_prefix(value: object) -> str:
-        return re.sub(r"_\d+$", "", str(value or ""))
-
-    def points_for_representative(representative: list[float]) -> list[list[float]]:
-        points: list[list[float]] = []
-        for operation in operations:
-            point = [float(value) % 1.0 for value in operation.apply_to_xyz(representative)]
-            if not any(same_point(point, existing) for existing in points):
-                points.append(point)
-        return points
-
-    rows_with_prefix: list[tuple[dict[str, Any], str]] = []
-    current_prefix = str(atom_prefix or "")
-    for row in rows:
-        explicit_prefix = label_prefix(row.get("atom"))
-        if explicit_prefix and atom_prefix is None:
-            current_prefix = explicit_prefix
-        rows_with_prefix.append((row, current_prefix))
-
-    orbit_atoms = list(atoms)
-    orbit_points = [
-        points_for_representative([float(value) for value in atom.get("xyz") or (0, 0, 0)])
-        for atom in orbit_atoms
-    ]
-    known_labels = {str(atom.get("label") or "") for atom in orbit_atoms}
-    known_prefixes = {
-        label.rsplit("_", 1)[0]
-        for label in known_labels
-        if re.search(r"_\d+$", label)
-    }
-    for row, prefix in rows_with_prefix:
-        label = str(row.get("atom") or "")
-        match = re.match(r"^(.+)_\d+$", label)
-        if not match or label in known_labels or match.group(1) not in known_prefixes:
-            continue
-        representative = [float(value) for value in row.get("xyz") or (0, 0, 0)]
-        if any(
-            label_prefix(atom.get("label")) == prefix
-            and any(same_point(representative, point) for point in points)
-            for atom, points in zip(orbit_atoms, orbit_points, strict=True)
+    row_atom_ids = tuple(row.get("atom_id") for row in rows)
+    if (
+        not rows
+        or not all(isinstance(atom_id, str) and atom_id for atom_id in row_atom_ids)
+        or len(set(row_atom_ids)) != len(row_atom_ids)
+    ):
+        raise ValueError("mode definition has no complete atom identity")
+    row_atom_id_set = set(row_atom_ids)
+    expected_sites: list[tuple[str, tuple[str, ...]]] = []
+    for atom in atoms:
+        child_site = atom.get("child_site")
+        atom_ids = atom.get("atom_ids")
+        multiplicity = atom.get("multiplicity")
+        if (
+            not isinstance(child_site, str)
+            or not child_site
+            or atom.get("label") != child_site
+            or not isinstance(atom_ids, list)
+            or not atom_ids
+            or not all(isinstance(atom_id, str) and atom_id for atom_id in atom_ids)
+            or isinstance(multiplicity, bool)
+            or not isinstance(multiplicity, int)
+            or multiplicity != len(atom_ids)
         ):
-            continue
-        orbit_atoms.append({"label": label, "xyz": representative})
-        orbit_points.append(points_for_representative(representative))
-        known_labels.add(label)
-
-    grouped: list[list[dict[str, Any]]] = [[] for _ in orbit_atoms]
-    unmatched: list[dict[str, Any]] = []
-    for row, prefix in rows_with_prefix:
-        xyz = [float(value) for value in row.get("xyz") or (0, 0, 0)]
-        orbit_index = next(
-            (
-                index
-                for index, (atom, points) in enumerate(
-                    zip(orbit_atoms, orbit_points, strict=True)
-                )
-                if (not prefix or label_prefix(atom.get("label")) == prefix)
-                and any(same_point(xyz, point) for point in points)
-            ),
-            None,
+            raise ValueError("undistorted child site has no complete atom identity")
+        site_atom_ids = tuple(atom_ids)
+        matched = row_atom_id_set.intersection(site_atom_ids)
+        if matched:
+            if matched != set(site_atom_ids):
+                raise ValueError("mode definition splits an undistorted child site")
+            expected_sites.append((child_site, site_atom_ids))
+    expected = [
+        (child_site, atom_id, member_order)
+        for child_site, atom_ids in expected_sites
+        for member_order, atom_id in enumerate(atom_ids)
+    ]
+    if len(rows) != len(expected):
+        raise ValueError(
+            "mode definition does not cover the undistorted child atoms: "
+            f"{len(rows)} != {len(expected)}"
         )
-        if orbit_index is None:
-            unmatched.append(row)
-        else:
-            grouped[orbit_index].append(row)
-
-    out: list[dict[str, Any]] = []
-    for atom, orbit_rows in zip(orbit_atoms, grouped):
-        for index, row in enumerate(orbit_rows):
-            out.append({**row, "atom": str(atom.get("label") or "") if index == 0 else None})
-    out.extend(_mode_rows_with_operation_labels(unmatched))
-    return out
-
-
-def _mode_parent_atom_prefix(label: object) -> str | None:
-    match = re.search(r"\[([^:\]]+):[^:\]]+:(?:dsp|mag)\]", str(label or ""))
-    return None if match is None else match.group(1)
-
-
-def _ordinary_child_space_group_number(
-    mode_details: dict[str, Any],
-    selected: dict[str, Any],
-) -> int | None:
-    """Resolve the ordinary child group used to orbit positional rows."""
-
-    def ordinary_number(*candidates: Any) -> int | None:
-        for candidate in candidates:
-            if isinstance(candidate, bool):
-                continue
-            try:
-                number = int(candidate)
-            except (TypeError, ValueError):
-                continue
-            if 1 <= number <= 230:
-                return number
-        return None
-
-    subgroup_details = mode_details.get("subgroup_details")
-    if isinstance(subgroup_details, dict):
-        candidates: list[Any] = [
-            subgroup_details.get("number"),
-            subgroup_details.get("subgroup"),
-        ]
-        magnetic = subgroup_details.get("magnetic_subgroup")
-        if isinstance(magnetic, dict):
-            candidates.append(magnetic.get("ordinary_number"))
-        if (number := ordinary_number(*candidates)) is not None:
-            return number
-
-    subgroup_state = selected.get("subgroup_state")
-    if isinstance(subgroup_state, dict):
-        state_subgroup = subgroup_state.get("subgroup")
-        candidates = [subgroup_state.get("number")]
-        if isinstance(state_subgroup, dict):
-            candidates.extend(
-                [state_subgroup.get("ordinary_number"), state_subgroup.get("number")]
-            )
-        if (number := ordinary_number(*candidates)) is not None:
-            return number
-
-    orderparam = selected.get("orderparam")
-    isotropy = (
-        orderparam.get("isotropy")
-        if isinstance(orderparam, dict) and isinstance(orderparam.get("isotropy"), dict)
-        else orderparam
-    )
-    subgroup = isotropy.get("subgroup") if isinstance(isotropy, dict) else None
-    if isinstance(subgroup, dict):
-        return ordinary_number(subgroup.get("ordinary_number"), subgroup.get("number"))
-    return None
+    for row, (child_site, atom_id, member_order) in zip(rows, expected, strict=True):
+        if row.get("child_site") != child_site or row.get("atom_id") != atom_id:
+            raise ValueError("mode definition child-site identity/order changed")
+        expected_label = child_site if member_order == 0 else None
+        if (row.get("atom") or None) != expected_label:
+            raise ValueError("mode definition child-site label run is malformed")
+    return [dict(row) for row in rows]
 
 
 def _web_subgroup_line(row: object) -> str | None:
@@ -587,7 +207,11 @@ def _supercell_lattice(parent: object, basis: object) -> dict[str, float] | obje
     cy = c * (math.cos(al) - math.cos(be) * math.cos(ga)) / math.sin(ga)
     cz = math.sqrt(max(c * c - cx * cx - cy * cy, 0.0))
     P = [(a, 0.0, 0.0), (b * math.cos(ga), b * math.sin(ga), 0.0), (cx, cy, cz)]
-    rows = [[sum(float(row[k]) * P[k][axis] for k in range(3)) for axis in range(3)] for row in basis]
+    rows = [
+        [sum(float(row[k]) * P[k][axis] for k in range(3)) for axis in range(3)]
+        for row in basis
+    ]
+
     def norm(vector: list[float]) -> float:
         return math.sqrt(sum(value * value for value in vector))
 
@@ -600,7 +224,9 @@ def _supercell_lattice(parent: object, basis: object) -> dict[str, float] | obje
         return math.degrees(math.acos(max(-1.0, min(1.0, d))))
 
     return {
-        "a": la, "b": lb, "c": lc,
+        "a": la,
+        "b": lb,
+        "c": lc,
         "alpha": angle(rows[1], rows[2], lb, lc),
         "beta": angle(rows[0], rows[2], la, lc),
         "gamma": angle(rows[0], rows[1], la, lb),
@@ -623,18 +249,24 @@ def render_mode_detail_text(
     mode_details = selected.get("mode_details") or {}
     parent_lattice = input_info.get("lattice") or {}
     _opd = selected.get("orderparam")
-    _opd_iso = _opd.get("isotropy") if isinstance(_opd, dict) and isinstance(_opd.get("isotropy"), dict) else (_opd or {})
-    supercell_lattice = _supercell_lattice(parent_lattice, _opd_iso.get("basis"))
-    parent_sites = [site for site in input_info.get("atom_sites", []) if isinstance(site, dict)]
-    atoms = _atoms_grouped_by_parent_site(
-        list(mode_details.get("undistorted_atoms") or mode_details.get("distorted_atoms") or []),
-        parent_sites,
+    _opd_iso = (
+        _opd.get("isotropy")
+        if isinstance(_opd, dict) and isinstance(_opd.get("isotropy"), dict)
+        else (_opd or {})
     )
+    supercell_lattice = _supercell_lattice(parent_lattice, _opd_iso.get("basis"))
+    parent_sites = [
+        site for site in input_info.get("atom_sites", []) if isinstance(site, dict)
+    ]
+    raw_atoms = mode_details.get("undistorted_atoms")
+    if not isinstance(raw_atoms, list) or not all(
+        isinstance(atom, dict) for atom in raw_atoms
+    ):
+        raise ValueError("mode details have no canonical undistorted child sites")
+    atoms = [dict(atom) for atom in raw_atoms]
     definitions = mode_details.get("displacive_definitions") or []
     magnetic_definitions = mode_details.get("magnetic_definitions") or []
     strain_definitions = mode_details.get("strain_definitions") or []
-    child_sg = _ordinary_child_space_group_number(mode_details, selected)
-
     lines: list[str] = []
     lines.append("Parent structure")
     lines.append(f"{parent.get('number', '')} {parent.get('symbol', '')}".rstrip())
@@ -659,7 +291,7 @@ def render_mode_detail_text(
         xyz = atom.get("xyz") or (0, 0, 0)
         site = atom.get("site") or ""
         lines.append(
-            f"{str(atom.get('label') or ''):<6} {str(site):<5} "
+            f"{str(atom.get('child_site') or ''):<6} {str(site):<5} "
             f"{float(xyz[0]):{precision + 4}.{precision}f} "
             f"{float(xyz[1]):{precision + 4}.{precision}f} "
             f"{float(xyz[2]):{precision + 4}.{precision}f}"
@@ -675,8 +307,6 @@ def render_mode_detail_text(
         for row in _mode_rows_grouped_by_child_orbit(
             list(mode.get("rows") or []),
             atoms,
-            child_sg,
-            atom_prefix=_mode_parent_atom_prefix(mode.get("label")),
         ):
             xyz = row.get("xyz") or (0, 0, 0)
             dxyz = row.get("dxyz") or (0, 0, 0)
@@ -701,8 +331,6 @@ def render_mode_detail_text(
             for row in _mode_rows_grouped_by_child_orbit(
                 list(mode.get("rows") or []),
                 atoms,
-                child_sg,
-                atom_prefix=_mode_parent_atom_prefix(mode.get("label")),
             ):
                 xyz = row.get("xyz") or (0, 0, 0)
                 vector = row.get("dxyz") or (0, 0, 0)

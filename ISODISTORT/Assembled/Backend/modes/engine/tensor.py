@@ -45,7 +45,7 @@ def _cartesian_point_matrix(decoder: Any, sg: int, point_op: int) -> np.ndarray:
 
 
 def strain_normfactor(values: tuple[float, ...] | list[float]) -> float:
-    """Return ISO/Web's reciprocal norm for one six-component strain row."""
+    """Return the reciprocal norm for one six-component strain row."""
 
     xx, xy, xz, yy, yz, zz = (float(value) for value in values)
     norm = math.sqrt(xx * xx + yy * yy + zz * zz + 0.5 * (xy * xy + xz * xz + yz * yz))
@@ -225,7 +225,7 @@ def selected_rank2_tensor_row_groups(
 
 
 def totally_symmetric_rank2_rows(decoder: Any, sg: int, gid: int) -> tuple[tuple[float, ...], ...]:
-    """Return the faithful GM totally-symmetric tensor copies in binary order."""
+    """Return selected GM totally-symmetric tensor copies in selection order."""
 
     dimension = int(decoder.little_record_by_gid(int(gid)).full_dim)
     return selected_rank2_tensor_rows(

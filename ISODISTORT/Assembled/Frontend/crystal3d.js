@@ -47,6 +47,19 @@ export function atomColor(atom) {
   return elementStyles.get(atomElement(atom))?.color ?? 0x777777;
 }
 
+export function softenedMaterialColor(value) {
+  const color = Number(value) >>> 0;
+  const red = (color >> 16) & 0xff;
+  const green = (color >> 8) & 0xff;
+  const blue = color & 0xff;
+  const neutral = red * 0.2126 + green * 0.7152 + blue * 0.0722;
+  const channel = component => Math.max(
+    0,
+    Math.min(255, Math.round((neutral + (component - neutral) * 0.86) * 0.90)),
+  );
+  return (channel(red) << 16) | (channel(green) << 8) | channel(blue);
+}
+
 export function atomRadius(atom, fallback) {
   const radius = elementStyles.get(atomElement(atom))?.radius;
   return Number.isFinite(radius) ? radius * ATOM_RADIUS_SCALE : fallback;
@@ -57,32 +70,33 @@ export function colorCss(value) {
 }
 
 export function atomMaterial(atom) {
-  const color = new THREE.Color(atomColor(atom));
-  return new THREE.MeshStandardMaterial({
+  const color = new THREE.Color(softenedMaterialColor(atomColor(atom)));
+  return new THREE.MeshPhongMaterial({
     color,
-    roughness: 0.42,
-    metalness: 0.05,
-    emissive: color.clone().multiplyScalar(0.08),
+    specular: color.clone().lerp(new THREE.Color(0xffffff), 0.27),
+    shininess: 28,
+    emissive: color.clone().multiplyScalar(0.02),
   });
 }
 
 // 原子球。atom は {element|type_symbol} を持つ。位置は呼び出し側で設定する。
 export function makeAtomMesh(atom, fallbackRadius) {
   return new THREE.Mesh(
-    new THREE.SphereGeometry(atomRadius(atom, fallbackRadius), 28, 20),
+    new THREE.SphereGeometry(atomRadius(atom, fallbackRadius), 32, 24),
     atomMaterial(atom),
   );
 }
 
-// MeshStandardMaterial 用のライト（cif_standardizer と同じ構成）。
+// Diffuse ambient light keeps element colors legible; one directional key
+// produces one readable specular highlight on each atom.
 export function addLights(scene) {
-  scene.add(new THREE.HemisphereLight(0xffffff, 0xd7dde8, 1.8));
-  const keyLight = new THREE.DirectionalLight(0xffffff, 2.4);
-  keyLight.position.set(2.5, -3.0, 4.5);
-  scene.add(keyLight);
-  const fillLight = new THREE.DirectionalLight(0xffffff, 0.8);
-  fillLight.position.set(-3.0, 2.0, 2.0);
-  scene.add(fillLight);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0xb8c2d0, 1.45));
+  scene.add(new THREE.AmbientLight(0xffffff, 0.42));
+  const keyLight = new THREE.DirectionalLight(0xffffff, 1.65);
+  const keyTarget = new THREE.Object3D();
+  keyLight.target = keyTarget;
+  scene.add(keyLight, keyTarget);
+  return { keyLight, keyTarget };
 }
 
 export function makeLine(points, color, opacity = 1, dashed = false) {
@@ -101,13 +115,19 @@ export function makeLine(points, color, opacity = 1, dashed = false) {
 }
 
 // 細い線を 3 本わずかにずらして重ね、太く見せる（線幅非対応環境向け）。
-export function makeBoldLine(points, color, opacity = 1, dashed = false) {
+export function makeBoldLine(points, color, opacity = 1, dashed = false, emphasis = 1) {
   const group = new THREE.Group();
   const offsets = [
     new THREE.Vector3(0, 0, 0),
     new THREE.Vector3(0.012, 0.012, 0),
     new THREE.Vector3(-0.012, 0.012, 0),
   ];
+  if (emphasis > 1) {
+    offsets.push(
+      new THREE.Vector3(0.012, -0.012, 0),
+      new THREE.Vector3(-0.012, -0.012, 0),
+    );
+  }
   for (const offset of offsets) {
     group.add(makeLine(points.map((point) => point.clone().add(offset)), color, opacity, dashed));
   }
@@ -115,7 +135,14 @@ export function makeBoldLine(points, color, opacity = 1, dashed = false) {
 }
 
 // 平行六面体（基底ベクトル a,b,c）の 12 辺を太線で描く。
-export function makeCellEdges(vectors, color, offset = new THREE.Vector3(), opacity = 1, dashed = false) {
+export function makeCellEdges(
+  vectors,
+  color,
+  offset = new THREE.Vector3(),
+  opacity = 1,
+  dashed = false,
+  emphasis = 1,
+) {
   const [a, b, c] = vectors;
   const corners = [];
   for (let i = 0; i < 2; i++)
@@ -133,6 +160,6 @@ export function makeCellEdges(vectors, color, offset = new THREE.Vector3(), opac
         if (k === 0) edges.push(p, corners[idx(i, j, 1)]);
       }
   const group = new THREE.Group();
-  group.add(makeBoldLine(edges, color, opacity, dashed));
+  group.add(makeBoldLine(edges, color, opacity, dashed, emphasis));
   return group;
 }

@@ -1,4 +1,4 @@
-"""Ported newlat_ basis helpers."""
+"""Integer superlattice basis construction for ``newlat_`` records."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ class NewlatMixin:
         mode_count: int,
         vector_records: Iterable[Iterable[int]],
     ) -> tuple[int, ...]:
-        """Port the integer lattice-basis routine ``newlat_``.
+        """Construct the integer lattice basis defined by ``newlat_`` records.
 
         `newlat_` receives a small list of 4-int rational vectors and constructs
         a 3x3 integer basis whose rows have integral dot product with the first

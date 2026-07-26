@@ -1,18 +1,18 @@
-"""Small numeric helpers ported from upstream ``iso`` routines."""
+"""Fixed-stride numeric kernels used by the isotropy engine."""
 
 from __future__ import annotations
 
 
 def ncmp(value: float, *, eps: float = 1e-6) -> bool:
-    """Port of ``ncmp_``: true when a scalar is nonzero at iso tolerance."""
+    """Return whether a scalar is nonzero at the ``ncmp_`` tolerance."""
 
     return eps < abs(float(value))
 
 
 def xrowop2(buffer: list[float] | tuple[float, ...], rows: int, cols: int, *, stride: int = 50) -> tuple[float, ...]:
-    """Port the real row-reduction shape of upstream ``xrowop2_``.
+    """Reduce a real matrix in the fixed-stride ``xrowop2_`` layout.
 
-    Upstream stores the work matrix in column-major form: row ``r`` and column
+    The work matrix is column-major: row ``r`` and column
     ``c`` live at ``r + c * stride``.  The routine performs Gauss-Jordan
     reduction over the active ``rows`` x ``cols`` window, preserving the fixed
     stride buffer layout.

@@ -1,4 +1,4 @@
-"""Helpers for the decompiled ``MAIN__`` bridge before ``project_vector_``."""
+"""Prepare dense coefficient buffers for ``project_vector_``."""
 
 from __future__ import annotations
 

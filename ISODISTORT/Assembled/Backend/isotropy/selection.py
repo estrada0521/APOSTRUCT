@@ -28,8 +28,8 @@ def _coupled_selected_labels(
 ) -> tuple[str, ...] | None:
     """Parse exact per-slot Source labels from a complete OPD heading.
 
-    B: the heading is a conditioned input.  It only bounds Source OPD
-    discovery; no Web row values are accepted as computed output.
+    The heading is a conditioned input.  It only bounds Source OPD discovery;
+    no Web row values are accepted as computed output.
     """
 
     if not selected_opd_only or not isinstance(orderparam, str) or slot_count < 2:

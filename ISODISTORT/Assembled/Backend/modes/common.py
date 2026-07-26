@@ -102,7 +102,7 @@ def _mode_decoder(source_dir: str | None) -> ModeDataDecoder:
     data_dir = source_dir or "Source"
     if Path(data_dir).resolve() == Path(_SOURCE_ROOT).resolve():
         assembled = _assembled_data()
-        return ModeDataDecoder(data_dir, iso=assembled.iso)
+        return ModeDataDecoder(data_dir, tables=assembled)
     return ModeDataDecoder(data_dir)
 
 
@@ -317,14 +317,6 @@ def _fold01(value: float) -> float:
     if abs(folded - 1.0) < 1e-10 or abs(folded) < 1e-10:
         return 0.0
     return folded
-
-
-
-def _frac_close(left: list[float], right: list[float], tol: float = 1e-6) -> bool:
-    return all(abs(((left[index] - right[index] + 0.5) % 1.0) - 0.5) <= tol for index in range(3))
-
-
-
 def _isotropy_row_id_from_opd_row(selected_opd: dict[str, Any] | None) -> int | None:
     if not isinstance(selected_opd, dict):
         return None

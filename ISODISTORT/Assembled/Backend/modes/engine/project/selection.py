@@ -1,4 +1,4 @@
-"""Candidate block generation and selection loops for binary ``project_``."""
+"""Generate and select site-irrep projection blocks."""
 
 from __future__ import annotations
 
@@ -25,8 +25,8 @@ class ProjectSelectionMixin:
         into the complex `zrowop2_` work matrix.  Parent matrices are read via
         `get_irrep4_` semantics: full operation record, generated-operation
         sparse matrix, and k-star phase.  Site matrices use the local setting
-        selected by `project_`; the observed matrix orientation is the
-        transpose used by the checked type-2 path.
+        selected by the site operation records.  Their matrix orientation is
+        the transpose consumed by the type-2 reduction below.
         """
 
         little = self.little_record_by_gid(gid)
@@ -77,7 +77,7 @@ class ProjectSelectionMixin:
         case: Case | None = None,
         tol: float = 1e-10,
     ) -> ProjectSelection:
-        """Mirror the type-1 `project_` branch up to returned real blocks."""
+        """Select independent real blocks for a type-1 little irrep."""
 
         candidates = self.project_real_blocks_from_records(gid, site_pg, pg_irrep, parent_records, case)
         kept_rows: np.ndarray | None = None
@@ -120,13 +120,11 @@ class ProjectSelectionMixin:
         case: Case | None = None,
         tol: float = 1e-10,
     ) -> ProjectSelection:
-        """Mirror the real-block selection used by checked type-3 project_ rows.
+        """Select independent real blocks for a type-3 little irrep.
 
-        SG46/a/R1R2 shows that type-3 returns the selected normalized real
-        block, while the row-reduction state is only the independence test, as
-        in type 1.  Keep this separate from type 1 so future GDB cases can
-        tighten type-3-specific complex pairing without perturbing the checked
-        type-1 path.
+        Return the selected normalized real blocks while using the transformed
+        row-reduction state only to test independence.  The support gates below
+        preserve distinct Source block representatives before that reduction.
         """
 
         candidates = self.project_real_blocks_from_records(gid, site_pg, pg_irrep, parent_records, case)
@@ -329,8 +327,8 @@ class ProjectSelectionMixin:
 
         Type-2 irreps return the original normalized real block, but test
         independence after mapping the block through the inverse matrix emitted
-        by ``transform_irrep2complex_``.  The binary appends two complex rows
-        per candidate: one from the first half of the inverse columns and one
+        by ``transform_irrep2complex_``.  Each candidate contributes two
+        complex rows: one from the first half of the inverse columns and one
         from the conjugate partner half.
         """
 

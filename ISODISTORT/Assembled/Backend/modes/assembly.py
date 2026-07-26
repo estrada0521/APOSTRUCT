@@ -12,8 +12,12 @@ from typing import Any
 import gemmi
 import numpy as np
 from ISODISTORT.Assembled.Backend.modes.engine.input import Case
-from ISODISTORT.Assembled.Backend.modes.engine.dynamic_subduction import _strict_integral_values
-from ISODISTORT.Assembled.Backend.modes.engine.trace.pipeline_trace import pipeline_trace
+from ISODISTORT.Assembled.Backend.modes.engine.dynamic_subduction import (
+    _strict_integral_values,
+)
+from ISODISTORT.Assembled.Backend.modes.engine.trace.pipeline_trace import (
+    pipeline_trace,
+)
 from ISODISTORT.Assembled.Backend.modes.engine.project.display_distortion import (
     occurrence_sublattice,
 )
@@ -35,10 +39,8 @@ from ISODISTORT.Assembled.Backend.modes.definition_presentation import (
 )
 from ISODISTORT.Assembled.Backend.modes.common import (
     _assembled_data,
-    _basis_matrix,
     _cell_from_basis,
     _cell_params,
-    _fold_fractional_xyz,
     _freeparam_from_opd_row,
     _integer_basis_tuple,
     _is_full_parameter_opd,
@@ -48,31 +50,31 @@ from ISODISTORT.Assembled.Backend.modes.common import (
     _mode_decoder,
     _origin_from_opd_row,
     _origin_vector,
-    _site_label,
-    _transform_dxyz,
 )
 from ISODISTORT.Assembled.Backend.modes.structure_runtime import (
     _basis_cinter_to_pml,
     _basis_from_opd_row,
-    _child_orbit_representative_rows,
-    _child_site_display,
-    _canonical_site_fractional_xyz,
-    _complete_child_atom_layout,
-    _magnetic_undistorted_rows_for_site,
-    _mode_rows_grouped_by_presentation_orbits,
-    _mode_rows_on_complete_atom_layout,
-    _presentation_atom_layout,
+    _child_presentation_setting,
+    _compile_child_atom_mode_topology,
+    _magnetic_child_atom_layout_for_site,
+    _mode_rows_on_child_atom_layout,
+    _ordinary_layout_in_public_setting,
+    _present_child_atom_layout,
     _presentation_basis_candidate,
     _presentation_mode_vectors,
     _selected_magnetic_group_number,
     _selected_subgroup_number,
-    _sort_child_orbit_rows_for_display,
+    _selected_source_subgroup_transform,
     _source_split_basis_from_opd_row,
     _source_split_origin_from_opd_row,
+    _source_child_atom_layout_for_site,
     _split_basis_origin_for_wyckoff,
-    _to_child_fractionals,
-    _undistorted_rows_for_site,
     _web_magnetic_occurrence_gauge,
+)
+from ISODISTORT.Assembled.Backend.modes.structure.child_atom_layout import (
+    ChildAtomLayout,
+    child_atom_layout_in_presentation_order,
+    exact_operation_record,
 )
 from ISODISTORT.Assembled.Backend.modes.request_context import (
     _case_k_params,
@@ -122,11 +124,7 @@ def _fixed_source_print_route(
 ) -> tuple[bool, bool]:
     """Admit raw-basis companions only after the site's fixed Source seed."""
 
-    seed = bool(
-        fixed_summary_valid
-        and not has_k_params
-        and not trace_uses_raw_basis
-    )
+    seed = bool(fixed_summary_valid and not has_k_params and not trace_uses_raw_basis)
     companion = bool(
         fixed_summary_valid
         and not has_k_params
@@ -189,8 +187,10 @@ def _selected_star_transport_required(
 
     gid = int(spec.get("gid") or 0)
     raw_request = spec.get("request_k_params", spec.get("case_k_params"))
-    if gid <= 0 or raw_request is None or isinstance(
-        raw_request, (str, bytes, bytearray)
+    if (
+        gid <= 0
+        or raw_request is None
+        or isinstance(raw_request, (str, bytes, bytearray))
     ):
         return False
     try:
@@ -299,7 +299,9 @@ def _freeze_fractional_xyz(value: Any) -> tuple[tuple[int, int], ...]:
         raise ValueError("malformed Source fractional coordinate") from None
     if len(values) != 3:
         raise ValueError("malformed Source fractional coordinate")
-    return tuple((item.numerator % item.denominator, item.denominator) for item in values)
+    return tuple(
+        (item.numerator % item.denominator, item.denominator) for item in values
+    )
 
 
 def _occurrence_source_signature(
@@ -321,19 +323,45 @@ def _occurrence_source_signature(
             if not isinstance(opd_groups, list) or not opd_groups:
                 return None
             required = _strict_integral_values(
-                [identity[field] for field in (
-                    "gid", "site_pg", "pg_irrep", "family", "component",
-                    "print_component", "family_width", "source_row_count", "little_type",
-                )],
+                [
+                    identity[field]
+                    for field in (
+                        "gid",
+                        "site_pg",
+                        "pg_irrep",
+                        "family",
+                        "component",
+                        "print_component",
+                        "family_width",
+                        "source_row_count",
+                        "little_type",
+                    )
+                ],
                 size=9,
             )
             if required is None:
                 return None
-            gid, site_pg, pg_irrep, family, component, print_component, family_width, source_row_count, little_type = required
+            (
+                gid,
+                site_pg,
+                pg_irrep,
+                family,
+                component,
+                print_component,
+                family_width,
+                source_row_count,
+                little_type,
+            ) = required
             if (
-                gid <= 0 or site_pg <= 0 or pg_irrep <= 0 or family_width <= 0
-                or source_row_count <= 0 or little_type <= 0
-                or family < 0 or component < 0 or print_component < 0
+                gid <= 0
+                or site_pg <= 0
+                or pg_irrep <= 0
+                or family_width <= 0
+                or source_row_count <= 0
+                or little_type <= 0
+                or family < 0
+                or component < 0
+                or print_component < 0
             ):
                 return None
             signature.append(
@@ -412,32 +440,40 @@ _magnetic_occurrence_modes_are_nonzero = _occurrence_modes_are_nonzero
 _magnetic_occurrence_alias_spec_orders = _occurrence_alias_spec_orders
 
 
-def build_undistorted_structure(
+def _build_child_structure(
     *,
     cif_info: dict[str, Any],
-    selected_k: dict[str, Any],
     selected_opd: dict[str, Any] | None = None,
     parent_inter_setting_id: int | None = None,
-) -> dict[str, Any]:
-    """Return only the local Undistorted superstructure display payload.
-
-    This is the structure-only companion to ``build_mode_details``.
-    It intentionally avoids mode-vector generation and uses the same Source-only
-    Wyckoff splitting path that the full mode-detail builder tries first.
-    """
+    decoder: Any,
+) -> tuple[
+    dict[str, Any],
+    tuple[ChildAtomLayout, ...],
+    dict[str, tuple[float, float, float]],
+]:
+    """Build the one child-site/atom identity shared by every output surface."""
 
     sites = _mapped_sites(cif_info)
     if not sites:
-        return {
-            "status": "unsupported",
-            "reason": "mode kernel requires at least one mapped displacive site",
-        }
+        raise ValueError("mode kernel requires at least one mapped displacive site")
     sg = int(cif_info["parent"]["number"])
     child_sg = _selected_subgroup_number(selected_opd)
+    if child_sg is None:
+        raise ValueError("selected subgroup has no ordinary space-group identity")
     parent_cell = _cell_params(cif_info)
     display_basis = _basis_from_opd_row(selected_opd)
     presentation_basis, presentation_rule = _presentation_basis_candidate(display_basis)
+    if presentation_basis is None:
+        raise ValueError("selected subgroup has no presentation basis")
     child_origin = _origin_from_opd_row(selected_opd)
+    presentation_basis_pml = _basis_cinter_to_pml(
+        decoder,
+        int(sg),
+        presentation_basis,
+        parent_inter_setting_id,
+    )
+    if presentation_basis_pml is None:
+        raise ValueError("selected subgroup has no exact presentation basis")
     split_basis, split_origin = _split_basis_origin_for_wyckoff(
         parent_sg=sg,
         child_sg=child_sg,
@@ -446,121 +482,147 @@ def build_undistorted_structure(
         presentation_origin=child_origin,
     )
     magnetic_group = _selected_magnetic_group_number(selected_opd, child_sg)
-    selected_isotropy = _isotropy_from_opd_row(selected_opd) or {}
-    magnetic_subgroup_selection = selected_isotropy.get("magnetic_subgroup_selection")
-    decoder = _mode_decoder("Source") if magnetic_group is not None else None
+    child_symbol = gemmi.find_spacegroup_by_number(int(child_sg)).hm
+    parent_setting_bridge = _parent_setting_bridge(int(sg), parent_inter_setting_id)
+    source_basis_record, source_origin_record = _selected_source_subgroup_transform(
+        selected_opd
+    )
+    (
+        child_setting_ids,
+        child_coordinate_matrix,
+        child_coordinate_origin,
+        child_setting_actions,
+    ) = _child_presentation_setting(
+        data=_assembled_data(),
+        parent_sg=int(sg),
+        child_sg=int(child_sg),
+        parent_setting_id=parent_inter_setting_id,
+        source_basis=source_basis_record,
+        source_origin=source_origin_record,
+        presentation_basis_pml=presentation_basis_pml,
+        presentation_origin=child_origin,
+    )
     undistorted_atoms: list[dict[str, Any]] = []
-    for site in sites:
+    layouts: list[ChildAtomLayout] = []
+    mode_atom_positions: dict[str, tuple[float, float, float]] = {}
+    public_wyckoff_labels: dict[str, str] = {}
+    for site_index, site in enumerate(sites):
         atom_label = str(site.get("type") or site.get("label") or "X")
         label_prefix = str(site.get("label") or atom_label)
-        parent_xyz = _canonical_site_fractional_xyz(site)
-        fallback_site = _site_label(site)
-        complete_atom_layout = _complete_child_atom_layout(
-            parent_sg=sg,
-            child_sg=child_sg,
-            parent_xyz=parent_xyz,
-            basis=presentation_basis,
-            origin=child_origin,
-            label_prefix=label_prefix,
-            fallback_site=fallback_site,
-            parent_operations=[
-                str(value) for value in (cif_info.get("symmetry_operations") or [])
-            ],
-        )
-        child_orbit_rows = _undistorted_rows_for_site(
-            sg=sg,
-            child_sg=child_sg,
+        layout = _source_child_atom_layout_for_site(
+            sg=int(sg),
+            child_sg=int(child_sg),
             site=site,
             label_prefix=label_prefix,
-            fallback_site=fallback_site,
-            parent_xyz=parent_xyz,
             split_basis=split_basis,
             split_origin=split_origin,
-            presentation_basis=presentation_basis,
-            presentation_origin=child_origin,
             parent_setting_id=parent_inter_setting_id,
             symmetry_operations=[
                 str(value) for value in (cif_info.get("symmetry_operations") or [])
             ],
         )
-        if magnetic_group is not None and decoder is not None and child_sg is not None:
-            magnetic_rows = _magnetic_undistorted_rows_for_site(
-                decoder=decoder,
+        layout = _ordinary_layout_in_public_setting(
+            child_sg=int(child_sg),
+            setting_ids=child_setting_ids,
+            setting_actions=child_setting_actions,
+            coordinate_matrix=child_coordinate_matrix,
+            coordinate_origin=child_coordinate_origin,
+            layout=layout,
+            label_correspondence=public_wyckoff_labels,
+        )
+        site_params = _source_default_site_params(
+            int(sg),
+            site,
+            parent_inter_setting_id,
+            [str(value) for value in (cif_info.get("symmetry_operations") or [])],
+        )
+        layout, site_mode_positions = _present_child_atom_layout(
+            decoder,
+            parent_sg=int(sg),
+            child_sg=int(child_sg),
+            parent_wyckoff=str(site["wyckoff"]),
+            site_params=site_params,
+            presentation_basis=presentation_basis,
+            presentation_basis_pml=presentation_basis_pml,
+            presentation_origin=child_origin,
+            child_symbol=child_symbol,
+            label_prefix=label_prefix,
+            layout=layout,
+            parent_setting_bridge=parent_setting_bridge,
+        )
+        if magnetic_group is not None:
+            if split_basis is None:
+                raise ValueError("magnetic child layout has no Source subgroup basis")
+            layout = _magnetic_child_atom_layout_for_site(
                 magnetic_group=int(magnetic_group),
-                parent_sg=sg,
                 child_sg=int(child_sg),
                 label_prefix=label_prefix,
-                parent_xyz=parent_xyz,
-                ordinary_rows=child_orbit_rows,
+                layout=layout,
+                presentation_positions=site_mode_positions,
                 source_basis=split_basis,
                 source_origin=split_origin,
-                presentation_basis=presentation_basis,
-                presentation_origin=child_origin,
-                magnetic_subgroup_selection=(
-                    magnetic_subgroup_selection
-                    if isinstance(magnetic_subgroup_selection, dict)
-                    else None
-                ),
-                parent_setting_id=parent_inter_setting_id,
-                presentation_grid_points=(
-                    None if complete_atom_layout is None else complete_atom_layout[0]
-                ),
             )
-            if magnetic_rows:
-                child_orbit_rows = magnetic_rows
-        if magnetic_group is None:
-            child_orbit_rows = _sort_child_orbit_rows_for_display(
-                child_orbit_rows,
+            layout = child_atom_layout_in_presentation_order(
+                layout,
                 label_prefix=label_prefix,
+                atom_ids=tuple(row.atom_id for row in layout.presentation_rows),
+                atom_positions=site_mode_positions,
             )
+        overlap = set(mode_atom_positions).intersection(site_mode_positions)
+        if overlap:
+            raise ValueError(
+                f"canonical atom identities cross parent sites: {sorted(overlap)[:8]!r}"
+            )
+        mode_atom_positions.update(site_mode_positions)
+        layouts.append(layout)
         undistorted_atoms.extend(
             {
-                "label": row["label"],
-                "site": row["site"],
-                "xyz": row["xyz"],
-                **(
-                    {"_presentation_orbit_points": row["_presentation_orbit_points"]}
-                    if row.get("_presentation_orbit_points")
-                    else {}
-                ),
-                **(
-                    {"_mode_row_orbit_points": row["_mode_row_orbit_points"]}
-                    if row.get("_mode_row_orbit_points")
-                    else {}
-                ),
-                **(
-                    {
-                        "_presentation_grid_indices": row[
-                            "_presentation_grid_indices"
-                        ]
-                    }
-                    if row.get("_presentation_grid_indices") is not None
-                    else {}
-                ),
-                **(
-                    {
-                        "_presentation_grid_size": row[
-                            "_presentation_grid_size"
-                        ]
-                    }
-                    if row.get("_presentation_grid_size") is not None
-                    else {}
-                ),
+                "label": child_site.child_site_id,
+                "child_site": child_site.child_site_id,
+                "site": child_site.wyckoff_site,
+                "multiplicity": len(child_site.atom_ids),
+                "atom_ids": list(child_site.atom_ids),
+                "xyz": [float(value) for value in child_site.representative_xyz],
+                "_presentation_orbit_points": [
+                    list(mode_atom_positions[atom_id]) for atom_id in child_site.atom_ids
+                ],
             }
-            for row in child_orbit_rows
+            for child_site in layout.sites
         )
-    return {
-        "status": "experimental",
-        "source": "Source-only Wyckoff splitting",
-        "lattice": _cell_from_basis(parent_cell, presentation_basis),
-        "subgroup_details": {
-            **(_isotropy_from_opd_row(selected_opd) or {}),
-            "parent_inter_setting_id": parent_inter_setting_id,
+    return (
+        {
+            "status": "experimental",
+            "source": "Source Formula15 child atom layout",
+            "lattice": _cell_from_basis(parent_cell, presentation_basis),
+            "subgroup_details": {
+                **(_isotropy_from_opd_row(selected_opd) or {}),
+                "parent_inter_setting_id": parent_inter_setting_id,
+            },
+            "undistorted_atoms": undistorted_atoms,
+            "_presentation_rule": presentation_rule,
         },
-        "undistorted_atoms": undistorted_atoms,
-        "_presentation_rule": presentation_rule,
-    }
+        tuple(layouts),
+        mode_atom_positions,
+    )
 
+
+def build_undistorted_structure(
+    *,
+    cif_info: dict[str, Any],
+    selected_k: dict[str, Any],
+    selected_opd: dict[str, Any] | None = None,
+    parent_inter_setting_id: int | None = None,
+) -> dict[str, Any]:
+    """Return the undistorted structure from the canonical child atom layout."""
+
+    del selected_k
+    payload, _layouts, _mode_atom_positions = _build_child_structure(
+        cif_info=cif_info,
+        selected_opd=selected_opd,
+        parent_inter_setting_id=parent_inter_setting_id,
+        decoder=_mode_decoder("Source"),
+    )
+    return payload
 
 
 def build_mode_details(
@@ -598,7 +660,9 @@ def build_mode_details(
             "reason": "mode kernel requires at least one mapped displacive site",
         }
     selected_slots = list(selected_slots or [])
-    coupled = bool((_isotropy_from_opd_row(selected_opd) or {}).get("coupled") and selected_slots)
+    coupled = bool(
+        (_isotropy_from_opd_row(selected_opd) or {}).get("coupled") and selected_slots
+    )
     if (
         not coupled
         and int(selected_irrep.get("old_id") or 0) <= 0
@@ -613,7 +677,9 @@ def build_mode_details(
     decoder = _mode_decoder(str(source_dir) if source_dir is not None else None)
     parent_cell = _cell_params(cif_info)
     child_sg = _selected_subgroup_number(selected_opd)
-    target_label = str(selected_irrep.get("symbol") or selected_irrep.get("label") or "")
+    target_label = str(
+        selected_irrep.get("symbol") or selected_irrep.get("label") or ""
+    )
     if not target_label:
         return {
             "status": "unsupported",
@@ -627,7 +693,8 @@ def build_mode_details(
             selected_slots,
             selected_opd,
             include_displacive=displacive_row_ids is None or bool(displacive_row_ids),
-            include_magnetic=include_magnetic and (magnetic_row_ids is None or bool(magnetic_row_ids)),
+            include_magnetic=include_magnetic
+            and (magnetic_row_ids is None or bool(magnetic_row_ids)),
         )
         if coupled
         else []
@@ -637,9 +704,16 @@ def build_mode_details(
         mode_specs = _subduced_mode_specs(decoder, sg, selected_irrep, selected_opd)
         render_specs = [(spec, "dsp", 1, str(spec["label"])) for spec in mode_specs]
         if magnetic_selected:
-            magnetic_specs = _magnetic_subduced_mode_specs(decoder, sg, selected_irrep, selected_opd)
+            magnetic_specs = _magnetic_subduced_mode_specs(
+                decoder, sg, selected_irrep, selected_opd
+            )
             render_specs.extend(
-                (spec, "mag", 2, str(spec.get("display_label") or "m" + str(spec["label"])))
+                (
+                    spec,
+                    "mag",
+                    2,
+                    str(spec.get("display_label") or "m" + str(spec["label"])),
+                )
                 for spec in magnetic_specs
             )
     selected_star_transport_required = tuple(
@@ -677,9 +751,7 @@ def build_mode_details(
     occurrence_eligible_sites: dict[int, list[int]] = {
         order: [] for order in occurrence_observed_orders
     }
-    occurrence_emissions: dict[
-        tuple[int, int], OccurrenceSiteEmission
-    ] = {}
+    occurrence_emissions: dict[tuple[int, int], OccurrenceSiteEmission] = {}
     pending_occurrence_definitions: dict[int, list[dict[str, Any]]] = {}
     pending_occurrence_counts: dict[tuple[int, int], int] = {}
     strain_mode_specs = [
@@ -746,7 +818,10 @@ def build_mode_details(
     presentation_basis, presentation_rule = _presentation_basis_candidate(display_basis)
     child_lattice = _cell_from_basis(parent_cell, presentation_basis)
     child_cartesian = child_lattice_cartesian(
-        tuple(float(child_lattice[key]) for key in ("a", "b", "c", "alpha", "beta", "gamma")),
+        tuple(
+            float(child_lattice[key])
+            for key in ("a", "b", "c", "alpha", "beta", "gamma")
+        ),
         ((1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0)),
     )
     split_basis, split_origin = _split_basis_origin_for_wyckoff(
@@ -757,16 +832,24 @@ def build_mode_details(
         presentation_origin=_origin_from_opd_row(selected_opd),
     )
     selected_freeparam = _freeparam_from_opd_row(decoder, selected_opd)
-    selected_full_parameter_opd = _is_full_parameter_opd(selected_opd, selected_freeparam)
+    selected_full_parameter_opd = _is_full_parameter_opd(
+        selected_opd, selected_freeparam
+    )
     selected_origin_override = _origin_from_opd_row(selected_opd)
     parent_setting_bridge = _parent_setting_bridge(sg, parent_inter_setting_id)
-    child_symbol = gemmi.find_spacegroup_by_number(int(child_sg)).hm if child_sg is not None else "P1"
+    child_symbol = (
+        gemmi.find_spacegroup_by_number(int(child_sg)).hm
+        if child_sg is not None
+        else "P1"
+    )
     viewer_placement = parent_cell_placement(
         presentation_basis or [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]],
         _origin_vector(selected_origin_override),
         child_symbol,
     )
-    source_basis_override = _integer_basis_tuple(_source_split_basis_from_opd_row(selected_opd))
+    source_basis_override = _integer_basis_tuple(
+        _source_split_basis_from_opd_row(selected_opd)
+    )
     selected_basis_pml_override = (
         _basis_cinter_to_pml(
             decoder,
@@ -777,95 +860,67 @@ def build_mode_details(
         if presentation_basis is not None
         else None
     )
+    if (
+        child_sg is None
+        or presentation_basis is None
+        or selected_basis_pml_override is None
+    ):
+        raise ValueError(
+            "canonical child atom layout requires an exact presentation basis"
+        )
     definitions: list[dict[str, Any]] = []
     magnetic_definitions: list[dict[str, Any]] = []
-    structure_payload = (
-        build_undistorted_structure(
-            cif_info=cif_info,
-            selected_k=selected_k,
-            selected_opd=selected_opd,
-            parent_inter_setting_id=parent_inter_setting_id,
-        )
-        if include_structure
-        else {}
+    structure_payload, child_atom_layouts, mode_atom_positions = _build_child_structure(
+        cif_info=cif_info,
+        selected_opd=selected_opd,
+        parent_inter_setting_id=parent_inter_setting_id,
+        decoder=decoder,
     )
     undistorted_atoms: list[dict[str, Any]] = [
         dict(atom)
-        for atom in structure_payload.get("undistorted_atoms") or []
+        for atom in (
+            structure_payload.get("undistorted_atoms") or []
+            if include_structure
+            else []
+        )
         if isinstance(atom, dict)
     ]
-    structure_site_prefixes = {
-        str(atom.get("label") or "").rsplit("_", 1)[0]
-        for atom in undistorted_atoms
-        if atom.get("label")
-    }
-    viewer_atoms: list[dict[str, Any]] = []
     selected_opd_isotropy: dict[str, Any] | None = _isotropy_from_opd_row(selected_opd)
     selected_isotropy: dict[str, Any] | None = selected_opd_isotropy
     per_site_status: list[dict[str, Any]] = []
     multi_print_transform_cache: dict[tuple[Any, ...], tuple[np.ndarray, set[int]]] = {}
     for site_index, site in enumerate(sites):
         atom_label = str(site.get("type") or site.get("label") or "X")
+        child_atom_layout = child_atom_layouts[site_index]
+        site_params = _source_default_site_params(
+            sg,
+            site,
+            parent_inter_setting_id,
+            [str(value) for value in (cif_info.get("symmetry_operations") or [])],
+        )
         site_representative_operation_record = _site_representative_operation_record(
             decoder,
             int(sg),
             site,
         )
-        presentation_relative_operation_record: tuple[int, int, int, int, int] | None = None
+        presentation_relative_operation_record: (
+            tuple[int, int, int, int, int] | None
+        ) = None
         presentation_relative_operation_record_computed = False
-        complete_atom_layout = _complete_child_atom_layout(
-            parent_sg=sg,
-            child_sg=child_sg,
-            parent_xyz=_canonical_site_fractional_xyz(site),
-            basis=presentation_basis,
-            origin=selected_origin_override,
-            label_prefix=str(site.get("label") or atom_label),
-            fallback_site=_site_label(site),
-            parent_operations=[str(value) for value in (cif_info.get("symmetry_operations") or [])],
-        )
         site_definition_count = 0
         site_atom_count = 0
         missing_specs: list[str] = []
         fixed_site_source_print_admitted = False
-        site_atoms_added = str(site.get("label") or atom_label) in structure_site_prefixes
-        site_viewer_atoms_added = False
-        if include_structure and complete_atom_layout is not None:
-            positions, representative_labels = complete_atom_layout
-            label_prefix = str(site.get("label") or atom_label)
-            for atom_index, position in enumerate(positions):
-                viewer_atoms.append(
-                    {
-                        "label": representative_labels.get(
-                            atom_index,
-                            f"{label_prefix}_{atom_index + 1}",
-                        ),
-                        "element": atom_label,
-                        "site_order": site_index,
-                        "atom_index": atom_index,
-                        "xyz": list(position),
-                    }
-                )
-            site_viewer_atoms_added = bool(positions)
-        elif include_structure:
-            label_prefix = str(site.get("label") or atom_label)
-            fallback_atoms = [
-                atom
-                for atom in undistorted_atoms
-                if str(atom.get("label") or "") == label_prefix
-                or str(atom.get("label") or "").startswith(f"{label_prefix}_")
-            ]
-            for atom_index, atom in enumerate(fallback_atoms):
-                viewer_atoms.append(
-                    {
-                        "label": str(atom.get("label") or f"{label_prefix}_{atom_index + 1}"),
-                        "element": atom_label,
-                        "site_order": site_index,
-                        "atom_index": atom_index,
-                        "xyz": list(atom.get("xyz") or (0.0, 0.0, 0.0)),
-                    }
-                )
-            site_viewer_atoms_added = bool(fallback_atoms)
-        for spec_index, (spec, mode_kind, vector_setting, display_irrep_label) in enumerate(render_specs):
+        mode_topologies_by_records: dict[
+            tuple[tuple[int, int, int, int, int], ...],
+            dict[tuple[int, int, tuple[int, int, int, int, int]], str],
+        ] = {}
+        for spec_index, (
+            spec,
+            mode_kind,
+            vector_setting,
+            display_irrep_label,
+        ) in enumerate(render_specs):
             allowed_site_indexes = (
                 magnetic_site_indexes if mode_kind == "mag" else displacive_site_indexes
             )
@@ -874,18 +929,17 @@ def build_mode_details(
             }:
                 continue
             site_row_id = int(site.get("wyckoff_row_id") or 0)
-            allowed_row_ids = magnetic_row_ids if mode_kind == "mag" else displacive_row_ids
-            if allowed_row_ids is not None and site_row_id not in {int(value) for value in allowed_row_ids}:
+            allowed_row_ids = (
+                magnetic_row_ids if mode_kind == "mag" else displacive_row_ids
+            )
+            if allowed_row_ids is not None and site_row_id not in {
+                int(value) for value in allowed_row_ids
+            }:
                 continue
-            occurrence_alias_candidate = (
-                spec_index in occurrence_alias_candidate_orders
-            )
-            occurrence_observation_only = (
-                spec_index in occurrence_observation_orders
-            )
+            occurrence_alias_candidate = spec_index in occurrence_alias_candidate_orders
+            occurrence_observation_only = spec_index in occurrence_observation_orders
             occurrence_speculative = (
-                occurrence_alias_candidate
-                or occurrence_observation_only
+                occurrence_alias_candidate or occurrence_observation_only
             )
             if spec_index in occurrence_observed_orders:
                 occurrence_eligible_sites[spec_index].append(site_index)
@@ -898,12 +952,7 @@ def build_mode_details(
                 k_label=spec_k_label,
                 params=parent_cell,
                 atom_label=atom_label,
-                site_params=_source_default_site_params(
-                    sg,
-                    site,
-                    parent_inter_setting_id,
-                    [str(value) for value in (cif_info.get("symmetry_operations") or [])],
-                ),
+                site_params=site_params,
                 k_params=_case_k_params(
                     decoder,
                     selected_k=selected_k,
@@ -913,7 +962,9 @@ def build_mode_details(
                     k_params=k_params,
                 ),
             )
-            spec_display_kvector = _spec_display_kvector(decoder, case, spec, display_kvector)
+            spec_display_kvector = _spec_display_kvector(
+                decoder, case, spec, display_kvector
+            )
             k_standard_presentation = _k_standard_primary_presentation(
                 decoder,
                 sg=sg,
@@ -938,7 +989,9 @@ def build_mode_details(
             source_orderparam_rows = (
                 spec.get("source_numeric_rows")
                 or (
-                    (_isotropy_from_opd_row(selected_opd) or {}).get("source_numeric_rows")
+                    (_isotropy_from_opd_row(selected_opd) or {}).get(
+                        "source_numeric_rows"
+                    )
                     if mode_kind == "mag"
                     else []
                 )
@@ -976,7 +1029,9 @@ def build_mode_details(
                     int(spec_row_id) if spec_row_id is not None else None
                 ),
                 "selected_basis_pml_override": (
-                    source_basis_override if trace_uses_raw_basis else selected_basis_pml_override
+                    source_basis_override
+                    if trace_uses_raw_basis
+                    else selected_basis_pml_override
                 ),
                 "selected_origin_override": (
                     _source_split_origin_from_opd_row(selected_opd)
@@ -1003,7 +1058,8 @@ def build_mode_details(
                     (
                         item
                         for item in trace.get("little_irreps", [])
-                        if isinstance(item, dict) and str(item.get("label")) == spec_label
+                        if isinstance(item, dict)
+                        and str(item.get("label")) == spec_label
                     ),
                     None,
                 )
@@ -1047,71 +1103,24 @@ def build_mode_details(
                     missing_specs.append(spec_label)
                 continue
 
-            site_isotropy = block.get("selected_isotropy_row") if isinstance(block, dict) else None
+            site_isotropy = (
+                block.get("selected_isotropy_row") if isinstance(block, dict) else None
+            )
             if spec.get("primary") and isinstance(site_isotropy, dict):
                 selected_isotropy = site_isotropy
-            vector_basis = _basis_matrix(site_isotropy if isinstance(site_isotropy, dict) else None)
             atom_fractionals = block.get("atom_fractionals") or []
             atom_operation_records = block.get("atom_operation_records") or []
             mode_vectors = block.get("mode_vectors") or []
             source_display_projection = bool(block.get("source_display_projection"))
-            child_origin = selected_origin_override if selected_origin_override is not None else (
-                selected_isotropy.get("origin") if isinstance(selected_isotropy, dict) else None
-            )
-            presentation_layout = (
-                _presentation_atom_layout(
-                    atom_fractionals,
-                    presentation_basis,
-                    child_origin,
-                    presentation_rule,
-                    child_sg,
+            child_origin = (
+                selected_origin_override
+                if selected_origin_override is not None
+                else (
+                    selected_isotropy.get("origin")
+                    if isinstance(selected_isotropy, dict)
+                    else None
                 )
-                if presentation_basis is not None
-                else None
             )
-            if presentation_layout is None:
-                display_atom_positions = [
-                    [float(Fraction(str(value))) for value in xyz]
-                    for xyz in atom_fractionals
-                ]
-                display_atom_order = list(range(len(display_atom_positions)))
-                display_atom_representatives = set(display_atom_order)
-                transform_vectors = True
-            else:
-                display_atom_positions, display_atom_order, display_atom_representatives = presentation_layout
-                transform_vectors = False
-            atom_table_positions = display_atom_positions
-            if presentation_layout is None and presentation_basis is not None:
-                child_positions = _to_child_fractionals(atom_fractionals, presentation_basis, child_origin)
-                if child_positions is not None:
-                    atom_table_positions = child_positions
-            atom_source_rows: list[dict[str, Any]] = []
-            atom_representative_counter = 0
-            for atom_index in display_atom_order:
-                if atom_index >= len(display_atom_positions):
-                    continue
-                atom_name = None
-                if atom_index in display_atom_representatives:
-                    atom_representative_counter += 1
-                    atom_name = f"{site.get('label') or atom_label}_{atom_representative_counter}"
-                atom_source_rows.append({"atom": atom_name, "xyz": display_atom_positions[atom_index]})
-            if (
-                include_structure
-                and not site_viewer_atoms_added
-                and not occurrence_speculative
-            ):
-                label_prefix = str(site.get("label") or atom_label)
-                for atom_index, row in enumerate(atom_source_rows):
-                    viewer_atoms.append(
-                        {
-                            "label": row.get("atom") or f"{label_prefix}_{atom_index + 1}",
-                            "element": atom_label,
-                            "site_order": site_index,
-                            "atom_index": atom_index,
-                            "xyz": row["xyz"],
-                        }
-                    )
-                site_viewer_atoms_added = True
             source_metadata_layout = _mode_source_metadata_layout(
                 block,
                 len(mode_vectors),
@@ -1137,8 +1146,7 @@ def build_mode_details(
                                 for record in atom_operation_records
                             ),
                             atom_fractionals=tuple(
-                                _freeze_fractional_xyz(xyz)
-                                for xyz in atom_fractionals
+                                _freeze_fractional_xyz(xyz) for xyz in atom_fractionals
                             ),
                         )
                     )
@@ -1174,12 +1182,8 @@ def build_mode_details(
             )
             fixed_summary_valid = source_summary_complete and all(
                 (
-                    (
-                        int(identity.get("little_type") or 0) == 3
-                    )
-                    or (
-                        len(identity.get("opd_groups") or []) == 1
-                    )
+                    (int(identity.get("little_type") or 0) == 3)
+                    or (len(identity.get("opd_groups") or []) == 1)
                 )
                 for identity in (source_metadata_layout or [])
             )
@@ -1284,7 +1288,9 @@ def build_mode_details(
                                 decoder,
                                 case,
                                 selected_isotropy_row_id=(
-                                    int(spec_row_id) if spec_row_id is not None else None
+                                    int(spec_row_id)
+                                    if spec_row_id is not None
+                                    else None
                                 ),
                                 selected_basis_pml_override=source_basis_override,
                                 selected_origin_override=solver_origin,
@@ -1292,7 +1298,8 @@ def build_mode_details(
                                     selected_full_parameter_opd or emit_full_spec_rows
                                 ),
                                 emit_freeparam_opd_groups=(
-                                    not selected_full_parameter_opd and not emit_full_spec_rows
+                                    not selected_full_parameter_opd
+                                    and not emit_full_spec_rows
                                 ),
                                 vector_setting=int(vector_setting),
                             )
@@ -1303,12 +1310,19 @@ def build_mode_details(
                                 and int(item.get("gid") or 0) == int(print_spec["gid"])
                             )
                             solver_vectors = solver_block.get("mode_vectors") or []
-                            solver_fractionals = solver_block.get("atom_fractionals") or []
-                            solver_records = solver_block.get("atom_operation_records") or []
+                            solver_fractionals = (
+                                solver_block.get("atom_fractionals") or []
+                            )
+                            solver_records = (
+                                solver_block.get("atom_operation_records") or []
+                            )
                             solver_identities = _mode_source_metadata_layout(
                                 solver_block,
                                 len(solver_vectors),
-                                site_pg=int((solver_trace.get("wyckoff") or {}).get("site_pg") or 0),
+                                site_pg=int(
+                                    (solver_trace.get("wyckoff") or {}).get("site_pg")
+                                    or 0
+                                ),
                             )
                             selected_identity = tuple(
                                 (
@@ -1332,7 +1346,9 @@ def build_mode_details(
                                 or len(solver_vectors) != len(mode_vectors)
                                 or solver_identity != selected_identity
                             ):
-                                raise ValueError("raw Source trace does not match selected mode columns")
+                                raise ValueError(
+                                    "raw Source trace does not match selected mode columns"
+                                )
                         except (KeyError, StopIteration, TypeError, ValueError):
                             solver_trace = {}
                             solver_block = {}
@@ -1340,40 +1356,39 @@ def build_mode_details(
                             solver_identities = None
                             solver_fractionals = []
                             solver_records = []
-                    _solver_modes, multi_print_modes, solved_matrix = _multi_source_print_modes(
-                        decoder,
-                        sg=sg,
-                        child_sg=child_sg,
-                        case=case,
-                        spec=print_spec,
-                        trace=solver_trace,
-                        block=solver_block,
-                        site=site,
-                        mode_vectors=solver_vectors,
-                        identities=solver_identities,
-                        atom_fractionals=solver_fractionals,
-                        atom_operation_records=solver_records,
-                        presentation_basis=presentation_basis,
-                        child_origin=child_origin,
-                        vector_setting=vector_setting,
-                        subgroup_basis=solver_basis,
-                        subgroup_origin=solver_origin,
-                        representative_operation_record=presentation_relative_operation_record,
-                        carrier_representative_operation_record=(
-                            parametric_carrier_record
-                        ),
-                        site_representative_operation_record=(
-                            site_representative_operation_record
-                        ),
-                        allow_single_columns=mode_kind == "dsp",
-                        use_presented_star=False,
-                        combine_parent_pg_irreps=False,
-                        use_type1_project_surface=(
-                            parametric_carrier_record is not None
-                        ),
+                    _solver_modes, multi_print_modes, solved_matrix = (
+                        _multi_source_print_modes(
+                            decoder,
+                            sg=sg,
+                            child_sg=child_sg,
+                            case=case,
+                            spec=print_spec,
+                            trace=solver_trace,
+                            block=solver_block,
+                            site=site,
+                            mode_vectors=solver_vectors,
+                            identities=solver_identities,
+                            atom_fractionals=solver_fractionals,
+                            atom_operation_records=solver_records,
+                            presentation_basis=presentation_basis,
+                            child_origin=child_origin,
+                            vector_setting=vector_setting,
+                            subgroup_basis=solver_basis,
+                            subgroup_origin=solver_origin,
+                            representative_operation_record=presentation_relative_operation_record,
+                            carrier_representative_operation_record=(
+                                parametric_carrier_record
+                            ),
+                            allow_single_columns=mode_kind == "dsp",
+                            use_type1_project_surface=(
+                                parametric_carrier_record is not None
+                            ),
+                        )
                     )
                     if solved_matrix is not None:
-                        original = [np.asarray(vectors, dtype=float) for vectors in mode_vectors]
+                        original = [
+                            np.asarray(vectors, dtype=float) for vectors in mode_vectors
+                        ]
                         mode_vectors = [
                             sum(
                                 original[source_index]
@@ -1388,21 +1403,22 @@ def build_mode_details(
                         )
                 else:
                     solved_matrix, multi_print_modes = cached
-                    original = [np.asarray(vectors, dtype=float) for vectors in mode_vectors]
+                    original = [
+                        np.asarray(vectors, dtype=float) for vectors in mode_vectors
+                    ]
                     mode_vectors = [
                         sum(
-                            original[source_index] * float(solved_matrix[source_index, target_index])
+                            original[source_index]
+                            * float(solved_matrix[source_index, target_index])
                             for source_index in range(len(original))
                         ).tolist()
                         for target_index in range(len(original))
                     ]
-            printable_mode_vectors = _presentation_mode_vectors(
-                mode_vectors,
-                presentation_basis,
-            ) if (
-                not transform_vectors
-                and (not trace_uses_raw_basis or source_display_projection)
-            ) else mode_vectors
+            printable_mode_vectors = (
+                _presentation_mode_vectors(mode_vectors, presentation_basis)
+                if not trace_uses_raw_basis or source_display_projection
+                else mode_vectors
+            )
             site_irrep_labels = _mode_site_irrep_labels(
                 decoder,
                 trace,
@@ -1427,40 +1443,40 @@ def build_mode_details(
             )
             source_layout = _mode_source_layout(block, len(printable_mode_vectors))
             spec_gid = int(spec.get("gid") or 0)
-            first_definition_rows: list[dict[str, Any]] = []
+            child_symbol = gemmi.find_spacegroup_by_number(int(child_sg)).hm
+            operation_record_key = tuple(
+                exact_operation_record(
+                    record,
+                    point_operation_count=len(decoder.iso.space["ipoint_op_inverse"]),
+                )
+                for record in atom_operation_records
+            )
+            mode_topology = mode_topologies_by_records.get(operation_record_key)
+            if mode_topology is None:
+                mode_topology = _compile_child_atom_mode_topology(
+                    decoder,
+                    child_sg=child_sg,
+                    presentation_basis_pml=selected_basis_pml_override,
+                    layout=child_atom_layout,
+                    atom_operation_records=list(operation_record_key),
+                )
+                mode_topologies_by_records[operation_record_key] = mode_topology
             for mode_index, vectors in enumerate(printable_mode_vectors, start=1):
                 if not isinstance(vectors, list):
                     continue
-                rows: list[dict[str, Any]] = []
-                representative_counter = 0
-                for atom_index in display_atom_order:
-                    if atom_index >= len(display_atom_positions) or atom_index >= len(vectors):
-                        continue
-                    vector = vectors[atom_index]
-                    if not isinstance(vector, list):
-                        continue
-                    atom_name = None
-                    if atom_index in display_atom_representatives:
-                        representative_counter += 1
-                        atom_name = f"{site.get('label') or atom_label}_{representative_counter}"
-                    dxyz = (
-                        _transform_dxyz(vector, vector_basis)
-                        if transform_vectors
-                        else [float(value) for value in vector]
-                    )
-                    rows.append(
-                        {
-                            "atom": atom_name,
-                            "xyz": display_atom_positions[atom_index],
-                            "dxyz": dxyz,
-                            "_source_raw_index": atom_index,
-                            "_operation_record": (
-                                atom_operation_records[atom_index]
-                                if atom_index < len(atom_operation_records)
-                                else None
-                            ),
-                        }
-                    )
+                rows = [
+                    {
+                        "dxyz": [float(value) for value in vector],
+                        "_source_raw_index": atom_index,
+                        "_operation_record": (
+                            atom_operation_records[atom_index]
+                            if atom_index < len(atom_operation_records)
+                            else None
+                        ),
+                    }
+                    for atom_index, vector in enumerate(vectors)
+                    if isinstance(vector, list)
+                ]
                 if (
                     trace_uses_raw_basis
                     and not source_display_projection
@@ -1468,7 +1484,10 @@ def build_mode_details(
                 ):
                     raw_rows = [
                         {
-                            "xyz": [float(Fraction(str(value))) for value in atom_fractionals[index]],
+                            "xyz": [
+                                float(Fraction(str(value)))
+                                for value in atom_fractionals[index]
+                            ],
                             "dxyz": [float(value) for value in vectors[index]],
                             "_source_raw_index": index,
                             **(
@@ -1480,19 +1499,18 @@ def build_mode_details(
                         for index in range(min(len(atom_fractionals), len(vectors)))
                         if isinstance(vectors[index], list)
                     ]
-                    try:
-                        child_symbol = gemmi.find_spacegroup_by_number(int(child_sg)).hm if child_sg is not None else "P"
-                    except Exception:
-                        child_symbol = "P"
                     presented = present_mode_rows(
                         raw_rows,
                         basis=presentation_basis,
                         origin=_origin_vector(child_origin),
                         centering_symbol=child_symbol,
+                        include_centering_ordinal=True,
                     )
                     rows = [
                         {
-                            "atom": f"{site.get('label') or atom_label}_1" if index == 0 else None,
+                            "atom": f"{site.get('label') or atom_label}_1"
+                            if index == 0
+                            else None,
                             "xyz": list(row["xyz"]),
                             "dxyz": list(row["dxyz"]),
                             **(
@@ -1505,11 +1523,29 @@ def build_mode_details(
                                 if row.get("_source_raw_index") is not None
                                 else {}
                             ),
+                            **(
+                                {
+                                    "_presentation_centering_ordinal": row[
+                                        "_presentation_centering_ordinal"
+                                    ]
+                                }
+                                if row.get("_presentation_centering_ordinal")
+                                is not None
+                                else {}
+                            ),
                         }
                         for index, row in enumerate(presented["rows"])
                     ]
+                rows = _mode_rows_on_child_atom_layout(
+                    layout=child_atom_layout,
+                    mode_topology=mode_topology,
+                    rows=rows,
+                    mode_atom_positions=mode_atom_positions,
+                )
                 source_print_identity = (
-                    None if source_metadata_layout is None else source_metadata_layout[mode_index - 1]
+                    None
+                    if source_metadata_layout is None
+                    else source_metadata_layout[mode_index - 1]
                 )
                 source_print_scalar = (
                     _rank1_source_print_intertwiner(
@@ -1534,9 +1570,6 @@ def build_mode_details(
                     and mode_index - 1 not in multi_print_modes
                     else None
                 )
-                rows = _mode_rows_on_complete_atom_layout(rows, complete_atom_layout)
-                if mode_index == 1 and mode_kind == "dsp":
-                    first_definition_rows = rows
                 if mode_kind == "mag":
                     rows = _web_magnetic_occurrence_gauge(decoder, sg, rows)
                 target_definitions = (
@@ -1554,11 +1587,15 @@ def build_mode_details(
                             display_irrep_label,
                             spec_opd_direction,
                             site,
-                            None if site_irrep_labels is None else site_irrep_labels[mode_index - 1],
+                            None
+                            if site_irrep_labels is None
+                            else site_irrep_labels[mode_index - 1],
                             mode_index,
                             mode_kind,
                         ),
-                        "normfactor": _complete_mode_normfactor(rows, child_cartesian, child_sg),
+                        "normfactor": _complete_mode_normfactor(
+                            rows, child_cartesian, child_sg
+                        ),
                         "rows": rows,
                         "_spec_order": spec_index,
                         "_site_order": site_index,
@@ -1567,18 +1604,25 @@ def build_mode_details(
                             spec_gid > 0 and int(spec.get("old_id") or 0) <= 0
                         ),
                         "_source_family": (
-                            None if source_layout is None else source_layout[mode_index - 1][0]
+                            None
+                            if source_layout is None
+                            else source_layout[mode_index - 1][0]
                         ),
                         "_source_family_component": (
-                            None if source_layout is None else source_layout[mode_index - 1][1]
+                            None
+                            if source_layout is None
+                            else source_layout[mode_index - 1][1]
                         ),
                         "_source_family_width": (
-                            None if source_layout is None else source_layout[mode_index - 1][2]
+                            None
+                            if source_layout is None
+                            else source_layout[mode_index - 1][2]
                         ),
                         "_source_family_phase": bool(
                             spec_gid > 0
                             and int(spec.get("old_id") or 0) <= 0
-                            and int(decoder.little_record_by_gid(spec_gid).irrep_type) == 1
+                            and int(decoder.little_record_by_gid(spec_gid).irrep_type)
+                            == 1
                             and (
                                 mode_kind == "mag"
                                 or decoder.little_transform_block_count(spec_gid) > 1
@@ -1588,15 +1632,22 @@ def build_mode_details(
                             mode_kind == "mag"
                             and spec_gid > 0
                             and int(spec.get("old_id") or 0) <= 0
-                            and int(decoder.little_record_by_gid(spec_gid).irrep_type) == 1
+                            and int(decoder.little_record_by_gid(spec_gid).irrep_type)
+                            == 1
                         ),
                         "_source_print_identity": (
                             None
                             if source_print_identity is None
                             else {
                                 **source_print_identity,
-                                "source_kparam": tuple(int(value) for value in spec.get("source_kparam") or ()),
-                                "direction_matrix": [list(row) for row in spec.get("direction_matrix") or []],
+                                "source_kparam": tuple(
+                                    int(value)
+                                    for value in spec.get("source_kparam") or ()
+                                ),
+                                "direction_matrix": [
+                                    list(row)
+                                    for row in spec.get("direction_matrix") or []
+                                ],
                             }
                         ),
                         "_display_site_irrep_label": (
@@ -1605,89 +1656,17 @@ def build_mode_details(
                             else display_site_irrep_labels[mode_index - 1]
                         ),
                         "_source_print_scalar": (
-                            1.0 if mode_index - 1 in multi_print_modes else source_print_scalar
+                            1.0
+                            if mode_index - 1 in multi_print_modes
+                            else source_print_scalar
                         ),
                     }
                 )
             if occurrence_alias_candidate:
-                pending_occurrence_counts[(spec_index, site_index)] = len(
-                    mode_vectors
-                )
+                pending_occurrence_counts[(spec_index, site_index)] = len(mode_vectors)
             else:
                 site_definition_count += len(mode_vectors)
                 site_atom_count = max(site_atom_count, len(atom_fractionals))
-            if (
-                include_structure
-                and not site_atoms_added
-                and not occurrence_speculative
-            ):
-                label_prefix = str(site.get("label") or atom_label)
-                fallback_site = _site_label(site)
-                parent_xyz = _fold_fractional_xyz(site.get("fract"))
-                child_orbit_rows = _undistorted_rows_for_site(
-                    sg=sg,
-                    child_sg=child_sg,
-                    site=site,
-                    label_prefix=label_prefix,
-                    fallback_site=fallback_site,
-                    parent_xyz=parent_xyz,
-                    split_basis=split_basis,
-                    split_origin=split_origin,
-                    presentation_basis=presentation_basis,
-                    presentation_origin=child_origin,
-                    parent_setting_id=parent_inter_setting_id,
-                    symmetry_operations=[
-                        str(value) for value in (cif_info.get("symmetry_operations") or [])
-                    ],
-                )
-                if not child_orbit_rows:
-                    child_orbit_rows = _child_orbit_representative_rows(
-                        label_prefix=label_prefix,
-                        positions=atom_table_positions,
-                        child_sg=child_sg,
-                        fallback_site=fallback_site,
-                    )
-                if child_orbit_rows:
-                    undistorted_atoms.extend(
-                        {
-                            "label": row["label"],
-                            "site": row["site"],
-                            "xyz": row["xyz"],
-                        }
-                        for row in child_orbit_rows
-                    )
-                elif str(selected_k.get("label")) != "GM":
-                    atom_rows = [row for row in atom_source_rows if row.get("atom")]
-                    for atom_counter, row in enumerate(atom_rows, start=1):
-                        atom_name = row.get("atom") or f"{site.get('label') or atom_label}_{atom_counter}"
-                        site_label, display_xyz = _child_site_display(child_sg, row["xyz"], _site_label(site))
-                        undistorted_atoms.append(
-                            {
-                                "label": atom_name,
-                                "site": site_label,
-                                "xyz": display_xyz,
-                            }
-                        )
-                elif first_definition_rows:
-                    row = first_definition_rows[0]
-                    site_label, display_xyz = _child_site_display(child_sg, row["xyz"], _site_label(site))
-                    undistorted_atoms.append(
-                        {
-                            "label": row["atom"] or f"{site.get('label') or atom_label}_1",
-                            "site": site_label,
-                            "xyz": display_xyz,
-                        }
-                    )
-                elif atom_fractionals:
-                    site_label, display_xyz = _child_site_display(child_sg, atom_fractionals[0], _site_label(site))
-                    undistorted_atoms.append(
-                        {
-                            "label": f"{site.get('label') or atom_label}_1",
-                            "site": site_label,
-                            "xyz": display_xyz,
-                        }
-                    )
-                site_atoms_added = True
         per_site_status.append(
             {
                 "site": site.get("label"),
@@ -1697,17 +1676,14 @@ def build_mode_details(
                 "missing": missing_specs,
             }
         )
-    admitted_occurrence_orders = (
-        admitted_occurrence_alias_spec_orders(
-            occurrence_alias_candidate_to_anchor,
-            eligible_sites_by_spec=occurrence_eligible_sites,
-            emissions=occurrence_emissions,
-        )
-        | admitted_self_complete_occurrence_alias_spec_orders(
-            occurrence_direction_distinct_orders,
-            eligible_sites_by_spec=occurrence_eligible_sites,
-            emissions=occurrence_emissions,
-        )
+    admitted_occurrence_orders = admitted_occurrence_alias_spec_orders(
+        occurrence_alias_candidate_to_anchor,
+        eligible_sites_by_spec=occurrence_eligible_sites,
+        emissions=occurrence_emissions,
+    ) | admitted_self_complete_occurrence_alias_spec_orders(
+        occurrence_direction_distinct_orders,
+        eligible_sites_by_spec=occurrence_eligible_sites,
+        emissions=occurrence_emissions,
     )
     for spec_order in sorted(admitted_occurrence_orders):
         target_definitions = (
@@ -1717,37 +1693,34 @@ def build_mode_details(
         )
         target_definitions.extend(pending_occurrence_definitions.get(spec_order, ()))
         for site_index in occurrence_eligible_sites.get(spec_order, ()):
-            count = int(
-                pending_occurrence_counts.get((spec_order, site_index), 0)
-            )
+            count = int(pending_occurrence_counts.get((spec_order, site_index), 0))
             if count > 0 and 0 <= site_index < len(per_site_status):
-                per_site_status[site_index]["definition_count"] = int(
-                    per_site_status[site_index].get("definition_count") or 0
-                ) + count
-    definitions.sort(key=lambda item: (int(item.get("_spec_order", 0)), int(item.get("_site_order", 0))))
-    magnetic_definitions.sort(key=lambda item: (int(item.get("_spec_order", 0)), int(item.get("_site_order", 0))))
-    definitions = _orthogonalize_definition_modes(definitions, child_cartesian, child_sg)
-    magnetic_definitions = _orthogonalize_definition_modes(magnetic_definitions, child_cartesian, child_sg)
-    definitions = _apply_dynamic_source_family_presentation(definitions)
-    magnetic_definitions = _apply_dynamic_source_family_presentation(magnetic_definitions)
-    for definition in (*definitions, *magnetic_definitions):
-        site_order = definition.get("_site_order")
-        if (
-            isinstance(site_order, bool)
-            or not isinstance(site_order, int)
-            or not 0 <= site_order < len(sites)
-        ):
-            continue
-        site = sites[site_order]
-        atom_prefix = str(site.get("label") or site.get("type") or "")
-        grouped_rows = _mode_rows_grouped_by_presentation_orbits(
-            list(definition.get("rows") or []),
-            undistorted_atoms,
-            atom_prefix=atom_prefix,
-            child_sg=child_sg,
+                per_site_status[site_index]["definition_count"] = (
+                    int(per_site_status[site_index].get("definition_count") or 0)
+                    + count
+                )
+    definitions.sort(
+        key=lambda item: (
+            int(item.get("_spec_order", 0)),
+            int(item.get("_site_order", 0)),
         )
-        if grouped_rows is not None:
-            definition["rows"] = grouped_rows
+    )
+    magnetic_definitions.sort(
+        key=lambda item: (
+            int(item.get("_spec_order", 0)),
+            int(item.get("_site_order", 0)),
+        )
+    )
+    definitions = _orthogonalize_definition_modes(
+        definitions, child_cartesian, child_sg
+    )
+    magnetic_definitions = _orthogonalize_definition_modes(
+        magnetic_definitions, child_cartesian, child_sg
+    )
+    definitions = _apply_dynamic_source_family_presentation(definitions)
+    magnetic_definitions = _apply_dynamic_source_family_presentation(
+        magnetic_definitions
+    )
     strain_definitions = (
         _strain_mode_definitions(
             sg,
@@ -1758,6 +1731,34 @@ def build_mode_details(
         if include_strain
         else []
     )
+    viewer_atoms: list[dict[str, Any]] = []
+    if include_structure:
+        expected_atom_ids = {
+            atom.atom_id for layout in child_atom_layouts for atom in layout.atoms
+        }
+        if set(mode_atom_positions) != expected_atom_ids:
+            missing = sorted(expected_atom_ids - set(mode_atom_positions))
+            extra = sorted(set(mode_atom_positions) - expected_atom_ids)
+            raise ValueError(
+                "mode coordinates do not cover the canonical child layout: "
+                f"missing={missing[:8]!r}, extra={extra[:8]!r}"
+            )
+        for site_index, (site, layout) in enumerate(
+            zip(sites, child_atom_layouts, strict=True)
+        ):
+            element = str(site.get("type") or site.get("label") or "X")
+            for atom_index, atom in enumerate(layout.atoms):
+                viewer_atoms.append(
+                    {
+                        "label": atom.child_site_id,
+                        "atom_id": atom.atom_id,
+                        "child_site": atom.child_site_id,
+                        "element": element,
+                        "site_order": site_index,
+                        "atom_index": atom_index,
+                        "xyz": list(mode_atom_positions[atom.atom_id]),
+                    }
+                )
     if not definitions and not magnetic_definitions and not strain_definitions:
         return {
             "status": "missing",
@@ -1804,14 +1805,7 @@ def build_mode_details(
                 "parent_inter_setting_id": parent_inter_setting_id,
             }
         ),
-        "undistorted_atoms": [
-            {
-                key: value
-                for key, value in atom.items()
-                if key != "_mode_row_orbit_points"
-            }
-            for atom in undistorted_atoms
-        ],
+        "undistorted_atoms": undistorted_atoms,
         # Complete atom list for display consumers. Unlike undistorted_atoms,
         # this retains every symmetry-equivalent atom even when no mode moves it.
         "viewer_atoms": viewer_atoms,

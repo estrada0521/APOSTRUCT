@@ -1,20 +1,18 @@
-"""Port of binary ``transform_irrep2complex_`` and type-2 helpers."""
+"""Real-to-complex little-irrep transforms."""
 
 from __future__ import annotations
 
 import numpy as np
-
-from ISODISTORT.Assembled.Backend.modes.engine.records import LittleIrrepRecord
 
 
 class TransformIrrep2ComplexMixin:
     def little_transform_block_count(self, gid: int) -> int:
         """Return the block count read by ``transform_irrep2complex_``.
 
-        Static analysis shows the routine does not use the full-irrep
-        ``little_irr_lif`` field here.  It indexes a small-k table by
-        ``(space_group - 1) * 27 + kslot``.  Focused GDB checks currently
-        pin SG226/W -> 3 and SG219/L -> 4.
+        The block-count contract does not use the full-irrep
+        ``little_irr_lif`` field. It indexes the Source small-k table by
+        ``(space_group - 1) * 27 + kslot``; SG226/W maps to 3 blocks and
+        SG219/L maps to 4.
         """
 
         sg = int(self.iso.little["little_irr_space_group"][gid - 1])
@@ -25,11 +23,9 @@ class TransformIrrep2ComplexMixin:
     def little_transform_uses_permutation(self, gid: int) -> bool:
         """Return the small-k flag used by ``transform_irrep2complex_``.
 
-        The binary reads the boolean table immediately after
-        ``little_k_star_count`` before it builds the initial real matrix for
-        type-2 irreps.  In the text data this table is
-        ``little_k_star_minusk``.  The section is T/F encoded, so it only
-        became available after the data parser learned boolean blocks.
+        Source stores this flag in the T/F-encoded
+        ``little_k_star_minusk`` table adjacent to ``little_k_star_count``.
+        It controls the initial real matrix for type-2 irreps.
         """
 
         sg = int(self.iso.little["little_irr_space_group"][gid - 1])
@@ -41,10 +37,8 @@ class TransformIrrep2ComplexMixin:
     def little_real2_triples(self, gid: int) -> tuple[tuple[int, int, int], ...]:
         """Return the ``little_irr_real2`` triples used by type-2 conversion.
 
-        Ghidra shows ``transform_irrep2complex_`` using
-        ``little_irr_real2_pointer * 3`` in COMMON memory.  The text pointer is
-        the usual Fortran 1-based triple index, so the flat Python start is
-        ``(pointer - 1) * 3``.
+        The Source pointer is a Fortran 1-based triple index, so the flat
+        Python start is ``(pointer - 1) * 3``.
         """
 
         little = self.little_record_by_gid(gid)
@@ -67,7 +61,7 @@ class TransformIrrep2ComplexMixin:
         active_dim: int,
         leading_dim: int,
     ) -> np.ndarray:
-        """Port the shape used by ``zmatmlt_`` for square complex matrices."""
+        """Multiply the active square block and clear the padded region."""
 
         out = np.array(right, dtype=complex, copy=True)
         out[:active_dim, :active_dim] = left[:active_dim, :active_dim] @ right[:active_dim, :active_dim]
@@ -85,10 +79,10 @@ class TransformIrrep2ComplexMixin:
     ) -> tuple[np.ndarray, np.ndarray]:
         """Return the two matrices emitted by ``transform_irrep2complex_``.
 
-        The first matrix corresponds to the routine's second argument at
-        return.  The second is the conjugate-transpose matrix written to the
-        third argument.  Type-3 rows with no ``real2`` table are the current
-        verified target; type-2 still needs its ``little_irr_real2`` branch.
+        The first matrix is constructed from the little-irrep dimensions and
+        type/permutation metadata.  Type-2 rows with a ``real2`` pointer also
+        apply the corresponding Source ``little_irr_real2`` triples.  The
+        second matrix is its conjugate transpose, as consumed by projection.
         """
 
         little = self.little_record_by_gid(gid)
@@ -156,7 +150,7 @@ class TransformIrrep2ComplexMixin:
 
         first = np.zeros((dim, dim), dtype=complex)
         base = 0
-        # This is the no-real2 path reached at transform_irrep2complex_+0x7bf.
+        # Build the first complex transform when no real type-2 block is available.
         for _block in range(block_count):
             for outer in range(2):
                 row_start = base + (outer * block_dim) // 2
@@ -195,16 +189,3 @@ class TransformIrrep2ComplexMixin:
 
         inverse = matrix.conj().T
         return matrix, inverse
-
-    def type2_inverse_transform_from_iso_data(self, little: LittleIrrepRecord) -> np.ndarray:
-        """Return the type-2 real-to-complex inverse transform from iso data.
-
-        The previous diagnostic implementation used a separate PIR API as a
-        shortcut.  That is not acceptable for the
-        mode-kernel implementation target: the binary path is root ``Source`` and
-        this routine has to be ported from ``transform_irrep2complex_`` plus
-        ``data_little:little_irr_real2``.
-        """
-
-        _forward, inverse = self.transform_irrep2complex_matrices(little.gid)
-        return inverse[: little.full_dim, : little.full_dim]

@@ -14,4 +14,4 @@ class IsotropyMixin(
     IsotropySettingChangeMixin,
     NewlatMixin,
 ):
-    """Port surface for ``find_isotropy_subgroup_``, ``newlat_``, and final atom setup."""
+    """Runtime surface for ``find_isotropy_subgroup_``, ``newlat_``, and final atom setup."""

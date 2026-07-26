@@ -1,16 +1,10 @@
 #!/usr/bin/env python3
 """
-Pure-local decoder for selected ISOTROPY/ISO-IR data tables.
+Decoder for selected ISOTROPY/ISO-IR Source data tables.
 
 This module decodes
   data_space.txt, data_irreps.txt, data_little.txt, data_wyckoff.txt, const.dat
-without calling the iso/smodes binaries.
-
-Confirmed paths:
-  - data_irreps matrices: 3 primitive translations + finite space-group coset reps
-  - const.dat code -> real constant
-  - space operations generated from data_space:ispace_generators_conv
-  - SG221 X/M and SG62 Pnma X displacement-mode multiplicities.
+directly from the repository Source files.
 
 All data pointers in the ISOTROPY tables are Fortran 1-based and are converted
 locally where used.
@@ -212,8 +206,8 @@ class ISOData:
         """Return finite coset representatives derived from static ``data_space``.
 
         The reps come from the generator closure of the conventional
-        space-group generators (``_space_ops_from_generators``); no external or
-        binary-derived table is consulted.
+        space-group generators (``_space_ops_from_generators``); no separate
+        precomputed coset table is consulted.
 
         Known limitation: the mod-1 closure over-generates for centered
         lattices (it counts centering translations / high-order screw powers as

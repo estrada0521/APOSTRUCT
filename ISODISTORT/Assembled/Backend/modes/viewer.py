@@ -43,10 +43,9 @@ def parent_cell_placement(
 ) -> dict[str, list[list[float]] | list[float]]:
     """Return ISOVIZ-style parent basis/origin in child-cell coordinates.
 
-    The exact algebraic origin is ``-origin @ inverse(basis)``. ISOVIZ then
-    chooses a lattice/centering-equivalent parent cell whose center is nearest
-    the center of the displayed child cell. Web-oracle probes spanning eight
-    crystal/centering classes all use a minimum-distance representative.
+    The exact algebraic origin is ``-origin @ inverse(basis)``. This adapter
+    then chooses the lattice/centering-equivalent parent cell whose center is
+    nearest to the displayed child-cell center.
     """
 
     try:

@@ -5,6 +5,8 @@ from __future__ import annotations
 import math
 from typing import Any, Iterable, Mapping, Sequence
 
+from ISODISTORT.Assembled.Backend.modes.periodic import periodic_float_close3
+
 
 Vector3 = tuple[float, float, float]
 ModeRow = dict[str, Vector3]
@@ -27,14 +29,29 @@ def _inverse3(matrix: Sequence[Sequence[float]]) -> tuple[Vector3, Vector3, Vect
     if abs(det) <= 1e-15:
         raise ValueError("mode presentation basis is singular")
     return (
-        ((a[1][1] * a[2][2] - a[1][2] * a[2][1]) / det, (a[0][2] * a[2][1] - a[0][1] * a[2][2]) / det, (a[0][1] * a[1][2] - a[0][2] * a[1][1]) / det),
-        ((a[1][2] * a[2][0] - a[1][0] * a[2][2]) / det, (a[0][0] * a[2][2] - a[0][2] * a[2][0]) / det, (a[0][2] * a[1][0] - a[0][0] * a[1][2]) / det),
-        ((a[1][0] * a[2][1] - a[1][1] * a[2][0]) / det, (a[0][1] * a[2][0] - a[0][0] * a[2][1]) / det, (a[0][0] * a[1][1] - a[0][1] * a[1][0]) / det),
+        (
+            (a[1][1] * a[2][2] - a[1][2] * a[2][1]) / det,
+            (a[0][2] * a[2][1] - a[0][1] * a[2][2]) / det,
+            (a[0][1] * a[1][2] - a[0][2] * a[1][1]) / det,
+        ),
+        (
+            (a[1][2] * a[2][0] - a[1][0] * a[2][2]) / det,
+            (a[0][0] * a[2][2] - a[0][2] * a[2][0]) / det,
+            (a[0][2] * a[1][0] - a[0][0] * a[1][2]) / det,
+        ),
+        (
+            (a[1][0] * a[2][1] - a[1][1] * a[2][0]) / det,
+            (a[0][1] * a[2][0] - a[0][0] * a[2][1]) / det,
+            (a[0][0] * a[1][1] - a[0][1] * a[1][0]) / det,
+        ),
     )
 
 
 def _row_multiply(row: Sequence[float], matrix: Sequence[Sequence[float]]) -> Vector3:
-    return tuple(sum(float(row[col]) * float(matrix[col][axis]) for col in range(3)) for axis in range(3))  # type: ignore[return-value]
+    return tuple(
+        sum(float(row[col]) * float(matrix[col][axis]) for col in range(3))
+        for axis in range(3)
+    )  # type: ignore[return-value]
 
 
 def centering_translations(symbol: str) -> tuple[Vector3, ...]:
@@ -51,10 +68,6 @@ def centering_translations(symbol: str) -> tuple[Vector3, ...]:
     return ((0.0, 0.0, 0.0),) + extra
 
 
-def _same_periodic(left: Sequence[float], right: Sequence[float], tol: float) -> bool:
-    return all(abs(((float(left[axis]) - float(right[axis]) + 0.5) % 1.0) - 0.5) <= tol for axis in range(3))
-
-
 def _same_vector(left: Sequence[float], right: Sequence[float], tol: float) -> bool:
     return all(abs(float(left[axis]) - float(right[axis])) <= tol for axis in range(3))
 
@@ -68,21 +81,13 @@ def _bucket_width(tol: float) -> float | None:
     return width
 
 
-def _linear_bucket_key(values: Sequence[float], width: float) -> BucketKey | None:
-    folded = tuple(float(value) for value in values)
-    if len(folded) != 3 or not all(math.isfinite(value) for value in folded):
-        return None
-    return tuple(int(math.floor(value / width)) for value in folded)  # type: ignore[return-value]
-
-
-def _periodic_bucket_key(values: Sequence[float], width: float, count: int) -> BucketKey | None:
+def _periodic_bucket_key(
+    values: Sequence[float], width: float, count: int
+) -> BucketKey | None:
     folded = tuple(float(value) % 1.0 for value in values)
     if len(folded) != 3 or not all(math.isfinite(value) for value in folded):
         return None
-    return tuple(
-        min(count - 1, int(math.floor(value / width)))
-        for value in folded
-    )  # type: ignore[return-value]
+    return tuple(min(count - 1, int(math.floor(value / width))) for value in folded)  # type: ignore[return-value]
 
 
 def _bucket_candidates(
@@ -133,6 +138,7 @@ def present_mode_rows(
     origin: Sequence[float],
     centering_symbol: str,
     tol: float = 1e-8,
+    include_centering_ordinal: bool = False,
 ) -> dict[str, Any]:
     """Transform parent rows to the selected child setting and Web normalization."""
     inverse = _inverse3(basis)
@@ -142,9 +148,15 @@ def present_mode_rows(
         parent_xyz = tuple(float(value) for value in row["xyz"])
         parent_dxyz = tuple(float(value) for value in row["dxyz"])
         xyz = _row_multiply(tuple(parent_xyz[i] - shift[i] for i in range(3)), inverse)
-        metadata = {key: value for key, value in row.items() if key not in {"xyz", "dxyz"}}
+        metadata = {
+            key: value for key, value in row.items() if key not in {"xyz", "dxyz"}
+        }
         primitive.append(
-            {**metadata, "xyz": tuple(value % 1.0 for value in xyz), "dxyz": _row_multiply(parent_dxyz, inverse)}
+            {
+                **metadata,
+                "xyz": tuple(value % 1.0 for value in xyz),
+                "dxyz": _row_multiply(parent_dxyz, inverse),
+            }
         )
 
     scale = max((abs(value) for row in primitive for value in row["dxyz"]), default=0.0)
@@ -157,25 +169,10 @@ def present_mode_rows(
     translations = centering_translations(centering_symbol)
     quotient: list[ModeRow] = []
     width = _bucket_width(tol)
-    periodic_count = (
-        max(1, int(math.floor(1.0 / width)))
-        if width is not None
-        else None
-    )
-    vector_buckets: dict[BucketKey, list[int]] = {}
+    periodic_count = max(1, int(math.floor(1.0 / width))) if width is not None else None
     orbit_position_buckets: dict[BucketKey, list[int]] = {}
     position_index_complete = True
     for row in primitive:
-        vector_key = (
-            _linear_bucket_key(row["dxyz"], width)
-            if width is not None
-            else None
-        )
-        vector_candidates = (
-            _bucket_candidates(vector_buckets, vector_key)
-            if vector_key is not None
-            else list(range(len(quotient)))
-        )
         position_key = (
             _periodic_bucket_key(row["xyz"], width, periodic_count)
             if width is not None and periodic_count is not None
@@ -190,11 +187,12 @@ def present_mode_rows(
             if position_key is not None and position_index_complete
             else list(range(len(quotient)))
         )
-        candidate_indices = sorted(set(vector_candidates).intersection(position_candidates))
+        # Position proximity is a complete prefilter; vector equality remains final.
+        candidate_indices = position_candidates
         if any(
             _same_vector(row["dxyz"], quotient[index]["dxyz"], tol)
             and any(
-                _same_periodic(
+                periodic_float_close3(
                     row["xyz"],
                     tuple(quotient[index]["xyz"][i] + translation[i] for i in range(3)),
                     tol,
@@ -205,12 +203,13 @@ def present_mode_rows(
         ):
             continue
         quotient.append(row)
-        if vector_key is not None:
-            vector_buckets.setdefault(vector_key, []).append(len(quotient) - 1)
         if width is not None and periodic_count is not None:
             translated_keys = tuple(
                 _periodic_bucket_key(
-                    tuple((row["xyz"][axis] + translation[axis]) % 1.0 for axis in range(3)),
+                    tuple(
+                        (row["xyz"][axis] + translation[axis]) % 1.0
+                        for axis in range(3)
+                    ),
                     width,
                     periodic_count,
                 )
@@ -218,18 +217,25 @@ def present_mode_rows(
             )
             if all(key is not None for key in translated_keys):
                 for translated_key in translated_keys:
-                    orbit_position_buckets.setdefault(translated_key, []).append(len(quotient) - 1)  # type: ignore[arg-type]
+                    orbit_position_buckets.setdefault(translated_key, []).append(
+                        len(quotient) - 1
+                    )  # type: ignore[arg-type]
             else:
                 position_index_complete = False
 
     conventional: list[ModeRow] = []
     position_buckets: dict[BucketKey, list[int]] = {}
     for row in quotient:
-        for translation in translations:
+        for centering_ordinal, translation in enumerate(translations):
             candidate = {
                 **row,
                 "xyz": tuple((row["xyz"][i] + translation[i]) % 1.0 for i in range(3)),
                 "dxyz": row["dxyz"],
+                **(
+                    {"_presentation_centering_ordinal": centering_ordinal}
+                    if include_centering_ordinal
+                    else {}
+                ),
             }
             position_key = (
                 _periodic_bucket_key(candidate["xyz"], width, periodic_count)
@@ -246,30 +252,50 @@ def present_mode_rows(
                 else range(len(conventional))
             )
             if any(
-                _same_periodic(candidate["xyz"], conventional[index]["xyz"], tol)
+                periodic_float_close3(candidate["xyz"], conventional[index]["xyz"], tol)
                 and _same_vector(candidate["dxyz"], conventional[index]["dxyz"], tol)
                 for index in candidate_indices
             ):
                 continue
             conventional.append(candidate)
             if position_key is not None:
-                position_buckets.setdefault(position_key, []).append(len(conventional) - 1)
+                position_buckets.setdefault(position_key, []).append(
+                    len(conventional) - 1
+                )
     return {"primitive_rows": quotient, "rows": conventional, "scale": scale}
 
 
-def child_lattice_cartesian(parent_lattice: Sequence[float], basis: Sequence[Sequence[float]]) -> tuple[Vector3, Vector3, Vector3]:
+def child_lattice_cartesian(
+    parent_lattice: Sequence[float], basis: Sequence[Sequence[float]]
+) -> tuple[Vector3, Vector3, Vector3]:
     """Build child Cartesian row vectors from six parent lattice parameters."""
     a, b, c, alpha, beta, gamma = (float(value) for value in parent_lattice)
     ar, br, gr = (math.radians(value) for value in (alpha, beta, gamma))
     parent = (
         (a, 0.0, 0.0),
         (b * math.cos(gr), b * math.sin(gr), 0.0),
-        (c * math.cos(br), c * (math.cos(ar) - math.cos(br) * math.cos(gr)) / math.sin(gr), c * math.sqrt(max(0.0, 1.0 - math.cos(br) ** 2 - ((math.cos(ar) - math.cos(br) * math.cos(gr)) / math.sin(gr)) ** 2))),
+        (
+            c * math.cos(br),
+            c * (math.cos(ar) - math.cos(br) * math.cos(gr)) / math.sin(gr),
+            c
+            * math.sqrt(
+                max(
+                    0.0,
+                    1.0
+                    - math.cos(br) ** 2
+                    - ((math.cos(ar) - math.cos(br) * math.cos(gr)) / math.sin(gr))
+                    ** 2,
+                )
+            ),
+        ),
     )
     return tuple(_row_multiply(row, parent) for row in basis)  # type: ignore[return-value]
 
 
-def mode_normfactor(primitive_rows: Iterable[Mapping[str, Sequence[float]]], child_cartesian: Sequence[Sequence[float]]) -> float | None:
+def mode_normfactor(
+    primitive_rows: Iterable[Mapping[str, Sequence[float]]],
+    child_cartesian: Sequence[Sequence[float]],
+) -> float | None:
     """Return the complete-mode normfactor from primitive displacement rows."""
     total = 0.0
     for row in primitive_rows:

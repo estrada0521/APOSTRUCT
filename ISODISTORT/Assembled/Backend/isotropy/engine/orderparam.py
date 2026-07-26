@@ -1,4 +1,4 @@
-"""Order-parameter canonicalization helpers ported from ``Source/iso``."""
+"""Order-parameter labeling, reduction, and invariance kernels."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from ISODISTORT.Assembled.Backend.isotropy.engine.numerics import ncmp, xrowop2
 
 
 def orderparam_label(free: int, index: int) -> str:
-    """Port the public label shape produced by ``orderparam_label_``."""
+    """Return the public label shape produced by ``orderparam_label_``."""
 
     if free == 1:
         prefix = "P"
@@ -58,9 +58,9 @@ def _nice_score(rows: int, cols: int, buffer: Sequence[float], *, stride: int = 
 
 
 def nice_orderparam(rows: int, cols: int, candidate_a: Sequence[float], candidate_b: Sequence[float], *, stride: int = 48) -> int:
-    """Port of ``nice_orderparam_``.
+    """Compare two candidates with the ``nice_orderparam_`` ordering.
 
-    Return values follow upstream:
+    Return values identify the preferred candidate:
 
     - ``1``: candidate A is preferred
     - ``2``: candidate B is preferred
@@ -85,9 +85,9 @@ def nice_orderparam(rows: int, cols: int, candidate_a: Sequence[float], candidat
 
 
 def orthogonal_orderparam(rows: int, cols: int, buffer: Sequence[float], *, stride: int = 48) -> tuple[int, tuple[float, ...]]:
-    """Port of ``orthogonal_orderparam_``.
+    """Apply the ``orthogonal_orderparam_`` row-orthogonalization contract.
 
-    Return ``(flag, buffer)`` where ``flag`` is upstream's return value:
+    Return ``(flag, buffer)`` where ``flag`` reports whether rows changed:
 
     - ``1``: rows were already orthogonal
     - ``0``: a reverse Gram-Schmidt pass was applied
@@ -124,9 +124,9 @@ def orthogonal_orderparam(rows: int, cols: int, buffer: Sequence[float], *, stri
 
 
 def eqs_to_orderparam(cols: int, eq_count: int, equations: Sequence[float], *, eq_stride: int = 50, op_stride: int = 48) -> tuple[int, tuple[float, ...]]:
-    """Port of ``eqs_to_orderparam_``.
+    """Convert equations to the ``eqs_to_orderparam_`` OPD layout.
 
-    ``equations`` is the upstream column-stride work matrix where equation
+    ``equations`` is the column-stride work matrix where equation
     ``r`` and variable ``c`` live at ``r + c * eq_stride``.  The returned OPD
     buffer uses the usual stride-48 row layout.
     """
@@ -157,7 +157,7 @@ def eqs_to_orderparam(cols: int, eq_count: int, equations: Sequence[float], *, e
         required = row_index * op_stride + cols
         if len(out) < required:
             out.extend([0.0] * (required - len(out)))
-        # Upstream scans variables from the last source column back to the
+        # Variables are scanned from the last source column back to the
         # first, but writes them into the OPD buffer in reversed display order.
         out[row_index * op_stride + (cols - source_col - 1)] = 1.0
         for eq_row, pivot_col in enumerate(pivots):
@@ -172,9 +172,9 @@ def eqs_to_orderparam(cols: int, eq_count: int, equations: Sequence[float], *, e
 
 
 def orderparam_to_eqs(cols: int, free: int, orderparam: Sequence[float], *, op_stride: int = 48, eq_stride: int = 50) -> tuple[int, tuple[float, ...]]:
-    """Port of ``orderparam_to_eqs_``.
+    """Convert OPD rows to the ``orderparam_to_eqs_`` equation layout.
 
-    The input OPD rows use the upstream stride-48 layout.  The returned
+    The input OPD rows use the stride-48 layout. The returned
     equation matrix uses stride 50 and the same reversed display-column order
     as ``eqs_to_orderparam_``.
     """
@@ -236,7 +236,7 @@ def orderparam_to_eqs(cols: int, free: int, orderparam: Sequence[float], *, op_s
             assignments.append((column_state[col] - 1, pivot, -value))
 
     # Columns untouched by the OPD span become simple unit constraints.  The
-    # upstream loop walks source columns left-to-right while its display index
+    # The loop walks source columns left-to-right while its display index
     # counts down, which is equivalent to set_eq's reversed mapping.
     for col in range(cols):
         if column_state[col] == 0:
@@ -268,9 +268,9 @@ def orderparam_add_eqs(
     eq_stride: int = 50,
     matrix_stride: int = 48,
 ) -> tuple[int, tuple[float, ...]]:
-    """Port of ``orderparam_add_eqs_``.
+    """Append one group element's ``orderparam_add_eqs_`` constraints.
 
-    ``equations`` is the upstream constraint matrix with column stride 50.
+    ``equations`` is the constraint matrix with column stride 50.
     ``irrep_matrix`` is the stride-48 matrix buffer passed in from
     ``get_irreps_``.  The routine appends the equations ``D - I`` for one
     group element, periodically row-reduces them with ``xrowop2_``, and trims
@@ -335,11 +335,11 @@ def orderparam_check(
     matrix_stride: int = 48,
     op_stride: int = 48,
 ) -> int:
-    """Port of ``orderparam_check_``.
+    """Evaluate the ``orderparam_check_`` invariance condition.
 
     Return ``1`` when every active OPD row is invariant under the supplied
-    irrep matrix, otherwise ``0``.  Buffers use the same fixed stride-48
-    layout observed in ``orderparam_to_subgroup_``.
+    irrep matrix, otherwise ``0``. Buffers use the fixed stride-48 layout
+    consumed by ``orderparam_to_subgroup_``.
     """
 
     def matrix_value(row: int, col: int) -> float:

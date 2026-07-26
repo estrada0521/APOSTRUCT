@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from fractions import Fraction
 import math
 from typing import Any, Callable, Sequence
@@ -12,19 +13,18 @@ from ISODISTORT.Assembled.Backend.exactmath import (
 )
 from ISODISTORT.Assembled.Backend.source.magnetic import data as magnetic_data
 from ISODISTORT.Assembled.Backend.source.tables import source_tables
+from ISODISTORT.Assembled.Backend.modes.periodic import (
+    periodic_fraction_float_close3,
+)
 from ISODISTORT.Assembled.Backend.modes.presentation import (
     _bucket_candidates,
     _bucket_width,
     _periodic_bucket_key,
 )
-from ISODISTORT.Assembled.Backend.modes.site_transport import (
-    _parent_point_from_default,
-    _parent_point_to_default,
-    _parent_setting_bridge,
-)
 from ISODISTORT.Assembled.Backend.modes.structure.magnetic_wyckoff import (
     _input_fraction,
     _pml_point_operation_matrix,
+    generate_magnetic_space_group_records,
     identify_magnetic_wyckoff_branch,
     magnetic_orbit_points,
 )
@@ -37,6 +37,14 @@ PeriodicPointIndex = tuple[
     int,
     dict[tuple[int, int, int], tuple[int, ...]],
 ]
+
+
+@dataclass(frozen=True)
+class MagneticAtomAction:
+    """Exact magnetic action on one canonical child atom population."""
+
+    components: tuple[tuple[int, ...], ...]
+    canonical_cinter_points: tuple[FractionPoint, ...]
 
 
 def _periodic_point_index(
@@ -68,7 +76,6 @@ def _periodic_point_index(
 def _periodic_match_indices(
     point: Sequence[Any],
     candidates: Sequence[Sequence[Any]],
-    tolerance: float,
     predicate: Callable[[Any, Any], bool],
     point_index: PeriodicPointIndex | None,
 ) -> list[int]:
@@ -87,18 +94,13 @@ def _periodic_match_indices(
                 key,
                 periodic_count=bucket_count,
             )
-    return [
-        index
-        for index in narrowed
-        if predicate(point, candidates[index])
-    ]
+    return [index for index in narrowed if predicate(point, candidates[index])]
 
 
 def _periodic_match_owner_indices(
     point: Sequence[Any],
     candidates: Sequence[Sequence[Any]],
     owners: Sequence[int],
-    tolerance: float,
     predicate: Callable[[Any, Any], bool],
     point_index: PeriodicPointIndex | None,
 ) -> tuple[int, ...]:
@@ -113,7 +115,6 @@ def _periodic_match_owner_indices(
                 for index in _periodic_match_indices(
                     point,
                     candidates,
-                    tolerance,
                     predicate,
                     point_index,
                 )
@@ -124,11 +125,10 @@ def _periodic_match_owner_indices(
 
 def _fraction_matrix(values: Sequence[Any]) -> FractionMatrix:
     rows = tuple(values)
-    if len(rows) == 3 and all(isinstance(row, Sequence) and len(row) == 3 for row in rows):
-        return tuple(
-            tuple(_input_fraction(value) for value in row)
-            for row in rows
-        )  # type: ignore[return-value]
+    if len(rows) == 3 and all(
+        isinstance(row, Sequence) and len(row) == 3 for row in rows
+    ):
+        return tuple(tuple(_input_fraction(value) for value in row) for row in rows)  # type: ignore[return-value]
     if len(rows) != 9:
         raise ValueError(f"expected 3x3 basis, got {values!r}")
     return tuple(
@@ -161,30 +161,6 @@ def _fold(point: Sequence[Fraction]) -> FractionPoint:
     return tuple(Fraction(value) % 1 for value in point)  # type: ignore[return-value]
 
 
-def _periodic_close(left: Sequence[Fraction], right: Sequence[Fraction], tolerance: float) -> bool:
-    return all(
-        abs(float(Fraction(left[axis]) - Fraction(right[axis]))
-            - round(float(Fraction(left[axis]) - Fraction(right[axis])))) <= tolerance
-        for axis in range(3)
-    )
-
-
-def _correspondence_value(item: Any, name: str) -> Any:
-    if isinstance(item, dict):
-        return item.get(name)
-    return getattr(item, name, None)
-
-
-def _operation_record(item: Any, name: str) -> tuple[int, int, int, int, int]:
-    raw = _correspondence_value(item, name)
-    if not isinstance(raw, Sequence) or len(raw) != 5:
-        raise ValueError(f"missing {name} in magnetic correspondence")
-    record = tuple(int(value) for value in raw)
-    if record[3] == 0:
-        raise ValueError(f"zero denominator in {name}")
-    return record  # type: ignore[return-value]
-
-
 def _apply_pml_operation(
     sg: int,
     record: tuple[int, int, int, int, int],
@@ -194,119 +170,53 @@ def _apply_pml_operation(
     ordinary_point_op = int(table["mag_point_op_mag2nonmag"][int(record[4]) - 1])
     rotation = _pml_point_operation_matrix(int(sg), ordinary_point_op)
     rotated = _row_multiply(tuple(Fraction(value) for value in point), rotation)
-    translation = tuple(Fraction(int(record[axis]), int(record[3])) for axis in range(3))
+    translation = tuple(
+        Fraction(int(record[axis]), int(record[3])) for axis in range(3)
+    )
     return tuple(rotated[axis] + translation[axis] for axis in range(3))  # type: ignore[return-value]
 
 
-def selected_magnetic_correspondence_standard_points(
+def selected_magnetic_atom_action(
     *,
-    parent_sg: int,
+    magnetic_group: int,
     child_sg: int,
-    presentation_points: Sequence[Sequence[Fraction | int | float]],
-    presentation_basis: Sequence[Any],
-    presentation_origin: Sequence[Any] | str,
+    parent_points: Sequence[Sequence[Fraction | int]],
+    ordinary_orbits: Sequence[Sequence[int]],
     selected_basis: Sequence[Any],
     selected_origin: Sequence[Any] | str,
-    full_operation_correspondence: Sequence[Any],
-    parent_setting_id: int | None = None,
-    tolerance: float = 1e-8,
-) -> tuple[FractionPoint, ...]:
-    """Map a presentation grid through one selected magnetic BNS embedding.
+) -> MagneticAtomAction:
+    """Build the exact atom permutation induced by the Source BNS group."""
 
-    ``presentation_basis/origin`` map presentation child-cinter coordinates to
-    the selected parent cinter setting. ``selected_basis/origin`` are the
-    accepted subgroup result and map canonical child-PML coordinates to the
-    Source-default parent PML. ``parent_setting_id`` supplies the intervening
-    default-to-selected parent setting bridge. The retained full operation
-    correspondence then validates the affine map on every grid row. Search-only
-    candidate basis/origin values are deliberately not accepted.
-    """
+    if not parent_points:
+        raise ValueError("magnetic atom action requires canonical atoms")
+    points = tuple(tuple(Fraction(value) for value in point) for point in parent_points)
+    if any(len(point) != 3 for point in points):
+        raise ValueError("magnetic atom action requires point triplets")
 
-    if not presentation_points or not full_operation_correspondence:
-        return ()
-    try:
-        direct_points = tuple(
-            tuple(_input_fraction(value) for value in point)
-            for point in presentation_points
-        )
-        if any(len(point) != 3 for point in direct_points):
-            return ()
-        display_basis = _fraction_matrix(presentation_basis)
-        display_inverse = _matrix_inverse(display_basis)
-        display_origin = _fraction_origin(presentation_origin)
-        result_basis = _fraction_matrix(selected_basis)
-        result_inverse = _matrix_inverse(result_basis)
-        result_origin = _fraction_origin(selected_origin)
-        data = source_tables()
-        parent_pml_to_cinter = tuple(
-            tuple(Fraction(value) for value in row)
-            for row in data.pml_to_cinter_matrix(int(parent_sg))
-        )
-        parent_cinter_to_pml = _matrix_inverse(parent_pml_to_cinter)
-        parent_setting_origin = tuple(
-            Fraction(value) for value in data.cml_to_cinter_origin(int(parent_sg))
-        )
-        setting_bridge = _parent_setting_bridge(int(parent_sg), parent_setting_id)
-        child_pml_to_cinter = tuple(
-            tuple(Fraction(value) for value in row)
-            for row in data.pml_to_cinter_matrix(int(child_sg))
-        )
-        child_setting_origin = tuple(
-            Fraction(value) for value in data.cml_to_cinter_origin(int(child_sg))
-        )
-        correspondences = tuple(
-            (
-                int(_correspondence_value(item, "input_slot") or index),
-                _operation_record(item, "input_record"),
-                _operation_record(item, "canonical_record"),
-            )
-            for index, item in enumerate(full_operation_correspondence, start=1)
-        )
-        if len({slot for slot, _raw, _canonical in correspondences}) != len(correspondences):
-            return ()
-    except (IndexError, KeyError, TypeError, ValueError, ZeroDivisionError):
-        return ()
+    result_basis = _fraction_matrix(selected_basis)
+    result_inverse = _matrix_inverse(result_basis)
+    result_origin = _fraction_origin(selected_origin)
+    data = source_tables()
+    child_pml_to_cinter = tuple(
+        tuple(Fraction(value) for value in row)
+        for row in data.pml_to_cinter_matrix(int(child_sg))
+    )
+    child_setting_origin = tuple(
+        Fraction(value) for value in data.cml_to_cinter_origin(int(child_sg))
+    )
+    records = generate_magnetic_space_group_records(
+        int(magnetic_group), setting="binary"
+    )
+    if not records:
+        raise ValueError(f"magnetic group {magnetic_group} has no Source operations")
 
-    def presentation_to_parent_pml(point: FractionPoint) -> FractionPoint:
-        parent_cinter_offset = _row_multiply(point, display_basis)
-        parent_cinter = tuple(
-            parent_cinter_offset[axis] + display_origin[axis]
-            for axis in range(3)
-        )
-        parent_default_cinter = _parent_point_to_default(
-            parent_cinter, setting_bridge
-        )
-        return _row_multiply(
-            tuple(
-                parent_default_cinter[axis] - parent_setting_origin[axis]
-                for axis in range(3)
-            ),
-            parent_cinter_to_pml,
-        )
-
-    def parent_pml_to_presentation(point: FractionPoint) -> FractionPoint:
-        cinter_offset = _row_multiply(point, parent_pml_to_cinter)
-        parent_cinter = tuple(
-            cinter_offset[axis] + parent_setting_origin[axis]
-            for axis in range(3)
-        )
-        parent_cinter = _parent_point_from_default(parent_cinter, setting_bridge)
-        return _fold(
-            _row_multiply(
-                tuple(parent_cinter[axis] - display_origin[axis] for axis in range(3)),
-                display_inverse,
-            )
-        )
-
-    def parent_to_canonical_pml(point: FractionPoint) -> FractionPoint:
-        return _row_multiply(
+    canonical_pml = tuple(
+        _row_multiply(
             tuple(point[axis] - result_origin[axis] for axis in range(3)),
             result_inverse,
         )
-
-    def canonical_to_parent_pml(point: FractionPoint) -> FractionPoint:
-        offset = _row_multiply(point, result_basis)
-        return tuple(offset[axis] + result_origin[axis] for axis in range(3))  # type: ignore[return-value]
+        for point in points
+    )
 
     def canonical_pml_to_cinter(point: FractionPoint) -> FractionPoint:
         offset = _row_multiply(point, child_pml_to_cinter)
@@ -314,56 +224,68 @@ def selected_magnetic_correspondence_standard_points(
             tuple(offset[axis] + child_setting_origin[axis] for axis in range(3))
         )
 
-    anchors: list[FractionPoint] = []
-    canonical_points: list[FractionPoint] = []
-    parent_points: list[FractionPoint] = []
-    for point in direct_points:
-        parent_point = presentation_to_parent_pml(point)  # type: ignore[arg-type]
-        canonical_point = parent_to_canonical_pml(parent_point)
-        if not _periodic_close(
-            canonical_to_parent_pml(canonical_point), parent_point, tolerance
-        ):
-            return ()
-        parent_points.append(parent_point)
-        canonical_points.append(canonical_point)
-        anchors.append(canonical_pml_to_cinter(canonical_point))
+    canonical_cinter = tuple(canonical_pml_to_cinter(point) for point in canonical_pml)
+    cinter_owner: dict[FractionPoint, int] = {}
+    for index, point in enumerate(canonical_cinter):
+        previous = cinter_owner.setdefault(point, index)
+        if previous != index:
+            raise ValueError(
+                f"canonical atoms share one child-cinter point: {previous}, {index}"
+            )
+    orbit_indices = tuple(
+        tuple(int(index) for index in orbit) for orbit in ordinary_orbits
+    )
+    if (
+        not orbit_indices
+        or sorted(index for orbit in orbit_indices for index in orbit)
+        != list(range(len(points)))
+        or any(not orbit for orbit in orbit_indices)
+    ):
+        raise ValueError("ordinary child sites do not partition magnetic atoms")
+    adjacency: list[set[int]] = [{index} for index in range(len(points))]
+    for orbit in orbit_indices:
+        for index in orbit:
+            adjacency[index].update(orbit)
+    for operation_index, canonical_record in enumerate(records, start=1):
+        targets: set[int] = set()
+        for source, canonical_point in enumerate(canonical_pml):
+            canonical_image = canonical_pml_to_cinter(
+                _apply_pml_operation(int(child_sg), canonical_record, canonical_point)
+            )
+            target = cinter_owner.get(canonical_image)
+            if target is None:
+                raise KeyError(
+                    "magnetic Source operation leaves the canonical atom population: "
+                    f"operation={operation_index}, source={source}, "
+                    f"image={canonical_image}"
+                )
+            targets.add(target)
+            adjacency[source].add(target)
+            adjacency[target].add(source)
+        if targets != set(range(len(points))):
+            raise ValueError(
+                f"magnetic operation {operation_index} is not an atom permutation"
+            )
 
-    assigned: list[FractionPoint | None] = [None] * len(direct_points)
-    covered: set[int] = set()
-    for parent_point in parent_points:
-        canonical_seed = parent_to_canonical_pml(parent_point)
-        for _slot, input_record, canonical_record in correspondences:
-            raw_image = _apply_pml_operation(int(parent_sg), input_record, parent_point)
-            canonical_image = _apply_pml_operation(int(child_sg), canonical_record, canonical_seed)
-            if not _periodic_close(
-                parent_to_canonical_pml(raw_image), canonical_image, tolerance
-            ):
-                return ()
-            direct_image = parent_pml_to_presentation(raw_image)
-            matches = [
-                index
-                for index, candidate in enumerate(direct_points)
-                if _periodic_close(direct_image, candidate, tolerance)
-            ]
-            if len(matches) != 1:
-                return ()
-            target = matches[0]
-            # PML integer lifts become centering translations in a conventional
-            # child setting.  Compare the paired action in primitive PML, then
-            # retain the target row's direct cinter anchor rather than choosing
-            # a path-dependent conventional lift.
-            if not _periodic_close(canonical_image, canonical_points[target], tolerance):
-                return ()
-            standard_image = anchors[target]
-            if assigned[target] is not None and not _periodic_close(
-                assigned[target], standard_image, tolerance
-            ):
-                return ()
-            assigned[target] = standard_image
-            covered.add(target)
-    if covered != set(range(len(direct_points))) or any(point is None for point in assigned):
-        return ()
-    return tuple(point for point in assigned if point is not None)
+    visited: set[int] = set()
+    components: list[tuple[int, ...]] = []
+    for start in range(len(points)):
+        if start in visited:
+            continue
+        component: set[int] = set()
+        pending = [start]
+        while pending:
+            current = pending.pop()
+            if current in component:
+                continue
+            component.add(current)
+            pending.extend(adjacency[current] - component)
+        visited.update(component)
+        components.append(tuple(sorted(component)))
+    return MagneticAtomAction(
+        components=tuple(components),
+        canonical_cinter_points=canonical_cinter,
+    )
 
 
 def presentation_branch_labels_from_correspondence(
@@ -425,14 +347,7 @@ def presentation_grid_rows_for_magnetic_groups(
     standard_points = [to_standard(point) for point in presentation_points]
 
     def periodic_match(left: Any, right: Any) -> bool:
-        return all(
-            abs(
-                float(Fraction(left[axis]) - Fraction(right[axis]))
-                - round(float(Fraction(left[axis]) - Fraction(right[axis])))
-            )
-            <= tolerance
-            for axis in range(3)
-        )
+        return periodic_fraction_float_close3(left, right, tolerance)
 
     def same_point_set(
         left: Any,
@@ -448,7 +363,6 @@ def presentation_grid_rows_for_magnetic_groups(
                 for index in _periodic_match_indices(
                     point,
                     right,
-                    tolerance,
                     periodic_match,
                     right_index,
                 )
@@ -475,14 +389,17 @@ def presentation_grid_rows_for_magnetic_groups(
             matches = _periodic_match_indices(
                 point,
                 standard_points,
-                tolerance,
                 periodic_match,
                 standard_point_index,
             )
             if len(matches) != 1:
                 return []
             component.add(matches[0])
-        if len(component) != len(orbit) or seed not in component or not component <= unused:
+        if (
+            len(component) != len(orbit)
+            or seed not in component
+            or not component <= unused
+        ):
             return []
         components.append((tuple(sorted(component)), tuple(orbit)))
         unused.difference_update(component)
@@ -491,7 +408,9 @@ def presentation_grid_rows_for_magnetic_groups(
     for group in groups:
         try:
             orbit = magnetic_orbit_points(
-                int(magnetic_group), group.standard_representative, record_setting="cinter"
+                int(magnetic_group),
+                group.standard_representative,
+                record_setting="cinter",
             )
         except (IndexError, KeyError, TypeError, ValueError, ZeroDivisionError):
             return []
@@ -499,8 +418,7 @@ def presentation_grid_rows_for_magnetic_groups(
             return []
         group_orbits.append(tuple(orbit))
     group_orbit_indexes = [
-        _periodic_point_index(orbit, tolerance)
-        for orbit in group_orbits
+        _periodic_point_index(orbit, tolerance) for orbit in group_orbits
     ]
     group_points = tuple(point for orbit in group_orbits for point in orbit)
     group_point_owners = tuple(
@@ -517,7 +435,6 @@ def presentation_grid_rows_for_magnetic_groups(
                 component_orbit[0],
                 group_points,
                 group_point_owners,
-                tolerance,
                 periodic_match,
                 group_point_index,
             )
@@ -541,7 +458,9 @@ def presentation_grid_rows_for_magnetic_groups(
         return []
     assignments: list[tuple[int, ...]] = []
 
-    def assign(component_index: int, used_groups: set[int], selected: list[int]) -> None:
+    def assign(
+        component_index: int, used_groups: set[int], selected: list[int]
+    ) -> None:
         if len(assignments) > 1:
             return
         if component_index == len(candidates):
@@ -590,7 +509,6 @@ def presentation_grid_rows_for_magnetic_groups(
             matches = _periodic_match_indices(
                 point,
                 presentation_points,
-                tolerance,
                 periodic_match,
                 presentation_point_index,
             )
@@ -615,10 +533,6 @@ def presentation_grid_rows_for_magnetic_groups(
                 "label": f"{label_prefix}_{len(rows) + 1}",
                 "site": f"{int(group.multiplicity)}{identification.row.label}",
                 "xyz": list(direct_point),
-                "_mode_row_orbit_points": [
-                    list(presentation_points[index])
-                    for index in sorted(direct_indices)
-                ],
             }
         )
     return rows if covered_direct == set(range(len(presentation_points))) else []

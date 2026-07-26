@@ -4,6 +4,11 @@
 
 **Distortropy** is a pure-Python, offline implementation of **ISODISTORT**.
 
+<p align="center">
+  <img src="media/distortropy-1.png" alt="Distortropy structure selection" width="49%">
+  <img src="media/distortropy-2.png" alt="Distortropy mode viewer" width="49%">
+</p>
+
 ## Setup
 
 Clone the repository, then install its dependencies and the `isodistort`
@@ -24,9 +29,18 @@ data_magnetic.txt  data_space.txt  data_ssgmag.txt  data_wyckoff.txt
 
 ## How to Use
 
+A structure is provided either as a CIF file, or — for quick queries without a
+file — directly by space group and Wyckoff positions via `--sg` / `--wyckoff`,
+accepted anywhere a CIF is.
+
 ```bash
+# 0. Show the parsed structure: space group, sites, Wyckoff positions
+isodistort info structure.cif
+isodistort info --sg 205 --wyckoff a c        # on the fly, no CIF
+
 # 1. Enumerate k points for the parent space group
 isodistort kpoints structure.cif
+isodistort kpoints --sg 205
 
 # 2. Enumerate irreducible representations at selected k points
 isodistort irreps structure.cif \
@@ -34,6 +48,7 @@ isodistort irreps structure.cif \
   --k GP 1/3 1/4 2/5 \
   --k B 1/3 2/5 \
   --k W 1/4
+# without a CIF: isodistort irreps --sg 62 --wyckoff a c --k L --k GP 1/3 1/4 2/5 ...
 
 # 3. Enumerate order-parameter directions (OPDs) for selected irreps
 isodistort opds structure.cif \
@@ -118,10 +133,6 @@ Start the standalone local server to use the graphical interface:
 ```bash
 isodistort serve --host 127.0.0.1 --port 8300
 ```
-
-<p align="center">
-  <img src="media/distortropy.png" alt="Distortropy frontend" width="100%">
-</p>
 
 ## Validation
 

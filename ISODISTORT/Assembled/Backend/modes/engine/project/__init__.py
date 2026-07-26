@@ -1,4 +1,4 @@
-"""Ported helpers around binary ``project_`` and ``project_vector_``."""
+"""Site-irrep projection and vector-expansion helpers."""
 
 from ISODISTORT.Assembled.Backend.modes.engine.project.core import ProjectMixin
 from ISODISTORT.Assembled.Backend.modes.engine.project.entry import (

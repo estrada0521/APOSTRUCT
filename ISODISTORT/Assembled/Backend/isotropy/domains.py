@@ -136,7 +136,7 @@ def domain_operation_records(
     basis: tuple[int, ...],
     origin: tuple[int, int, int, int],
 ) -> tuple[Operation, ...]:
-    """Return domain operations in binary ``generate_domains2_`` order."""
+    """Return domain operations in ``generate_domains2_`` scan order."""
 
     mapped = mapped_subgroup_records(
         data,

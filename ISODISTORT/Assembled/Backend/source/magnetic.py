@@ -1,9 +1,9 @@
-"""Reader for the magnetic ISOTROPY data tables used by ISODISTORT.
+"""Reader for the magnetic ISOTROPY Source tables used by ISODISTORT.
 
-This is intentionally a thin decoder.  It does not try to present magnetic
-subgroup basis/origin in the Web convention yet; that path still needs binary
-boundary work.  The goal here is to expose the native ``data_magnetic`` CSR
-records without using Web-derived values.
+The decoder exposes ``data_magnetic`` CSR records in their stored coordinate
+conventions.  Subgroup basis and origin presentation remain downstream
+responsibilities, so this module does not normalize values against rendered
+output.
 """
 
 from __future__ import annotations
@@ -53,7 +53,7 @@ class SSGMagRecord:
 
 
 class MagneticData:
-    """Minimal native decoder for ``Source/data_magnetic.txt``.
+    """Minimal decoder for ``Source/data_magnetic.txt``.
 
     The table stores magnetic isotropy rows as CSR arrays keyed by nonmagnetic
     ``data_irreps`` old-id.  Row ids are 1-based positions in

@@ -1,4 +1,4 @@
-"""Minimal Source/data_* reader for the ISOTROPY disassembly runtime."""
+"""Decoders for static Source tables used by isotropy and mode kernels."""
 
 from __future__ import annotations
 
@@ -29,7 +29,7 @@ from ISODISTORT.Assembled.Backend.isotropy.engine.orderparam import orderparam_c
 
 
 class SourceData:
-    """Small decoder for Source tables needed by the ISO port frontier."""
+    """Shared table decoder for isotropy and subgroup construction."""
 
     _IDENTITY_AFFINE_RECORD = (
         1, 0, 0, 0,
@@ -89,7 +89,7 @@ class SourceData:
         return key
 
     def generate_space_group_records(self, sg: int) -> tuple[tuple[int, int, int, int, int], ...]:
-        """Port the record list copied by upstream ``generate_space_group_``."""
+        """Return the operation records assembled by ``generate_space_group_``."""
 
         sg = int(sg)
         point_group = int(self.space["ispace_point_group"][sg - 1])
@@ -124,7 +124,7 @@ class SourceData:
         self,
         magnetic_group: int,
     ) -> tuple[tuple[int, int, int, int, int], ...]:
-        """Port the closure core of ``generate_spacegroup_magnetic_``.
+        """Generate the closure used by ``generate_spacegroup_magnetic_``.
 
         Magnetic records keep magnetic point-operation numbers.  Translation
         rotation uses the corresponding nonmagnetic point operation, matching
@@ -193,7 +193,7 @@ class SourceData:
             for axis in range(3)
         ]
         x, y, z, den = _reduce_fraction_vector((numerators[0], numerators[1], numerators[2], denominator))
-        # ``mag_point_op_mlt`` is stored right-major in the binary common block.
+        # ``mag_point_op_mlt`` is right-major: right operation, then left.
         point_op = int(
             table["mag_point_op_mlt"][(int(right_record[4]) - 1) * 144 + (int(left_record[4]) - 1)]
         )
@@ -205,8 +205,8 @@ class SourceData:
         ``data_space:ispace_settings_inter`` stores each setting as two 4x4
         affine integer transforms.  The basis transform used by
         ``id_subgroup_`` is the upper-left 3x3 block of one half.
-        ``setting_index`` and ``half`` follow the upstream 1-based setting
-        index and 0/1 half convention used in the RE notes.
+        ``setting_index`` is the 1-based Source setting id; ``half`` selects
+        the first or second affine transform in its 32-value table block.
         """
 
         if half not in (0, 1):
@@ -294,7 +294,7 @@ class SourceData:
         left: tuple[int, ...] | list[int],
         right: tuple[int, ...] | list[int],
     ) -> tuple[int, ...]:
-        """Port ``matmlt_`` storage semantics for flat 3x3 integer buffers."""
+        """Apply ``matmlt_`` storage semantics to flat 3x3 integer buffers."""
 
         out = [0] * 9
         for outer in range(3):
@@ -312,9 +312,9 @@ class SourceData:
         candidate_subgroup: int,
         point_op: int,
     ) -> tuple[tuple[int, int, int], ...]:
-        """Port the candidate generator matrix conversion in ``id_subgroup_``.
+        """Build the candidate generator matrix used by ``id_subgroup_``.
 
-        Upstream conjugates the canonical point-operation matrix by a
+        The routine conjugates the canonical point-operation matrix by a
         point-group convention transform selected from Source lattice tables:
 
         ``S0 * ipoint_op(point_op) * S1``
@@ -449,11 +449,9 @@ class SourceData:
     def cml_to_pml_operation_record(self, sg: int, record: tuple[int, int, int, int, int]) -> tuple[int, int, int, int, int]:
         """Apply the cml->pml translation part used after ``op_change_setting_``.
 
-        This helper is intentionally narrow: the current ``get_generators_``
-        frontier has already selected pml point-operation numbers in the
-        initialized common-space generator block.  The remaining observed
-        effect of ``op_change_setting_(cml,pml)`` at that boundary is the
-        affine translation transform.
+        The initialized generator block already supplies pml point-operation
+        numbers.  This helper therefore applies only the affine translation
+        part of ``op_change_setting_(cml,pml)``.
         """
 
         x, y, z, den, op = (int(value) for value in record)
@@ -568,13 +566,13 @@ class SourceData:
         return tuple(records)
 
     def get_generators_records(self, sg: int, setting: str = "pml") -> tuple[tuple[int, int, int, int, int], ...]:
-        """Port the table access performed by upstream ``get_generators_``.
+        """Read generator records with the ``get_generators_`` table contract.
 
-        Upstream maps requested primitive settings to the corresponding
+        The routine maps requested primitive settings to the corresponding
         conventional generator table by replacing the first setting character
         with ``c``.  When Source declares the conventional-to-primitive affine
-        setting as exact identity, the binary copies the 1-based generator
-        pointer records directly from the common space-element block.
+        setting as exact identity, the 1-based generator pointers address
+        records directly in the shared space-element table.
         """
 
         sg = self._source_table_integer(sg, field="space group")
@@ -628,13 +626,11 @@ class SourceData:
                         and int(self.space["ipoint_op_code"][int(candidate[4]) - 1]) == target_code
                     ]
                     if candidates:
-                        # Most observed cml->pml generator calls use the last
-                        # generated operation with the requested point-op code.
-                        # Trigonal point-group 18's second generator is the
-                        # observed exception: Source/iso maps op 58 to the
-                        # first representative (55/57/59 -> 55).  Keep this
-                        # localized until op_change_setting_/mat_to_num_ is
-                        # fully ported for generator tables.
+                        # Multiple generated operations can share a point-op
+                        # code. This mapper selects the last representative,
+                        # except PG18/op58, where it selects the first
+                        # (55/57/59 -> 55). Keep this policy local to generator
+                        # setting conversion.
                         if point_group == 18 and int(op) == 58:
                             record = candidates[0]
                         else:
@@ -772,7 +768,7 @@ class SourceData:
         record: tuple[int, int, int, int, int],
         kparam: tuple[int, ...] | list[int],
     ) -> np.ndarray:
-        """Port the nonmagnetic ``get_irreps_`` matrix branch for ISO traces."""
+        """Evaluate a nonmagnetic operation in the ``get_irreps_`` matrix frame."""
 
         key = (int(gid), tuple(int(value) for value in record), tuple(int(value) for value in kparam))
         cache = getattr(self, "_get_irreps_matrix_for_record_cache", None)
@@ -795,10 +791,10 @@ class SourceData:
         record: tuple[int, int, int, int, int],
         kparam: tuple[int, ...] | list[int],
     ) -> np.ndarray:
-        """Port magnetic ``get_irreps_`` matrix evaluation.
+        """Evaluate a magnetic operation in the ``get_irreps_`` matrix frame.
 
-        Binary ``get_irreps_`` converts the magnetic point operation to its
-        nonmagnetic partner before calling ``get_irrep4_``.  If the magnetic
+        Convert the magnetic point operation to its nonmagnetic partner before
+        calling ``get_irrep4_``. If the magnetic
         operation carries time reversal, it multiplies the resulting matrix by
         ``-1``.
         """
@@ -950,7 +946,7 @@ class SourceData:
         kparam: tuple[int, ...] | list[int],
         orderparam: tuple[float, ...] | list[float],
     ) -> tuple[int, ...]:
-        """Port the lattice selector ``newlat_order_`` for one OPD row."""
+        """Select a lattice with ``newlat_order_`` rules for one OPD row."""
 
         return self._search_newlat_basis(gid, kparam, orderparam)
 
@@ -961,7 +957,7 @@ class SourceData:
         orderparam: tuple[float, ...] | list[float],
         previous_basis: tuple[int, ...] | list[int],
     ) -> tuple[int, ...]:
-        """Port the constrained lattice selector ``newlat_order3_``."""
+        """Select a constrained lattice with ``newlat_order3_`` rules."""
 
         return self._search_newlat_basis(gid, kparam, orderparam, contains=previous_basis)
 
@@ -1160,7 +1156,7 @@ class SourceData:
         *,
         lattice: int,
     ) -> tuple[int, int, int, int]:
-        """Port the nonmagnetic ``vrot_(setting, point_op, fraction)`` shape used here."""
+        """Apply the nonmagnetic ``vrot_(setting, point_op, fraction)`` contract."""
 
         fraction_values = tuple(int(value) for value in fraction)
         fraction_denominator = int(fraction_values[3])
@@ -1257,7 +1253,7 @@ class SourceData:
         left: tuple[int, int],
         right: tuple[int, int],
     ) -> tuple[int, int]:
-        """Port the observable effect of ``iso_mlt_ops_`` for one pair product.
+        """Return the ``iso_mlt_ops_`` membership key for one pair product.
 
         ``get_isotropy_`` keeps operation membership in a table keyed by
         ``(ispace_index, kernel_fraction_index)``.  Matrix evaluation still
@@ -1316,7 +1312,7 @@ class SourceData:
         orderparam: tuple[float, ...] | list[float],
         row_count: int,
     ) -> tuple[tuple[int, ...], tuple[tuple[int, int, int, int, int], ...]]:
-        """Port the nonmagnetic ``orderparam_to_subgroup_`` loop."""
+        """Evaluate the nonmagnetic ``orderparam_to_subgroup_`` loop."""
 
         gid = int(gid)
         dim = int(self.little["little_irr_full_dim"][gid - 1])
@@ -1361,7 +1357,7 @@ class SourceData:
         orderparam: tuple[float, ...] | list[float],
         row_count: int,
     ) -> tuple[tuple[int, ...], tuple[tuple[int, int, int, int, int], ...]]:
-        """Port the magnetic ``orderparam_to_subgroup_magnetic_`` loop."""
+        """Evaluate the magnetic ``orderparam_to_subgroup_magnetic_`` loop."""
 
         gid = int(gid)
         dim = int(self.little["little_irr_full_dim"][gid - 1])

@@ -1,4 +1,4 @@
-"""Trace helpers for the entry side of the binary ``project_`` routine."""
+"""Trace helpers for site-irrep projection inputs."""
 
 from __future__ import annotations
 

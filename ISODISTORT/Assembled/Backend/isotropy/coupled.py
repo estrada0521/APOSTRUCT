@@ -411,7 +411,7 @@ def _magnetic_domain_operation_records_from_stabilizer(
     basis: tuple[int, ...],
     subgroup_operations: tuple[tuple[int, int, int, int, int], ...],
 ) -> tuple[tuple[int, int, int, int, int], ...]:
-    """Port the coset-order core of ``generate_domains2_magnetic_``."""
+    """Return magnetic domain operations in ``generate_domains2_magnetic_`` coset order."""
 
     table = magnetic_data.data().table
     parent_records = tuple(data.generate_space_group_records(int(parent_sg)))
@@ -1058,10 +1058,10 @@ def coupled_opd_rows(
             expected_subduction: list[int] = []
             for slot, source in zip(slots, canonical):
                 expected_subduction.append(int(source[0]))
-            # The standalone 9.6.1 binary evaluates each irrep with its own
-            # translation kernel.  Method-2 coupled tables instead retain the
-            # common coupled kernel at this gate.  Keep both values visible so
-            # the binary-faithful and Web-presentation boundaries do not merge.
+            # Each irrep uses its own translation kernel for subduction.
+            # Method-2 coupled tables instead retain the common coupled kernel
+            # at this gate. Keep both values visible so the per-irrep and
+            # coupled-presentation boundaries do not merge.
             binary_subduction = [
                 _subduction_frequency(
                     irrep_data,

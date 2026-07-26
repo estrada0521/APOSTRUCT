@@ -42,11 +42,11 @@ class IsotropySettingChangeMixin:
 
     @staticmethod
     def get_new_fractionals_from_basis(matrix: Iterable[int]) -> tuple[tuple[int, int, int, int], ...]:
-        """Port the small `get_new_fractionals_` enumeration for a basis matrix.
+        """Enumerate `get_new_fractionals_` representatives for a basis matrix.
 
         `data_isotropy:isotropy_basis` is stored in the same row-major
-        convention as the printed superlattice basis. Binary scans triples
-        over the reduced ``matinv_`` denominator, applies ``P``, reduces the
+        convention as the printed superlattice basis. The enumeration scans
+        triples over the reduced ``matinv_`` denominator, applies ``P``, reduces the
         rational vector, and keeps the integral cases. The shared exact
         quotient kernel produces the same ordered translations directly.
         """
@@ -69,11 +69,10 @@ class IsotropySettingChangeMixin:
     def get_new_fractionals_from_basis_columns(matrix: Iterable[int]) -> tuple[tuple[int, int, int, int], ...]:
         """Return internal translations using the transpose multiplication convention.
 
-        MAIN__ exposes row-major superlattice bases, but the final atom/mode
-        expansion for identity setting rows follows the column multiplication
-        convention.  Keep the row helper above intact for GDB probes that
-        observe `get_new_fractionals_` directly; this helper is only used at
-        the final expansion boundary.
+        Public superlattice bases are row-major, but final atom/mode expansion
+        for identity-setting rows follows the column multiplication
+        convention. The row helper above remains available to its row-vector
+        callers; this helper is only used at the final expansion boundary.
         """
 
         return _new_fractionals_from_basis_columns_cached(
@@ -152,9 +151,9 @@ class IsotropySettingChangeMixin:
     ) -> tuple[tuple[Fraction, Fraction, Fraction], ...]:
         """Return the row-vector matrix used by ``vector_change_setting_``.
 
-        The binary recognizes at least the Miller-Love primitive (``pml``),
+        The Source setting catalog supports Miller-Love primitive (``pml``),
         Miller-Love conventional (``cml``), and internal conventional
-        (``cinter``) settings.  All matrices here satisfy ``v_to = v_from * M``.
+        (``cinter``) coordinates.  All matrices satisfy ``v_to = v_from * M``.
         """
 
         from_setting = from_setting.strip().lower()
@@ -236,7 +235,7 @@ class IsotropySettingChangeMixin:
         to_setting: str,
         point: Iterable[Fraction],
     ) -> tuple[Fraction, Fraction, Fraction]:
-        """Port the affine point-coordinate part of ``xyz_change_setting_``."""
+        """Apply the affine point-coordinate part of ``xyz_change_setting_``."""
 
         values = tuple(point)
         if len(values) != 3:
@@ -283,7 +282,7 @@ class IsotropySettingChangeMixin:
         to_setting: str,
         record: Iterable[int],
     ) -> tuple[int, int, int, int]:
-        """Port ``vector_change_setting_`` for one 4-int rational vector."""
+        """Apply ``vector_change_setting_`` to one 4-int rational vector."""
 
         raw = tuple(int(x) for x in record)
         if len(raw) != 4:

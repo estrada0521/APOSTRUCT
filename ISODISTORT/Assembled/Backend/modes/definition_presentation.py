@@ -21,7 +21,6 @@ from ISODISTORT.Assembled.Backend.modes.presentation import (
     centering_translations,
     mode_normfactor,
 )
-
 from ISODISTORT.Assembled.Backend.modes.request_context import (
     _direction_matrix_text,
 )
@@ -29,6 +28,7 @@ from ISODISTORT.Assembled.Backend.modes.common import (
     _k_label_from_irrep_label,
     _mode_decoder,
 )
+
 
 def _mode_label(
     parent_symbol: str,
@@ -47,7 +47,6 @@ def _mode_label(
     return f"{parent_symbol}[{kvector}]{irrep_label}{direction}[{atom_label}:{wyckoff}:{mode_kind}]{tail}"
 
 
-
 def _strain_mode_definitions(
     sg: int,
     parent_symbol: str,
@@ -60,7 +59,11 @@ def _strain_mode_definitions(
     selected_specs = [
         spec
         for spec in (mode_specs or [])
-        if str(spec.get("k_label") or _k_label_from_irrep_label(str(spec.get("label") or ""))) == "GM"
+        if str(
+            spec.get("k_label")
+            or _k_label_from_irrep_label(str(spec.get("label") or ""))
+        )
+        == "GM"
         and spec.get("gid") is not None
         and spec.get("direction_matrix")
     ]
@@ -81,7 +84,14 @@ def _strain_mode_definitions(
     else:
         rows_by_spec = []
     catalog = reciprocal_catalog.kpoints(int(sg))
-    gamma = next((item for item in catalog.get("kpoints") or [] if str(item.get("label")) == "GM"), None)
+    gamma = next(
+        (
+            item
+            for item in catalog.get("kpoints") or []
+            if str(item.get("label")) == "GM"
+        ),
+        None,
+    )
     if gamma is None and not rows_by_spec:
         return []
     if not rows_by_spec:
@@ -101,7 +111,9 @@ def _strain_mode_definitions(
                 "(a)",
                 tuple(
                     (row,)
-                    for row in totally_symmetric_rank2_rows(decoder, int(sg), int(irrep["gid"]))
+                    for row in totally_symmetric_rank2_rows(
+                        decoder, int(sg), int(irrep["gid"])
+                    )
                 ),
             )
         ]
@@ -146,7 +158,9 @@ def _strain_mode_definitions(
             if presented_group:
                 presented_groups.append(presented_group)
         direction_parameters: list[str] = []
-        for parameter in re.findall(r"(?<![A-Za-z])([a-z])(?![A-Za-z])", direction_text):
+        for parameter in re.findall(
+            r"(?<![A-Za-z])([a-z])(?![A-Za-z])", direction_text
+        ):
             if parameter not in direction_parameters:
                 direction_parameters.append(parameter)
         for group_index, presented_group in enumerate(presented_groups, start=1):
@@ -158,12 +172,13 @@ def _strain_mode_definitions(
                     {
                         "label": f"{parent_symbol}[0,0,0]{symbol}{direction_text}strain{suffix}({parameter})",
                         "normfactor": strain_normfactor(normalized),
-                        "components": tuple(normalized[position] for position in web_order),
+                        "components": tuple(
+                            normalized[position] for position in web_order
+                        ),
                         "tensor_components": strain_tensor_components(normalized),
                     }
                 )
     return definitions
-
 
 
 def _complete_mode_normfactor(
@@ -183,36 +198,12 @@ def _complete_mode_normfactor(
     return value * math.sqrt(len(centering_translations(symbol)))
 
 
-
 def _definition_site_irrep_key(label: str) -> tuple[str, str] | None:
     tail = str(label).rsplit("]", 1)[-1]
     match = re.match(r"^(?P<base>.*?)(?:_\d+)?\((?P<component>[^()]*)\)$", tail)
     if match is None:
         return None
     return match.group("base"), match.group("component")
-
-
-
-def _periodic_xyz_match(left: list[Any], right: list[Any], tol: float = 2e-5) -> bool:
-    return all(
-        abs(((float(left[axis]) - float(right[axis]) + 0.5) % 1.0) - 0.5) <= tol
-        for axis in range(3)
-    )
-
-
-
-def _has_finite_float_xyz_rows(rows: list[dict[str, Any]]) -> bool:
-    for row in rows:
-        xyz = row.get("xyz")
-        if not isinstance(xyz, (list, tuple)) or len(xyz) != 3:
-            return False
-        if any(
-            not isinstance(value, (int, float)) or not math.isfinite(value)
-            for value in xyz
-        ):
-            return False
-    return True
-
 
 
 def _orthogonalize_definition_modes(
@@ -227,7 +218,6 @@ def _orthogonalize_definition_modes(
         list[
             tuple[
                 dict[str, Any],
-                bool,
                 dict[int, tuple[float, float, float]],
                 float,
             ]
@@ -235,7 +225,12 @@ def _orthogonalize_definition_modes(
     ] = {}
     out: list[dict[str, Any]] = []
     for source in modes:
-        mode = {**source, "rows": [{**row, "dxyz": list(row["dxyz"])} for row in source.get("rows") or []]}
+        mode = {
+            **source,
+            "rows": [
+                {**row, "dxyz": list(row["dxyz"])} for row in source.get("rows") or []
+            ],
+        }
         parsed = _definition_site_irrep_key(str(mode.get("label") or ""))
         if parsed is None:
             out.append(mode)
@@ -247,81 +242,61 @@ def _orthogonalize_definition_modes(
             parsed[1],
         )
         prior = prior_by_key.setdefault(key, [])
-        mode_xyz_is_finite = _has_finite_float_xyz_rows(mode["rows"])
+        mode_atom_ids = tuple(row.get("atom_id") for row in mode["rows"])
+        if (
+            not mode_atom_ids
+            or not all(
+                isinstance(atom_id, str) and atom_id for atom_id in mode_atom_ids
+            )
+            or len(set(mode_atom_ids)) != len(mode_atom_ids)
+        ):
+            raise ValueError("mode definition has no complete atom identity")
         for (
             orthogonal,
-            orthogonal_xyz_is_finite,
             reference_cartesian_by_row_id,
             exact_order_denominator,
         ) in prior:
             reference_rows = list(orthogonal.get("rows") or [])
-            exact_order_alignment = False
-            if (
-                mode_xyz_is_finite
-                and orthogonal_xyz_is_finite
-                and len(mode["rows"]) == len(reference_rows)
-                and all(
-                    row["xyz"] == reference["xyz"]
-                    for row, reference in zip(
-                        mode["rows"], reference_rows, strict=True
-                    )
-                )
+            if mode_atom_ids != tuple(
+                reference.get("atom_id") for reference in reference_rows
             ):
-                aligned = reference_rows
-                exact_order_alignment = True
-            else:
-                aligned = []
-                remaining = list(reference_rows)
-                for row in mode["rows"]:
-                    index = next(
-                        (
-                            i
-                            for i, candidate in enumerate(remaining)
-                            if _periodic_xyz_match(
-                                row["xyz"], candidate["xyz"]
-                            )
-                        ),
-                        None,
-                    )
-                    if index is None:
-                        aligned = []
-                        break
-                    aligned.append(remaining.pop(index))
-            if not aligned:
-                continue
+                raise ValueError("mode family atom identity/order changed")
             numerator = 0.0
-            denominator = 0.0
-            for row, reference in zip(
-                mode["rows"], aligned, strict=True
-            ):
+            for row, reference in zip(mode["rows"], reference_rows, strict=True):
                 reference_cart = reference_cartesian_by_row_id[id(reference)]
                 current_cart = [
-                    sum(float(row["dxyz"][axis]) * float(child_cartesian[axis][column]) for axis in range(3))
+                    sum(
+                        float(row["dxyz"][axis]) * float(child_cartesian[axis][column])
+                        for axis in range(3)
+                    )
                     for column in range(3)
                 ]
-                numerator += sum(current_cart[axis] * reference_cart[axis] for axis in range(3))
-                if not exact_order_alignment:
-                    denominator += sum(value * value for value in reference_cart)
-            if exact_order_alignment:
-                denominator = exact_order_denominator
-            if denominator <= 1e-15:
+                numerator += sum(
+                    current_cart[axis] * reference_cart[axis] for axis in range(3)
+                )
+            if exact_order_denominator <= 1e-15:
                 continue
-            coefficient = numerator / denominator
-            for row, reference in zip(mode["rows"], aligned, strict=True):
+            coefficient = numerator / exact_order_denominator
+            for row, reference in zip(mode["rows"], reference_rows, strict=True):
                 row["dxyz"] = [
-                    float(row["dxyz"][axis]) - coefficient * float(reference["dxyz"][axis])
+                    float(row["dxyz"][axis])
+                    - coefficient * float(reference["dxyz"][axis])
                     for axis in range(3)
                 ]
-        scale = max((abs(float(value)) for row in mode["rows"] for value in row["dxyz"]), default=0.0)
+        scale = max(
+            (abs(float(value)) for row in mode["rows"] for value in row["dxyz"]),
+            default=0.0,
+        )
         if scale > 1e-15:
             for row in mode["rows"]:
                 row["dxyz"] = [float(value) / scale for value in row["dxyz"]]
-        mode["normfactor"] = _complete_mode_normfactor(mode["rows"], child_cartesian, child_sg)
+        mode["normfactor"] = _complete_mode_normfactor(
+            mode["rows"], child_cartesian, child_sg
+        )
         mode_cartesian_by_row_id = {
             id(row): tuple(
                 sum(
-                    float(row["dxyz"][axis])
-                    * float(child_cartesian[axis][column])
+                    float(row["dxyz"][axis]) * float(child_cartesian[axis][column])
                     for axis in range(3)
                 )
                 for column in range(3)
@@ -335,7 +310,6 @@ def _orthogonalize_definition_modes(
         prior.append(
             (
                 mode,
-                mode_xyz_is_finite,
                 mode_cartesian_by_row_id,
                 mode_denominator,
             )
@@ -344,8 +318,9 @@ def _orthogonalize_definition_modes(
     return out
 
 
-
-def _apply_dynamic_source_family_presentation(modes: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _apply_dynamic_source_family_presentation(
+    modes: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
     """Present type-1 real-carrier columns in component-major family order."""
 
     out = list(modes)
@@ -360,9 +335,14 @@ def _apply_dynamic_source_family_presentation(modes: list[dict[str, Any]]) -> li
             int(mode.get("_site_order") or 0),
             parsed[0],
         )
-        base_families.setdefault(base_key, set()).add(int(mode.get("_source_family") or 0))
+        base_families.setdefault(base_key, set()).add(
+            int(mode.get("_source_family") or 0)
+        )
     for index, mode in enumerate(modes):
-        if mode.get("_source_family") is None or mode.get("_source_family_component") is None:
+        if (
+            mode.get("_source_family") is None
+            or mode.get("_source_family_component") is None
+        ):
             continue
         static_pair_candidate = (
             mode.get("_mode_kind") == "dsp"
@@ -374,9 +354,14 @@ def _apply_dynamic_source_family_presentation(modes: list[dict[str, Any]]) -> li
             and not mode.get("_source_family_dynamic")
             and int(mode.get("_source_family_width") or 0) > 1
         )
-        if not mode.get("_source_family_phase") and not (
-            mode.get("_mode_kind") == "dsp" and mode.get("_source_family_dynamic")
-        ) and not static_pair_candidate and not static_magnetic_pair_candidate:
+        if (
+            not mode.get("_source_family_phase")
+            and not (
+                mode.get("_mode_kind") == "dsp" and mode.get("_source_family_dynamic")
+            )
+            and not static_pair_candidate
+            and not static_magnetic_pair_candidate
+        ):
             continue
         parsed = _definition_site_irrep_key(str(mode.get("label") or ""))
         if parsed is None:
@@ -439,15 +424,14 @@ def _apply_dynamic_source_family_presentation(modes: list[dict[str, Any]]) -> li
         )
         static_width = next(iter(static_widths), 0)
         paired_static_carrier = (
-            static_rectangular_carrier
-            and static_width >= 4
-            and static_width % 2 == 0
+            static_rectangular_carrier and static_width >= 4 and static_width % 2 == 0
         )
         single_family_multi_group = (
             all(mode.get("_mode_kind") == "dsp" for mode in sources)
             and not any(mode.get("_source_family_dynamic") for mode in sources)
             and all(
-                int((mode.get("_source_print_identity") or {}).get("little_type") or 0) != 3
+                int((mode.get("_source_print_identity") or {}).get("little_type") or 0)
+                != 3
                 for mode in sources
             )
             and len(source_families) == 1
@@ -458,7 +442,8 @@ def _apply_dynamic_source_family_presentation(modes: list[dict[str, Any]]) -> li
                 for component in range(static_width)
             }
             and all(
-                len((mode.get("_source_print_identity") or {}).get("opd_groups") or []) > 1
+                len((mode.get("_source_print_identity") or {}).get("opd_groups") or [])
+                > 1
                 for mode in sources
             )
         )
@@ -466,12 +451,17 @@ def _apply_dynamic_source_family_presentation(modes: list[dict[str, Any]]) -> li
             opd_row_counts = {
                 sum(
                     len(group.get("rows") or [])
-                    for group in (mode.get("_source_print_identity") or {}).get("opd_groups") or []
+                    for group in (mode.get("_source_print_identity") or {}).get(
+                        "opd_groups"
+                    )
+                    or []
                     if isinstance(group, dict)
                 )
                 for mode in sources
             }
-            opd_row_count = next(iter(opd_row_counts), 0) if len(opd_row_counts) == 1 else 0
+            opd_row_count = (
+                next(iter(opd_row_counts), 0) if len(opd_row_counts) == 1 else 0
+            )
             source_little_types = {
                 int((mode.get("_source_print_identity") or {}).get("little_type") or 0)
                 for mode in sources
@@ -491,7 +481,9 @@ def _apply_dynamic_source_family_presentation(modes: list[dict[str, Any]]) -> li
                     key=lambda mode: (
                         int(
                             (
-                                (mode.get("_source_print_identity") or {}).get("component")
+                                (mode.get("_source_print_identity") or {}).get(
+                                    "component"
+                                )
                                 if multi_group_type3
                                 else mode.get("_source_family_component")
                             )
@@ -508,7 +500,9 @@ def _apply_dynamic_source_family_presentation(modes: list[dict[str, Any]]) -> li
                         ),
                         int(
                             (
-                                (mode.get("_source_print_identity") or {}).get("component")
+                                (mode.get("_source_print_identity") or {}).get(
+                                    "component"
+                                )
                                 if multi_group_type3
                                 else mode.get("_source_family_component")
                             )
@@ -529,10 +523,17 @@ def _apply_dynamic_source_family_presentation(modes: list[dict[str, Any]]) -> li
                 )
         elif single_family_multi_group:
             ordered = sources
-        elif static_rectangular_carrier or static_rectangular_magnetic or any(
-            mode.get("_source_family_phase")
-            or (mode.get("_mode_kind") == "dsp" and mode.get("_source_family_dynamic"))
-            for mode in sources
+        elif (
+            static_rectangular_carrier
+            or static_rectangular_magnetic
+            or any(
+                mode.get("_source_family_phase")
+                or (
+                    mode.get("_mode_kind") == "dsp"
+                    and mode.get("_source_family_dynamic")
+                )
+                for mode in sources
+            )
         ):
             ordered = sorted(
                 sources,
@@ -556,7 +557,12 @@ def _apply_dynamic_source_family_presentation(modes: list[dict[str, Any]]) -> li
                 if source_print_scalar is not None:
                     scalar = float(source_print_scalar)
                     rows = [
-                        {**row, "dxyz": [scalar * float(value) for value in row.get("dxyz") or []]}
+                        {
+                            **row,
+                            "dxyz": [
+                                scalar * float(value) for value in row.get("dxyz") or []
+                            ],
+                        }
                         for row in rows
                     ]
             target = modes[target_index]

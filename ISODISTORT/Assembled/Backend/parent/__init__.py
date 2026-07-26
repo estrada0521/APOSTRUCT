@@ -334,24 +334,32 @@ def _match_inter_wyckoff_site_with_symmetry(
     return None
 
 
-def _score_parent_inter_setting(
+def _match_parent_inter_setting(
     local_data: SourceTables,
     sg: int,
     atom_sites: list[dict[str, Any]],
     operations: list[str],
     setting_id: int,
-) -> tuple[int, int, int, int, int]:
+) -> tuple[
+    tuple[int, int, int, int, int],
+    tuple[dict[str, Any] | None, ...],
+]:
     matched = 0
     direct = 0
     constrained = 0
+    matches: list[dict[str, Any] | None] = []
     for site in atom_sites:
         if not site.get("fract"):
+            matches.append(None)
             continue
         match = local_data.match_inter_wyckoff_site(sg, site, setting_id)
         if match:
             direct += 1
         else:
-            match = _match_inter_wyckoff_site_with_symmetry(local_data, sg, site, operations, setting_id)
+            match = _match_inter_wyckoff_site_with_symmetry(
+                local_data, sg, site, operations, setting_id
+            )
+        matches.append(match)
         if match:
             matched += 1
             constrained += max(0, 3 - len(match.get("free") or []))
@@ -363,7 +371,13 @@ def _score_parent_inter_setting(
         str(setting.get(key, "")) == str(default.get(key, ""))
         for key in ("cell", "axis", "abc")
     ) else 0
-    return matched, constrained, same_orientation, direct, default_bonus
+    return (
+        matched,
+        constrained,
+        same_orientation,
+        direct,
+        default_bonus,
+    ), tuple(matches)
 
 
 def _select_parent_inter_setting(
@@ -371,16 +385,18 @@ def _select_parent_inter_setting(
     sg: int,
     atom_sites: list[dict[str, Any]],
     operations: list[str],
-) -> int:
+) -> tuple[int, tuple[dict[str, Any] | None, ...]]:
     candidates = local_data.inter_setting_ids_for_space_group(sg)
     if not candidates:
-        return int(local_data.default_inter_setting_record(sg)["id"])
-    scored = [
-        (_score_parent_inter_setting(local_data, sg, atom_sites, operations, setting_id), setting_id)
-        for setting_id in candidates
-    ]
+        candidates = (int(local_data.default_inter_setting_record(sg)["id"]),)
+    scored = []
+    for setting_id in candidates:
+        score, matches = _match_parent_inter_setting(
+            local_data, sg, atom_sites, operations, setting_id
+        )
+        scored.append((score, int(setting_id), matches))
     scored.sort(key=lambda item: (item[0], -int(item[1])), reverse=True)
-    return int(scored[0][1])
+    return int(scored[0][1]), scored[0][2]
 
 
 def build_parent_state_from_cif_info(cif_info: dict[str, Any]) -> dict[str, Any]:
@@ -388,32 +404,24 @@ def build_parent_state_from_cif_info(cif_info: dict[str, Any]) -> dict[str, Any]
     local_data = source_tables()
     cif_info = copy.deepcopy(cif_info)
     atom_sites = [site for site in cif_info.get("atom_sites", []) if isinstance(site, dict)]
-    parent_inter_setting_id = _select_parent_inter_setting(
+    parent_inter_setting_id, parent_site_matches = _select_parent_inter_setting(
         local_data,
         sg,
         atom_sites,
         cif_info.get("symmetry_operations", []),
     )
-    for site in cif_info.get("atom_sites", []):
-        if site.get("wyckoff") and not site.get("wyckoff_row_id"):
-            try:
-                row = local_data.wyckoff_row_by_label(sg, str(site["wyckoff"]))
-            except KeyError:
-                row = None
-            if row is not None:
-                site["wyckoff_row_id"] = row.row_id
-                formula = local_data.inter_wyckoff_formula(sg, row, parent_inter_setting_id)
-                site.setdefault("wyckoff_formula", formula["formula"])
-                site.setdefault("wyckoff_multiplicity", local_data.wyckoff_multiplicity(sg, row))
-        if site.get("wyckoff") and site.get("wyckoff_params"):
-            continue
-        match = _match_inter_wyckoff_site_with_symmetry(
-            local_data,
-            sg,
-            site,
-            cif_info.get("symmetry_operations", []),
-            parent_inter_setting_id,
-        )
+    for site, selected_match in zip(
+        cif_info.get("atom_sites", []), parent_site_matches, strict=True
+    ):
+        # CIFs variously report a Wyckoff letter ("b") or a composed label
+        # ("4b").  Neither spelling is the site identity used downstream:
+        # establish that identity from the selected-setting coordinates.
+        site.pop("wyckoff", None)
+        site.pop("wyckoff_row_id", None)
+        site.pop("wyckoff_formula", None)
+        site.pop("wyckoff_params", None)
+        site.pop("wyckoff_multiplicity", None)
+        match = selected_match
         if not match:
             match = _match_wyckoff_site_with_symmetry(
                 local_data,
@@ -429,10 +437,8 @@ def build_parent_state_from_cif_info(cif_info: dict[str, Any]) -> dict[str, Any]
             )
             if canonical_mapping:
                 match.update(canonical_mapping)
-            if not site.get("wyckoff"):
-                site["wyckoff"] = match["label"]
-            if not site.get("wyckoff_row_id"):
-                site["wyckoff_row_id"] = match["row_id"]
+            site["wyckoff"] = match["label"]
+            site["wyckoff_row_id"] = match["row_id"]
             site["wyckoff_formula"] = match["formula"]
             site["wyckoff_params"] = match["params"]
             site["wyckoff_multiplicity"] = match["multiplicity"]

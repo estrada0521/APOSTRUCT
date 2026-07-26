@@ -1,4 +1,4 @@
-"""Ports of ``zrowop2_``, ``xrowop2_``, and subgroup constraint row logic."""
+"""``zrowop2_``, ``xrowop2_``, and subgroup constraint row logic."""
 
 from __future__ import annotations
 
@@ -9,25 +9,13 @@ import numpy as np
 
 class RowOpsMixin:
     @staticmethod
-    def subspace_residual(rows: np.ndarray, vector: np.ndarray) -> float:
-        """Return relative residual for `vector` projected onto row span."""
-
-        nonzero = rows[np.linalg.norm(rows, axis=1) > 1e-10]
-        if len(nonzero) == 0:
-            return float("inf")
-        coeffs, *_ = np.linalg.lstsq(nonzero.T, vector, rcond=None)
-        projected = nonzero.T @ coeffs
-        return float(np.linalg.norm(projected - vector) / max(np.linalg.norm(vector), 1e-12))
-
-    @staticmethod
     def zrowop2_like(rows: np.ndarray, tol: float = 1e-10) -> np.ndarray:
         """Return the complex reduced row form used by mode kernel ``zrowop2_``.
 
-        GDB on SG205/R2-R2- shows that ``zrowop2_`` applies ordinary complex
-        Gauss-Jordan elimination: choose the first nonzero pivot in the current
-        column, swap it into the current row, divide by the pivot, then remove
-        that column from all other rows.  The routine operates in-place in
-        mode kernel; this helper returns a copy.
+        This is ordinary complex Gauss-Jordan elimination: choose the first
+        nonzero pivot in the current column, swap it into the current row,
+        divide by the pivot, then remove that column from all other rows. This
+        helper returns a copy rather than mutating the caller's array.
         """
 
         out = np.array(rows, dtype=complex, copy=True)
@@ -170,26 +158,3 @@ class RowOpsMixin:
         out = np.vstack(blocks) if blocks else np.zeros((0, dim), dtype=float)
         out[np.abs(out) < tol] = 0.0
         return out
-
-    @staticmethod
-    def zrowop2_sg205_r2_gdb_fixture() -> tuple[np.ndarray, np.ndarray]:
-        """Return the GDB-observed ``zrowop2_`` SG205/R2 input and output."""
-
-        root2 = np.sqrt(2)
-        root6 = np.sqrt(6)
-        before = np.array(
-            [
-                [1 / root2, 1j / root6, 0, (-1 + 1j) / root6],
-                [0, (-1 - 1j) / root6, -1 / root2, 1j / root6],
-            ],
-            dtype=complex,
-        )
-        after = np.array(
-            [
-                [1, 0, -0.5 - 0.5j, (-np.sqrt(3) / 2) + (np.sqrt(3) / 2) * 1j],
-                [0, 1, (np.sqrt(3) / 2) - (np.sqrt(3) / 2) * 1j, -0.5 - 0.5j],
-            ],
-            dtype=complex,
-        )
-        return before, after
-

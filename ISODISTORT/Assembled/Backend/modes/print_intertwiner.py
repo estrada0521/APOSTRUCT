@@ -27,10 +27,8 @@ from ISODISTORT.Assembled.Backend.modes.engine.subgroup_structure.presentation_t
     factor_carrier_coefficients_on_target_rows,
     factor_resolved_parent_site_vectors,
     factor_target_row_indices,
-    joint_site_print_basis_intertwiner,
     printed_project_block_sources,
     printed_project_blocks_from_trace,
-    presented_star_gauge_for_case,
     presentation_carrier_coefficients,
     compose_seitz_records,
     site_vector_print_columns,
@@ -42,9 +40,6 @@ from ISODISTORT.Assembled.Backend.modes.presentation import (
     present_mode_rows,
 )
 
-from ISODISTORT.Assembled.Backend.modes.structure_runtime import (
-    _child_site_display,
-)
 from ISODISTORT.Assembled.Backend.modes.common import (
     _float_matrix_inverse_3,
     _origin_vector,
@@ -76,8 +71,12 @@ def _factor_rows_and_target_indices(
 ]:
     """Share exact occurrence factorizations in a bounded decoder-local LRU."""
 
-    records = tuple(tuple(int(value) for value in row["_operation_record"]) for row in rows)
-    points = tuple(tuple(float(value) for value in row.get("xyz") or ()) for row in rows)
+    records = tuple(
+        tuple(int(value) for value in row["_operation_record"]) for row in rows
+    )
+    points = tuple(
+        tuple(float(value) for value in row.get("xyz") or ()) for row in rows
+    )
     key = (
         int(sg),
         int(child_sg),
@@ -134,13 +133,15 @@ def _paired_type1_presentation_project_matrices(
     The trace remains the authority for the source-side printed blocks.  A
     presentation matrix is returned only when every family retains the exact
     selected candidate and numerical source block exposed by the paired
-    ``project_`` surface.  Family ordinal is then the binary Source print-loop
-    join between the independently evaluated source and standard cases.
+    projection surface.  Family ordinal then joins the independently evaluated
+    source and standard cases in Source print order.
     """
 
     if not sources or len(source_kparam) != 4 or int(source_kparam[3]) == 0:
         return None
-    family_order = tuple(dict.fromkeys(int(source.project_family_index) for source in sources))
+    family_order = tuple(
+        dict.fromkeys(int(source.project_family_index) for source in sources)
+    )
     if family_order != tuple(range(len(family_order))):
         return None
     project_count = int(project_item.get("count") or len(family_order))
@@ -168,15 +169,17 @@ def _paired_type1_presentation_project_matrices(
     arm_permutation = tuple(int(value) for value in surface.provenance.arm_permutation)
     arm_identity = arm_permutation == tuple(range(len(arm_permutation)))
     arm_conjugated = any(bool(value) for value in surface.provenance.arm_conjugated)
-    request_differs = (
-        request_k_params is not None
-        and tuple(surface.source_case.k_parameters) != tuple(request_k_params)
-    )
+    request_differs = request_k_params is not None and tuple(
+        surface.source_case.k_parameters
+    ) != tuple(request_k_params)
     if arm_identity and not arm_conjugated and not request_differs:
         return None
     source_blocks = np.asarray(surface.source_case.real_blocks, dtype=complex)
     standard_blocks = np.asarray(surface.standard_case.real_blocks, dtype=complex)
-    if source_blocks.shape != standard_blocks.shape or source_blocks.shape[0] != project_count:
+    if (
+        source_blocks.shape != standard_blocks.shape
+        or source_blocks.shape[0] != project_count
+    ):
         return None
     presentation: list[np.ndarray] = []
     for source in sources:
@@ -195,7 +198,9 @@ def _paired_type1_presentation_project_matrices(
         ):
             return None
         presentation.append(np.asarray(standard_blocks[family], dtype=complex))
-    presentation_case = replace(case, k_params=tuple(surface.standard_case.k_parameters))
+    presentation_case = replace(
+        case, k_params=tuple(surface.standard_case.k_parameters)
+    )
     return presentation_case, tuple(presentation)
 
 
@@ -244,6 +249,7 @@ def _request_presentation_case(
         return None
     return presentation_case
 
+
 def _rank1_factor_target(
     decoder: ModeDataDecoder,
     *,
@@ -253,9 +259,7 @@ def _rank1_factor_target(
     basis: tuple[int, ...],
     origin: tuple[int, int, int, int],
     rows: list[dict[str, Any]],
-    child_vectors: list[np.ndarray],
     parent_column: Any,
-    reference: np.ndarray,
     pg_irrep: int,
     vector_setting: int,
     presentation_basis: list[list[float]],
@@ -279,10 +283,14 @@ def _rank1_factor_target(
         final_setting = decoder.cml_to_cinter_matrix(int(sg))
         if inverse is None or final_setting is None:
             return None
-        transform = np.asarray(final_setting, dtype=complex) @ np.asarray(inverse, dtype=complex)
+        transform = np.asarray(final_setting, dtype=complex) @ np.asarray(
+            inverse, dtype=complex
+        )
         columns = np.zeros((len(factors), 3, 1), dtype=complex)
         parent_vectors = np.asarray(parent_column.vector, dtype=complex).reshape(3, 1)
-        orbit_representatives = sorted({int(factor.orbit_representative_index) for factor in factors})
+        orbit_representatives = sorted(
+            {int(factor.orbit_representative_index) for factor in factors}
+        )
         for representative_index in orbit_representatives:
             factor_indices = [
                 index
@@ -290,21 +298,29 @@ def _rank1_factor_target(
                 if int(factor.orbit_representative_index) == representative_index
             ]
             orbit_factors = [factors[index] for index in factor_indices]
-            site_label, _display = _child_site_display(int(child_sg), list(points[representative_index]), "")
-            match = re.search(r"([A-Za-z]+)$", str(site_label))
+            match = re.fullmatch(
+                r"\s*\d+\s*([A-Za-z]+)\s*",
+                str(rows[representative_index].get("wyckoff_site") or ""),
+            )
             if match is None:
                 return None
             child_row = next(
-                item for item in decoder.wyckoff_rows(int(child_sg)) if item.label == match.group(1)
+                item
+                for item in decoder.wyckoff_rows(int(child_sg))
+                if item.label == match.group(1)
             )
             child_records = decoder.wyc_pg_elements_records(int(child_sg), child_row)
             projectors = child_site_irrep_projectors(
                 decoder,
                 parent_site_pg=int(parent_row.site_pg),
                 parent_pg_irrep=int(pg_irrep),
-                parent_site_records=decoder.wyc_pg_elements_records(int(sg), parent_row),
+                parent_site_records=decoder.wyc_pg_elements_records(
+                    int(sg), parent_row
+                ),
                 child_site_pg=int(child_row.site_pg),
-                child_stabilizer_point_ops=tuple(int(record[4]) for record in child_records),
+                child_stabilizer_point_ops=tuple(
+                    int(record[4]) for record in child_records
+                ),
                 factors=orbit_factors,
             )
             aligned_candidates = []
@@ -329,12 +345,16 @@ def _rank1_factor_target(
                         child_basis_rows_in_parent_cinter=presentation_basis,
                         parent_site_vectors=parent_vectors,
                         projector_basis=projector.basis,
-                        child_print_vectors=np.asarray([column.vector for column in block], dtype=complex).T,
+                        child_print_vectors=np.asarray(
+                            [column.vector for column in block], dtype=complex
+                        ).T,
                         vector_setting=int(vector_setting),
                     )
                     if aligned is not None:
                         aligned_candidates.append(aligned)
-            aligned_basis = aligned_candidates[0].basis if len(aligned_candidates) == 1 else None
+            aligned_basis = (
+                aligned_candidates[0].basis if len(aligned_candidates) == 1 else None
+            )
             if aligned_basis is None:
                 return None
             site_vectors = factor_resolved_parent_site_vectors(
@@ -342,7 +362,9 @@ def _rank1_factor_target(
                 parent_sg=int(sg),
                 parent_site_pg=int(parent_row.site_pg),
                 parent_pg_irrep=int(pg_irrep),
-                parent_site_records=decoder.wyc_pg_elements_records(int(sg), parent_row),
+                parent_site_records=decoder.wyc_pg_elements_records(
+                    int(sg), parent_row
+                ),
                 occurrence_records=records,
                 factors=orbit_factors,
                 parent_site_vectors=parent_vectors,
@@ -353,7 +375,9 @@ def _rank1_factor_target(
             carrier = presentation_carrier_coefficients(
                 decoder,
                 gid=int(gid),
-                presentation_records=[factor.presentation_record for factor in orbit_factors],
+                presentation_records=[
+                    factor.presentation_record for factor in orbit_factors
+                ],
                 presentation_case=presentation_case,
                 direction_matrix=direction_matrix,
                 source_vectors=source_vectors,
@@ -380,8 +404,10 @@ def _rank1_factor_target(
         1,
     )
     row_indices = tuple(int(target_rows[index]) for index in indices)
-    return target, row_indices, tuple(
-        int(value) for value in canonical.orbit_representative_indices
+    return (
+        target,
+        row_indices,
+        tuple(int(value) for value in canonical.orbit_representative_indices),
     )
 
 
@@ -401,7 +427,10 @@ def _selected_site_print_component_is_identity(
     identity_record = tuple(
         int(value) for value in decoder.generate_space_group_records(int(sg))[0]
     )
-    if tuple(int(value) for value in representative_operation_record) != identity_record:
+    if (
+        tuple(int(value) for value in representative_operation_record)
+        != identity_record
+    ):
         return False
     selected_change = site_print_basis_intertwiner(
         decoder,
@@ -446,7 +475,6 @@ def _factor_print_block_target(
     presentation_basis: list[list[float]],
     gid: int,
     source_case: Case,
-    presentation_star_vectors: tuple[tuple[Fraction, ...], ...] | None,
     presentation_case: Case,
     direction_matrix: list[list[float]],
     project_matrix: np.ndarray,
@@ -457,7 +485,6 @@ def _factor_print_block_target(
     carrier_representative_operation_record: tuple[int, int, int, int, int]
     | None = None,
     defer_matrix_site_change: bool = False,
-    defer_child_print_alignment: bool = False,
 ) -> tuple[np.ndarray, tuple[int, ...], np.ndarray] | None:
     """Transport one faithful printed block into the selected child layout."""
 
@@ -497,13 +524,19 @@ def _factor_print_block_target(
         final_setting = decoder.cml_to_cinter_matrix(int(sg))
         if inverse is None or final_setting is None:
             return None
-        transform = np.asarray(final_setting, dtype=complex) @ np.asarray(inverse, dtype=complex)
+        transform = np.asarray(final_setting, dtype=complex) @ np.asarray(
+            inverse, dtype=complex
+        )
         print_row_count = len(direction_matrix)
         if print_row_count == 0:
             return None
         factor_columns = np.zeros((len(factors), 3, print_row_count), dtype=complex)
-        source_factor_columns = np.zeros((len(factors), 3, print_row_count), dtype=complex)
-        orbit_representatives = sorted({int(factor.orbit_representative_index) for factor in factors})
+        source_factor_columns = np.zeros(
+            (len(factors), 3, print_row_count), dtype=complex
+        )
+        orbit_representatives = sorted(
+            {int(factor.orbit_representative_index) for factor in factors}
+        )
         for representative_index in orbit_representatives:
             factor_indices = [
                 index
@@ -512,29 +545,33 @@ def _factor_print_block_target(
             ]
             orbit_factors = [factors[index] for index in factor_indices]
             target_orbit_factors = [target_factors[index] for index in factor_indices]
-            site_label, _display = _child_site_display(
-                int(child_sg), list(points[representative_index]), ""
+            match = re.fullmatch(
+                r"\s*\d+\s*([A-Za-z]+)\s*",
+                str(rows[representative_index].get("wyckoff_site") or ""),
             )
-            match = re.search(r"([A-Za-z]+)$", str(site_label))
             if match is None:
                 return None
             child_row = next(
-                item for item in decoder.wyckoff_rows(int(child_sg)) if item.label == match.group(1)
+                item
+                for item in decoder.wyckoff_rows(int(child_sg))
+                if item.label == match.group(1)
             )
             child_records = decoder.wyc_pg_elements_records(int(child_sg), child_row)
             projectors = child_site_irrep_projectors(
                 decoder,
                 parent_site_pg=int(parent_row.site_pg),
                 parent_pg_irrep=int(pg_irrep),
-                parent_site_records=decoder.wyc_pg_elements_records(int(sg), parent_row),
+                parent_site_records=decoder.wyc_pg_elements_records(
+                    int(sg), parent_row
+                ),
                 child_site_pg=int(child_row.site_pg),
-                child_stabilizer_point_ops=tuple(int(record[4]) for record in child_records),
+                child_stabilizer_point_ops=tuple(
+                    int(record[4]) for record in child_records
+                ),
                 factors=orbit_factors,
             )
             embedding_candidates = []
-            projector_candidates = []
             for projector in projectors:
-                projector_candidates.append(np.asarray(projector.basis, dtype=complex))
                 child_columns = site_vector_print_columns(
                     decoder,
                     site_pg=int(child_row.site_pg),
@@ -556,16 +593,9 @@ def _factor_print_block_target(
                 )
                 if embedding is not None:
                     embedding_candidates.append(embedding)
-            if len(embedding_candidates) == 1:
-                aligned_basis = np.asarray(embedding_candidates[0].basis, dtype=complex)
-            elif (
-                defer_child_print_alignment
-                and not embedding_candidates
-                and len(projector_candidates) == 1
-            ):
-                aligned_basis = projector_candidates[0]
-            else:
+            if len(embedding_candidates) != 1:
                 return None
+            aligned_basis = np.asarray(embedding_candidates[0].basis, dtype=complex)
             if aligned_basis.shape[1] != project_matrix.shape[1]:
                 return None
             site_vectors = factor_resolved_parent_site_vectors(
@@ -573,7 +603,9 @@ def _factor_print_block_target(
                 parent_sg=int(sg),
                 parent_site_pg=int(parent_row.site_pg),
                 parent_pg_irrep=int(pg_irrep),
-                parent_site_records=decoder.wyc_pg_elements_records(int(sg), parent_row),
+                parent_site_records=decoder.wyc_pg_elements_records(
+                    int(sg), parent_row
+                ),
                 occurrence_records=records,
                 factors=orbit_factors,
                 parent_site_vectors=parent_site_vectors,
@@ -586,11 +618,12 @@ def _factor_print_block_target(
                 gid=int(gid),
                 factors=target_orbit_factors,
                 source_factors=orbit_factors,
-                target_row_indices=[target_rows[factor_index] for factor_index in factor_indices],
+                target_row_indices=[
+                    target_rows[factor_index] for factor_index in factor_indices
+                ],
                 target_occurrence_records=target_records,
                 presentation_case=presentation_case,
                 source_case=source_case,
-                presentation_star_vectors=presentation_star_vectors,
                 direction_matrix=direction_matrix,
                 source_vectors=target_project_matrix,
             ).coefficients
@@ -598,7 +631,9 @@ def _factor_print_block_target(
                 decoder,
                 gid=int(gid),
                 factors=orbit_factors,
-                target_row_indices=[target_rows[factor_index] for factor_index in factor_indices],
+                target_row_indices=[
+                    target_rows[factor_index] for factor_index in factor_indices
+                ],
                 target_occurrence_records=records,
                 presentation_case=source_case,
                 direction_matrix=direction_matrix,
@@ -664,7 +699,9 @@ def _factor_print_block_target(
     except (IndexError, KeyError, ValueError):
         return None
     indices = tuple(int(value) for value in canonical.source_factor_indices)
-    target = np.asarray([factor_columns[index] for index in indices], dtype=complex).reshape(
+    target = np.asarray(
+        [factor_columns[index] for index in indices], dtype=complex
+    ).reshape(
         len(indices) * 3,
         print_row_count,
     )
@@ -673,7 +710,6 @@ def _factor_print_block_target(
     ).reshape(len(indices) * 3, print_row_count)
     row_indices = tuple(int(target_rows[index]) for index in indices)
     return target, row_indices, source_target
-
 
 
 def _rank1_source_print_intertwiner(
@@ -704,7 +740,9 @@ def _rank1_source_print_intertwiner(
     ):
         return None
     records = [row.get("_operation_record") for row in rows]
-    if not records or any(not isinstance(record, (list, tuple)) or len(record) != 5 for record in records):
+    if not records or any(
+        not isinstance(record, (list, tuple)) or len(record) != 5 for record in records
+    ):
         return None
     gid = int(identity.get("gid") or 0)
     pg_irrep = int(identity.get("pg_irrep") or 0)
@@ -719,7 +757,11 @@ def _rank1_source_print_intertwiner(
     if source_vectors is None or source_vectors.shape[1] != 1:
         return None
     try:
-        parent_row = next(item for item in decoder.wyckoff_rows(int(sg)) if item.label == str(site["wyckoff"]))
+        parent_row = next(
+            item
+            for item in decoder.wyckoff_rows(int(sg))
+            if item.label == str(site["wyckoff"])
+        )
     except (KeyError, StopIteration):
         return None
     parent_columns = site_vector_print_columns(
@@ -749,7 +791,7 @@ def _rank1_source_print_intertwiner(
         target = _parallel_source_child_vector(
             decoder,
             child_sg=int(child_sg),
-            child_xyz=[float(value) for value in row.get("xyz") or ()],
+            child_wyckoff_site=str(row.get("wyckoff_site") or ""),
             reference=reference,
             vector_setting=int(vector_setting),
         )
@@ -787,13 +829,7 @@ def _rank1_source_print_intertwiner(
             basis=subgroup_basis,
             origin=subgroup_origin,
             rows=rows,
-            child_vectors=(
-                None
-                if target_site_vectors is None
-                else [item.reshape(3) for item in target_site_vectors]
-            ),
             parent_column=parent_columns[0],
-            reference=reference,
             pg_irrep=pg_irrep,
             vector_setting=int(vector_setting),
             presentation_basis=presentation_basis,
@@ -839,7 +875,9 @@ def _rank1_source_print_intertwiner(
             direction_matrix=spec.get("source_numeric_rows") or [],
             source_vectors=source_vectors,
         )
-        target = expand_occurrence_print_columns(carrier, np.asarray(target_site_vectors))
+        target = expand_occurrence_print_columns(
+            carrier, np.asarray(target_site_vectors)
+        )
     except (ValueError, np.linalg.LinAlgError):
         return None
     scale = float(np.max(np.abs(target))) if target.size else 0.0
@@ -857,7 +895,6 @@ def _rank1_source_print_intertwiner(
     return float(value.real) if abs(value.imag) <= 1e-10 else None
 
 
-
 def _remix_site_print_columns(
     target_columns: list[np.ndarray],
     sources: list[Any],
@@ -873,8 +910,11 @@ def _remix_site_print_columns(
         for print_row in dict.fromkeys(print_rows):
             positions = [
                 index
-                for index, (source, row_index) in enumerate(zip(sources, print_rows, strict=True))
-                if int(source.project_family_index) == family and int(row_index) == int(print_row)
+                for index, (source, row_index) in enumerate(
+                    zip(sources, print_rows, strict=True)
+                )
+                if int(source.project_family_index) == family
+                and int(row_index) == int(print_row)
             ]
             positions.sort(
                 key=lambda index: (
@@ -883,7 +923,9 @@ def _remix_site_print_columns(
                 )
             )
             components = [int(sources[index].vector_component) for index in positions]
-            if len(positions) != site_matrix.shape[0] or len(set(components)) != len(components):
+            if len(positions) != site_matrix.shape[0] or len(set(components)) != len(
+                components
+            ):
                 return None
             block_matrix = np.asarray(
                 [remixed_columns[index] for index in positions],
@@ -893,187 +935,6 @@ def _remix_site_print_columns(
             for column, position in enumerate(positions):
                 remixed_columns[position] = remixed[:, column]
     return remixed_columns
-
-
-def _solve_joint_source_print_blocks(
-    blocks: list[tuple[list[int], np.ndarray, np.ndarray, tuple[int, ...]]],
-) -> tuple[tuple[int, ...], np.ndarray] | None:
-    """Solve a print intertwiner across parent site-irrep branches."""
-
-    if len(blocks) <= 1:
-        return None
-    canonical_rows = blocks[0][3]
-    if not canonical_rows or any(block[3] != canonical_rows for block in blocks):
-        return None
-    mode_indices = tuple(index for indices, _source, _target, _rows in blocks for index in indices)
-    if len(mode_indices) != len(set(mode_indices)):
-        return None
-    source_matrix = np.column_stack([source for _indices, source, _target, _rows in blocks])
-    target_matrix = np.column_stack([target for _indices, _source, target, _rows in blocks])
-    if source_matrix.shape[1] != len(mode_indices) or target_matrix.shape != source_matrix.shape:
-        return None
-    solved = solve_source_print_intertwiner(source_matrix, target_matrix)
-    if solved is None or solved.matrix.shape != (len(mode_indices), len(mode_indices)):
-        return None
-    matrix = np.real_if_close(solved.matrix, tol=1000)
-    if np.iscomplexobj(matrix):
-        return None
-    return mode_indices, np.asarray(matrix, dtype=float)
-
-
-def _cross_pg_identity_key(identity: dict[str, Any]) -> tuple[Any, ...] | None:
-    """Return the exact Source mode identity shared across parent PG branches."""
-
-    required_integer_fields = (
-        "gid",
-        "site_pg",
-        "family",
-        "component",
-        "print_component",
-        "source_row_count",
-        "little_type",
-    )
-    if any(field not in identity or identity[field] is None for field in required_integer_fields):
-        return None
-    raw_groups = identity.get("opd_groups") or ()
-    if not isinstance(raw_groups, (list, tuple)) or not raw_groups or any(
-        not isinstance(group, dict) for group in raw_groups
-    ):
-        return None
-    try:
-        integer_values = tuple(int(identity[field]) for field in required_integer_fields)
-        opd_groups = tuple(
-            tuple(
-                tuple(Fraction(str(value)) for value in row)
-                for row in group.get("rows") or ()
-            )
-            for group in raw_groups
-        )
-    except (TypeError, ValueError, ZeroDivisionError):
-        return None
-    if not opd_groups or any(not rows for rows in opd_groups):
-        return None
-    return (
-        *integer_values,
-        opd_groups,
-    )
-
-
-def _fixed_cross_pg_site_print_matrix(
-    decoder: ModeDataDecoder,
-    *,
-    parent_sg: int,
-    parent_wyckoff_row: Any,
-    identities: list[dict[str, Any]],
-    base_matrix: np.ndarray,
-    applied_indices: set[int],
-    vector_setting: int,
-    site_representative_operation_record: tuple[int, int, int, int, int],
-    tolerance: float = 1e-10,
-    condition_limit: float = 1e10,
-) -> np.ndarray | None:
-    """Compose complete fixed-mode PG branches with their Source site transport."""
-
-    mode_count = len(identities)
-    try:
-        base = np.asarray(base_matrix, dtype=float)
-    except (TypeError, ValueError):
-        return None
-    if (
-        mode_count < 2
-        or base.shape != (mode_count, mode_count)
-        or applied_indices != set(range(mode_count))
-        or not np.all(np.isfinite(base))
-        or not np.allclose(base, np.diag(np.diag(base)), atol=tolerance, rtol=0.0)
-    ):
-        return None
-    try:
-        base_condition = float(np.linalg.cond(base))
-    except np.linalg.LinAlgError:
-        return None
-    if not np.isfinite(base_condition) or base_condition > float(condition_limit):
-        return None
-    try:
-        identity_record = tuple(
-            int(value) for value in decoder.generate_space_group_records(int(parent_sg))[0]
-        )
-        record = tuple(int(value) for value in site_representative_operation_record)
-    except (IndexError, KeyError, TypeError, ValueError):
-        return None
-    if len(record) != 5 or record == identity_record:
-        return None
-
-    grouped: dict[tuple[Any, ...], list[int]] = {}
-    for index, identity in enumerate(identities):
-        key = _cross_pg_identity_key(identity)
-        if (
-            key is None
-            or key[0] <= 0
-            or key[1] <= 0
-            or any(key[index] < 0 for index in (2, 3, 4))
-            or key[5] <= 0
-            or key[6] <= 0
-        ):
-            return None
-        grouped.setdefault(key, []).append(index)
-    if not grouped or any(len(indices) < 2 for indices in grouped.values()):
-        return None
-
-    joint_matrix = np.eye(mode_count, dtype=float)
-    changed = False
-    for indices in grouped.values():
-        if any(
-            "pg_irrep" not in identities[index] or identities[index]["pg_irrep"] is None
-            for index in indices
-        ):
-            return None
-        try:
-            pg_irreps = tuple(int(identities[index]["pg_irrep"]) for index in indices)
-        except (TypeError, ValueError):
-            return None
-        if any(pg_irrep <= 0 for pg_irrep in pg_irreps) or len(set(pg_irreps)) != len(pg_irreps):
-            return None
-        try:
-            joint = joint_site_print_basis_intertwiner(
-                decoder,
-                parent_sg=int(parent_sg),
-                parent_wyckoff_row=parent_wyckoff_row,
-                pg_irreps=pg_irreps,
-                vector_setting=int(vector_setting),
-                representative_operation_record=record,
-                tolerance=float(tolerance),
-                condition_limit=float(condition_limit),
-            )
-        except (IndexError, KeyError, TypeError, ValueError, np.linalg.LinAlgError):
-            return None
-        if joint is None or tuple(item[0] for item in joint.column_identities) != pg_irreps:
-            return None
-        matrix = np.real_if_close(joint.matrix, tol=1000)
-        if (
-            np.iscomplexobj(matrix)
-            or matrix.shape != (len(indices), len(indices))
-            or not np.all(np.isfinite(matrix))
-        ):
-            return None
-        real_matrix = np.asarray(matrix, dtype=float)
-        joint_matrix[np.ix_(indices, indices)] = real_matrix
-        changed = changed or not np.allclose(
-            real_matrix,
-            np.eye(len(indices), dtype=float),
-            atol=float(tolerance),
-            rtol=0.0,
-        )
-    if not changed:
-        return None
-    composed = base @ joint_matrix
-    if not np.all(np.isfinite(composed)):
-        return None
-    try:
-        condition = float(np.linalg.cond(composed))
-    except np.linalg.LinAlgError:
-        return None
-    return composed if np.isfinite(condition) and condition <= float(condition_limit) else None
-
 
 
 def _multi_source_print_modes(
@@ -1098,10 +959,7 @@ def _multi_source_print_modes(
     representative_operation_record: tuple[int, int, int, int, int] | None = None,
     carrier_representative_operation_record: tuple[int, int, int, int, int]
     | None = None,
-    site_representative_operation_record: tuple[int, int, int, int, int] | None = None,
     allow_single_columns: bool = False,
-    use_presented_star: bool = True,
-    combine_parent_pg_irreps: bool = False,
     use_type1_project_surface: bool = False,
 ) -> tuple[list[Any], set[int], np.ndarray | None]:
     """Apply Source-only multi-column print intertwiners before layout joins."""
@@ -1124,7 +982,9 @@ def _multi_source_print_modes(
         return unchanged
     try:
         parent_row = next(
-            item for item in decoder.wyckoff_rows(int(sg)) if item.label == str(site["wyckoff"])
+            item
+            for item in decoder.wyckoff_rows(int(sg))
+            if item.label == str(site["wyckoff"])
         )
         trace_blocks = printed_project_blocks_from_trace(
             decoder,
@@ -1153,11 +1013,6 @@ def _multi_source_print_modes(
         )
         if presentation_case is None:
             return unchanged
-        presentation_star = (
-            presented_star_gauge_for_case(decoder, gid=gid, case=case)
-            if use_presented_star
-            else None
-        )
         child_symbol = gemmi.find_spacegroup_by_number(int(child_sg)).hm
         presented_modes: list[list[dict[str, Any]]] = []
         raw_mode_rows: list[list[dict[str, Any]]] = []
@@ -1166,12 +1021,18 @@ def _multi_source_print_modes(
                 return unchanged
             raw_rows = [
                 {
-                    "xyz": [float(Fraction(str(value))) for value in atom_fractionals[index]],
+                    "xyz": [
+                        float(Fraction(str(value))) for value in atom_fractionals[index]
+                    ],
                     "dxyz": [float(value) for value in vectors[index]],
                     "_operation_record": atom_operation_records[index],
                     "_source_raw_index": index,
                 }
-                for index in range(min(len(atom_fractionals), len(vectors), len(atom_operation_records)))
+                for index in range(
+                    min(
+                        len(atom_fractionals), len(vectors), len(atom_operation_records)
+                    )
+                )
                 if isinstance(vectors[index], list)
             ]
             raw_mode_rows.append(raw_rows)
@@ -1185,7 +1046,9 @@ def _multi_source_print_modes(
                     )["rows"]
                 )
             )
-        if not presented_modes or any(len(rows) != len(presented_modes[0]) for rows in presented_modes):
+        if not presented_modes or any(
+            len(rows) != len(presented_modes[0]) for rows in presented_modes
+        ):
             return unchanged
         calibration_rows = raw_mode_rows[0]
         if any(row.get("_operation_record") is None for row in calibration_rows):
@@ -1199,11 +1062,13 @@ def _multi_source_print_modes(
     ]
     applied: set[int] = set()
     overall_matrix = np.eye(len(mode_vectors), dtype=float)
-    joint_blocks: list[tuple[list[int], np.ndarray, np.ndarray, tuple[int, ...]]] = []
     parent_identity_point_op = int(decoder.generate_space_group_records(int(sg))[0][4])
-    for pg_irrep in dict.fromkeys(int(identity.get("pg_irrep") or 0) for identity in identities):
+    for pg_irrep in dict.fromkeys(
+        int(identity.get("pg_irrep") or 0) for identity in identities
+    ):
         mode_indices = [
-            index for index, identity in enumerate(identities)
+            index
+            for index, identity in enumerate(identities)
             if int(identity.get("pg_irrep") or 0) == pg_irrep
         ]
         if not mode_indices or (
@@ -1213,7 +1078,11 @@ def _multi_source_print_modes(
         ):
             continue
         item = project_item_by_irrep.get(pg_irrep)
-        blocks_for_irrep = [block_item for block_item in trace_blocks if block_item.target_vector_rep == pg_irrep]
+        blocks_for_irrep = [
+            block_item
+            for block_item in trace_blocks
+            if block_item.target_vector_rep == pg_irrep
+        ]
         if item is None or not blocks_for_irrep:
             continue
         try:
@@ -1221,7 +1090,9 @@ def _multi_source_print_modes(
                 decoder,
                 site_pg=site_pg,
                 pg_irrep=pg_irrep,
-                site_operation_records=decoder.wyc_pg_elements_records(int(sg), parent_row),
+                site_operation_records=decoder.wyc_pg_elements_records(
+                    int(sg), parent_row
+                ),
                 vector_setting=int(vector_setting),
                 full_dim=full_dim,
                 project_basis_active_values=item.get("active_values") or [],
@@ -1234,10 +1105,13 @@ def _multi_source_print_modes(
                     case=case,
                     gid=gid,
                     pg_irrep=pg_irrep,
-                    source_kparam=tuple(int(value) for value in spec.get("source_kparam") or ()),
+                    source_kparam=tuple(
+                        int(value) for value in spec.get("source_kparam") or ()
+                    ),
                     request_k_params=(
                         None
-                        if spec.get("request_k_params", spec.get("case_k_params")) is None
+                        if spec.get("request_k_params", spec.get("case_k_params"))
+                        is None
                         else tuple(
                             Fraction(str(value))
                             for value in spec.get(
@@ -1255,21 +1129,19 @@ def _multi_source_print_modes(
             if paired_type1 is None:
                 irrep_presentation_case = presentation_case
                 presentation_project_matrices = tuple(
-                    np.asarray(source.project_matrix, dtype=complex) for source in sources
+                    np.asarray(source.project_matrix, dtype=complex)
+                    for source in sources
                 )
-                irrep_presentation_star = presentation_star
             else:
                 irrep_presentation_case, presentation_project_matrices = paired_type1
-                irrep_presentation_star = None
             target_columns = []
             source_block_columns = []
             expanded_sources = []
             expanded_print_rows = []
             site_change_matrix: np.ndarray | None = None
-            if (
-                representative_operation_record is not None
-                and int(decoder.little_record_by_gid(gid).irrep_type) in {1, 3}
-            ):
+            if representative_operation_record is not None and int(
+                decoder.little_record_by_gid(gid).irrep_type
+            ) in {1, 3}:
                 site_change = site_print_basis_intertwiner(
                     decoder,
                     parent_sg=int(sg),
@@ -1302,15 +1174,12 @@ def _multi_source_print_modes(
                     presentation_basis=presentation_basis,
                     gid=gid,
                     source_case=case,
-                    presentation_star_vectors=(
-                        None
-                        if irrep_presentation_star is None
-                        else irrep_presentation_star.presented_vectors
-                    ),
                     presentation_case=irrep_presentation_case,
                     direction_matrix=spec.get("source_numeric_rows") or [],
                     project_matrix=np.asarray(source.project_matrix, dtype=complex),
-                    presentation_project_matrix=presentation_project_matrices[source_index],
+                    presentation_project_matrix=presentation_project_matrices[
+                        source_index
+                    ],
                     parent_site_vectors=np.asarray(source.site_vectors, dtype=complex),
                     site_vector_component=int(source.vector_component),
                     representative_operation_record=representative_operation_record,
@@ -1320,7 +1189,6 @@ def _multi_source_print_modes(
                         else carrier_representative_operation_record
                     ),
                     defer_matrix_site_change=site_change_matrix is not None,
-                    defer_child_print_alignment=bool(combine_parent_pg_irreps),
                 )
                 if target_result is None:
                     target_columns = []
@@ -1356,9 +1224,12 @@ def _multi_source_print_modes(
             contracted_targets: list[np.ndarray] = []
             contracted_sources: list[Any] = []
             contraction_valid = True
-            for family in dict.fromkeys(source.project_family_index for source in sources):
+            for family in dict.fromkeys(
+                source.project_family_index for source in sources
+            ):
                 positions = [
-                    index for index, source in enumerate(sources)
+                    index
+                    for index, source in enumerate(sources)
                     if int(source.project_family_index) == int(family)
                 ]
                 desired = desired_by_family.get(int(family), 0)
@@ -1368,10 +1239,12 @@ def _multi_source_print_modes(
                         contracted_sources.append(sources[position])
                 elif desired == 1 and positions:
                     source_blocks = np.asarray(
-                        [source_block_columns[position] for position in positions], dtype=complex
+                        [source_block_columns[position] for position in positions],
+                        dtype=complex,
                     ).T
                     family_mode_indices = [
-                        index for index in mode_indices
+                        index
+                        for index in mode_indices
                         if int(identities[index].get("family") or 0) == int(family)
                     ]
                     local_family = np.asarray(
@@ -1380,24 +1253,33 @@ def _multi_source_print_modes(
                                 complex(float(value))
                                 for row_index in canonical_rows
                                 for value in next(
-                                    row for row in presented_modes[index]
-                                    if int(row.get("_source_raw_index", -1)) == int(row_index)
-                                ).get("dxyz") or ()
+                                    row
+                                    for row in presented_modes[index]
+                                    if int(row.get("_source_raw_index", -1))
+                                    == int(row_index)
+                                ).get("dxyz")
+                                or ()
                             ]
                             for index in family_mode_indices
                         ],
                         dtype=complex,
                     ).T
-                    contraction, *_ = np.linalg.lstsq(source_blocks, local_family, rcond=None)
+                    contraction, *_ = np.linalg.lstsq(
+                        source_blocks, local_family, rcond=None
+                    )
                     if (
                         contraction.shape != (len(positions), 1)
                         or np.linalg.matrix_rank(source_blocks, tol=1e-10) < 1
-                        or float(np.max(np.abs(source_blocks @ contraction - local_family))) > 1e-10
+                        or float(
+                            np.max(np.abs(source_blocks @ contraction - local_family))
+                        )
+                        > 1e-10
                     ):
                         contraction_valid = False
                         break
                     target_blocks = np.asarray(
-                        [target_columns[position] for position in positions], dtype=complex
+                        [target_columns[position] for position in positions],
+                        dtype=complex,
                     ).T
                     contracted_targets.append((target_blocks @ contraction).reshape(-1))
                     contracted_sources.append(sources[positions[0]])
@@ -1418,67 +1300,38 @@ def _multi_source_print_modes(
                         complex(float(value))
                         for row_index in canonical_rows
                         for value in next(
-                            row for row in presented_modes[index]
+                            row
+                            for row in presented_modes[index]
                             if int(row.get("_source_raw_index", -1)) == int(row_index)
-                        ).get("dxyz") or ()
+                        ).get("dxyz")
+                        or ()
                     ]
                     for index in mode_indices
                 ],
                 dtype=complex,
             ).T
-            if combine_parent_pg_irreps:
-                joint_blocks.append((mode_indices, source_matrix, target_basis, canonical_rows))
-                continue
             solved = solve_source_print_intertwiner(source_matrix, target_basis)
-            if solved is None or solved.matrix.shape != (len(mode_indices), len(mode_indices)):
+            if solved is None or solved.matrix.shape != (
+                len(mode_indices),
+                len(mode_indices),
+            ):
                 continue
             matrix = np.real_if_close(solved.matrix, tol=1000)
             if np.iscomplexobj(matrix):
                 continue
-            original = [np.asarray(mode_vectors[index], dtype=float) for index in mode_indices]
+            original = [
+                np.asarray(mode_vectors[index], dtype=float) for index in mode_indices
+            ]
             for target_local, target_index in enumerate(mode_indices):
                 values = sum(
                     original[source_local] * float(matrix[source_local, target_local])
                     for source_local in range(len(mode_indices))
                 )
                 transformed[target_index] = values.tolist()
-            overall_matrix[np.ix_(mode_indices, mode_indices)] = np.asarray(matrix, dtype=float)
+            overall_matrix[np.ix_(mode_indices, mode_indices)] = np.asarray(
+                matrix, dtype=float
+            )
             applied.update(mode_indices)
         except (IndexError, KeyError, TypeError, ValueError, np.linalg.LinAlgError):
             continue
-    joint = _solve_joint_source_print_blocks(joint_blocks) if combine_parent_pg_irreps else None
-    if joint is not None:
-        joint_indices, matrix = joint
-        original = [np.asarray(mode_vectors[index], dtype=float) for index in joint_indices]
-        for target_local, target_index in enumerate(joint_indices):
-            transformed[target_index] = sum(
-                original[source_local] * float(matrix[source_local, target_local])
-                for source_local in range(len(joint_indices))
-            ).tolist()
-        overall_matrix[np.ix_(joint_indices, joint_indices)] = matrix
-        applied.update(joint_indices)
-    if (
-        not tuple(case.k_params or ())
-        and site_representative_operation_record is not None
-    ):
-        cross_pg_matrix = _fixed_cross_pg_site_print_matrix(
-            decoder,
-            parent_sg=int(sg),
-            parent_wyckoff_row=parent_row,
-            identities=identities,
-            base_matrix=overall_matrix,
-            applied_indices=applied,
-            vector_setting=int(vector_setting),
-            site_representative_operation_record=site_representative_operation_record,
-        )
-        if cross_pg_matrix is not None:
-            original = [np.asarray(vectors, dtype=float) for vectors in mode_vectors]
-            transformed = [
-                sum(
-                    original[source_index] * float(cross_pg_matrix[source_index, target_index])
-                    for source_index in range(len(original))
-                ).tolist()
-                for target_index in range(len(original))
-            ]
-            overall_matrix = cross_pg_matrix
     return transformed, applied, (overall_matrix if applied else None)

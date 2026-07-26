@@ -14,4 +14,4 @@ class ProjectMixin(
     ProjectVectorMixin,
     RowOpsMixin,
 ):
-    """Faithful port surface for binary ``project_`` and adjacent helpers."""
+    """Combined site-irrep projection surface used by the mode engine."""
