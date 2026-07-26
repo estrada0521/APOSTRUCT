@@ -13,9 +13,6 @@ from ISODISTORT.Assembled.Backend.modes.engine.subgroup_structure.presentation_t
     site_vector_print_columns,
 )
 
-from ISODISTORT.Assembled.Backend.modes.structure_runtime import (
-    _child_site_display,
-)
 
 def _mode_site_irrep_labels(
     decoder: ModeDataDecoder,
@@ -25,12 +22,23 @@ def _mode_site_irrep_labels(
     *,
     opd_rows_as_components: bool = False,
 ) -> list[str] | None:
-    summaries = [item for item in block.get("mode_block_summaries") or [] if isinstance(item, dict)]
+    summaries = [
+        item
+        for item in block.get("mode_block_summaries") or []
+        if isinstance(item, dict)
+    ]
     try:
         site_pg = int((trace.get("wyckoff") or {})["site_pg"])
-        bases = [decoder.site_pg_irrep_label(site_pg, int(item["pg_irrep"])) for item in summaries]
+        bases = [
+            decoder.site_pg_irrep_label(site_pg, int(item["pg_irrep"]))
+            for item in summaries
+        ]
         dimensions = [
-            int(decoder.image_record(decoder.site_pg_irrep_old_id(site_pg, int(item["pg_irrep"]))).dimension)
+            int(
+                decoder.image_record(
+                    decoder.site_pg_irrep_old_id(site_pg, int(item["pg_irrep"]))
+                ).dimension
+            )
             for item in summaries
         ]
     except Exception:
@@ -132,12 +140,17 @@ def _mode_site_irrep_labels(
     return labels
 
 
-
-def _mode_source_layout(block: dict[str, Any], mode_count: int) -> list[tuple[int, int, int]] | None:
+def _mode_source_layout(
+    block: dict[str, Any], mode_count: int
+) -> list[tuple[int, int, int]] | None:
     """Return ``(family, component, family_width)`` in local emitted order."""
 
     layout = [
-        (int(summary.get("source_family") or 0), component, int(summary.get("flat_mode_count") or 0))
+        (
+            int(summary.get("source_family") or 0),
+            component,
+            int(summary.get("flat_mode_count") or 0),
+        )
         for summary in block.get("mode_block_summaries") or []
         if isinstance(summary, dict)
         for component in _summary_source_print_components(summary)
@@ -145,15 +158,13 @@ def _mode_source_layout(block: dict[str, Any], mode_count: int) -> list[tuple[in
     return layout if len(layout) == mode_count else None
 
 
-
 def _summary_source_print_components(summary: dict[str, Any]) -> list[int]:
-    """Map the binary summary loop to projected-block print identities."""
+    """Map projected-block summaries to their displayed component identities."""
 
     mode_count = int(summary.get("flat_mode_count") or 0)
     if int(summary.get("little_type") or 0) != 3:
         return list(range(mode_count))
     return _summary_projected_print_components(summary)
-
 
 
 def _summary_projected_print_components(summary: dict[str, Any]) -> list[int]:
@@ -179,7 +190,6 @@ def _summary_projected_print_components(summary: dict[str, Any]) -> list[int]:
             )
         row_offset += len(rows)
     return components if len(components) == mode_count else list(range(mode_count))
-
 
 
 def _mode_source_metadata_layout(
@@ -210,7 +220,6 @@ def _mode_source_metadata_layout(
         )
     ]
     return layout if len(layout) == mode_count else None
-
 
 
 def _source_family_vector_matrix(
@@ -267,23 +276,25 @@ def _source_family_vector_matrix(
     return matrix if found else None
 
 
-
 def _parallel_source_child_vector(
     decoder: ModeDataDecoder,
     *,
     child_sg: int,
-    child_xyz: list[float],
+    child_wyckoff_site: str,
     reference: np.ndarray,
     vector_setting: int,
 ) -> np.ndarray | None:
     """Find the unique Source child-site print column spanning reference."""
 
-    site_label, _display_xyz = _child_site_display(int(child_sg), child_xyz, "")
-    match = re.search(r"([A-Za-z]+)$", str(site_label))
+    match = re.fullmatch(r"\s*\d+\s*([A-Za-z]+)\s*", child_wyckoff_site)
     if match is None:
         return None
     try:
-        row = next(item for item in decoder.wyckoff_rows(int(child_sg)) if item.label == match.group(1))
+        row = next(
+            item
+            for item in decoder.wyckoff_rows(int(child_sg))
+            if item.label == match.group(1)
+        )
     except StopIteration:
         return None
     records = decoder.wyc_pg_elements_records(int(child_sg), row)
@@ -304,7 +315,12 @@ def _parallel_source_child_vector(
             norm = float(np.linalg.norm(vector))
             if norm <= 1e-12:
                 continue
-            if float(np.linalg.norm(np.cross(reference, vector))) <= 1e-10 * reference_norm * norm:
-                if not any(np.allclose(vector, seen, atol=1e-12) for seen in candidates):
+            if (
+                float(np.linalg.norm(np.cross(reference, vector)))
+                <= 1e-10 * reference_norm * norm
+            ):
+                if not any(
+                    np.allclose(vector, seen, atol=1e-12) for seen in candidates
+                ):
                     candidates.append(vector)
     return candidates[0] if len(candidates) == 1 else None

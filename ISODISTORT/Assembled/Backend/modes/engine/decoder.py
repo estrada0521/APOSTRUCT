@@ -18,7 +18,7 @@ class ModeDataDecoder(
 ):
     """Read Source tables once and evaluate the mode projection contracts."""
 
-    # This is the small integer table addressed as DAT_0050da0c[irrep_type]
-    # in the decompiled project_ routine.  SG205 R2-R2- fixes type 2 as 4:
-    # frequency 2, image_type 2 doubles it to 4, and the mode kernel returns count 1.
+    # The project divisor follows the irrep real-form contract. SG205 R2-R2-
+    # fixes type 2 as 4: frequency 2, image_type 2 doubles it to 4, and the
+    # mode kernel returns count 1.
     TYPE_DIVISOR = {1: 1, 2: 4, 3: 2}

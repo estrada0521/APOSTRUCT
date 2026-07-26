@@ -1,8 +1,8 @@
 """Source-only child-orbit to parent-site coset factorization.
 
-The binary projection loop works with parent Wyckoff coset representatives.
-Complete-mode presentation instead organizes the same occurrences under the
-selected child subgroup.  A child operation generally does not equal the
+The local projection adapter uses parent Wyckoff coset representatives from
+Source records.  Complete-mode presentation organizes those occurrences under
+the selected child subgroup.  A child operation generally does not equal the
 stored parent occurrence record: it factors through a parent-site stabilizer
 and a selected-child lattice translation.  This module exposes that metadata
 without choosing a Web print basis.
@@ -85,18 +85,6 @@ class SourcePrintIntertwiner:
 
 
 @dataclass(frozen=True)
-class JointSitePrintIntertwiner:
-    """A Source site-print change spanning multiple parent PG irreps."""
-
-    matrix: np.ndarray
-    column_identities: tuple[tuple[int, int, int], ...]
-    source_rank: int
-    target_rank: int
-    residual: float
-    condition_number: float
-
-
-@dataclass(frozen=True)
 class CanonicalRankOnePrintScalar:
     """One relative rank-one print gauge shared by canonical child orbits."""
 
@@ -129,7 +117,7 @@ class ChildPrintSubductionEmbedding:
 
 @dataclass(frozen=True)
 class MinimalPrintedProjectBlock:
-    """The binary print-loop identity needed by the Assembled kernel."""
+    """The runtime print-topology identity needed by the Assembled kernel."""
 
     printed_block_index: int
     target_occurrence: int
@@ -150,15 +138,6 @@ class FactorCarrierPullback:
 
 
 @dataclass(frozen=True)
-class PresentedStarGauge:
-    """One physical k star with Source and reduced presentation gauges."""
-
-    source_vectors: tuple[FractionVector, ...]
-    presented_vectors: tuple[FractionVector, ...]
-    reciprocal_shifts: tuple[tuple[int, int, int], ...]
-
-
-@dataclass(frozen=True)
 class CanonicalChildPrintFactors:
     """Identity-child-operation factors defining Source print representatives."""
 
@@ -169,7 +148,7 @@ class CanonicalChildPrintFactors:
 
 @dataclass(frozen=True)
 class PrintedProjectBlockSource:
-    """Faithful project and site columns for one binary printed block."""
+    """Source project and site columns for one runtime print block."""
 
     printed_block_index: int
     project_family_index: int
@@ -480,7 +459,7 @@ def factor_presentation_occurrences(
     stabilizer_affines = tuple(_record_affine(decoder, int(parent_sg), record) for record in stabilizers)
     child_affines = tuple(_record_affine(decoder, int(parent_sg), record) for record in child_records)
 
-    # Provenance B: this is an exact Source-order index over the legacy scan.
+    # This is an exact runtime index over the Source-record candidate scan.
     # Candidate occurrence/site products do not depend on the orbit
     # representative or child operation.  Preserve their original nested
     # Source order while composing each exact affine only once.
@@ -803,31 +782,6 @@ def solve_source_print_intertwiner(
     )
 
 
-def _joint_intertwiner_condition_number(
-    source: np.ndarray,
-    target: np.ndarray,
-    matrix: np.ndarray,
-    *,
-    tolerance: float,
-    condition_limit: float,
-) -> float | None:
-    """Bound conditioning on both column frames and their relative map."""
-
-    conditions: list[float] = []
-    try:
-        for values in (source, target, matrix):
-            singular_values = np.linalg.svd(np.asarray(values, dtype=complex), compute_uv=False)
-            if not len(singular_values) or float(singular_values[-1]) <= float(tolerance):
-                return None
-            conditions.append(float(singular_values[0] / singular_values[-1]))
-    except np.linalg.LinAlgError:
-        return None
-    condition = max(conditions, default=math.inf)
-    if not np.isfinite(condition) or condition > float(condition_limit):
-        return None
-    return float(condition)
-
-
 def solve_canonical_rank1_print_scalar(
     current_orbit_columns: Sequence[Sequence[complex | float]],
     target_orbit_columns: Sequence[Sequence[complex | float]],
@@ -1025,143 +979,6 @@ def site_print_basis_intertwiner(
         canonical,
         tolerance=float(tolerance),
         condition_limit=float(condition_limit),
-    )
-
-
-def joint_site_print_basis_intertwiner(
-    decoder: Any,
-    *,
-    parent_sg: int,
-    parent_wyckoff_row: Any,
-    pg_irreps: Sequence[int],
-    vector_setting: int,
-    representative_operation_record: Sequence[int],
-    tolerance: float = 1e-10,
-    condition_limit: float = 1e10,
-) -> JointSitePrintIntertwiner | None:
-    """Return a Source site-print gauge that may mix parent PG irreps.
-
-    A site representative can conjugate two parent point-group irreps into
-    each other.  Solving each irrep separately then fails even when their
-    direct sum has a unique Source-authorized transport.  This helper keeps
-    the caller-provided PG and Source component order as an explicit column
-    identity and solves only the complete, nondegenerate direct sum.
-    """
-
-    irreps = tuple(int(value) for value in pg_irreps)
-    if len(irreps) < 2 or len(set(irreps)) != len(irreps) or any(value <= 0 for value in irreps):
-        return None
-    record = tuple(int(value) for value in representative_operation_record)
-    if len(record) != 5 or int(record[3]) == 0:
-        raise ValueError(
-            f"invalid representative operation record: {representative_operation_record!r}"
-        )
-    if int(vector_setting) not in (1, 2):
-        raise ValueError(f"unsupported vector setting: {vector_setting}")
-
-    canonical_records = tuple(
-        tuple(int(value) for value in item)
-        for item in decoder.wyc_pg_elements_records(int(parent_sg), parent_wyckoff_row)
-    )
-    canonicalizer = _record_affine(decoder, int(parent_sg), record)  # type: ignore[arg-type]
-    inverse_matrix = _matrix_inverse(canonicalizer[0])
-    inverse_translation = tuple(
-        -value
-        for value in _row_multiply(canonicalizer[1], inverse_matrix)
-    )
-    inverse = (inverse_matrix, inverse_translation)  # type: ignore[arg-type]
-    try:
-        presentation_records = tuple(
-            _record_from_affine(
-                decoder,
-                int(parent_sg),
-                _compose_affine(
-                    _compose_affine(
-                        canonicalizer,
-                        _record_affine(decoder, int(parent_sg), site_record),
-                    ),
-                    inverse,
-                ),
-            )
-            for site_record in canonical_records
-        )
-    except (KeyError, ValueError):
-        return None
-
-    canonical_columns: list[SiteVectorPrintColumn] = []
-    presentation_columns: list[SiteVectorPrintColumn] = []
-    identities: list[tuple[int, int, int]] = []
-    try:
-        for pg_irrep in irreps:
-            canonical_for_irrep = site_vector_print_columns(
-                decoder,
-                site_pg=int(parent_wyckoff_row.site_pg),
-                pg_irrep=int(pg_irrep),
-                site_operation_records=canonical_records,
-                vector_setting=int(vector_setting),
-            )
-            presentation_for_irrep = site_vector_print_columns(
-                decoder,
-                site_pg=int(parent_wyckoff_row.site_pg),
-                pg_irrep=int(pg_irrep),
-                site_operation_records=presentation_records,
-                vector_setting=int(vector_setting),
-            )
-            if not canonical_for_irrep or len(canonical_for_irrep) != len(presentation_for_irrep):
-                return None
-            canonical_columns.extend(canonical_for_irrep)
-            presentation_columns.extend(presentation_for_irrep)
-            identities.extend(
-                (int(pg_irrep), int(item.component_start), int(item.basis_column))
-                for item in canonical_for_irrep
-            )
-    except (KeyError, ValueError):
-        return None
-    if len(identities) != len(set(identities)):
-        return None
-
-    canonical = np.asarray([item.vector for item in canonical_columns], dtype=complex).T
-    presentation = np.asarray([item.vector for item in presentation_columns], dtype=complex).T
-    pml_to_cinter = tuple(
-        tuple(Fraction(value) for value in row)
-        for row in decoder.pml_to_cinter_matrix(int(parent_sg))
-    )
-    cinter_to_pml = tuple(
-        tuple(Fraction(value) for value in row)
-        for row in decoder.cinter_to_pml_matrix(int(parent_sg))
-    )
-    cinter_rotation = _matrix_multiply(
-        _matrix_multiply(cinter_to_pml, canonicalizer[0]),
-        pml_to_cinter,
-    )
-    rotation = np.asarray(cinter_rotation, dtype=float).T
-    if int(vector_setting) == 2:
-        rotation = rotation * float(round(np.linalg.det(rotation)))
-    transported = rotation @ presentation
-    solved = solve_source_print_intertwiner(
-        transported,
-        canonical,
-        tolerance=float(tolerance),
-        condition_limit=float(condition_limit),
-    )
-    if solved is None or solved.matrix.shape != (len(identities), len(identities)):
-        return None
-    condition_number = _joint_intertwiner_condition_number(
-        transported,
-        canonical,
-        solved.matrix,
-        tolerance=float(tolerance),
-        condition_limit=float(condition_limit),
-    )
-    if condition_number is None:
-        return None
-    return JointSitePrintIntertwiner(
-        matrix=solved.matrix,
-        column_identities=tuple(identities),
-        source_rank=int(solved.source_rank),
-        target_rank=int(solved.target_rank),
-        residual=float(solved.residual),
-        condition_number=float(condition_number),
     )
 
 
@@ -1651,11 +1468,11 @@ def printed_project_block_sources(
     printed_blocks: Iterable[Any],
     family_stride: int = 144,
 ) -> tuple[PrintedProjectBlockSource, ...]:
-    """Decode the faithful Source columns for every binary print block.
+    """Decode the Source columns for every printed project block.
 
     The project return stores each family as ``carrier * 3 + site_column`` in
-    a 144-value family stride.  The binary print topology separately maps a
-    project family to an emitted block and vector component.  Combining those
+    a 144-value family stride.  Runtime print topology over Source records maps
+    a project family to an emitted block and vector component.  Combining those
     two Source surfaces yields ``project_matrix(full_dim, site_columns)`` and
     ``site_vectors(3, site_columns)`` once.  Both direct tensor generation and
     factor-aligned child targets must consume this same decode.
@@ -1742,16 +1559,15 @@ def printed_project_blocks_from_trace(
     project_return_basis_type1: Iterable[dict[str, Any]],
     pg_irrep: int | None = None,
 ) -> tuple[MinimalPrintedProjectBlock, ...]:
-    """Copy-port the minimal DISPLAY DISTORTION print-block ordering.
+    """Return the minimal DISPLAY DISTORTION print-block ordering.
 
     Target irreps follow ``project_``/subduction order in the supplied trace,
     not the order of the three site-vector slots.  Within each target, project
     family is the outer loop and repeated site-vector component is the inner
     loop.  Only families actually returned by ``project_`` are emitted.
 
-    This is intentionally smaller than Disassembled's diagnostic topology:
-    it exposes only the identities required to build faithful Assembled
-    source tensors and imports no Disassembled module.
+    This minimal runtime topology exposes only the identities required to
+    build Assembled Source tensors.
     """
 
     if int(vector_setting) not in (1, 2):
@@ -1823,7 +1639,6 @@ def factor_carrier_coefficients_on_target_rows(
     presentation_case: Any,
     source_case: Any | None = None,
     source_factors: Iterable[PresentationTransportFactor] | None = None,
-    presentation_star_vectors: Sequence[Sequence[Fraction | int]] | None = None,
     direction_matrix: Sequence[Sequence[complex | float]],
     source_vectors: Sequence[Sequence[complex | float]],
 ) -> FactorCarrierPullback:
@@ -1837,9 +1652,7 @@ def factor_carrier_coefficients_on_target_rows(
     ``Q_f = D_source(q_target) inverse(D_source(p_f))``
 
     and returns ``W Q_f D_presentation(p_f) V``.  With one Case this reduces
-    to ``W D(q_target) V``.  Supplying a distinct Source Case and explicit
-    presentation-star vectors retains only the reciprocal-lattice gauge shift
-    used by complete-mode presentation.  ``Q_f`` is a full real-carrier
+    to ``W D(q_target) V``.  ``Q_f`` is a full real-carrier
     matrix; no scalar sign, first-factor selection, or averaging is used.
     ``source_factors`` may provide the untransported ``p_f`` records when the
     presentation factors include an additional representative operation.  It
@@ -1881,39 +1694,6 @@ def factor_carrier_coefficients_on_target_rows(
     target_records: list[OperationRecord] = []
     pullback_case = presentation_case if source_case is None else source_case
 
-    def matrix_for_presented_star(record: OperationRecord) -> np.ndarray:
-        if presentation_star_vectors is None:
-            return np.asarray(
-                decoder._bridge_irrep_matrix_for_record(
-                    int(gid),
-                    record,
-                    presentation_case,
-                ),
-                dtype=complex,
-            )
-        vectors_for_star = tuple(
-            tuple(Fraction(value) for value in vector)
-            for vector in presentation_star_vectors
-        )
-        denominator = int(record[3])
-        if denominator == 0:
-            raise ValueError(f"zero presentation record denominator: {record}")
-        request_tau = tuple(Fraction(int(record[axis]), denominator) for axis in range(3))
-        if getattr(presentation_case, "k_params", ()):
-            delta = request_tau
-        else:
-            generated = decoder.generated_space_tau(int(presentation_case.sg), int(record[4]))
-            delta = tuple(request_tau[axis] - generated[axis] for axis in range(3))
-        phases = tuple(
-            sum(kvector[axis] * delta[axis] for axis in range(3))
-            for kvector in vectors_for_star
-        )
-        return np.asarray(
-            decoder.phase_operator(int(gid), phases)
-            @ decoder.little_sparse_matrix_by_gid_record(int(gid), record),
-            dtype=complex,
-        )
-
     for factor, source_factor, row_index in zip(
         factor_rows, source_factor_rows, row_indices, strict=True
     ):
@@ -1936,7 +1716,14 @@ def factor_carrier_coefficients_on_target_rows(
             ),
             dtype=complex,
         )
-        presentation = matrix_for_presented_star(factor.presentation_record)
+        presentation = np.asarray(
+            decoder._bridge_irrep_matrix_for_record(
+                int(gid),
+                factor.presentation_record,
+                presentation_case,
+            ),
+            dtype=complex,
+        )
         if (
             source_presentation.shape != source_target.shape
             or source_presentation.shape != presentation.shape
@@ -1969,44 +1756,6 @@ def factor_carrier_coefficients_on_target_rows(
     )
 
 
-def presented_star_gauge_for_case(
-    decoder: Any,
-    *,
-    gid: int,
-    case: Any,
-) -> PresentedStarGauge:
-    """Reduce one Source runtime k star without changing its physical k.
-
-    Each arm is reduced componentwise modulo one.  The integer reciprocal
-    shift is retained explicitly because it is a position-dependent print
-    gauge even though it does not change the physical propagation vector.
-    """
-
-    source = tuple(
-        tuple(Fraction(value) for value in vector)
-        for vector in decoder.little_k_star_vectors_for_case(int(gid), case)
-    )
-    presented = tuple(
-        tuple(value % 1 for value in vector)
-        for vector in source
-    )
-    shifts = tuple(
-        tuple(int(presented_value - source_value) for presented_value, source_value in zip(pvec, svec))
-        for pvec, svec in zip(presented, source, strict=True)
-    )
-    if any(
-        Fraction(presented_value - source_value).denominator != 1
-        for pvec, svec in zip(presented, source, strict=True)
-        for presented_value, source_value in zip(pvec, svec, strict=True)
-    ):
-        raise ValueError("presented star reduction did not yield reciprocal integer shifts")
-    return PresentedStarGauge(
-        source_vectors=source,
-        presented_vectors=presented,
-        reciprocal_shifts=shifts,
-    )
-
-
 def canonical_child_print_factors(
     decoder: Any,
     *,
@@ -2017,9 +1766,9 @@ def canonical_child_print_factors(
 
     Complete physical fields require all child-operation factors.  Their
     carrier and site actions can cancel a print-column sign, however, because
-    gauge-equivalent fields are physically identical.  The binary fixes its
-    printed column at the Source canonical child representative: the factor
-    whose child operation is the Source identity operation.  This helper
+    gauge-equivalent fields are physically identical.  Runtime print order over
+    Source records fixes the column at the canonical child representative: the
+    factor whose child operation is the Source identity operation.  This helper
     verifies that operation zero is affine identity and then selects exactly
     one such factor per ``orbit_representative_index`` in Source factor order.
 

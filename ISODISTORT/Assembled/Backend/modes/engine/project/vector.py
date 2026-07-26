@@ -1,4 +1,4 @@
-"""Ported ``project_vector_`` and adjacent MAIN__ bridge loops."""
+"""Project-vector expansion and its coefficient-building stages."""
 
 from __future__ import annotations
 
@@ -22,12 +22,10 @@ class ProjectVectorMixin:
         output_length: int = 720,
         sign: float = 1.0,
     ) -> tuple[int, list[float]]:
-        """Port ``project_vector_`` for a captured routine-boundary state.
+        """Evaluate ``project_vector_`` from a materialized boundary state.
 
-        This helper intentionally takes the same scalar values that the binary
-        receives at ``project_vector_`` entry.  It is for routine-boundary
-        verification first; later the upstream Python pipeline should provide
-        these values without GDB injection.
+        The explicit scalar arguments form the projection boundary contract;
+        callers must derive them from Source-backed pipeline state.
         """
 
         basis = list(float(x) for x in basis_function)
@@ -41,20 +39,19 @@ class ProjectVectorMixin:
         basis_codes = self.iso.wyckoff["iwyckoff_pg_vector_basis"]
         point = tuple(int(x) for x in self.iso.space["ipoint_op"][9 * (int(point_op) - 1):9 * int(point_op)])
 
-        emitted = 0
         component_start = 1
-        local_94 = 0
+        emitted_count = 0
         while component_start < 4:
-            local_80 = local_94
+            next_emitted_count = emitted_count
             rep_index = (int(site_pg) - 1) * 6 + (int(vector_setting) - 1) * 3 + (component_start - 1)
             if int(target_vector_rep) == int(reps[rep_index]):
                 if int(project_count) == 0:
-                    local_80 = local_94 + 1
+                    next_emitted_count = emitted_count + 1
                 elif int(project_count) > 0:
                     family = 0
-                    local_88 = (local_94 * 9 + 9) * 16
+                    output_family_offset = emitted_count * 144
                     while family < int(project_count):
-                        local_80 += 1
+                        next_emitted_count += 1
                         for atom in range(max(0, int(atom_count))):
                             local_vec = [0.0, 0.0, 0.0]
                             for basis_col in range(max(0, int(vector_dim))):
@@ -73,15 +70,14 @@ class ProjectVectorMixin:
                                 # the mode kernel walks point-op columns here:
                                 # indices axis, axis+3, axis+6 in row-major storage.
                                 value = sum(float(point[inner * 3 + axis]) * sign * local_vec[inner] for inner in range(3))
-                                output_index = local_88 - 145 + (axis + 1) + atom * 3
+                                output_index = output_family_offset + axis + atom * 3
                                 if 0 <= output_index < len(out):
                                     out[output_index] = value
                         family += 1
-                        local_88 += 144
-            local_94 = local_80
+                        output_family_offset += 144
+            emitted_count = next_emitted_count
             component_start += max(1, int(vector_dim))
-        emitted = local_94
-        return emitted, out
+        return emitted_count, out
 
     @staticmethod
     def project_vector_bridge_source_e8_from_active_values(
@@ -90,12 +86,11 @@ class ProjectVectorMixin:
         family_stride: int = 144,
         output_length: int = 768,
     ) -> list[dict[str, object]]:
-        """Synthesize MAIN__ bridge source buffers from a `project_` basis.
+        """Synthesize bridge source buffers from a projected basis.
 
         `project_` stores one selected real block per family with the local
         layout `parent_row * 3 + site_col` and a 144-double family stride.
-        The first MAIN__ bridge loop does not read that block from index zero;
-        it points at a window whose active entries begin at
+        The coefficient stage reads a shifted window whose active entries begin at
         `64 - 3 * (bridge_project_count + 1)`.  `bridge_project_count` is the
         highest parent-row index in the current family, not the number of
         selected project families.
@@ -142,13 +137,11 @@ class ProjectVectorMixin:
         coefficients: Iterable[float],
         output_length: int = 360,
     ) -> list[float]:
-        """Port the MAIN__ bridge loop immediately before ``project_vector_``.
+        """Build project-vector basis functions from source rows and coefficients.
 
-        This corresponds to the checked address range ``0x4148ea..0x41497f``.
-        The routine takes the source matrix pointed to by stack slot ``0x178``
-        dumped from ``ptr-0x200`` and the coefficient buffer beginning at
-        ``rsp+0x8640``.  It writes the stack buffer beginning at ``rsp+0x81c0``,
-        which is later passed as ``project_vector_`` argument 9.
+        Source rows use a 48-value stride and coefficients use three values per
+        term.  The leading output block contains one vector per atom; the block
+        at offset 144 preserves the coefficient rows consumed by the next stage.
         """
 
         source = [float(x) for x in source_minus256]
@@ -182,11 +175,11 @@ class ProjectVectorMixin:
         stack_0490: Iterable[float],
         output_length: int = 181,
     ) -> list[float]:
-        """Port the first MAIN__ bridge loop that builds the coefficient buffer.
+        """Build the coefficient buffer from projected basis rows and weights.
 
-        This mirrors ``0x4147c2..0x414839``.  It fills the coefficient buffer
-        beginning at ``rsp+0x8640`` from the source pointer stored at stack slot
-        ``0xe8`` and the stack work array beginning near ``rsp+0x490``.
+        Source families are stored in three-value rows, while operation weights
+        use a 48-value column stride.  The output is atom-major with three vector
+        components per atom.
         """
 
         source = [float(x) for x in source_e8_minus512]

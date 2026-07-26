@@ -174,7 +174,7 @@ def project_vector_prep_trace(
     project_entries: list[dict[str, int]],
     project_local408: list[dict[str, object]],
 ) -> list[dict[str, object]]:
-    """Trace MAIN__ values prepared around `project_` for vector expansion."""
+    """Describe Source values prepared for project-vector expansion."""
 
     out: list[dict[str, object]] = []
     for entry, local in zip(project_entries, project_local408):
@@ -221,7 +221,7 @@ def project_vector_bridge_source_trace(
     decoder: Any,
     project_basis: list[dict[str, object]],
 ) -> list[dict[str, object]]:
-    """Expose MAIN__ bridge source buffers synthesized from `project_` basis."""
+    """Expose bridge source buffers synthesized from a projected basis."""
 
     out: list[dict[str, object]] = []
     for item in project_basis:

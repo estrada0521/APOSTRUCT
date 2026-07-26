@@ -1,6 +1,6 @@
 """Local nonmagnetic ``get_isotropy_`` dynamic-row generation.
 
-This module ports the DISPLAY-ISOTROPY path that materializes dynamic
+This module implements the DISPLAY-ISOTROPY path that materializes dynamic
 ``*.iso`` rows for parametric-k irreps.  The public display layer sorts these
 rows before printing, but the rows themselves are generated here from
 ``Source`` data only:
@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from collections import deque
 from collections.abc import Sequence
+from fractions import Fraction
 from functools import lru_cache
 
 from ISODISTORT.Assembled.Backend.isotropy.engine.dynamic_isotropy_file import DynamicIsotropyRow
@@ -34,6 +35,7 @@ from ISODISTORT.Assembled.Backend.isotropy.engine.orderparam import (
 )
 from ISODISTORT.Assembled.Backend.isotropy.engine.numerics import xrowop2
 from ISODISTORT.Assembled.Backend.isotropy.engine.source_data import SourceData
+from ISODISTORT.Assembled.Backend.source import magnetic as magnetic_data
 
 
 Pair = tuple[int, int]
@@ -41,8 +43,143 @@ PairProductCache = dict[tuple[Pair, Pair], Pair]
 OperationCache = dict[Pair, tuple[int, int, int, int, int]]
 StrideMatrixCache = dict[tuple[int, int, int, int, int], tuple[float, ...]]
 StrideNonzeroCache = dict[int, tuple[tuple[tuple[int, float], ...], ...]]
-# M: bound retained float objects and tuple slots to roughly 40 MiB per orbit node.
+# Bound retained float objects and tuple slots to roughly 40 MiB per orbit node.
 _ORBIT_ACTIVE_MEMO_SCALAR_BUDGET = 1_000_000
+
+
+class _FactorizedMagneticPairProduct:
+    """Multiply Source ``(space, kernel-coset)`` pairs without flattening the coset."""
+
+    def __init__(
+        self,
+        base: SourceData,
+        *,
+        space_operations: Sequence[tuple[int, int, int, int, int]],
+        kernel_basis: Sequence[int],
+        kernel_fractions: Sequence[tuple[int, int, int, int]],
+        lattice: int,
+    ) -> None:
+        self.base = base
+        self.space_operations = space_operations
+        self.kernel_basis = kernel_basis
+        self.kernel_fractions = kernel_fractions
+        self._kernel_fraction_values = tuple(
+            self.base._fraction_values(fraction) for fraction in kernel_fractions
+        )
+        self.lattice = lattice
+        self._magnetic_table = magnetic_data.data().table
+        self._space_products: dict[tuple[int, int], Pair] = {}
+        self._space_fraction_actions: dict[tuple[int, int], int] = {}
+
+    def accepts(
+        self,
+        *,
+        space_operations: Sequence[tuple[int, int, int, int, int]],
+        kernel_basis: Sequence[int],
+        kernel_fractions: Sequence[tuple[int, int, int, int]],
+        lattice: object,
+        left: object,
+        right: object,
+    ) -> bool:
+        if (
+            space_operations is not self.space_operations
+            or kernel_basis is not self.kernel_basis
+            or kernel_fractions is not self.kernel_fractions
+            or type(lattice) is not int
+            or lattice != self.lattice
+        ):
+            return False
+        space_count = len(self.space_operations)
+        fraction_count = len(self.kernel_fractions)
+        return all(
+            type(pair) is tuple
+            and len(pair) == 2
+            and type(pair[0]) is int
+            and type(pair[1]) is int
+            and 1 <= pair[0] <= space_count
+            and 1 <= pair[1] <= fraction_count
+            for pair in (left, right)
+        )
+
+    def _fraction_index(
+        self,
+        values: tuple[Fraction, Fraction, Fraction],
+    ) -> int:
+        return self.base._kernel_fraction_index_for_delta(
+            kernel_basis=self.kernel_basis,  # type: ignore[arg-type]
+            kernel_fractions=self.kernel_fractions,
+            delta=values,
+        )
+
+    def _space_product(self, left_space: int, right_space: int) -> Pair:
+        key = (left_space, right_space)
+        cached = self._space_products.get(key)
+        if cached is not None:
+            return cached
+
+        left_record = self.space_operations[left_space - 1]
+        right_record = self.space_operations[right_space - 1]
+        nonmagnetic_point_op = int(
+            self._magnetic_table["mag_point_op_mag2nonmag"][int(left_record[4]) - 1]
+        )
+        rotated = self.base._rotate_kernel_fraction_by_space_operation(
+            tuple(int(value) for value in right_record[:4]),  # type: ignore[arg-type]
+            (*left_record[:4], nonmagnetic_point_op),
+            lattice=self.lattice,
+        )
+        left_values = self.base._fraction_values(
+            tuple(int(value) for value in left_record[:4])  # type: ignore[arg-type]
+        )
+        rotated_values = self.base._fraction_values(rotated)
+        fraction = self.base._fraction_record_from_values(
+            tuple(left_values[axis] + rotated_values[axis] for axis in range(3))  # type: ignore[arg-type]
+        )
+        point_op = int(
+            self._magnetic_table["mag_point_op_mlt"]
+            [(int(right_record[4]) - 1) * 144 + (int(left_record[4]) - 1)]
+        )
+        result = self.base._operation_pair_for_record(
+            space_operations=self.space_operations,
+            kernel_basis=self.kernel_basis,  # type: ignore[arg-type]
+            kernel_fractions=self.kernel_fractions,
+            record=(*fraction, point_op),
+        )
+        self._space_products[key] = result
+        return result
+
+    def _space_fraction(self, space_index: int, fraction_index: int) -> int:
+        key = (space_index, fraction_index)
+        cached = self._space_fraction_actions.get(key)
+        if cached is not None:
+            return cached
+
+        space_record = self.space_operations[space_index - 1]
+        nonmagnetic_point_op = int(
+            self._magnetic_table["mag_point_op_mag2nonmag"][int(space_record[4]) - 1]
+        )
+        rotated = self.base._rotate_kernel_fraction_by_space_operation(
+            self.kernel_fractions[fraction_index - 1],
+            (*space_record[:4], nonmagnetic_point_op),
+            lattice=self.lattice,
+        )
+        result = self._fraction_index(self.base._fraction_values(rotated))
+        self._space_fraction_actions[key] = result
+        return result
+
+    def multiply(self, left: Pair, right: Pair) -> Pair:
+        space_index, correction_index = self._space_product(left[0], right[0])
+        rotated_index = self._space_fraction(left[0], right[1])
+        left_values = self._kernel_fraction_values[left[1] - 1]
+        correction_values = self._kernel_fraction_values[correction_index - 1]
+        rotated_values = self._kernel_fraction_values[rotated_index - 1]
+        return space_index, self._fraction_index(
+            tuple(
+                left_values[axis]
+                + correction_values[axis]
+                + rotated_values[axis]
+                for axis in range(3)
+            )
+        )
 
 
 class _MagneticDynamicData:
@@ -57,6 +194,7 @@ class _MagneticDynamicData:
         self.little = base.little
         self.const = base.const
         self._operation_pair_multiply_cache: dict[tuple[object, ...], Pair] = {}
+        self._factorized_pair_product: _FactorizedMagneticPairProduct | None = None
 
     def __getattr__(self, name: str):
         return getattr(self._base, name)
@@ -88,6 +226,22 @@ class _MagneticDynamicData:
             int(row_count),
         )
 
+    def configure_pair_product(
+        self,
+        *,
+        space_operations: Sequence[tuple[int, int, int, int, int]],
+        kernel_basis: Sequence[int],
+        kernel_fractions: Sequence[tuple[int, int, int, int]],
+        lattice: int,
+    ) -> None:
+        self._factorized_pair_product = _FactorizedMagneticPairProduct(
+            self._base,
+            space_operations=space_operations,
+            kernel_basis=kernel_basis,
+            kernel_fractions=kernel_fractions,
+            lattice=lattice,
+        )
+
     def operation_pair_multiply(
         self,
         *,
@@ -98,6 +252,17 @@ class _MagneticDynamicData:
         left: Pair,
         right: Pair,
     ) -> Pair:
+        factorized = self._factorized_pair_product
+        if factorized is not None and factorized.accepts(
+            space_operations=space_operations,
+            kernel_basis=kernel_basis,
+            kernel_fractions=kernel_fractions,
+            lattice=lattice,
+            left=left,
+            right=right,
+        ):
+            return factorized.multiply(left, right)
+
         cache_key = (
             self._base._sequence_key(space_operations, cache_name="_mag_space_operation_sequence_key_cache"),
             tuple(int(value) for value in kernel_basis),
@@ -247,14 +412,14 @@ def _candidate_pairs_with_parent_closure(
     stride_matrix_cache: StrideMatrixCache,
     initial_flags: dict[Pair, int] | None = None,
 ) -> tuple[Pair, ...]:
-    """Return pair scan order after the parent ``pvVar9`` closure pass.
+    """Return pair scan order after the parent operation-pair closure pass.
 
-    Binary ``get_isotropy_`` keeps a flag table over
-    ``(ispace_index, kernel_fraction_index)``.  Matrix evaluation still uses
+    ``get_isotropy_`` maintains flags over
+    ``(ispace_index, kernel_fraction_index)``. Matrix evaluation uses
     ``vadd(kernel_fraction, ispace_op)``, but candidate enumeration marks
     ``selected * stabilizer`` products as excluded before trying the next
-    representative.  This mirrors the parent-node half of that table without
-    changing the OPD matrix semantics.
+    representative. This is the parent-node half of the closure table and does
+    not alter OPD matrix semantics.
     """
 
     pairs = _all_operation_pairs(len(generated_space), len(kernel_fractions))
@@ -346,7 +511,7 @@ def _close_child_pair_flags(
     stride_nonzero_cache: StrideNonzeroCache,
     orbit_key_by_stride_id: dict[int, tuple[int, tuple[float, ...]]] | None = None,
 ) -> dict[Pair, int]:
-    """Approximate binary ``__ptr`` closure for a newly created node."""
+    """Propagate operation-pair closure flags to a newly created child node."""
 
     pairs = _all_operation_pairs(len(generated_space), len(kernel_fractions))
     flags = {pair: 0 for pair in pairs}
@@ -544,7 +709,7 @@ def _orderparam_equation_data_cached(
     free: int,
     active_orderparam: tuple[float, ...],
 ) -> tuple[int, tuple[float, ...], tuple[int, tuple[float, ...]]]:
-    """M: memoize the exact OPD-to-equation boundary without changing its key."""
+    """Memoize the exact OPD-to-equation boundary without changing its key."""
 
     eq_count, equations = orderparam_to_eqs(
         int(dim),
@@ -595,7 +760,7 @@ def _orderparam_from_equations(
     *,
     reduce_first: bool,
 ) -> tuple[int, tuple[float, ...]]:
-    """Return the OPD reconstructed at the matching binary boundary."""
+    """Return the OPD reconstructed from its equation-row representation."""
 
     source = xrowop2(equations, int(eq_count), int(dim)) if reduce_first else equations
     return eqs_to_orderparam(int(dim), int(eq_count), source)
@@ -896,14 +1061,14 @@ def generate_dynamic_isotropy_rows(
                 orderparam=row_orderparam,
                 counts=counts,
             )
-            # B: a selected P occurrence only depends on accepted free=1 rows.
+            # A selected P occurrence only depends on accepted free=1 rows.
             # Higher-free subgroup presentation does not affect BFS expansion.
             if _point_occurrence is None or int(free) == 1
             else None
         )
         if row is not None:
             rows.append(row)
-            # B: dynamic file labels count accepted free=1 rows in Source BFS
+            # Dynamic file labels count accepted free=1 rows in Source BFS
             # discovery order.  Once P<n> is accepted, later nodes cannot
             # change that selected row or its final file-order ordinal.
             if (
@@ -1032,7 +1197,7 @@ def generate_dynamic_isotropy_rows_magnetic(
 
     This follows the same OPD-subspace traversal as the ordinary dynamic
     generator, but evaluates matrices, operation products, and subgroup
-    identification through the magnetic binary surfaces.
+    identification through magnetic Source-table operations.
     """
 
     gid = int(gid)
@@ -1055,6 +1220,12 @@ def generate_dynamic_isotropy_rows_magnetic(
     first = _full_orderparam(dim)
     first_basis, _ = magnetic_data.orderparam_to_subgroup(gid, tuple(int(value) for value in kparam), first, dim)
     kernel_fractions = get_new_fractionals(first_basis)
+    magnetic_data.configure_pair_product(
+        space_operations=generated_space,
+        kernel_basis=first_basis,
+        kernel_fractions=kernel_fractions,
+        lattice=lattice,
+    )
     first_keys, first_rep, _ = _orbit_keys_and_representative(
         magnetic_data,  # type: ignore[arg-type]
         gid=gid,
@@ -1100,7 +1271,7 @@ def generate_dynamic_isotropy_rows_magnetic(
         )
         if row is not None:
             rows.append(row)
-            # B: magnetic dynamic rows use the same Source P<n> discovery
+            # Magnetic dynamic rows use the same Source P<n> discovery
             # count as ordinary rows, so the accepted occurrence is final.
             if (
                 _point_occurrence is not None

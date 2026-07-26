@@ -20,40 +20,9 @@ class IsotropyAtomExpansionMixin:
         return len(self.wyc_pg_cosets_records(sg, site_records))
 
     def supercell_atom_count(self, case: Case, row: WyckoffRow) -> int:
-        """Return MAIN__'s supercell-expanded atom count candidate."""
+        """Return the conventional-orbit multiplicity times the k-cell index."""
 
         return self.wyckoff_multiplicity(case.sg, row) * self.k_supercell_index(case)
-
-    def supercell_atom_fractionals(
-        self,
-        sg: int,
-        row: WyckoffRow,
-        site_params: Iterable[object] | None,
-        basis: Iterable[int],
-        origin: Iterable[int] | None = None,
-    ) -> tuple[tuple[Fraction, Fraction, Fraction], ...]:
-        """Return the atom-table fractional positions for one supercell basis.
-
-        This mirrors the observed MAIN__ atom-table structure: internal
-        supercell translations from `get_new_fractionals_` are combined with
-        Wyckoff coset representatives in the Miller-Love primitive setting,
-        then folded back into the chosen supercell by reducing supercell
-        coordinates modulo one.  The final atom table is printed in the
-        internal conventional setting, so the folded coordinates are converted
-        at the edge of this helper rather than changing the projection
-        machinery's working coordinates.
-        """
-
-        matrix = tuple(int(x) for x in basis)
-        translations = self.get_new_fractionals_from_basis_columns(matrix)
-        return self._supercell_atom_fractionals_affine_setting(
-            sg,
-            row,
-            site_params,
-            matrix,
-            translations,
-            origin,
-        )
 
     def display_distortion_atom_fractionals(
         self,
@@ -62,7 +31,7 @@ class IsotropyAtomExpansionMixin:
         site_params: Iterable[object] | None,
         basis_pml: Iterable[int],
     ) -> tuple[tuple[Fraction, Fraction, Fraction], ...]:
-        """Port DISPLAY DISTORTION's printed Point-column construction.
+        """Construct DISPLAY DISTORTION's printed Point column.
 
         The operation/base part is an affine coordinate and the free Wyckoff
         parameter part is a direct vector.  They therefore cross the setting
@@ -114,88 +83,6 @@ class IsotropyAtomExpansionMixin:
                 out.append(
                     tuple(display_base[axis] + display_parameter[axis] for axis in range(3))
                 )
-        return tuple(out)
-
-    def _supercell_atom_fractionals_affine_setting(
-        self,
-        sg: int,
-        row: WyckoffRow,
-        site_params: Iterable[object] | None,
-        matrix: tuple[int, ...],
-        translations: Iterable[tuple[int, int, int, int]],
-        origin: Iterable[int] | None = None,
-    ) -> tuple[tuple[Fraction, Fraction, Fraction], ...]:
-        """Return final atom positions by transforming Wyckoff affine records.
-
-        MAIN__ first builds the Wyckoff point plus the supercell-internal
-        translation in the Miller-Love primitive setting.  It then changes that
-        point to the internal conventional setting and only afterwards reduces
-        the coordinates modulo the selected supercell basis.  Reducing the
-        affine pml point first erases the translation branch and collapses
-        distinct atoms for centered/nontrivial settings.
-        """
-
-        base, *parameter_vectors = self.wyckoff_fraction_vectors(row)
-        site_records = self.wyc_pg_elements_records(sg, row)
-        cosets = self.wyc_pg_cosets_records(sg, site_records)
-        basis_rows_pml = tuple(
-            tuple(Fraction(matrix[3 * row_index + col]) for col in range(3))
-            for row_index in range(3)
-        )
-        inverse_basis_rows_pml = fraction_matrix_inverse3(basis_rows_pml)
-        params = [Fraction(str(value)) for value in (site_params or ())]
-        out: list[tuple[Fraction, Fraction, Fraction]] = []
-
-        def basis_coordinates(point: tuple[Fraction, Fraction, Fraction]) -> tuple[Fraction, Fraction, Fraction]:
-            return tuple(
-                sum(point[col] * inverse_basis_rows_pml[col][axis] for col in range(3))
-                for axis in range(3)
-            )  # type: ignore[return-value]
-
-        def reduce_in_pml_basis(point: tuple[Fraction, Fraction, Fraction]) -> tuple[Fraction, Fraction, Fraction]:
-            reduced = list(point)
-            # MAIN__ reduces the pml point in the selected superlattice basis
-            # before calling xyz_change_setting_.  If a basis coordinate is
-            # outside [0,1), the corresponding integer basis row is added or
-            # subtracted from the affine translation record and the test restarts.
-            while True:
-                coords = basis_coordinates(tuple(reduced))
-                changed = False
-                for axis, value in enumerate(coords):
-                    if value >= 1:
-                        for col in range(3):
-                            reduced[col] -= basis_rows_pml[axis][col]
-                        changed = True
-                        break
-                    if value < 0:
-                        for col in range(3):
-                            reduced[col] += basis_rows_pml[axis][col]
-                        changed = True
-                        break
-                if not changed:
-                    return tuple(reduced)  # type: ignore[return-value]
-
-        for coset in cosets:
-            op = int(coset[4])
-            denominator = int(coset[3])
-            tau = tuple(Fraction(int(coset[axis]), denominator) for axis in range(3))
-            rotated_base = self.vrot_fraction(sg, op, base)
-            rotated_parameters = [self.vrot_fraction(sg, op, vector) for vector in parameter_vectors]
-            for tx, ty, tz, tden in translations:
-                translation = (Fraction(tx, tden), Fraction(ty, tden), Fraction(tz, tden))
-                affine_base = tuple(
-                    rotated_base[axis] + tau[axis] + translation[axis]
-                    for axis in range(3)
-                )
-                position = list(affine_base)
-                for slot, vector in enumerate(rotated_parameters):
-                    value = params[slot] if slot < len(params) else Fraction(0)
-                    if value == 0:
-                        continue
-                    for axis in range(3):
-                        position[axis] += value * vector[axis]
-                reduced = reduce_in_pml_basis(tuple(position))
-                out.append(self.xyz_change_setting_point(sg, "pml", "cinter", reduced))
         return tuple(out)
 
     def supercell_atom_operation_records(
@@ -286,10 +173,9 @@ class IsotropyAtomExpansionMixin:
 
         Keep this separate from ``wyc_pg_cosets_`` and
         ``supercell_atom_operation_records`` because those are routine-boundary
-        data paths.  Earlier local builds had a broad repeated-translation
-        middle-swap heuristic here; fresh GDB/final comparisons show MAIN__
-        keeps the raw operation order for the current parametric atom-table
-        frontier, including SG126/e/DT and SG223/l/SM.
+        data paths. This implementation preserves the input operation order;
+        SG126/e/DT and SG223/l/SM are controls for that behavior, not a general
+        Source ordering theorem.
         """
 
         records = tuple(operation_records)

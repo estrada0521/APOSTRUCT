@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from fractions import Fraction
 from functools import lru_cache
 from itertools import product
 from math import gcd
@@ -13,8 +14,78 @@ from ISODISTORT.Assembled.Backend.exactmath import (
 )
 
 
+ModularVector3 = tuple[int, int, int]
+
+
+def _cyclic_quotient_offsets(
+    generator: ModularVector3,
+    subgroup: set[ModularVector3],
+    modulus: int,
+) -> tuple[ModularVector3, ...]:
+    """Return ``0,-g,-2g,...`` through the first subgroup recurrence."""
+
+    negative = tuple((-value) % modulus for value in generator)
+    offsets = [(0, 0, 0)]
+    current = negative
+    while current not in subgroup:
+        offsets.append(current)
+        current = tuple(
+            (current[axis] + negative[axis]) % modulus for axis in range(3)
+        )
+    return tuple(offsets)
+
+
+def reciprocal_mesh_source_order(
+    basis: Sequence[int],
+) -> tuple[tuple[Fraction, Fraction, Fraction], ...]:
+    """Return the exact reciprocal quotient in Source first-occurrence order.
+
+    Source scans each reciprocal coordinate as ``0,-1,-2,...`` modulo the
+    determinant.  Factoring that scan through the cyclic subgroup chain
+    ``<c> <= <b,c> <= <a,b,c>`` preserves its nested first/second/third order
+    while visiting exactly ``abs(det)`` quotient points.
+    """
+
+    values = tuple(int(value) for value in basis)
+    if len(values) < 9:
+        raise IndexError("tuple index out of range")
+    signed_det = integer_determinant3(values[:9])
+    det = abs(signed_det)
+    if det <= 0:
+        return ()
+    if det == 1:
+        return ((Fraction(0), Fraction(0), Fraction(0)),)
+    adjugate = integer_adjugate3(values[:9])
+    sign = 1 if signed_det > 0 else -1
+    generators = tuple(
+        tuple(sign * adjugate[3 * row + axis] % det for row in range(3))
+        for axis in range(3)
+    )
+    third = _cyclic_quotient_offsets(generators[2], {(0, 0, 0)}, det)
+    third_group = set(third)
+    second = _cyclic_quotient_offsets(generators[1], third_group, det)
+    second_third_group = {
+        tuple((second_row[axis] + third_row[axis]) % det for axis in range(3))
+        for second_row in second
+        for third_row in third
+    }
+    first = _cyclic_quotient_offsets(generators[0], second_third_group, det)
+    return tuple(
+        tuple(
+            Fraction(
+                (first_row[axis] + second_row[axis] + third_row[axis]) % det,
+                det,
+            )
+            for axis in range(3)
+        )
+        for first_row in first
+        for second_row in second
+        for third_row in third
+    )
+
+
 def integer_inverse_denominator(matrix: Sequence[int]) -> int:
-    """Return the reduced denominator produced by binary ``matinv_``."""
+    """Return the reduced denominator of the exact 3x3 inverse numerator."""
 
     values = tuple(int(value) for value in matrix)
     if len(values) != 9:
@@ -36,13 +107,10 @@ def _integral_row_images_cached(
 ) -> tuple[tuple[int, int, int, int], ...]:
     """Enumerate Source-ordered ``x M / denominator`` integral images.
 
-    Provenance: B. Binary ``get_new_fractionals_`` scans every ``x`` in
-    lexicographic order and retains the kernel of
-    ``x M = 0 (mod denominator)``. This optimized Assembled implementation
-    replaces only that exhaustive scan: Smith normal form generates the same
-    kernel directly, then exact sorting restores Source order. Work scales
-    with the determinant plus sorting instead of the square or cube of the
-    denominator. The faithful loop remains in ``ISOTROPY/Disassembled``.
+    The ``get_new_fractionals_`` contract retains, in lexicographic order, the
+    kernel of ``x M = 0 (mod denominator)``. Smith normal form generates that
+    kernel directly; exact sorting then restores Source order. Work scales with
+    the determinant plus sorting rather than an exhaustive denominator grid.
     """
 
     if len(matrix) != 9:

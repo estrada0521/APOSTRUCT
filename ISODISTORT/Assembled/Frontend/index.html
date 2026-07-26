@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ISODISTORT Assembled</title>
   <link rel="stylesheet" href="theme.css?v=1">
-  <link rel="stylesheet" href="tool.css?v=44">
+  <link rel="stylesheet" href="tool.css?v=54">
   <script type="importmap">
     {
       "imports": {
@@ -79,12 +79,18 @@
             <aside class="mode-viewer-sidebar" aria-label="Mode amplitudes">
               <div id="mode-viewer-controls" class="mode-viewer-controls"></div>
             </aside>
+            <div class="mode-viewer-resizer" role="separator" aria-label="Resize mode controls" aria-orientation="vertical" tabindex="0"></div>
             <div class="mode-viewer-canvas-wrap">
               <canvas id="mode-viewer-canvas"></canvas>
               <div id="mode-viewer-empty" class="mode-viewer-empty">Calculate mode details to open the viewer</div>
               <div class="mode-viewer-display-options">
+                <label><input id="mode-viewer-arrow-only" type="checkbox"> Arrows only</label>
                 <label><input id="mode-viewer-bonds" type="checkbox" checked> Bonds</label>
                 <label><input id="mode-viewer-polyhedra" type="checkbox" checked> Polyhedra</label>
+                <label class="mode-viewer-opacity">Poly opacity
+                  <input id="mode-viewer-poly-opacity" type="range" min="0" max="100" step="5" value="70">
+                  <output id="mode-viewer-poly-opacity-value">70%</output>
+                </label>
               </div>
             </div>
           </div>
@@ -94,7 +100,7 @@
   </main>
 
   <script type="module">
-    import { ModeStructureViewer } from "./mode3d.js?v=2";
+    import { ModeStructureViewer } from "./mode3d.js?v=27";
 
     const state = {
       cif: "",
@@ -116,8 +122,70 @@
       canvas: $("mode-viewer-canvas"),
       empty: $("mode-viewer-empty"),
       controls: $("mode-viewer-controls"),
+      arrowOnlyInput: $("mode-viewer-arrow-only"),
       bondsInput: $("mode-viewer-bonds"),
       polyhedraInput: $("mode-viewer-polyhedra"),
+      polyhedronOpacityInput: $("mode-viewer-poly-opacity"),
+      polyhedronOpacityOutput: $("mode-viewer-poly-opacity-value"),
+    });
+
+    const modeWorkspace = document.querySelector(".mode-viewer-workspace");
+    const modeSidebar = document.querySelector(".mode-viewer-sidebar");
+    const modeResizer = document.querySelector(".mode-viewer-resizer");
+
+    function setModeSidebarWidth(width) {
+      if (!modeWorkspace || !modeSidebar || !modeResizer) return;
+      const bounds = modeWorkspace.getBoundingClientRect();
+      const handleWidth = modeResizer.getBoundingClientRect().width;
+      const availableWidth = bounds.width - handleWidth;
+      if (availableWidth <= 0) return;
+      const minimumSidebar = Math.min(220, Math.max(100, availableWidth * 0.3));
+      const minimumViewer = Math.min(260, Math.max(120, availableWidth * 0.3));
+      const maximumSidebar = Math.max(minimumSidebar, availableWidth - minimumViewer);
+      const nextWidth = Math.min(maximumSidebar, Math.max(minimumSidebar, width));
+      modeWorkspace.style.setProperty("--mode-sidebar-width", `${nextWidth}px`);
+      modeResizer.setAttribute("aria-valuemin", String(Math.round(minimumSidebar)));
+      modeResizer.setAttribute("aria-valuemax", String(Math.round(maximumSidebar)));
+      modeResizer.setAttribute("aria-valuenow", String(Math.round(nextWidth)));
+    }
+
+    modeResizer?.addEventListener("pointerdown", event => {
+      event.preventDefault();
+      modeResizer.focus();
+      modeViewer.setLiveLayoutResize(true);
+      modeResizer.setPointerCapture(event.pointerId);
+      modeResizer.classList.add("is-dragging");
+    });
+    modeResizer?.addEventListener("pointermove", event => {
+      if (!modeResizer.hasPointerCapture(event.pointerId) || !modeWorkspace) return;
+      setModeSidebarWidth(event.clientX - modeWorkspace.getBoundingClientRect().left);
+    });
+    const stopModeResize = event => {
+      if (modeResizer?.hasPointerCapture(event.pointerId)) {
+        modeResizer.releasePointerCapture(event.pointerId);
+      }
+      modeResizer?.classList.remove("is-dragging");
+      modeViewer.setLiveLayoutResize(false);
+    };
+    modeResizer?.addEventListener("pointerup", stopModeResize);
+    modeResizer?.addEventListener("pointercancel", stopModeResize);
+    modeResizer?.addEventListener("lostpointercapture", () => {
+      modeResizer.classList.remove("is-dragging");
+      modeViewer.setLiveLayoutResize(false);
+    });
+    modeResizer?.addEventListener("keydown", event => {
+      if (!modeSidebar || !["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+      event.preventDefault();
+      const current = modeSidebar.getBoundingClientRect().width;
+      const target = event.key === "Home"
+        ? 0
+        : event.key === "End"
+          ? Number.POSITIVE_INFINITY
+          : current + (event.key === "ArrowLeft" ? -20 : 20);
+      setModeSidebarWidth(target);
+    });
+    window.addEventListener("resize", () => {
+      if (modeSidebar) setModeSidebarWidth(modeSidebar.getBoundingClientRect().width);
     });
 
     function setModeDetailsView(view) {

@@ -5,13 +5,13 @@ Extracted mechanically from the former monolithic runtime.
 
 from __future__ import annotations
 
-import ast
 from collections.abc import Sequence
 from fractions import Fraction
 from numbers import Integral, Real
 import re
 from typing import Any
 import numpy as np
+from ISODISTORT.Assembled.Backend.fraction_expression import evaluate_fraction_expression
 from ISODISTORT.Assembled.Backend.reciprocal import catalog as reciprocal_catalog
 from ISODISTORT.Assembled.Backend.modes.engine.decoder import ModeDataDecoder
 from ISODISTORT.Assembled.Backend.modes.engine.dynamic_subduction import (
@@ -635,33 +635,13 @@ def _evaluated_kvector_text(selected_k: dict[str, Any], k_params: dict[str, str]
 
     def evaluate(expression: str) -> Fraction:
         expression = re.sub(r"(?<![A-Za-z0-9_])(\d+(?:/\d+)?)([abg])\b", r"\1*\2", expression)
-        tree = ast.parse(expression, mode="eval")
-
-        def visit(node: ast.AST) -> Fraction:
-            if isinstance(node, ast.Expression):
-                return visit(node.body)
-            if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
-                return Fraction(str(node.value))
-            if isinstance(node, ast.Name) and node.id in params:
-                return Fraction(str(params[node.id]))
-            if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.USub):
-                return -visit(node.operand)
-            if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.UAdd):
-                return visit(node.operand)
-            if isinstance(node, ast.BinOp):
-                left = visit(node.left)
-                right = visit(node.right)
-                if isinstance(node.op, ast.Add):
-                    return left + right
-                if isinstance(node.op, ast.Sub):
-                    return left - right
-                if isinstance(node.op, ast.Mult):
-                    return left * right
-                if isinstance(node.op, ast.Div):
-                    return left / right
-            raise ValueError(f"unsupported k-vector expression {expression!r}")
-
-        return visit(tree)
+        message = f"unsupported k-vector expression {expression!r}"
+        return evaluate_fraction_expression(
+            expression,
+            params,
+            message,
+            message,
+        )
 
     values: list[str] = []
     for component in components:

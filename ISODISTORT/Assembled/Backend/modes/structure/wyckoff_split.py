@@ -1,17 +1,17 @@
 """Source-only Wyckoff splitting helper for undistorted superstructures.
 
-This is a local port of the ISO ``get_new_wyckoff_`` path used by
+This implements the ISO ``get_new_wyckoff_`` path used by
 ``SHOW WYCKOFF SUBGROUP``.  It intentionally depends only on Source-backed
-``SourceTables`` tables, not on web captures or reverse-engineering fixtures.
+``SourceTables`` tables, not on web captures or diagnostic fixtures.
 """
 
 from __future__ import annotations
 
-import ast
 from dataclasses import dataclass
 from fractions import Fraction
 import itertools
 import math
+from numbers import Integral
 import re
 from functools import lru_cache
 from typing import Any
@@ -20,6 +20,10 @@ from ISODISTORT.Assembled.Backend.exactmath import (
     fraction_matrix_inverse3,
     fraction_row_multiply3 as _row_multiply,
     integer_determinant3,
+)
+from ISODISTORT.Assembled.Backend.fraction_expression import (
+    evaluate_fraction_expression,
+    split_coordinate_expression3,
 )
 from ISODISTORT.Assembled.Backend.lattice_quotient import (
     integer_inverse_denominator,
@@ -87,9 +91,9 @@ def _matinv_denominator(matrix: tuple[int, ...]) -> int:
 def _get_new_fractionals(matrix: tuple[int, ...]) -> tuple[FractionRecord, ...]:
     """Return Source-ordered quotient translations for an integer basis.
 
-    Provenance: B.  The shared exact quotient kernel generates the same
-    ``(x, y, z)`` solutions and restores the Source lexicographic scan order
-    without enumerating the full modular cube.
+    The shared exact quotient kernel generates the same ``(x, y, z)``
+    solutions and restores the Source lexicographic scan order without
+    enumerating the full modular cube.
     """
 
     return integral_row_images_source_order(matrix, _matinv_denominator(matrix))
@@ -465,7 +469,7 @@ def child_row_matches_for_group(
         child_branch = tuple(_fraction_record(vector) for vector in data.wyckoff_fraction_vectors(row))
         child_base = _fraction_values(child_branch[0])
         child_params = [_fraction_values(vector) for vector in child_branch[1:] if not _is_zero_record(vector)]
-        # Provenance B: affine membership is independent of the Source itry scan.
+        # Affine membership is independent of the Source ``itry`` scan.
         affine_group_branches: list[WyckoffBranch] = []
         for index in group_indices:
             group_branch = flat[index]
@@ -739,14 +743,6 @@ def _evaluate_parent_affine_branch(
     )  # type: ignore[return-value]
 
 
-def _formula_parts(text: str) -> tuple[str, str, str] | None:
-    stripped = str(text or "").strip()
-    if stripped.startswith("(") and stripped.endswith(")"):
-        stripped = stripped[1:-1]
-    parts = tuple(part.strip() for part in stripped.split(","))
-    return parts if len(parts) == 3 else None
-
-
 def _expr_to_python(expr: str) -> str:
     expr = expr.strip().replace("−", "-")
     expr = re.sub(r"([+-])\s+(?=\d|[xyz])", r"\1", expr)
@@ -758,35 +754,13 @@ def _expr_to_python(expr: str) -> str:
 
 
 def _eval_formula_expr(expr: str, params: dict[str, Fraction]) -> Fraction:
-    tree = ast.parse(_expr_to_python(expr), mode="eval")
-
-    def visit(node: ast.AST) -> Fraction:
-        if isinstance(node, ast.Expression):
-            return visit(node.body)
-        if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
-            return Fraction(str(node.value))
-        if isinstance(node, ast.Name):
-            if node.id not in params:
-                raise ValueError(f"unknown parameter {node.id!r} in {expr!r}")
-            return params[node.id]
-        if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.USub):
-            return -visit(node.operand)
-        if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.UAdd):
-            return visit(node.operand)
-        if isinstance(node, ast.BinOp):
-            left = visit(node.left)
-            right = visit(node.right)
-            if isinstance(node.op, ast.Add):
-                return left + right
-            if isinstance(node.op, ast.Sub):
-                return left - right
-            if isinstance(node.op, ast.Mult):
-                return left * right
-            if isinstance(node.op, ast.Div):
-                return left / right
-        raise ValueError(f"unsupported expression {expr!r}")
-
-    return visit(tree) % 1
+    return evaluate_fraction_expression(
+        _expr_to_python(expr),
+        params,
+        f"unknown parameter {{name}} in {expr!r}",
+        f"unsupported expression {expr!r}",
+        decimal_names=False,
+    ) % 1
 
 
 def _representative_fraction(
@@ -798,7 +772,7 @@ def _representative_fraction(
     try:
         setting = int(data.default_inter_setting_record(int(child_sg))["id"])
         formula = data.inter_wyckoff_formula(int(child_sg), row, setting)
-        parts = _formula_parts(str(formula["formula"]))
+        parts = split_coordinate_expression3(str(formula["formula"]))
         if parts is None:
             raise ValueError("bad child Wyckoff formula")
         params = {"x": child_params[0], "y": child_params[1], "z": child_params[2]}
@@ -818,7 +792,7 @@ def undistorted_rows_from_wyckoff_split(
     *,
     parent_sg: int,
     child_sg: int | None,
-    parent_wyckoff: str,
+    parent_wyckoff_row_id: Any,
     label_prefix: str,
     parent_params: dict[str, Any] | None,
     subgroup_basis: list[list[float]] | None,
@@ -826,28 +800,36 @@ def undistorted_rows_from_wyckoff_split(
 ) -> list[dict[str, Any]]:
     """Return split atom/site/xyz rows for one parent Wyckoff orbit.
 
-    The returned coordinates are child-basis fractional coordinates.  If the
-    subgroup data are incomplete, callers should fall back to their geometric
-    grouping path.
+    The returned coordinates are child-basis fractional coordinates.  The
+    parent row identity is the Source row selected while parsing the parent;
+    it is not reconstructed from a CIF display label.
     """
 
     if child_sg is None or subgroup_basis is None:
-        return []
+        raise ValueError("Wyckoff split requires a child group and basis")
+    if isinstance(parent_wyckoff_row_id, bool) or not isinstance(
+        parent_wyckoff_row_id, Integral
+    ):
+        raise TypeError("parent Wyckoff row id must be an exact integer")
     parent_params = parent_params or {}
-    try:
-        parent_row = data.wyckoff_row_by_label(int(parent_sg), str(parent_wyckoff))
-        basis = _basis_tuple(subgroup_basis)
-        origin = _origin_record(subgroup_origin)
-        splits = get_new_wyckoff_child_rows_formula15_provenance(
-            data,
-            int(parent_sg),
-            int(child_sg),
-            int(parent_row.offset0) + 1,
-            basis,
-            origin,
-        )
-    except Exception:
-        return []
+    parent_rows = tuple(
+        row
+        for row in data.wyckoff_rows(int(parent_sg))
+        if int(row.row_id) == int(parent_wyckoff_row_id)
+    )
+    if len(parent_rows) != 1:
+        raise ValueError("parent Wyckoff row id does not identify one Source row")
+    parent_row = parent_rows[0]
+    basis = _basis_tuple(subgroup_basis)
+    origin = _origin_record(subgroup_origin)
+    splits = get_new_wyckoff_child_rows_formula15_provenance(
+        data,
+        int(parent_sg),
+        int(child_sg),
+        int(parent_row.offset0) + 1,
+        basis,
+        origin,
+    )
 
     rows: list[dict[str, Any]] = []
     child_rows = data.wyckoff_rows(int(child_sg))

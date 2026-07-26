@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from fractions import Fraction
 from functools import lru_cache
 import math
+from numbers import Integral
 from pathlib import Path
 import re
 import sys
@@ -229,9 +230,9 @@ class SourceTables:
 
     @classmethod
     def _trans4(cls, first: list[list[int]], middle: list[list[int]], last: list[list[int]]) -> list[list[int]]:
-        """Port ``trans4_``/``matmlt4_`` for row-major 4x4 integer matrices.
+        """Apply ``trans4_``/``matmlt4_`` rules to row-major 4x4 integer matrices.
 
-        Ghidra shows ``matmlt4_(A, B)`` computes ``B @ A``; therefore
+        This adapter implements ``matmlt4_(A, B)`` as ``B @ A``; therefore
         ``trans4_(A, B, C)`` returns ``C @ B @ A``.
         """
 
@@ -336,9 +337,9 @@ class SourceTables:
     def _space_cinter_base_matrix(self, sg: int, half: int) -> list[list[int]]:
         """Return the SG-indexed conventional/cinter base matrix used by iso.
 
-        Ghidra/GDB maps ``0xe3a740 + sg*0x80`` and ``0xe3a780 + sg*0x80`` to
-        ``data_space:ispace_settings`` starting at integer offset 29408.  The
-        binary uses SG numbers directly, so index 0 is a dummy identity block.
+        The two SG-indexed halves occupy 32 integers per space group in
+        ``data_space:ispace_settings`` starting at offset 29408. SG numbers
+        index the table directly, so index 0 is a dummy identity block.
         """
 
         start = SPACE_SETTINGS_CINTER_BASE + int(sg) * 32 + int(half) * 16
@@ -364,13 +365,12 @@ class SourceTables:
         parent_setting_id: int | None = None,
         subgroup_setting_id: int | None = None,
     ) -> dict[str, Any]:
-        """Port ``subgroup_change_setting_`` for OPD subgroup basis records.
+        """Apply ``subgroup_change_setting_`` to OPD subgroup basis records.
 
-        Ghidra shows that ``setting='cml'`` leaves the stored Miller-Love
-        basis untouched, while non-``cml`` settings apply SG-level setting
-        transforms.  The public ISOTROPY/ISODISTORT display path uses
-        ``setting='cinter'``.  The binary also returns the inverse transform,
-        which is needed by ISOVIZ-style parent/child-basis comparisons.
+        ``setting='cml'`` leaves the stored Miller-Love basis untouched, while
+        non-``cml`` settings apply SG-level setting transforms. The public
+        display path uses ``setting='cinter'``. The inverse transform supports
+        parent/child-basis comparisons.
         """
 
         den = int(origin[3] or 1)
@@ -846,7 +846,6 @@ class SourceTables:
         self,
         sg: int,
         row: WyckoffRow,
-        setting_id: int,
         fract: tuple[float, float, float],
         tol: float = 1e-5,
     ) -> dict[str, float] | None:
@@ -960,7 +959,6 @@ class SourceTables:
             display_source_params = self._solve_inter_wyckoff_params_source_branch(
                 sg,
                 row,
-                setting_id,
                 source_fract,
                 tol=tol,
             )
@@ -1004,6 +1002,50 @@ class SourceTables:
         if old_id <= 0:
             raise KeyError(f"PG{site_pg} irrep {pg_irrep} is not defined")
         return old_id
+
+    def site_pg_irrep_label(self, site_pg: int, pg_irrep: int) -> str:
+        """Return the Source point-group label attached to a site irrep."""
+
+        for field, value in (("site point group", site_pg), ("site irrep", pg_irrep)):
+            if isinstance(value, bool) or not isinstance(value, Integral):
+                raise TypeError(f"{field} must be an exact positive integer")
+            if value <= 0:
+                raise ValueError(f"{field} must be positive, got {value}")
+        site_pg = int(site_pg)
+        pg_irrep = int(pg_irrep)
+        wyckoff = self.iso.wyckoff
+        counts = wyckoff["iwyckoff_pg_irrep_count"]
+        if site_pg > len(counts):
+            raise KeyError(f"site point group out of range: {site_pg}")
+        raw_count = counts[site_pg - 1]
+        if isinstance(raw_count, bool) or not isinstance(raw_count, Integral):
+            raise TypeError(
+                f"PG{site_pg} Source irrep count must be an exact integer"
+            )
+        count = int(raw_count)
+        if count <= 0 or count > 12:
+            raise ValueError(f"PG{site_pg} Source irrep count is invalid: {count}")
+        if pg_irrep > count:
+            raise KeyError(f"PG{site_pg} irrep {pg_irrep} is not defined")
+        raw_old_id = wyckoff["iwyckoff_pg_irrep"][
+            (site_pg - 1) * 12 + pg_irrep - 1
+        ]
+        if isinstance(raw_old_id, bool) or not isinstance(raw_old_id, Integral):
+            raise TypeError(
+                f"PG{site_pg} irrep {pg_irrep} Source old id must be an exact integer"
+            )
+        old_id = int(raw_old_id)
+        labels = self.iso.irreps["irrep_label_pg"]
+        if old_id <= 0 or old_id > len(labels):
+            raise KeyError(
+                f"PG{site_pg} irrep {pg_irrep} Source old id is invalid: {old_id}"
+            )
+        raw_label = labels[old_id - 1]
+        if not isinstance(raw_label, str) or not raw_label.strip():
+            raise KeyError(
+                f"PG{site_pg} irrep {pg_irrep} has no Source point-group label"
+            )
+        return raw_label.strip()
 
     def site_vector_reps(self, site_pg: int) -> tuple[int, ...]:
         values = self.wyckoff["iwyckoff_pg_vector_reps"]

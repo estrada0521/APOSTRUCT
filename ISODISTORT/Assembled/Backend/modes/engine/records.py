@@ -7,20 +7,11 @@ import numpy as np
 
 from ISODISTORT.Assembled.Backend.source.tables import (
     IsotropySubduction as IsotropySubduction,
+    LittleIrrep,
+    WyckoffRow as WyckoffRow,
 )
 
-
-@dataclass(frozen=True)
-class LittleIrrepRecord:
-    gid: int
-    old_id: int
-    label: str
-    full_dim: int
-    irrep_type: int
-    lif: int
-    real_pointer: int
-    real2_pointer: int
-    real2_slice: tuple[int, ...]
+LittleIrrepRecord = LittleIrrep
 
 
 @dataclass(frozen=True)
@@ -36,14 +27,6 @@ class ImageRecord:
     image_type: int | None
     generator_count: int | None
     diagonalize_pointer: int | None
-
-
-@dataclass(frozen=True)
-class WyckoffRow:
-    offset0: int
-    row_id: int
-    label: str
-    site_pg: int
 
 
 @dataclass(frozen=True)

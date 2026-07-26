@@ -1,9 +1,7 @@
-"""Exposed trace assembly for the faithful mode-kernel runtime.
+"""Expose the mode-kernel atom-displacement projection trace.
 
-This module follows the live atom-displacement path through the decompiled
-``MAIN__`` logic around ``project_`` -> MAIN__ bridge -> ``project_vector_``.
-Binary routine names remain explicit so the Source callgraph and this port can
-be compared directly.
+The trace follows Source projection rows through coefficient preparation and
+the final vector expansion while preserving the runtime call boundaries.
 """
 
 from __future__ import annotations
@@ -22,7 +20,6 @@ from ISODISTORT.Assembled.Backend.modes.engine.project.mode_forms import (
     _type1_parametric_scalar_plane_print_order,
     _type3_parametric_component_print_order,
     _type3_parametric_kdim2_print_basis,
-    _type3_parametric_kdim2_trim_mixed_tail,
     _type3_parametric_scalar_plane_print_order,
     _type3_parametric_second_arm_phase,
     _type3_real_print_modes,
@@ -224,7 +221,6 @@ def pipeline_trace(
         for item in project_vector_orderparam_source
         if isinstance(item, dict) and "gid" in item
     }
-    final_project_vector_calls: list[dict[str, object]] = []
     project_weight_buffers: dict[tuple[object, ...], Sequence[float]] = {}
 
     def project_weight_buffer(
@@ -775,9 +771,9 @@ def pipeline_trace(
                                     )
                                 )
                                 if type1_dim4_identity_pair:
-                                    # MAIN__ stores the second real local-vector
-                                    # partner with the opposite sign in the
-                                    # final parametric full-dim-4 assembly.
+                                    # The second real local-vector partner has
+                                    # the opposite sign in the final parametric
+                                    # full-dimension-four assembly.
                                     for row_slot in range(max(0, int(opd_row_count))):
                                         index = row_slot * 3 + 1
                                         if index < len(basis_function):
@@ -799,35 +795,6 @@ def pipeline_trace(
                                     basis_function=basis_function,
                                     output_length=720,
                                 )
-                                final_project_vector_calls.append({
-                                    "gid": int(little.gid),
-                                    "label": little.label,
-                                    "site_pg": int(row.site_pg),
-                                    "vector_basis_id": int(prep["vector_basis_id"]),
-                                    "pg_irrep": pg_irrep,
-                                    "source_family": int(source["family"]),
-                                    "opd_group_index": int(opd_group_index),
-                                    "source_row_count": int(source_row_count),
-                                    "opd_row_count": int(opd_row_count),
-                                    "project_count": int(project_count),
-                                    "project_vector_count": int(project_vector_count),
-                                    "bridge_project_count": int(source["bridge_project_count"]),
-                                    "vector_dim": int(prep.get("vector_dim", 0)),
-                                    "two_row_slots": bool(two_row_slots),
-                                    "display_atom_index": atom_index + 1,
-                                    "point_op": int(record[4]),
-                                    "emitted": int(emitted),
-                                    "basis_function_active_values": [
-                                        [int(index), float(value)]
-                                        for index, value in enumerate(basis_function)
-                                        if abs(float(value)) > 1e-12
-                                    ][:24],
-                                    "output_active_values": [
-                                        [int(index), float(value)]
-                                        for index, value in enumerate(output[: max(0, emitted) * 144])
-                                        if abs(float(value)) > 1e-12
-                                    ][:24],
-                                })
                                 split_row_slots = little.irrep_type == 3 and opd_row_count > 1
                                 if split_row_slots:
                                     while len(source_modes) < max(0, emitted) * opd_row_count:
@@ -1066,9 +1033,6 @@ def pipeline_trace(
                     mode_vectors_by_gid[little.gid] = _type3_parametric_kdim2_print_basis(
                         mode_vectors_by_gid[little.gid]
                     )
-                    mode_vectors_by_gid[little.gid] = _type3_parametric_kdim2_trim_mixed_tail(
-                        mode_vectors_by_gid[little.gid]
-                    )
         else:
             atom_fractionals_by_gid[little.gid] = []
             mode_vectors_by_gid[little.gid] = []
@@ -1181,6 +1145,5 @@ def pipeline_trace(
         "project_vector_prep": project_vector_prep,
         "project_vector_bridge_source": project_vector_bridge_source,
         "project_vector_orderparam_source": project_vector_orderparam_source,
-        "final_project_vector_calls": final_project_vector_calls,
     }
     return result

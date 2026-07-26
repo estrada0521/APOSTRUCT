@@ -1,7 +1,6 @@
-"""Local ISODISTORT Assembled tool.
+"""Local CIF-to-mode-details implementation surface.
 
-This is not a legacy `tools/` draft.  It is the local implementation surface for
-the ISODISTORT-native path:
+The assembled pipeline follows the ISODISTORT-native path:
 
     CIF -> k vector -> irrep -> OPD -> mode details
 

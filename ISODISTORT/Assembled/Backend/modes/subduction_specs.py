@@ -52,9 +52,9 @@ from ISODISTORT.Assembled.Backend.modes.structure_runtime import (
 def _opd_source_data(decoder: ModeDataDecoder) -> OpdSourceData:
     """Share immutable Source tables without retaining per-view memo state.
 
-    Provenance B: both decoders read the same ``data_space``, ``data_little``,
-    and ``const`` tables from the exact Source directory.  A fresh view keeps
-    case-local calculation memoization from leaking across requests.
+    Both decoders read the same ``data_space``, ``data_little``, and ``const``
+    tables from the exact Source directory.  A fresh view keeps case-local
+    calculation memoization from leaking across requests.
     """
 
     return OpdSourceData(decoder.data_dir, tables=decoder.iso)
@@ -591,10 +591,10 @@ def _promote_selected_magnetic_occurrences(
     operations: tuple[tuple[int, int, int, int, int], ...],
     rows: Any,
     selected_cases: list[
-        tuple[int, tuple[int, int, int, int], tuple[Fraction, ...]]
+        tuple[int, tuple[int, int, int, int], tuple[Fraction, ...] | None]
     ],
 ) -> list[Any]:
-    """Replace a deduped magnetic row with its selected raw occurrence."""
+    """Replace a deduped row's heading; ``None`` omits the coupled PML guard."""
 
     promoted_rows = list(rows)
     claimed_indices: set[int] = set()
@@ -605,11 +605,18 @@ def _promote_selected_magnetic_occurrences(
     ) in selected_cases:
         selected_gid = _strict_positive_gid(raw_selected_gid)
         selected_source_kparam = _strict_source_kparam(raw_selected_source_kparam)
-        selected_case_k_params = _strict_case_k_params(raw_selected_case_k_params)
+        selected_case_k_params = (
+            None
+            if raw_selected_case_k_params is None
+            else _strict_case_k_params(raw_selected_case_k_params)
+        )
         if (
             selected_gid is None
             or selected_source_kparam is None
-            or selected_case_k_params is None
+            or (
+                raw_selected_case_k_params is not None
+                and selected_case_k_params is None
+            )
         ):
             continue
         target = _strict_source_kparam_identity(selected_source_kparam)
@@ -620,7 +627,7 @@ def _promote_selected_magnetic_occurrences(
             for row in promoted_rows
         ):
             continue
-        if any(
+        if selected_case_k_params is not None and any(
             _row_projects_selected_case_k_params(
                 decoder,
                 row,
@@ -1040,7 +1047,7 @@ def _subduced_mode_specs(
         specs.sort(key=lambda item: 0 if item["primary"] else 1)
         return specs
     if selected_row_id is None:
-        return [fallback]
+        raise ValueError("static selected irrep has no exact Source isotropy row")
 
     specs: list[dict[str, Any]] = []
     seen: set[tuple[int, int | None]] = set()
@@ -1079,9 +1086,9 @@ def _subduced_mode_specs(
             }
         )
     if not specs:
-        return [fallback]
+        raise ValueError("static Source isotropy row has no subduction records")
     if not any(item["primary"] for item in specs):
-        specs.insert(0, fallback)
+        raise ValueError("static Source subduction records omit the selected primary")
     child_sg = _selected_subgroup_number(selected_opd)
     basis = _integer_basis_tuple(_source_split_basis_from_opd_row(selected_opd))
     origin = _source_split_origin_from_opd_row(selected_opd)
@@ -1245,41 +1252,15 @@ def _magnetic_subduced_mode_specs(
         operations=operations,
         preferred_kparams={str(selected_irrep.get("k_label") or _k_label_from_irrep_label(str(selected_irrep.get("ordinary_symbol") or ""))): source_kparam},
     )
-    rows = raw_rows
-    if not _primary_dynamic_case_is_listed(
-        rows,
-        primary_gid=selected_gid,
-        primary_source_kparam=source_kparam,
-    ):
-        promoted_rows = list(rows)
-        for row_index, row in enumerate(rows):
-            if int(row.gid) != int(selected_gid):
-                continue
-            selected_alias = next(
-                (
-                    alias
-                    for alias in dynamic_magnetic_subduction_occurrence_alias_rows(
-                        decoder,
-                        magnetic_source,
-                        sg=int(sg),
-                        basis=basis,
-                        operations=operations,
-                        row=row,
-                        requested_source_kparam=source_kparam,
-                    )
-                    if _source_kparam_identity(alias.source_kparam)
-                    == _source_kparam_identity(source_kparam)
-                ),
-                None,
-            )
-            if selected_alias is None:
-                continue
-            promoted_rows[row_index] = replace(
-                selected_alias,
-                source_occurrences=row.source_occurrences,
-            )
-            break
-        rows = tuple(promoted_rows)
+    rows = _promote_selected_magnetic_occurrences(
+        decoder,
+        magnetic_source,
+        sg=int(sg),
+        basis=basis,
+        operations=operations,
+        rows=raw_rows,
+        selected_cases=[(selected_gid, source_kparam, None)],
+    )
     alias_candidates = stored_occurrence_alias_candidates(
         decoder,
         raw_rows,

@@ -5,357 +5,70 @@ Extracted mechanically from the former monolithic runtime.
 
 from __future__ import annotations
 
-import ast
+from dataclasses import replace
 from fractions import Fraction
-from functools import lru_cache
+from itertools import product
 import math
+from numbers import Integral
 import re
 from typing import Any
-import gemmi
 from ISODISTORT.Assembled.Backend.exactmath import (
     fraction_matrix_inverse3,
     fraction_matrix_multiply3,
+    fraction_row_multiply3,
     integer_determinant3,
 )
 from ISODISTORT.Assembled.Backend.source.tables import SourceTables
-from ISODISTORT.Assembled.Backend.modes.structure.wyckoff_split import undistorted_rows_from_wyckoff_split
+from ISODISTORT.Assembled.Backend.modes.structure.wyckoff_split import (
+    undistorted_rows_from_wyckoff_split,
+)
 from ISODISTORT.Assembled.Backend.modes.structure.ordinary_presentation import (
-    assign_formula_source_occurrences_to_presentation_grid,
-    match_formula_assignments_to_geometric_grid_orbits,
+    _centering_translations,
+    _input_fraction,
+    formula_child_sites_in_presentation,
+)
+from ISODISTORT.Assembled.Backend.modes.presentation import present_mode_rows
+from ISODISTORT.Assembled.Backend.modes.periodic import periodic_float_close3
+from ISODISTORT.Assembled.Backend.modes.structure.child_atom_layout import (
+    ChildAtomLayout,
+    ChildAtomPresentationRow,
+    child_atom_layout_in_presentation_order,
+    child_atom_layout_from_formula_sites,
+    exact_operation_record,
+    operation_record_row_assignments,
+    regroup_child_atom_layout,
 )
 from ISODISTORT.Assembled.Backend.modes.structure.magnetic_wyckoff import (
-    group_ordinary_orbits_magnetic,
     identify_magnetic_wyckoff,
-    identify_magnetic_wyckoff_branch,
     magnetic_group_setting,
     magnetic_orbit_points,
 )
 from ISODISTORT.Assembled.Backend.modes.structure.magnetic_presentation import (
     presentation_branch_labels_from_correspondence,
-    presentation_grid_rows_for_magnetic_groups,
-    selected_magnetic_correspondence_standard_points,
+    selected_magnetic_atom_action,
 )
 from ISODISTORT.Assembled.Backend.modes.engine.decoder import ModeDataDecoder
 
 from ISODISTORT.Assembled.Backend.modes.common import (
     _assembled_data,
     _float_matrix_inverse_3,
-    _fold01,
-    _fold_fractional_xyz,
-    _frac_close,
     _fraction_matmul,
     _fraction_matrix_inverse_3,
-    _fraction_mod01,
     _fraction_row_multiply,
     _fraction_vecadd,
     _fraction_vecsub,
-    _integer_basis_tuple,
     _isotropy_from_opd_row,
     _mat4_multiply_fraction,
     _matrix_from_basis_tuple,
-    _mode_decoder,
     _normalize_setting_matrix,
-    _origin_record_from_any,
     _origin_record_vector,
     _origin_vector,
     _row_multiply,
 )
 from ISODISTORT.Assembled.Backend.modes.site_transport import (
-    _parent_point_from_default,
-    _parent_point_to_default,
     _parent_setting_bridge,
     _source_default_wyckoff_params,
 )
-
-
-def _mode_rows_grouped_by_presentation_orbits(
-    rows: list[dict[str, Any]],
-    atoms: list[dict[str, Any]],
-    *,
-    atom_prefix: str | None,
-    child_sg: int | None = None,
-    tol: float = 2e-4,
-) -> list[dict[str, Any]] | None:
-    """Order complete mode rows by an exact Source orbit partition."""
-
-    def prefix(value: object) -> str:
-        return re.sub(r"_\d+$", "", str(value or ""))
-
-    def finite_xyz(value: object) -> tuple[float, float, float] | None:
-        if not isinstance(value, (list, tuple)) or len(value) != 3:
-            return None
-        try:
-            xyz = tuple(float(component) for component in value)
-        except (TypeError, ValueError):
-            return None
-        return xyz if all(math.isfinite(component) for component in xyz) else None
-
-    def same_point(
-        left: tuple[float, float, float],
-        right: tuple[float, float, float],
-    ) -> bool:
-        return all(
-            abs(((left[axis] - right[axis] + 0.5) % 1.0) - 0.5) <= tol
-            for axis in range(3)
-        )
-
-    expected_prefix = str(atom_prefix or "")
-    orbits: list[tuple[str, tuple[tuple[float, float, float], ...]]] = []
-    for atom in atoms:
-        if not isinstance(atom, dict):
-            return None
-        label = str(atom.get("label") or "")
-        if not label or (expected_prefix and prefix(label) != expected_prefix):
-            continue
-        raw_orbit = atom.get("_mode_row_orbit_points")
-        if raw_orbit is None:
-            raw_orbit = atom.get("_presentation_orbit_points")
-        if isinstance(raw_orbit, (list, tuple)) and raw_orbit:
-            parsed_orbit = tuple(finite_xyz(point) for point in raw_orbit)
-            if any(point is None for point in parsed_orbit):
-                return None
-        else:
-            representative = finite_xyz(atom.get("xyz"))
-            site_match = re.fullmatch(r"\s*(\d+)\s*[A-Za-z].*", str(atom.get("site") or ""))
-            if representative is None or child_sg is None or site_match is None:
-                return None
-            try:
-                operations = _child_symmetry_ops(int(child_sg))
-            except (KeyError, RuntimeError, TypeError, ValueError):
-                return None
-            parsed: list[tuple[float, float, float]] = []
-            for operation in operations:
-                point = finite_xyz(_apply_child_op(operation, list(representative)))
-                if point is None:
-                    return None
-                if not any(same_point(point, seen) for seen in parsed):
-                    parsed.append(point)
-            if len(parsed) != int(site_match.group(1)):
-                return None
-            parsed_orbit = tuple(parsed)
-        orbits.append((label, parsed_orbit))  # type: ignore[arg-type]
-    if not orbits or len({label for label, _orbit in orbits}) != len(orbits):
-        return None
-
-    row_points: list[tuple[float, float, float]] = []
-    for row in rows:
-        if not isinstance(row, dict):
-            return None
-        xyz = finite_xyz(row.get("xyz"))
-        if xyz is None:
-            return None
-        row_points.append(xyz)
-
-    def row_order_for(field: str) -> list[int]:
-        order: list[int] = []
-        for row in rows:
-            value = row.get(field)
-            if isinstance(value, bool) or not isinstance(value, int) or value < 0:
-                return []
-            order.append(value)
-        return order
-
-    presentation_order = row_order_for("_presentation_grid_index")
-    source_order = row_order_for("_source_raw_index")
-    if (
-        len(presentation_order) == len(rows)
-        and sorted(presentation_order) == list(range(len(rows)))
-    ):
-        row_order = presentation_order
-    elif len(source_order) == len(rows):
-        row_order = source_order
-    else:
-        return None
-
-    unused = set(range(len(rows)))
-    bucket_width: float | None = None
-    if isinstance(tol, (int, float)) and not isinstance(tol, bool):
-        candidate_width = 2.0 * float(tol)
-        if (
-            math.isfinite(candidate_width)
-            and candidate_width > 0.0
-            and math.isfinite(1.0 / candidate_width)
-        ):
-            bucket_width = candidate_width
-    bucket_count = (
-        max(1, int(math.floor(1.0 / bucket_width)))
-        if bucket_width is not None
-        else None
-    )
-    row_buckets: dict[tuple[int, int, int], list[int]] = {}
-    if bucket_count is not None and bucket_width is not None:
-        for index, point in enumerate(row_points):
-            key = tuple(
-                int(math.floor((point[axis] % 1.0) / bucket_width))
-                % bucket_count
-                for axis in range(3)
-            )
-            row_buckets.setdefault(key, []).append(index)  # type: ignore[arg-type]
-
-    def indexed_matches(point: tuple[float, float, float]) -> list[int]:
-        if bucket_count is None or bucket_width is None:
-            return [
-                index
-                for index in sorted(unused)
-                if same_point(point, row_points[index])
-            ]
-        center = tuple(
-            int(math.floor((point[axis] % 1.0) / bucket_width)) % bucket_count
-            for axis in range(3)
-        )
-        matches: list[int] = []
-        visited_buckets: set[tuple[int, int, int]] = set()
-        for first in (-1, 0, 1):
-            for second in (-1, 0, 1):
-                for third in (-1, 0, 1):
-                    key = (
-                        (center[0] + first) % bucket_count,
-                        (center[1] + second) % bucket_count,
-                        (center[2] + third) % bucket_count,
-                    )
-                    if key in visited_buckets:
-                        continue
-                    visited_buckets.add(key)
-                    for index in row_buckets.get(key, ()):
-                        if index in unused and same_point(
-                            point, row_points[index]
-                        ):
-                            matches.append(index)
-        return matches
-
-    grouped: list[tuple[str, int, list[int]]] = []
-    for label, orbit in orbits:
-        indices: list[int] = []
-        for point in orbit:
-            matches = indexed_matches(point)
-            if len(matches) != 1:
-                return None
-            unused.remove(matches[0])
-            indices.append(matches[0])
-        grouped.append((label, min(row_order[index] for index in indices), sorted(indices)))
-    if unused:
-        return None
-    if len({raw_index for _label, raw_index, _indices in grouped}) != len(grouped):
-        return None
-
-    out: list[dict[str, Any]] = []
-    for ordinal, (_label, _raw_index, indices) in enumerate(
-        sorted(grouped, key=lambda item: item[1]),
-        start=1,
-    ):
-        label = f"{expected_prefix}_{ordinal}"
-        for orbit_index, row_index in enumerate(indices):
-            out.append(
-                {
-                    **rows[row_index],
-                    "atom": label if orbit_index == 0 else None,
-                }
-            )
-    return out
-
-
-def _split_formula_xyz(formula: Any) -> tuple[str, str, str] | None:
-    if not isinstance(formula, str):
-        return None
-    text = formula.strip()
-    if text.startswith("(") and text.endswith(")"):
-        text = text[1:-1]
-    parts = tuple(part.strip() for part in text.split(","))
-    return parts if len(parts) == 3 else None
-
-
-
-def _eval_fraction_formula(expr: str, params: dict[str, Any]) -> float:
-    text = str(expr).strip().replace("−", "-")
-    text = re.sub(
-        r"(?<![A-Za-z0-9_])([+-]?(?:\d+(?:/\d+)?|\d*\.\d+))([xyz])\b",
-        r"\1*\2",
-        text,
-    )
-    tree = ast.parse(text, mode="eval")
-
-    def eval_node(node: ast.AST) -> float:
-        if isinstance(node, ast.Expression):
-            return eval_node(node.body)
-        if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
-            return float(node.value)
-        if isinstance(node, ast.Name):
-            return float(params.get(node.id, 0.0))
-        if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.USub):
-            return -eval_node(node.operand)
-        if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.UAdd):
-            return eval_node(node.operand)
-        if isinstance(node, ast.BinOp):
-            left = eval_node(node.left)
-            right = eval_node(node.right)
-            if isinstance(node.op, ast.Add):
-                return left + right
-            if isinstance(node.op, ast.Sub):
-                return left - right
-            if isinstance(node.op, ast.Mult):
-                return left * right
-            if isinstance(node.op, ast.Div):
-                return left / right
-        raise ValueError(f"unsupported Wyckoff formula expression: {expr!r}")
-
-    return eval_node(tree) % 1.0
-
-
-
-def _xyz_from_wyckoff_match(match: dict[str, Any], fallback_xyz: tuple[float, float, float]) -> list[float]:
-    parts = _split_formula_xyz(match.get("formula"))
-    params = match.get("params") or {}
-    if parts is None or not isinstance(params, dict):
-        return list(fallback_xyz)
-    try:
-        return [_eval_fraction_formula(part, params) for part in parts]
-    except Exception:
-        return list(fallback_xyz)
-
-@lru_cache(maxsize=4096)
-def _matched_child_site_display(
-    child_sg: int,
-    fract: tuple[float, float, float],
-    *,
-    multiplicity: int | None = None,
-) -> tuple[str, tuple[float, float, float]] | None:
-    query: dict[str, Any] = {"fract": [str(value) for value in fract]}
-    if multiplicity is not None and int(multiplicity) > 0:
-        query["multiplicity"] = str(int(multiplicity))
-    data = _assembled_data()
-    try:
-        setting = int(data.default_inter_setting_record(int(child_sg))["id"])
-        match = data.match_inter_wyckoff_site(
-            int(child_sg),
-            query,
-            setting,
-            tol=2e-5,
-        )
-    except Exception:
-        match = None
-    if not match:
-        try:
-            match = data.match_wyckoff_site(int(child_sg), query, tol=2e-5)
-        except Exception:
-            match = None
-    if not match:
-        return None
-    label = str(match.get("label") or "")
-    multiplicity = str(match.get("multiplicity") or "")
-    site = f"{multiplicity}{label}" if multiplicity or label else ""
-    if not site:
-        return None
-    display = _xyz_from_wyckoff_match(match, fract)
-    return site, tuple(float(value) for value in display)
-
-
-def _child_site_display(child_sg: int | None, xyz: Any, fallback: str) -> tuple[str, list[float]]:
-    fract = _fold_fractional_xyz(xyz)
-    if child_sg is None or fract is None:
-        return fallback, list(fract) if fract is not None else list(xyz or [])
-    match = _matched_child_site_display(int(child_sg), fract)
-    return (match[0], list(match[1])) if match is not None else (fallback, list(fract))
-
 
 
 def _display_basis_origin_matrix(
@@ -364,10 +77,16 @@ def _display_basis_origin_matrix(
 ) -> list[list[Fraction]]:
     origin_values = _origin_vector(origin)
     return [
-        [Fraction(str(basis[row][col])).limit_denominator(1000000) for col in range(3)] + [Fraction(0)]
+        [Fraction(str(basis[row][col])).limit_denominator(1000000) for col in range(3)]
+        + [Fraction(0)]
         for row in range(3)
-    ] + [[Fraction(str(origin_values[col])).limit_denominator(1000000) for col in range(3)] + [Fraction(1)]]
-
+    ] + [
+        [
+            Fraction(str(origin_values[col])).limit_denominator(1000000)
+            for col in range(3)
+        ]
+        + [Fraction(1)]
+    ]
 
 
 def _internal_split_basis_origin(
@@ -386,11 +105,16 @@ def _internal_split_basis_origin(
             _normalize_setting_matrix(data._space_cinter_base_matrix(int(child_sg), 0)),  # noqa: SLF001
         )
         right = _mat4_multiply_fraction(
-            _normalize_setting_matrix(data._space_cinter_base_matrix(int(parent_sg), 1)),  # noqa: SLF001
+            _normalize_setting_matrix(
+                data._space_cinter_base_matrix(int(parent_sg), 1)
+            ),  # noqa: SLF001
             _normalize_setting_matrix(data._inter_matrix_by_id(parent_choice, 0)),  # noqa: SLF001
         )
         internal = _mat4_multiply_fraction(
-            _mat4_multiply_fraction(data._mat4_inverse_fraction(left), _display_basis_origin_matrix(display_basis, display_origin)),  # noqa: SLF001
+            _mat4_multiply_fraction(
+                data._mat4_inverse_fraction(left),
+                _display_basis_origin_matrix(display_basis, display_origin),
+            ),  # noqa: SLF001
             data._mat4_inverse_fraction(right),  # noqa: SLF001
         )
     except Exception:
@@ -402,409 +126,6 @@ def _internal_split_basis_origin(
         den = math.lcm(den, value.denominator)
     origin = tuple(int(value * den) for value in origin_values) + (den,)
     return basis, origin  # type: ignore[return-value]
-
-
-
-def _child_symmetry_ops(child_sg: int) -> tuple[gemmi.Op, ...]:
-    return tuple(gemmi.find_spacegroup_by_number(int(child_sg)).operations())
-
-
-
-def _apply_child_op(op: gemmi.Op, xyz: list[float]) -> list[float]:
-    return [_fold01(value) for value in op.apply_to_xyz(list(xyz))]
-
-
-def _periodic_position_matches(
-    point: list[float],
-    positions: list[list[float]],
-    *,
-    tolerance: float = 2e-5,
-) -> list[int]:
-    matches: list[int] = []
-    for index, candidate in enumerate(positions):
-        if all(
-            abs(((float(point[axis]) - float(candidate[axis]) + 0.5) % 1.0) - 0.5)
-            <= tolerance
-            for axis in range(3)
-        ):
-            matches.append(index)
-    return matches
-
-
-def _child_orbit_display_layout(
-    positions: list[list[float]],
-    child_sg: int | None,
-) -> tuple[list[int], set[int]] | None:
-    """Return a stable orbit-major row order and its representative rows."""
-
-    if child_sg is None or not positions:
-        return None
-    try:
-        ops = _child_symmetry_ops(int(child_sg))
-    except Exception:
-        return None
-    unused = set(range(len(positions)))
-    orbit_rows: list[list[int]] = []
-    while unused:
-        seed = min(unused)
-        orbit: set[int] = set()
-        for operation in ops:
-            matches = _periodic_position_matches(
-                _apply_child_op(operation, positions[seed]),
-                positions,
-            )
-            if len(matches) != 1:
-                return None
-            orbit.add(matches[0])
-        if seed not in orbit or not orbit <= unused:
-            return None
-        ordered_orbit = sorted(orbit)
-        orbit_rows.append(ordered_orbit)
-        unused.difference_update(orbit)
-    order = [index for orbit in orbit_rows for index in orbit]
-    if len(order) != len(positions):
-        return None
-    return order, {orbit[0] for orbit in orbit_rows}
-
-
-def _sort_child_orbit_rows_for_display(
-    rows: list[dict[str, Any]],
-    *,
-    label_prefix: str,
-) -> list[dict[str, Any]]:
-    """Sort split sites by multiplicity/letter and renumber their display labels."""
-
-    def key(item: tuple[int, dict[str, Any]]) -> tuple[int, str, int]:
-        index, row = item
-        site = str(row.get("site") or "")
-        match = re.fullmatch(r"\s*(\d+)\s*([A-Za-z].*)?", site)
-        multiplicity = int(match.group(1)) if match else 10**9
-        letter = str(match.group(2) or "") if match else site
-        return multiplicity, letter, index
-
-    ordered = [dict(row) for _, row in sorted(enumerate(rows), key=key)]
-    for ordinal, row in enumerate(ordered, start=1):
-        row["label"] = f"{label_prefix}_{ordinal}"
-    return ordered
-
-
-
-def _child_orbit_representative_rows(
-    *,
-    label_prefix: str,
-    positions: list[list[float]],
-    child_sg: int | None,
-    fallback_site: str,
-    require_closed: bool = False,
-) -> list[dict[str, Any]]:
-    if child_sg is None or not positions:
-        return []
-    try:
-        ops = _child_symmetry_ops(int(child_sg))
-    except Exception:
-        return []
-    if require_closed and any(
-        len(_periodic_position_matches(position, positions)) != 1
-        for position in positions
-    ):
-        return []
-    unused = set(range(len(positions)))
-    rows: list[dict[str, Any]] = []
-    while unused:
-        seed = min(unused)
-        orbit_points = [_apply_child_op(op, positions[seed]) for op in ops]
-        orbit_indices: set[int] = set()
-        for point in orbit_points:
-            matches = set(_periodic_position_matches(point, positions))
-            if require_closed and len(matches) != 1:
-                return []
-            orbit_indices.update(matches)
-        if require_closed and (seed not in orbit_indices or not orbit_indices <= unused):
-            return []
-        orbit_indices.intersection_update(unused)
-        if not orbit_indices:
-            if require_closed:
-                return []
-            orbit_indices = {seed}
-        if require_closed:
-            representative = min(orbit_indices)
-            fast_display = _matched_child_site_display(
-                int(child_sg),
-                tuple(float(value) for value in positions[representative]),
-                multiplicity=len(orbit_indices),
-            )
-            if fast_display is not None:
-                site_label, display_xyz = fast_display
-                match = re.match(r"\s*(\d+)", str(site_label or ""))
-                if match is not None and int(match.group(1)) == len(orbit_indices):
-                    rows.append(
-                        {
-                            "label": f"{label_prefix}_{len(rows) + 1}",
-                            "site": site_label,
-                            "xyz": [_fold01(float(value)) for value in display_xyz],
-                            "_source_index": representative,
-                        }
-                    )
-                    unused.difference_update(orbit_indices)
-                    continue
-        display_by_index = {
-            index: _child_site_display(child_sg, positions[index], fallback_site)
-            for index in orbit_indices
-        }
-
-        def representative_key(index: int) -> tuple[int, int]:
-            site_label = display_by_index[index][0]
-            match = re.match(r"\s*(\d+)", str(site_label or ""))
-            multiplicity = int(match.group(1)) if match else 10**9
-            return multiplicity, index
-
-        representative = min(orbit_indices, key=representative_key)
-        site_label, display_xyz = display_by_index[representative]
-        display_xyz = [_fold01(float(value)) for value in display_xyz]
-        rows.append(
-            {
-                "label": f"{label_prefix}_{len(rows) + 1}",
-                "site": site_label,
-                "xyz": display_xyz,
-                "_source_index": representative,
-            }
-        )
-        unused.difference_update(orbit_indices)
-    return rows
-
-
-
-def _is_identity_basis_origin(
-    basis: list[list[float]] | None,
-    origin: Any,
-) -> bool:
-    if basis is None:
-        return False
-    identity = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
-    return (
-        all(abs(float(basis[row][col]) - identity[row][col]) <= 1e-8 for row in range(3) for col in range(3))
-        and all(abs(_fold01(value)) <= 1e-8 for value in _origin_vector(origin))
-    )
-
-
-
-def _translation_child_shifts(
-    basis: list[list[float]],
-    *,
-    max_size: int = 4096,
-) -> list[tuple[Fraction, Fraction, Fraction]]:
-    inverse = _fraction_matrix_inverse_3(basis)
-    if inverse is None:
-        return []
-    generators = [
-        tuple(_fraction_mod01(value) for value in _fraction_row_multiply(unit, inverse))
-        for unit in (
-            (Fraction(1), Fraction(0), Fraction(0)),
-            (Fraction(0), Fraction(1), Fraction(0)),
-            (Fraction(0), Fraction(0), Fraction(1)),
-        )
-    ]
-    seen: set[tuple[Fraction, Fraction, Fraction]] = {(Fraction(0), Fraction(0), Fraction(0))}
-    queue = [(Fraction(0), Fraction(0), Fraction(0))]
-    while queue:
-        current = queue.pop(0)
-        for generator in generators:
-            nxt = tuple(_fraction_mod01(current[axis] + generator[axis]) for axis in range(3))
-            if nxt in seen:
-                continue
-            seen.add(nxt)
-            queue.append(nxt)
-            if len(seen) > max_size:
-                return [(Fraction(0), Fraction(0), Fraction(0))]
-    return sorted(seen)
-
-
-
-def _parent_orbit_points(
-    parent_sg: int,
-    xyz: tuple[float, float, float],
-    operations: list[str] | None = None,
-    *,
-    preserve_lattice_translation: bool = False,
-) -> list[list[float]]:
-    if operations:
-        ops = []
-        for triplet in operations:
-            try:
-                ops.append(gemmi.Op(str(triplet)))
-            except (RuntimeError, TypeError, ValueError):
-                continue
-    else:
-        try:
-            ops = list(gemmi.find_spacegroup_by_number(int(parent_sg)).operations())
-        except Exception:
-            return [list(xyz)]
-    points: list[list[float]] = []
-    for op in ops:
-        transformed = [float(value) for value in op.apply_to_xyz(list(xyz))]
-        point = (
-            transformed
-            if preserve_lattice_translation
-            else [_fold01(value) for value in transformed]
-        )
-        if not any(_frac_close(point, seen, tol=1e-7) for seen in points):
-            points.append(point)
-    return points
-
-
-
-def _complete_child_atom_layout(
-    *,
-    parent_sg: int,
-    child_sg: int | None,
-    parent_xyz: tuple[float, float, float] | None,
-    basis: list[list[float]] | None,
-    origin: Any,
-    label_prefix: str,
-    fallback_site: str,
-    parent_operations: list[str] | None = None,
-) -> tuple[list[list[float]], dict[int, str]] | None:
-    """Return the full selected-cell atom grid and child-orbit labels."""
-
-    if child_sg is None or parent_xyz is None or basis is None:
-        return None
-    inverse = _float_matrix_inverse_3(basis)
-    if inverse is None:
-        return None
-    origin_vector = _origin_vector(origin)
-    positions: list[list[float]] = []
-    for parent_point in _parent_orbit_points(
-        parent_sg,
-        parent_xyz,
-        parent_operations,
-        preserve_lattice_translation=True,
-    ):
-        child_base = _row_multiply(
-            [parent_point[index] - origin_vector[index] for index in range(3)],
-            inverse,
-        )
-        for shift in _translation_child_shifts(basis):
-            child_point = [_fold01(child_base[index] + float(shift[index])) for index in range(3)]
-            if not any(_frac_close(child_point, seen, tol=1e-7) for seen in positions):
-                positions.append(child_point)
-    representatives = _child_orbit_representative_rows(
-        label_prefix=label_prefix,
-        positions=positions,
-        child_sg=child_sg,
-        fallback_site=fallback_site,
-    )
-    labels = {
-        int(row["_source_index"]): str(row["label"])
-        for row in representatives
-        if row.get("_source_index") is not None
-    }
-    return positions, labels
-
-
-def _canonical_site_fractional_xyz(
-    site: dict[str, Any],
-) -> tuple[float, float, float] | None:
-    """Keep the parent representative's lattice-translation provenance."""
-
-    matched = site.get("representative_matched_fract")
-    if isinstance(matched, (list, tuple)) and len(matched) == 3:
-        try:
-            parsed = tuple(float(value) for value in matched)
-        except (TypeError, ValueError):
-            parsed = ()
-        if len(parsed) == 3 and all(math.isfinite(value) for value in parsed):
-            return parsed  # type: ignore[return-value]
-    return _fold_fractional_xyz(site.get("fract"))
-
-
-
-def _mode_rows_on_complete_atom_layout(
-    rows: list[dict[str, Any]],
-    layout: tuple[list[list[float]], dict[int, str]] | None,
-) -> list[dict[str, Any]]:
-    """Join projected displacement support onto the complete selected-cell grid."""
-
-    if layout is None:
-        return rows
-    positions, labels = layout
-    tolerance = 1e-6
-    # A 2*tol cell keeps every tol-close pair in the same or an adjacent bin.
-    bucket_width = 2 * tolerance
-    bucket_count = 500_000
-    buckets: dict[tuple[int, int, int], list[int]] = {}
-    row_xyz: dict[int, list[float]] = {}
-    for row_index, row in enumerate(rows):
-        xyz = row.get("xyz")
-        if not isinstance(xyz, list):
-            continue
-        folded = tuple(float(xyz[index]) % 1.0 for index in range(3))
-        if not all(math.isfinite(value) for value in folded):
-            continue
-        key = tuple(
-            int(math.floor(value / bucket_width)) % bucket_count
-            for value in folded
-        )
-        buckets.setdefault(key, []).append(row_index)  # type: ignore[arg-type]
-        row_xyz[row_index] = xyz
-    aligned: list[dict[str, Any]] = []
-    for index, position in enumerate(positions):
-        folded = tuple(float(position[axis]) % 1.0 for axis in range(3))
-        candidate_indices: set[int] = set()
-        if len(folded) == 3 and all(math.isfinite(value) for value in folded):
-            center = tuple(
-                int(math.floor(value / bucket_width)) % bucket_count
-                for value in folded
-            )
-            for first in (-1, 0, 1):
-                for second in (-1, 0, 1):
-                    for third in (-1, 0, 1):
-                        candidate_indices.update(
-                            buckets.get(
-                                (
-                                    (center[0] + first) % bucket_count,
-                                    (center[1] + second) % bucket_count,
-                                    (center[2] + third) % bucket_count,
-                                ),
-                                (),
-                            )
-                        )
-        matches = [
-            row_index
-            for row_index in sorted(candidate_indices)
-            if _frac_close(position, row_xyz[row_index], tol=tolerance)
-        ]
-        source_index = max(
-            matches,
-            key=lambda row_index: sum(
-                float(value) ** 2 for value in (rows[row_index].get("dxyz") or ())
-            ),
-            default=None,
-        )
-        source = None if source_index is None else rows[source_index]
-        aligned.append(
-            {
-                "atom": labels.get(index),
-                "xyz": list(position),
-                "dxyz": (
-                    [0.0, 0.0, 0.0]
-                    if source is None
-                    else [float(value) for value in source.get("dxyz") or (0.0, 0.0, 0.0)]
-                ),
-                "_presentation_grid_index": index,
-                **(
-                    {"_operation_record": source["_operation_record"]}
-                    if source is not None and source.get("_operation_record") is not None
-                    else {}
-                ),
-                **(
-                    {"_source_raw_index": source["_source_raw_index"]}
-                    if source is not None and source.get("_source_raw_index") is not None
-                    else {}
-                ),
-            }
-        )
-    return aligned
-
 
 
 def _web_magnetic_occurrence_gauge(
@@ -827,7 +148,9 @@ def _web_magnetic_occurrence_gauge(
             continue
         lattice = int(decoder.iso.space["ispace_lattice"][int(sg) - 1])
         code = int(
-            decoder.iso.space["ipoint_op_psettings"][(lattice - 1) * 72 + int(record[4]) - 1]
+            decoder.iso.space["ipoint_op_psettings"][
+                (lattice - 1) * 72 + int(record[4]) - 1
+            ]
         )
         matrix = []
         for _ in range(9):
@@ -840,376 +163,1157 @@ def _web_magnetic_occurrence_gauge(
             out.append(
                 {
                     **row,
-                    "dxyz": [-float(value) for value in row.get("dxyz") or (0.0, 0.0, 0.0)],
+                    "dxyz": [
+                        -float(value) for value in row.get("dxyz") or (0.0, 0.0, 0.0)
+                    ],
                 }
             )
     return out
 
 
-
-def _presentation_child_points(
-    *,
-    parent_sg: int,
-    parent_xyz: tuple[float, float, float] | None,
-    basis: list[list[float]] | None,
-    origin: Any,
-) -> list[list[float]]:
-    """Expand one parent representative into the selected presentation cell."""
-
-    if basis is None or parent_xyz is None:
-        return []
-    inverse = _float_matrix_inverse_3(basis)
-    if inverse is None:
-        return []
-    origin_vector = _origin_vector(origin)
-    shifts = _translation_child_shifts(basis)
-    positions: list[list[float]] = []
-    for parent_point in _parent_orbit_points(parent_sg, parent_xyz):
-        child_base = _row_multiply(
-            [parent_point[index] - origin_vector[index] for index in range(3)],
-            inverse,
-        )
-        for shift in shifts:
-            child_point = [_fold01(child_base[index] + float(shift[index])) for index in range(3)]
-            if not any(_frac_close(child_point, seen, tol=1e-7) for seen in positions):
-                positions.append(child_point)
-    return positions
+def _exact_space_group_number(value: Any, name: str) -> int:
+    if isinstance(value, bool) or not isinstance(value, Integral):
+        raise TypeError(f"{name} must be an exact integer")
+    number = int(value)
+    if not 1 <= number <= 230:
+        raise ValueError(f"{name} must be between 1 and 230")
+    return number
 
 
-
-def _ordinary_rows_from_complete_child_grid(
-    *,
-    parent_sg: int,
-    child_sg: int,
-    label_prefix: str,
-    parent_xyz: tuple[float, float, float] | None,
-    fallback_site: str,
-    source_basis: list[list[float]] | None,
-    source_origin: Any,
-    presentation_basis: list[list[float]] | None,
-    presentation_origin: Any,
-) -> list[dict[str, Any]]:
-    """Partition the complete presentation grid in the standard child frame."""
-
-    source_basis_values = _integer_basis_tuple(source_basis)
-    source_inverse = _fraction_matrix_inverse_3(source_basis or [])
-    source_origin_record = _origin_record_from_any(source_origin)
-    if (
-        source_basis_values is None
-        or source_inverse is None
-        or source_origin_record is None
-        or presentation_basis is None
-    ):
-        return []
-    presentation_points = _presentation_child_points(
-        parent_sg=parent_sg,
-        parent_xyz=parent_xyz,
-        basis=presentation_basis,
-        origin=presentation_origin,
-    )
-    if not presentation_points:
-        return []
-    decoder = _mode_decoder("Source")
-    presentation_matrix = tuple(
-        tuple(Fraction(str(value)) for value in row)
-        for row in presentation_basis
-    )
-    presentation_origin_vector = tuple(
-        Fraction(str(value)) for value in _origin_vector(presentation_origin)
-    )
-    source_origin_vector = _origin_record_vector(source_origin_record)
-
-    standard_points: list[tuple[Fraction, Fraction, Fraction]] = []
-    for point in presentation_points:
-        parent_cinter = _fraction_vecadd(
-            _fraction_row_multiply(
-                tuple(Fraction(str(value)) for value in point), presentation_matrix
-            ),
-            presentation_origin_vector,
-        )
-        parent_pml = decoder.xyz_change_setting_point(
-            int(parent_sg), "cinter", "pml", parent_cinter
-        )
-        child_pml = _fraction_row_multiply(
-            _fraction_vecsub(parent_pml, source_origin_vector), source_inverse
-        )
-        standard_points.append(
-            tuple(
-                _fraction_mod01(value)
-                for value in decoder.xyz_change_setting_point(
-                    int(child_sg), "pml", "cinter", child_pml
-                )
-            )  # type: ignore[arg-type]
-        )
-
-    def periodic_match(left: Any, right: Any) -> bool:
-        return all(
-            abs(
-                float(Fraction(left[axis]) - Fraction(right[axis]))
-                - round(float(Fraction(left[axis]) - Fraction(right[axis])))
-            )
-            <= 1e-7
-            for axis in range(3)
-        )
-
-    try:
-        operations = _child_symmetry_ops(int(child_sg))
-    except (KeyError, RuntimeError, TypeError, ValueError):
-        return []
-    unused = set(range(len(standard_points)))
-    rows: list[dict[str, Any]] = []
-    while unused:
-        seed = min(unused)
-        component: set[int] = set()
-        for operation in operations:
-            image = operation.apply_to_xyz(
-                [float(value) for value in standard_points[seed]]
-            )
-            matches = [
-                index
-                for index, candidate in enumerate(standard_points)
-                if periodic_match(image, candidate)
-            ]
-            if len(matches) != 1:
-                return []
-            component.add(matches[0])
-        if seed not in component or not component <= unused:
-            return []
-        site_label, _display_xyz = _child_site_display(
-            int(child_sg),
-            [float(value) for value in standard_points[seed]],
-            fallback_site,
-        )
-        rows.append(
-            {
-                "label": f"{label_prefix}_{len(rows) + 1}",
-                "site": site_label,
-                "xyz": list(presentation_points[seed]),
-                "_source_index": seed,
-            }
-        )
-        unused.difference_update(component)
-    return rows
-
-
-
-def _undistorted_rows_from_parent_wyckoff_split(
-    *,
-    parent_sg: int,
-    child_sg: int | None,
-    label_prefix: str,
-    parent_xyz: tuple[float, float, float] | None,
-    parent_site: str,
-    basis: list[list[float]] | None,
-    origin: Any,
-) -> list[dict[str, Any]]:
-    if child_sg is None or basis is None or parent_xyz is None:
-        return []
-    if int(parent_sg) == int(child_sg) and _is_identity_basis_origin(basis, origin):
-        return [{"label": f"{label_prefix}_1", "site": parent_site, "xyz": list(parent_xyz)}]
-    positions = _presentation_child_points(
-        parent_sg=parent_sg,
-        parent_xyz=parent_xyz,
-        basis=basis,
-        origin=origin,
-    )
-    return _child_orbit_representative_rows(
-        label_prefix=label_prefix,
-        positions=positions,
-        child_sg=child_sg,
-        fallback_site=parent_site,
-        require_closed=True,
-    )
-
-
-
-def _undistorted_rows_for_site(
+def _source_child_atom_layout_for_site(
     *,
     sg: int,
     child_sg: int | None,
     site: dict[str, Any],
     label_prefix: str,
-    fallback_site: str,
-    parent_xyz: tuple[float, float, float] | None,
     split_basis: list[list[float]] | None,
     split_origin: Any,
-    presentation_basis: list[list[float]] | None,
-    presentation_origin: Any,
     parent_setting_id: int | None = None,
     symmetry_operations: list[str] | None = None,
-) -> list[dict[str, Any]]:
-    """Source-only undistorted-site rows for one parent atom-site group.
+) -> ChildAtomLayout:
+    """Construct the complete child atom layout from Source occurrences."""
 
-    Formula15 fixes the split topology and site order.  Coordinates are chosen
-    from the same parent orbit in the public child setting; this avoids making
-    an arbitrary Source-internal Wyckoff representative part of the display
-    contract.  The geometric path is accepted only when it has exactly the
-    formula15 site multiset, so an incompletely normalized setting cannot
-    silently over-expand the structure.
-    """
-
+    if child_sg is None or split_basis is None:
+        raise ValueError("child atom layout requires a subgroup basis")
+    parent_space_group = _exact_space_group_number(sg, "parent space group")
+    child_space_group = _exact_space_group_number(child_sg, "child space group")
+    data = _assembled_data()
     parent_params = _source_default_wyckoff_params(
-        int(sg),
+        parent_space_group,
         site,
         parent_setting_id,
         list(symmetry_operations or []),
     )
     formula_rows = undistorted_rows_from_wyckoff_split(
-        _assembled_data(),
-        parent_sg=sg,
-        child_sg=child_sg,
-        parent_wyckoff=str(site.get("wyckoff") or ""),
+        data,
+        parent_sg=parent_space_group,
+        child_sg=child_space_group,
+        parent_wyckoff_row_id=site.get("wyckoff_row_id"),
         label_prefix=label_prefix,
         parent_params=parent_params,
         subgroup_basis=split_basis,
         subgroup_origin=split_origin,
     )
-    geometric_rows = _undistorted_rows_from_parent_wyckoff_split(
-        parent_sg=sg,
-        child_sg=child_sg,
-        label_prefix=label_prefix,
-        parent_xyz=parent_xyz,
-        parent_site=fallback_site,
-        basis=presentation_basis,
-        origin=presentation_origin,
+    if not formula_rows:
+        raise ValueError("Source Wyckoff split produced no Formula15 rows")
+    formula_sites = formula_child_sites_in_presentation(
+        child_sg=child_space_group,
+        formula_rows=formula_rows,
+        subgroup_basis=split_basis,
+        subgroup_origin=split_origin,
+        child_pml_to_cinter_matrix=data.pml_to_cinter_matrix(child_space_group),
+        child_pml_to_cinter_origin=data.cml_to_cinter_origin(child_space_group),
     )
-    if formula_rows and parent_xyz is not None and presentation_basis is not None:
-        try:
-            data = _assembled_data()
-            setting_id = (
-                int(parent_setting_id)
-                if parent_setting_id is not None
-                else int(data.default_inter_setting_record(int(sg))["id"])
-            )
-            presentation_points = _presentation_child_points(
-                parent_sg=int(sg),
-                parent_xyz=parent_xyz,
-                basis=presentation_basis,
-                origin=presentation_origin,
-            )
-            assignments = assign_formula_source_occurrences_to_presentation_grid(
-                child_sg=child_sg,
-                formula_rows=formula_rows,
-                presentation_grid_points=presentation_points,
-                parent_pml_to_cinter_matrix=data.pml_to_cinter_matrix(int(sg), setting_id),
-                parent_pml_to_cinter_origin=data.cml_to_cinter_origin(int(sg), setting_id),
-                presentation_basis=presentation_basis,
-                presentation_origin=presentation_origin,
-            )
-        except (IndexError, KeyError, TypeError, ValueError, ZeroDivisionError):
-            assignments = None
-        if assignments is not None:
-            assigned_rows = [
-                {
-                    "label": f"{label_prefix}_{index}",
-                    "site": assignment.formula_site,
-                    "xyz": list(presentation_points[assignment.representative_grid_index]),
-                    "_source_index": int(assignment.representative_grid_index),
-                    "_wyckoff_formula15": assignment.formula15,
-                    "_presentation_orbit_points": [
-                        list(presentation_points[point_index])
-                        for point_index in assignment.grid_indices
-                    ],
-                }
-                for index, assignment in enumerate(assignments, start=1)
-            ]
-            geometric_order = (
-                match_formula_assignments_to_geometric_grid_orbits(
-                    child_sg=int(child_sg),
-                    formula_assignments=assignments,
-                    presentation_grid_points=presentation_points,
-                    geometric_rows=geometric_rows,
-                )
-                if geometric_rows and child_sg is not None
-                else None
-            )
-            if geometric_order is not None:
-                return [
-                    {
-                        **geometric_rows[geometric_index],
-                        "label": f"{label_prefix}_{index}",
-                        "_wyckoff_formula15": assignment.formula15,
-                        "_presentation_orbit_points": [
-                            list(presentation_points[point_index])
-                            for point_index in assignment.grid_indices
-                        ],
-                    }
-                    for index, (assignment, geometric_index) in enumerate(
-                        zip(assignments, geometric_order),
-                        start=1,
-                    )
-                ]
-            # B/M: Formula15 owns the complete split topology and Source row
-            # order.  A geometric representative may replace it only through
-            # the exact component bijection above; otherwise retain Formula15.
-            if sorted(str(row.get("site") or "") for row in assigned_rows) != sorted(
-                str(row.get("site") or "") for row in geometric_rows
-            ):
-                assigned_rows = [
-                    {
-                        **row,
-                        "_source_formula_site": str(row.get("site") or ""),
-                    }
-                    for row in assigned_rows
-                ]
-            return assigned_rows
-    if formula_rows and geometric_rows:
-        unused = list(geometric_rows)
-        ordered: list[dict[str, Any]] = []
-        for index, formula_row in enumerate(formula_rows, start=1):
-            match = next((row for row in unused if row.get("site") == formula_row.get("site")), None)
-            if match is None:
-                ordered = []
-                break
-            unused.remove(match)
-            ordered.append(
-                {
-                    **match,
-                    "label": f"{label_prefix}_{index}",
-                    "_wyckoff_formula15": formula_row.get("_wyckoff_formula15"),
-                }
-            )
-        if ordered and not unused:
-            return ordered
-        if len(formula_rows) == len(geometric_rows):
-            if len(formula_rows) == 1:
-                formula_site = str(formula_rows[0].get("site") or "")
-                geometric_site = str(geometric_rows[0].get("site") or "")
-                if formula_site and formula_site != geometric_site:
-                    # M: retain Formula15 topology as an independent witness;
-                    # the magnetic correspondence must still rederive it.
-                    return [
-                        {
-                            **geometric_rows[0],
-                            "_source_formula_site": formula_site,
-                            "_wyckoff_formula15": formula_rows[0].get(
-                                "_wyckoff_formula15"
-                            ),
-                        }
-                    ]
-            return geometric_rows
-    if formula_rows:
-        complete_rows = _ordinary_rows_from_complete_child_grid(
-            parent_sg=sg,
-            child_sg=int(child_sg) if child_sg is not None else 0,
-            label_prefix=label_prefix,
-            parent_xyz=parent_xyz,
-            fallback_site=fallback_site,
-            source_basis=split_basis,
-            source_origin=split_origin,
-            presentation_basis=presentation_basis,
-            presentation_origin=presentation_origin,
+    if formula_sites is None:
+        raise ValueError("Formula15 did not partition the presentation atoms")
+    return child_atom_layout_from_formula_sites(
+        formula_sites,
+        label_prefix=label_prefix,
+    )
+
+
+ExactMatrix3 = tuple[
+    tuple[Fraction, Fraction, Fraction],
+    tuple[Fraction, Fraction, Fraction],
+    tuple[Fraction, Fraction, Fraction],
+]
+ExactVector3 = tuple[Fraction, Fraction, Fraction]
+AffineOperation = tuple[ExactMatrix3, ExactVector3]
+
+
+def _exact_integer_tuple(value: Any, size: int, name: str) -> tuple[int, ...]:
+    if not isinstance(value, (list, tuple)) or len(value) != size:
+        raise ValueError(f"{name} requires {size} entries")
+    if any(isinstance(item, bool) or not isinstance(item, Integral) for item in value):
+        raise TypeError(f"{name} must contain exact integers")
+    return tuple(int(item) for item in value)
+
+
+def _selected_source_subgroup_transform(
+    selected_opd: dict[str, Any] | None,
+) -> tuple[tuple[int, ...], tuple[int, int, int, int]]:
+    iso = _isotropy_from_opd_row(selected_opd)
+    if iso is None:
+        raise ValueError("selected OPD has no Source subgroup transform")
+    basis = _exact_integer_tuple(
+        iso.get("source_basis_values"), 9, "Source subgroup basis"
+    )
+    raw_origin = _exact_integer_tuple(
+        iso.get("source_origin_values"), 4, "Source subgroup origin"
+    )
+    if raw_origin[3] <= 0:
+        raise ValueError("Source subgroup origin denominator must be positive")
+    return basis, raw_origin  # type: ignore[return-value]
+
+
+def _exact_presentation_origin(origin: Any) -> ExactVector3:
+    if origin is None:
+        return Fraction(0), Fraction(0), Fraction(0)
+    if isinstance(origin, str):
+        text = origin.strip()
+        if not (text.startswith("(") and text.endswith(")")):
+            raise ValueError(f"invalid presentation origin: {origin!r}")
+        parts = tuple(part.strip() for part in text[1:-1].split(","))
+        if len(parts) != 3:
+            raise ValueError(f"invalid presentation origin: {origin!r}")
+        return tuple(Fraction(part) for part in parts)  # type: ignore[return-value]
+    record = _exact_integer_tuple(origin, 4, "presentation origin")
+    if record[3] <= 0:
+        raise ValueError("presentation origin denominator must be positive")
+    return tuple(Fraction(record[axis], record[3]) for axis in range(3))  # type: ignore[return-value]
+
+
+def _fraction_matrix_determinant3(matrix: ExactMatrix3) -> Fraction:
+    return (
+        matrix[0][0] * (matrix[1][1] * matrix[2][2] - matrix[1][2] * matrix[2][1])
+        - matrix[0][1] * (matrix[1][0] * matrix[2][2] - matrix[1][2] * matrix[2][0])
+        + matrix[0][2] * (matrix[1][0] * matrix[2][1] - matrix[1][1] * matrix[2][0])
+    )
+
+
+def _primitive_lattice_offsets(matrix: ExactMatrix3) -> tuple[ExactVector3, ...]:
+    denominator = math.lcm(*(value.denominator for row in matrix for value in row), 1)
+    offsets = {
+        tuple(
+            sum(Fraction(values[row]) * matrix[row][column] for row in range(3)) % 1
+            for column in range(3)
         )
-        if complete_rows and sorted(row["site"] for row in complete_rows) == sorted(
-            row["site"] for row in formula_rows
+        for values in product(range(denominator), repeat=3)
+    }
+    determinant = abs(_fraction_matrix_determinant3(matrix))
+    if determinant == 0:
+        raise ValueError("child presentation transform is singular")
+    expected = Fraction(1, 1) / determinant
+    if expected.denominator != 1 or len(offsets) != int(expected):
+        raise ValueError(
+            "child presentation transform does not define a conventional lattice"
+        )
+    return tuple(sorted(offsets))  # type: ignore[return-value]
+
+
+def _space_group_action_in_affine_setting(
+    data: SourceTables,
+    *,
+    sg: int,
+    matrix: ExactMatrix3,
+    origin: ExactVector3,
+) -> frozenset[AffineOperation]:
+    inverse = fraction_matrix_inverse3(matrix)
+    offsets = _primitive_lattice_offsets(matrix)
+    operations: set[AffineOperation] = set()
+    for x, y, z, denominator, point_op in data.generate_space_group_records(int(sg)):
+        rotation = _point_rotation_matrix(data, int(sg), int(point_op))
+        transformed_rotation = fraction_matrix_multiply3(
+            inverse, fraction_matrix_multiply3(rotation, matrix)
+        )
+        translated = fraction_row_multiply3(
+            (
+                Fraction(int(x), int(denominator)),
+                Fraction(int(y), int(denominator)),
+                Fraction(int(z), int(denominator)),
+            ),
+            matrix,
+        )
+        rotated_origin = fraction_row_multiply3(origin, transformed_rotation)
+        base_translation = tuple(
+            (translated[axis] + origin[axis] - rotated_origin[axis]) % 1
+            for axis in range(3)
+        )
+        for offset in offsets:
+            operations.add(
+                (
+                    transformed_rotation,
+                    tuple(
+                        (base_translation[axis] + offset[axis]) % 1 for axis in range(3)
+                    ),
+                )
+            )
+    expected = len(data.generate_space_group_records(int(sg))) * len(offsets)
+    if len(operations) != expected:
+        raise ValueError(
+            "child space-group action contains duplicate affine operations"
+        )
+    return frozenset(operations)
+
+
+def _transform_affine_action(
+    operations: frozenset[AffineOperation],
+    *,
+    matrix: ExactMatrix3,
+    origin: ExactVector3,
+) -> frozenset[AffineOperation]:
+    inverse = fraction_matrix_inverse3(matrix)
+    transformed: set[AffineOperation] = set()
+    for rotation, translation in operations:
+        output_rotation = fraction_matrix_multiply3(
+            inverse, fraction_matrix_multiply3(rotation, matrix)
+        )
+        output_translation = fraction_row_multiply3(translation, matrix)
+        rotated_origin = fraction_row_multiply3(origin, output_rotation)
+        transformed.add(
+            (
+                output_rotation,
+                tuple(
+                    (output_translation[axis] + origin[axis] - rotated_origin[axis]) % 1
+                    for axis in range(3)
+                ),
+            )
+        )
+    if len(transformed) != len(operations):
+        raise ValueError("child setting transform collapses affine operations")
+    return frozenset(transformed)
+
+
+def _child_presentation_setting(
+    *,
+    data: SourceTables,
+    parent_sg: int,
+    child_sg: int,
+    parent_setting_id: int | None,
+    source_basis: tuple[int, ...],
+    source_origin: tuple[int, int, int, int],
+    presentation_basis_pml: tuple[int, ...],
+    presentation_origin: Any,
+) -> tuple[
+    tuple[int, ...],
+    ExactMatrix3,
+    ExactVector3,
+    tuple[tuple[int, frozenset[AffineOperation]], ...],
+]:
+    """Identify the displayed child setting and its exact coordinate map."""
+
+    default_id = int(data.default_inter_setting_record(int(child_sg))["id"])
+    changed = data.subgroup_change_setting_cinter(
+        int(parent_sg),
+        int(child_sg),
+        source_basis,
+        source_origin,
+        parent_setting_id=parent_setting_id,
+        subgroup_setting_id=default_id,
+    )
+    basis_denominator = int(changed["basis_denominator"])
+    if basis_denominator == 0:
+        raise ValueError("child setting transform has a zero basis denominator")
+    child_to_parent = tuple(
+        tuple(Fraction(int(value), basis_denominator) for value in row)
+        for row in changed["basis"]
+    )
+    changed_origin = _exact_integer_tuple(changed["origin"], 4, "child setting origin")
+    if changed_origin[3] <= 0:
+        raise ValueError("child setting origin denominator must be positive")
+    child_to_parent_origin = tuple(
+        Fraction(changed_origin[axis], changed_origin[3]) for axis in range(3)
+    )
+    presentation_pml_values = _exact_integer_tuple(
+        presentation_basis_pml, 9, "presentation PML basis"
+    )
+    presentation_pml = tuple(
+        tuple(
+            Fraction(presentation_pml_values[3 * row + column]) for column in range(3)
+        )
+        for row in range(3)
+    )
+    parent_pml_to_selected = data.pml_to_cinter_matrix(
+        int(parent_sg), parent_setting_id
+    )
+    display_basis = fraction_matrix_multiply3(presentation_pml, parent_pml_to_selected)
+    display_basis_inverse = fraction_matrix_inverse3(display_basis)
+    child_to_display = fraction_matrix_multiply3(child_to_parent, display_basis_inverse)
+    display_origin = _exact_presentation_origin(presentation_origin)
+    child_to_display_origin = fraction_row_multiply3(
+        tuple(child_to_parent_origin[axis] - display_origin[axis] for axis in range(3)),
+        display_basis_inverse,
+    )
+    identity_basis = (1, 0, 0, 0, 1, 0, 0, 0, 1)
+    zero_origin = (0, 0, 0, 1)
+    coordinate_matches: list[int] = []
+    for setting_id in data.inter_setting_ids_for_space_group(int(child_sg)):
+        setting_change = data.subgroup_change_setting_cinter(
+            int(child_sg),
+            int(child_sg),
+            identity_basis,
+            zero_origin,
+            parent_setting_id=default_id,
+            subgroup_setting_id=int(setting_id),
+        )
+        inverse_basis_values = _exact_integer_tuple(
+            tuple(value for row in setting_change["inverse_basis"] for value in row),
+            9,
+            "child inter-setting inverse basis",
+        )
+        inverse_denominator = setting_change["inverse_basis_denominator"]
+        if isinstance(inverse_denominator, bool) or not isinstance(
+            inverse_denominator, Integral
         ):
-            return complete_rows
-        return formula_rows
-    return geometric_rows
+            raise TypeError("child inter-setting basis denominator must be an integer")
+        if inverse_denominator <= 0:
+            raise ValueError("child inter-setting basis denominator must be positive")
+        inverse_matrix = tuple(
+            tuple(
+                Fraction(
+                    inverse_basis_values[3 * row + column],
+                    int(inverse_denominator),
+                )
+                for column in range(3)
+            )
+            for row in range(3)
+        )
+        inverse_origin_record = _exact_integer_tuple(
+            setting_change["inverse_origin"],
+            4,
+            "child inter-setting inverse origin",
+        )
+        if inverse_origin_record[3] <= 0:
+            raise ValueError("child inter-setting origin denominator must be positive")
+        inverse_origin = tuple(
+            Fraction(inverse_origin_record[axis], inverse_origin_record[3])
+            for axis in range(3)
+        )
+        if inverse_matrix == child_to_display and all(
+            (inverse_origin[axis] - child_to_display_origin[axis]) % 1 == 0
+            for axis in range(3)
+        ):
+            coordinate_matches.append(int(setting_id))
+    candidate_setting_ids = (
+        tuple(coordinate_matches)
+        if coordinate_matches
+        else tuple(data.inter_setting_ids_for_space_group(int(child_sg)))
+    )
+    target = _transform_affine_action(
+        _space_group_action_in_affine_setting(
+            data,
+            sg=int(child_sg),
+            matrix=data.pml_to_cinter_matrix(int(child_sg), default_id),
+            origin=data.cml_to_cinter_origin(int(child_sg), default_id),
+        ),
+        matrix=child_to_display,
+        origin=child_to_display_origin,
+    )
+    matching_actions = tuple(
+        (
+            setting_id,
+            _space_group_action_in_affine_setting(
+                data,
+                sg=int(child_sg),
+                matrix=data.pml_to_cinter_matrix(int(child_sg), int(setting_id)),
+                origin=data.cml_to_cinter_origin(int(child_sg), int(setting_id)),
+            ),
+        )
+        for setting_id in candidate_setting_ids
+    )
+    matches = tuple(
+        setting_id for setting_id, action in matching_actions if action == target
+    )
+    setting_ids = (default_id,) if default_id in matches else matches
+    if not setting_ids:
+        raise ValueError("displayed child action matches no Source inter setting")
+    selected_actions = tuple(
+        (setting_id, action)
+        for setting_id, action in matching_actions
+        if setting_id in setting_ids
+    )
+    return (
+        setting_ids,
+        child_to_display,
+        child_to_display_origin,
+        selected_actions,
+    )
 
 
+def _child_presentation_setting_ids(
+    **kwargs: Any,
+) -> tuple[int, ...]:
+    """Compatibility view of the exact child-presentation setting identity."""
 
-def _basis_from_opd_row(selected_opd: dict[str, Any] | None) -> list[list[float]] | None:
+    return _child_presentation_setting(**kwargs)[0]
+
+
+def _fraction_floor(value: Fraction) -> int:
+    return value.numerator // value.denominator
+
+
+def _fraction_ceil(value: Fraction) -> int:
+    return -((-value.numerator) // value.denominator)
+
+
+def _solve_exact_wyckoff_parameters(
+    vectors: tuple[ExactVector3, ...],
+    target: ExactVector3,
+) -> tuple[Fraction, ...] | None:
+    """Solve one Source Wyckoff representative exactly modulo the lattice."""
+
+    base, *raw_parameters = vectors
+    parameters = tuple(vector for vector in raw_parameters if any(vector))
+    if not parameters:
+        return (
+            ()
+            if all((target[axis] - base[axis]) % 1 == 0 for axis in range(3))
+            else None
+        )
+
+    column_count = len(parameters)
+    ranges: list[range] = []
+    for axis in range(3):
+        lower = sum(
+            (
+                coefficient
+                for coefficient in (vector[axis] for vector in parameters)
+                if coefficient < 0
+            ),
+            Fraction(0),
+        )
+        upper = sum(
+            (
+                coefficient
+                for coefficient in (vector[axis] for vector in parameters)
+                if coefficient > 0
+            ),
+            Fraction(0),
+        )
+        delta = target[axis] - base[axis]
+        ranges.append(
+            range(
+                _fraction_ceil(lower - delta),
+                _fraction_floor(upper - delta) + 1,
+            )
+        )
+
+    for lattice_shift in product(*ranges):
+        augmented = [
+            [parameters[column][row] for column in range(column_count)]
+            + [target[row] + lattice_shift[row] - base[row]]
+            for row in range(3)
+        ]
+        pivot_row = 0
+        pivot_columns: list[int] = []
+        for column in range(column_count):
+            pivot = next(
+                (row for row in range(pivot_row, 3) if augmented[row][column] != 0),
+                None,
+            )
+            if pivot is None:
+                continue
+            augmented[pivot_row], augmented[pivot] = (
+                augmented[pivot],
+                augmented[pivot_row],
+            )
+            divisor = augmented[pivot_row][column]
+            augmented[pivot_row] = [value / divisor for value in augmented[pivot_row]]
+            for row in range(3):
+                if row == pivot_row or augmented[row][column] == 0:
+                    continue
+                factor = augmented[row][column]
+                augmented[row] = [
+                    augmented[row][index] - factor * augmented[pivot_row][index]
+                    for index in range(column_count + 1)
+                ]
+            pivot_columns.append(column)
+            pivot_row += 1
+        if len(pivot_columns) != column_count:
+            raise ValueError("Source Wyckoff parameters are linearly dependent")
+        if any(
+            all(row[column] == 0 for column in range(column_count))
+            and row[column_count] != 0
+            for row in augmented
+        ):
+            continue
+        solution = [Fraction(0)] * column_count
+        for row, column in enumerate(pivot_columns):
+            solution[column] = augmented[row][column_count]
+        if not all(Fraction(0) <= value < 1 for value in solution):
+            continue
+        if all(
+            sum(
+                parameters[column][axis] * solution[column]
+                for column in range(column_count)
+            )
+            == target[axis] + lattice_shift[axis] - base[axis]
+            for axis in range(3)
+        ):
+            return tuple(solution)
+    return None
+
+
+def _source_wyckoff_orbit_matches(
+    *,
+    vectors: tuple[ExactVector3, ...],
+    operations: frozenset[AffineOperation],
+    points: frozenset[ExactVector3],
+) -> bool:
+    active_vectors = tuple(vector for vector in vectors[1:] if any(vector))
+    for target in points:
+        parameters = _solve_exact_wyckoff_parameters(vectors, target)
+        if parameters is None:
+            continue
+        representative = tuple(
+            (
+                vectors[0][axis]
+                + sum(
+                    active_vectors[index][axis] * parameters[index]
+                    for index in range(len(parameters))
+                )
+            )
+            % 1
+            for axis in range(3)
+        )
+        orbit = frozenset(
+            tuple(
+                (
+                    fraction_row_multiply3(representative, rotation)[axis]
+                    + translation[axis]
+                )
+                % 1
+                for axis in range(3)
+            )
+            for rotation, translation in operations
+        )
+        if orbit == points:
+            return True
+    return False
+
+
+def _ordinary_layout_in_public_setting(
+    *,
+    child_sg: int,
+    setting_ids: tuple[int, ...],
+    setting_actions: tuple[tuple[int, frozenset[AffineOperation]], ...],
+    coordinate_matrix: ExactMatrix3,
+    coordinate_origin: ExactVector3,
+    layout: ChildAtomLayout,
+    label_correspondence: dict[str, str],
+) -> ChildAtomLayout:
+    """Name each Formula15 partition from its complete exact Source orbit."""
+
+    data = _assembled_data()
+    if not setting_ids:
+        raise ValueError("child presentation has no Source inter setting")
+    atom_by_id = {atom.atom_id: atom for atom in layout.atoms}
+    if len(atom_by_id) != len(layout.atoms):
+        raise ValueError("child atom layout contains duplicate atom identities")
+    operations_by_setting = dict(setting_actions)
+    if len(operations_by_setting) != len(setting_actions) or set(
+        operations_by_setting
+    ) != set(setting_ids):
+        raise ValueError("child presentation setting actions are incomplete")
+    labels: list[str] = []
+    for site in layout.sites:
+        source_site = site.wyckoff_site
+        known_label = label_correspondence.get(source_site)
+        if known_label is not None:
+            labels.append(known_label)
+            continue
+        source_label = re.fullmatch(r"\s*\d+\s*(\S+)\s*", source_site)
+        if source_label is None:
+            raise ValueError(f"invalid Formula15 Wyckoff site: {source_site!r}")
+        source_site_pg = int(
+            data.wyckoff_row_by_label(int(child_sg), source_label.group(1)).site_pg
+        )
+        points = frozenset(
+            tuple(
+                (
+                    fraction_row_multiply3(
+                        atom_by_id[atom_id].structure_xyz,
+                        coordinate_matrix,
+                    )[axis]
+                    + coordinate_origin[axis]
+                )
+                % 1
+                for axis in range(3)
+            )
+            for atom_id in site.atom_ids
+        )
+        if len(points) != len(site.atom_ids):
+            raise ValueError("Formula15 child site contains duplicate points")
+        setting_labels: list[str] = []
+        for setting_id in setting_ids:
+            matches = tuple(
+                row
+                for row in data.wyckoff_rows(int(child_sg))
+                if data.wyckoff_multiplicity(int(child_sg), row) == len(points)
+                and int(row.site_pg) == source_site_pg
+                and _source_wyckoff_orbit_matches(
+                    vectors=data.inter_wyckoff_fraction_vectors(
+                        int(child_sg), row, int(setting_id)
+                    ),
+                    operations=operations_by_setting[setting_id],
+                    points=points,
+                )
+            )
+            if len(matches) != 1:
+                raise ValueError(
+                    "Source child-setting Wyckoff identity is not unique for "
+                    f"{site.child_site_id} {site.wyckoff_site}: "
+                    f"setting={setting_id}, rows={[row.row_id for row in matches]}"
+                )
+            label = str(matches[0].label)
+            if not label:
+                raise ValueError("Source child-setting Wyckoff identity is incomplete")
+            setting_labels.append(f"{len(points)}{label}")
+        if len(set(setting_labels)) != 1:
+            raise ValueError(
+                "equivalent Source child settings disagree on one Wyckoff identity: "
+                f"settings={setting_ids}, source={source_site}"
+            )
+        label_correspondence[source_site] = setting_labels[0]
+        labels.append(setting_labels[0])
+    return ChildAtomLayout(
+        sites=tuple(
+            replace(site, wyckoff_site=label)
+            for site, label in zip(layout.sites, labels, strict=True)
+        ),
+        atoms=layout.atoms,
+    )
+
+
+def _magnetic_child_atom_layout_for_site(
+    *,
+    magnetic_group: int,
+    child_sg: int,
+    label_prefix: str,
+    layout: ChildAtomLayout,
+    presentation_positions: dict[str, tuple[float, float, float]],
+    source_basis: list[list[float]],
+    source_origin: Any,
+) -> ChildAtomLayout:
+    """Regroup canonical atoms by the exact selected magnetic group action."""
+
+    atom_index_by_id = {atom.atom_id: index for index, atom in enumerate(layout.atoms)}
+    action = selected_magnetic_atom_action(
+        magnetic_group=int(magnetic_group),
+        child_sg=int(child_sg),
+        parent_points=tuple(atom.parent_xyz for atom in layout.atoms),
+        ordinary_orbits=tuple(
+            tuple(atom_index_by_id[atom_id] for atom_id in site.atom_ids)
+            for site in layout.sites
+        ),
+        selected_basis=source_basis,
+        selected_origin=source_origin,
+    )
+    if set(presentation_positions) != set(atom_index_by_id):
+        raise ValueError("magnetic presentation positions do not cover canonical atoms")
+    displayed_points = tuple(
+        tuple(
+            _input_fraction(value) % 1 for value in presentation_positions[atom.atom_id]
+        )
+        for atom in layout.atoms
+    )
+    if len(set(displayed_points)) != len(displayed_points):
+        raise ValueError("magnetic presentation atoms share one position")
+    components = action.components
+    site_index_by_atom_id = {
+        atom_id: site_index
+        for site_index, site in enumerate(layout.sites)
+        for atom_id in site.atom_ids
+    }
+    regrouping = []
+    presentation_branches = []
+    for component in components:
+        component_atom_ids = tuple(layout.atoms[index].atom_id for index in component)
+        site_indices = tuple(
+            dict.fromkeys(
+                site_index_by_atom_id[atom_id] for atom_id in component_atom_ids
+            )
+        )
+        site_atom_ids = tuple(
+            atom_id
+            for site_index in site_indices
+            for atom_id in layout.sites[site_index].atom_ids
+        )
+        if set(site_atom_ids) != set(component_atom_ids):
+            raise ValueError("magnetic atom component splits an ordinary child site")
+        seed_index = min(
+            component,
+            key=lambda index: (
+                layout.atoms[index].source_raw_index,
+                layout.atoms[index].centering_ordinal,
+            ),
+        )
+        seed_point = action.canonical_cinter_points[seed_index]
+        row, standard = identify_magnetic_wyckoff(int(magnetic_group), seed_point)
+        orbit = magnetic_orbit_points(int(magnetic_group), seed_point)
+        component_points = {
+            action.canonical_cinter_points[index] for index in component
+        }
+        if len(orbit) != len(component) or set(orbit) != component_points:
+            raise ValueError("canonical magnetic orbit does not equal atom membership")
+        target = tuple(Fraction(value) % 1 for value in standard)
+        matches = [
+            index
+            for index in component
+            if action.canonical_cinter_points[index] == target
+        ]
+        if len(matches) != 1:
+            raise ValueError(
+                "magnetic representative does not identify one canonical atom: "
+                f"matches={matches}"
+            )
+        displayed_representative = displayed_points[matches[0]]
+        regrouping.append((site_indices, len(component), displayed_representative))
+        presentation_branches.append(
+            (str(row.label), displayed_representative, len(component))
+        )
+    presentation_labels = presentation_branch_labels_from_correspondence(
+        magnetic_group=int(magnetic_group),
+        branches=presentation_branches,
+    )
+    if presentation_labels and len(presentation_labels) != len(regrouping):
+        raise ValueError("magnetic presentation branch map is incomplete")
+    # Display coordinates need not themselves use the standard BNS setting.
+    # Canonical labels remain authoritative unless a complete relabeling exists.
+    output_labels = (
+        presentation_labels
+        if presentation_labels
+        else tuple(branch[0] for branch in presentation_branches)
+    )
+    if len(output_labels) != len(regrouping):
+        raise ValueError("magnetic child sites have no Wyckoff branch labels")
+    return regroup_child_atom_layout(
+        layout,
+        label_prefix=label_prefix,
+        groups=tuple(
+            (
+                site_indices,
+                f"{multiplicity}{output_label}",
+                displayed_representative,
+            )
+            for (
+                site_indices,
+                multiplicity,
+                displayed_representative,
+            ), output_label in zip(regrouping, output_labels, strict=True)
+        ),
+    )
+
+
+def _child_centering_parent_translation_record(
+    *,
+    child_sg: int,
+    presentation_basis_pml: tuple[int, ...],
+    centering_ordinal: int,
+) -> tuple[int, int, int, int]:
+    child_space_group = _exact_space_group_number(child_sg, "child space group")
+    if isinstance(centering_ordinal, bool) or not isinstance(
+        centering_ordinal, Integral
+    ):
+        raise TypeError("child centering ordinal must be an exact integer")
+    exact_centering_ordinal = int(centering_ordinal)
+    translations = _centering_translations(child_space_group)
+    if translations is None or not 0 <= exact_centering_ordinal < len(translations):
+        raise ValueError(f"child centering ordinal out of range: {centering_ordinal}")
+    basis_values = _exact_integer_tuple(
+        presentation_basis_pml, 9, "presentation PML basis"
+    )
+    translation = translations[exact_centering_ordinal]
+    parent_pml = tuple(
+        sum(translation[row] * basis_values[3 * row + column] for row in range(3))
+        for column in range(3)
+    )
+    denominator = math.lcm(*(value.denominator for value in parent_pml), 1)
+    return tuple(int(value * denominator) for value in parent_pml) + (denominator,)  # type: ignore[return-value]
+
+
+def _child_atom_layout_operation_records(
+    decoder: ModeDataDecoder,
+    *,
+    child_sg: int,
+    presentation_basis_pml: tuple[int, ...],
+    layout: ChildAtomLayout,
+) -> tuple[tuple[int, int, int, int, int], ...]:
+    child_space_group = _exact_space_group_number(child_sg, "child space group")
+    point_operation_count = len(decoder.iso.space["ipoint_op_inverse"])
+    records: list[tuple[int, int, int, int, int]] = []
+    for atom in layout.atoms:
+        source_record = decoder.add_translation_to_operation_record(
+            atom.source_kernel_fraction,
+            atom.source_parent_coset_record,
+        )
+        centering_record = _child_centering_parent_translation_record(
+            child_sg=child_space_group,
+            presentation_basis_pml=presentation_basis_pml,
+            centering_ordinal=atom.centering_ordinal,
+        )
+        records.append(
+            exact_operation_record(
+                decoder.add_translation_to_operation_record(
+                    centering_record, source_record
+                ),
+                point_operation_count=point_operation_count,
+            )
+        )
+    return tuple(records)
+
+
+def _mode_row_assignments(
+    decoder: ModeDataDecoder,
+    *,
+    child_sg: int,
+    presentation_basis_pml: tuple[int, ...],
+    layout: ChildAtomLayout,
+    rows: list[dict[str, Any]],
+) -> tuple[tuple[int, ...], ...]:
+    """Map presented atom rows to canonical atoms by affine identity."""
+
+    canonical_records = _child_atom_layout_operation_records(
+        decoder,
+        child_sg=child_sg,
+        presentation_basis_pml=presentation_basis_pml,
+        layout=layout,
+    )
+    point_operation_count = len(decoder.iso.space["ipoint_op_inverse"])
+    row_records: list[tuple[int, int, int, int, int]] = []
+    for row in rows:
+        raw_record = row.get("_operation_record")
+        if not isinstance(raw_record, (list, tuple)):
+            raise ValueError("mode atom row is missing its Source operation record")
+        record = exact_operation_record(
+            raw_record,
+            point_operation_count=point_operation_count,
+        )
+        centering_ordinal = row.get("_presentation_centering_ordinal")
+        if centering_ordinal is not None:
+            if isinstance(centering_ordinal, bool) or not isinstance(
+                centering_ordinal, int
+            ):
+                raise TypeError("presentation centering ordinal must be an integer")
+            centering_record = _child_centering_parent_translation_record(
+                child_sg=child_sg,
+                presentation_basis_pml=presentation_basis_pml,
+                centering_ordinal=centering_ordinal,
+            )
+            record = exact_operation_record(
+                decoder.add_translation_to_operation_record(centering_record, record),
+                point_operation_count=point_operation_count,
+            )
+        row_records.append(record)  # type: ignore[arg-type]
+    return operation_record_row_assignments(
+        canonical_records,
+        row_records,
+        presentation_basis_pml=presentation_basis_pml,
+        point_operation_count=point_operation_count,
+    )
+
+
+def _compile_child_atom_mode_topology(
+    decoder: ModeDataDecoder,
+    *,
+    child_sg: int,
+    presentation_basis_pml: tuple[int, ...],
+    layout: ChildAtomLayout,
+    atom_operation_records: list[Any],
+) -> dict[tuple[int, int, tuple[int, int, int, int, int]], str]:
+    """Compile every Source row/centering representation to one child atom."""
+
+    child_space_group = _exact_space_group_number(child_sg, "child space group")
+    centering_count = len(_centering_translations(child_space_group) or ())
+    if centering_count <= 0 or not atom_operation_records:
+        raise ValueError("mode topology requires Source rows and centerings")
+    point_operation_count = len(decoder.iso.space["ipoint_op_inverse"])
+    rows: list[dict[str, Any]] = []
+    identities: list[tuple[int, int, tuple[int, int, int, int, int]]] = []
+    for source_raw_index, raw_record in enumerate(atom_operation_records):
+        if not isinstance(raw_record, (list, tuple)):
+            raise TypeError("mode topology operation record must be a sequence")
+        operation_record = exact_operation_record(
+            raw_record,
+            point_operation_count=point_operation_count,
+        )
+        for centering_ordinal in range(centering_count):
+            rows.append(
+                {
+                    "_operation_record": operation_record,
+                    "_presentation_centering_ordinal": centering_ordinal,
+                }
+            )
+            identities.append((source_raw_index, centering_ordinal, operation_record))
+    assignments = _mode_row_assignments(
+        decoder,
+        child_sg=child_space_group,
+        presentation_basis_pml=presentation_basis_pml,
+        layout=layout,
+        rows=rows,
+    )
+    topology: dict[tuple[int, int, tuple[int, int, int, int, int]], str] = {}
+    for atom, candidate_indices in zip(layout.atoms, assignments, strict=True):
+        for candidate_index in candidate_indices:
+            identity = identities[candidate_index]
+            previous = topology.setdefault(identity, atom.atom_id)
+            if previous != atom.atom_id:
+                raise ValueError("mode topology identity maps to multiple child atoms")
+    if len(topology) != len(identities):
+        raise ValueError("mode topology does not resolve every Source row")
+    if set(topology.values()) != {atom.atom_id for atom in layout.atoms}:
+        raise ValueError("mode topology does not cover every canonical child atom")
+    return topology
+
+
+def _present_child_atom_layout(
+    decoder: ModeDataDecoder,
+    *,
+    parent_sg: int,
+    child_sg: int,
+    parent_wyckoff: str,
+    site_params: tuple[float, ...] | None,
+    presentation_basis: list[list[float]],
+    presentation_basis_pml: tuple[int, ...],
+    presentation_origin: Any,
+    child_symbol: str,
+    label_prefix: str,
+    layout: ChildAtomLayout,
+    parent_setting_bridge: tuple[Any, Any] | None,
+) -> tuple[
+    ChildAtomLayout,
+    dict[str, tuple[float, float, float]],
+]:
+    """Bind Formula15 identities to the Source display atom table once."""
+
+    source_rows = [
+        row
+        for row in decoder.wyckoff_rows(int(parent_sg))
+        if row.label == parent_wyckoff
+    ]
+    if len(source_rows) != 1:
+        raise ValueError(
+            f"expected one Source Wyckoff row for SG{parent_sg} "
+            f"{parent_wyckoff}, got {len(source_rows)}"
+        )
+    source_row = source_rows[0]
+    raw_fractionals = decoder.display_distortion_atom_fractionals(
+        int(parent_sg),
+        source_row,
+        site_params,
+        presentation_basis_pml,
+    )
+    raw_records = decoder.supercell_atom_operation_records(
+        int(parent_sg),
+        source_row,
+        presentation_basis_pml,
+        site_params,
+    )
+    if len(raw_fractionals) != len(raw_records) or not raw_fractionals:
+        raise ValueError("Source atom positions and operation records differ")
+    if parent_setting_bridge is None:
+        displayed_fractionals = raw_fractionals
+    else:
+        setting_matrix, setting_origin = parent_setting_bridge
+        displayed_fractionals = tuple(
+            tuple(
+                sum(
+                    position[row] * Fraction(setting_matrix[row][column])
+                    for row in range(3)
+                )
+                + Fraction(setting_origin[column])
+                for column in range(3)
+            )
+            for position in raw_fractionals
+        )
+    presented = present_mode_rows(
+        (
+            {
+                "xyz": position,
+                "dxyz": (0.0, 0.0, 0.0),
+                "_source_raw_index": index,
+                "_operation_record": raw_records[index],
+            }
+            for index, position in enumerate(displayed_fractionals)
+        ),
+        basis=presentation_basis,
+        origin=_origin_vector(presentation_origin),
+        centering_symbol=child_symbol,
+        include_centering_ordinal=True,
+    )
+    rows = [dict(row) for row in presented["rows"]]
+    assignments = _mode_row_assignments(
+        decoder,
+        child_sg=child_sg,
+        presentation_basis_pml=presentation_basis_pml,
+        layout=layout,
+        rows=rows,
+    )
+    if any(len(candidate_indices) != 1 for candidate_indices in assignments):
+        raise ValueError(
+            "Source atom table does not bijectively cover canonical child atoms"
+        )
+    atom_ids_by_row: list[str | None] = [None] * len(rows)
+    presentation_rows: list[ChildAtomPresentationRow | None] = [None] * len(rows)
+    positions: dict[str, tuple[float, float, float]] = {}
+    for atom, candidate_indices in zip(layout.atoms, assignments, strict=True):
+        row_index = candidate_indices[0]
+        row = rows[row_index]
+        raw_xyz = row.get("xyz")
+        if not isinstance(raw_xyz, (list, tuple)) or len(raw_xyz) != 3:
+            raise ValueError("Source atom table contains no presented position")
+        xyz = tuple(float(value) % 1.0 for value in raw_xyz)
+        if not all(math.isfinite(value) for value in xyz):
+            raise ValueError("Source atom table contains a nonfinite position")
+        atom_ids_by_row[row_index] = atom.atom_id
+        positions[atom.atom_id] = xyz  # type: ignore[assignment]
+        source_raw_index = row.get("_source_raw_index")
+        centering_ordinal = row.get("_presentation_centering_ordinal")
+        if (
+            isinstance(source_raw_index, bool)
+            or not isinstance(source_raw_index, Integral)
+            or int(source_raw_index) < 0
+        ):
+            raise TypeError("Source display row has no exact raw index")
+        if (
+            isinstance(centering_ordinal, bool)
+            or not isinstance(centering_ordinal, Integral)
+            or int(centering_ordinal) < 0
+        ):
+            raise TypeError("Source display row has no exact centering ordinal")
+        raw_record = row.get("_operation_record")
+        if not isinstance(raw_record, (list, tuple)):
+            raise ValueError("Source display row has no operation record")
+        presentation_rows[row_index] = ChildAtomPresentationRow(
+            atom_id=atom.atom_id,
+            source_raw_index=int(source_raw_index),
+            centering_ordinal=int(centering_ordinal),
+            operation_record=exact_operation_record(
+                raw_record,
+                point_operation_count=len(decoder.iso.space["ipoint_op_inverse"]),
+            ),
+        )
+    if len(positions) != len(layout.atoms):
+        raise ValueError("Source atom table contains duplicate atom identities")
+    if any(atom_id is None for atom_id in atom_ids_by_row):
+        raise ValueError("Source atom table contains an unassigned presentation row")
+    if any(row is None for row in presentation_rows):
+        raise ValueError("Source atom table contains an unbound presentation row")
+    ordered_layout = child_atom_layout_in_presentation_order(
+        layout,
+        label_prefix=label_prefix,
+        atom_ids=tuple(atom_id for atom_id in atom_ids_by_row if atom_id is not None),
+        atom_positions=positions,
+    )
+    ordered_layout = replace(
+        ordered_layout,
+        presentation_rows=tuple(row for row in presentation_rows if row is not None),
+        point_operation_count=len(decoder.iso.space["ipoint_op_inverse"]),
+    )
+    return (
+        ordered_layout,
+        positions,
+    )
+
+
+def _mode_rows_on_child_atom_layout(
+    *,
+    layout: ChildAtomLayout,
+    mode_topology: dict[tuple[int, int, tuple[int, int, int, int, int]], str],
+    rows: list[dict[str, Any]],
+    mode_atom_positions: dict[str, tuple[float, float, float]],
+) -> list[dict[str, Any]]:
+    """Attach vectors to the Source display-row identities bound by the layout."""
+
+    if (
+        layout.point_operation_count <= 0
+        or len(layout.presentation_rows) != len(layout.atoms)
+        or len(rows) != len(layout.presentation_rows)
+    ):
+        raise ValueError("mode rows do not cover the canonical presentation layout")
+    atom_by_id = {atom.atom_id: atom for atom in layout.atoms}
+    if len(atom_by_id) != len(layout.atoms):
+        raise ValueError("child atom layout contains duplicate atom identities")
+    source_by_atom_id: dict[str, dict[str, Any]] = {}
+    for source in rows:
+        source_raw_index = source.get("_source_raw_index")
+        raw_centering_ordinal = source.get("_presentation_centering_ordinal")
+        centering_ordinal = (
+            0 if raw_centering_ordinal is None else raw_centering_ordinal
+        )
+        raw_record = source.get("_operation_record")
+        if (
+            isinstance(source_raw_index, bool)
+            or not isinstance(source_raw_index, Integral)
+            or isinstance(centering_ordinal, bool)
+            or not isinstance(centering_ordinal, Integral)
+            or not isinstance(raw_record, (list, tuple))
+        ):
+            raise ValueError("mode row has no exact Source display-row identity")
+        identity = (
+            int(source_raw_index),
+            int(centering_ordinal),
+            exact_operation_record(
+                raw_record,
+                point_operation_count=layout.point_operation_count,
+            ),
+        )
+        atom_id = mode_topology.get(identity)
+        if atom_id is None or atom_id in source_by_atom_id:
+            raise ValueError("mode row differs from its Source display-row identity")
+        source_by_atom_id[atom_id] = source
+    if set(source_by_atom_id) != set(atom_by_id):
+        raise ValueError("mode rows do not bijectively cover canonical child atoms")
+    site_by_id = {site.child_site_id: site for site in layout.sites}
+    aligned: list[dict[str, Any]] = []
+    for atom_index, atom in enumerate(layout.atoms):
+        source = source_by_atom_id[atom.atom_id]
+        source_fields = {
+            key: value
+            for key, value in source.items()
+            if key != "_presentation_centering_ordinal"
+        }
+        raw_xyz = source.get("xyz")
+        raw_dxyz = source.get("dxyz")
+        if not (isinstance(raw_dxyz, (list, tuple)) and len(raw_dxyz) == 3):
+            raise ValueError("mode atom row requires one vector")
+        dxyz = tuple(float(value) for value in raw_dxyz)
+        expected_xyz = mode_atom_positions.get(atom.atom_id)
+        if expected_xyz is None:
+            raise ValueError(f"canonical atom has no mode coordinate: {atom.atom_id}")
+        if not all(math.isfinite(value) for value in (*expected_xyz, *dxyz)):
+            raise ValueError("mode atom row contains a nonfinite position or vector")
+        if raw_xyz is not None:
+            if not isinstance(raw_xyz, (list, tuple)) or len(raw_xyz) != 3:
+                raise ValueError("mode atom row contains an invalid position")
+            mode_xyz = tuple(float(value) % 1.0 for value in raw_xyz)
+            if not all(math.isfinite(value) for value in mode_xyz):
+                raise ValueError("mode atom row contains a nonfinite position")
+        else:
+            mode_xyz = expected_xyz
+        if not periodic_float_close3(expected_xyz, mode_xyz, 1e-12):
+            raise ValueError(
+                "mode row differs from its canonical presentation coordinate: "
+                f"{atom.atom_id}: {expected_xyz!r} != {mode_xyz!r}"
+            )
+        aligned.append(
+            {
+                **source_fields,
+                "atom": atom.child_site_id if atom.member_order == 0 else None,
+                "atom_id": atom.atom_id,
+                "child_site": atom.child_site_id,
+                "wyckoff_site": site_by_id[atom.child_site_id].wyckoff_site,
+                "xyz": list(expected_xyz),
+                "dxyz": list(dxyz),
+                "_presentation_grid_index": atom_index,
+            }
+        )
+    return aligned
+
+
+def _basis_from_opd_row(
+    selected_opd: dict[str, Any] | None,
+) -> list[list[float]] | None:
     if not isinstance(selected_opd, dict):
         return None
     iso = selected_opd.get("isotropy") or selected_opd
@@ -1226,8 +1330,9 @@ def _basis_from_opd_row(selected_opd: dict[str, Any] | None) -> list[list[float]
         return None
 
 
-
-def _source_split_basis_from_opd_row(selected_opd: dict[str, Any] | None) -> list[list[float]] | None:
+def _source_split_basis_from_opd_row(
+    selected_opd: dict[str, Any] | None,
+) -> list[list[float]] | None:
     if not isinstance(selected_opd, dict):
         return None
     iso = selected_opd.get("isotropy") or selected_opd
@@ -1240,8 +1345,9 @@ def _source_split_basis_from_opd_row(selected_opd: dict[str, Any] | None) -> lis
         return None
 
 
-
-def _source_split_origin_from_opd_row(selected_opd: dict[str, Any] | None) -> tuple[int, int, int, int] | None:
+def _source_split_origin_from_opd_row(
+    selected_opd: dict[str, Any] | None,
+) -> tuple[int, int, int, int] | None:
     if not isinstance(selected_opd, dict):
         return None
     iso = selected_opd.get("isotropy") or selected_opd
@@ -1254,7 +1360,6 @@ def _source_split_origin_from_opd_row(selected_opd: dict[str, Any] | None) -> tu
         return None
 
 
-
 def _point_rotation_matrix(
     data: SourceTables,
     child_sg: int,
@@ -1265,8 +1370,9 @@ def _point_rotation_matrix(
         (Fraction(0), Fraction(1), Fraction(0)),
         (Fraction(0), Fraction(0), Fraction(1)),
     )
-    return tuple(tuple(data.vrot_fraction(int(child_sg), int(point_op), unit)) for unit in units)  # type: ignore[return-value]
-
+    return tuple(
+        tuple(data.vrot_fraction(int(child_sg), int(point_op), unit)) for unit in units
+    )  # type: ignore[return-value]
 
 
 def _fraction_vector_record(
@@ -1274,8 +1380,10 @@ def _fraction_vector_record(
     point_op: int,
 ) -> tuple[int, int, int, int, int]:
     denominator = math.lcm(*(value.denominator for value in values), 1)
-    return tuple(int(value * denominator) for value in values) + (denominator, int(point_op))  # type: ignore[return-value]
-
+    return tuple(int(value * denominator) for value in values) + (
+        denominator,
+        int(point_op),
+    )  # type: ignore[return-value]
 
 
 def _subgroup_parent_operation_records(
@@ -1288,31 +1396,44 @@ def _subgroup_parent_operation_records(
     """Map child operations into the selected raw parent embedding."""
 
     basis_matrix = _matrix_from_basis_tuple(basis)
-    basis_inverse = _fraction_matrix_inverse_3([[float(value) for value in row] for row in basis_matrix])
+    basis_inverse = _fraction_matrix_inverse_3(
+        [[float(value) for value in row] for row in basis_matrix]
+    )
     if basis_inverse is None:
         return ()
     origin_vector = _origin_record_vector(origin)
     parent_point_ops: dict[tuple[tuple[Fraction, Fraction, Fraction], ...], int] = {}
     for record in data.generate_space_group_records(int(parent_sg)):
-        parent_point_ops[_point_rotation_matrix(data, int(parent_sg), int(record[4]))] = int(record[4])
+        parent_point_ops[
+            _point_rotation_matrix(data, int(parent_sg), int(record[4]))
+        ] = int(record[4])
 
     out: list[tuple[int, int, int, int, int]] = []
-    for x, y, z, den, child_point_op in data.generate_space_group_records(int(child_sg)):
+    for x, y, z, den, child_point_op in data.generate_space_group_records(
+        int(child_sg)
+    ):
         rotation = _point_rotation_matrix(data, int(child_sg), int(child_point_op))
-        translation = (Fraction(int(x), int(den)), Fraction(int(y), int(den)), Fraction(int(z), int(den)))
-        parent_rotation = _fraction_matmul(basis_inverse, _fraction_matmul(rotation, basis_matrix))
+        translation = (
+            Fraction(int(x), int(den)),
+            Fraction(int(y), int(den)),
+            Fraction(int(z), int(den)),
+        )
+        parent_rotation = _fraction_matmul(
+            basis_inverse, _fraction_matmul(rotation, basis_matrix)
+        )
         point_op = parent_point_ops.get(parent_rotation)
         if point_op is None:
             raise ValueError(
                 f"child SG{child_sg} operation {child_point_op} does not map to a point operation in SG{parent_sg}"
             )
         parent_translation = _fraction_vecadd(
-            _fraction_vecsub(origin_vector, _fraction_row_multiply(origin_vector, parent_rotation)),
+            _fraction_vecsub(
+                origin_vector, _fraction_row_multiply(origin_vector, parent_rotation)
+            ),
             _fraction_row_multiply(translation, basis_matrix),
         )
         out.append(_fraction_vector_record(parent_translation, point_op))
     return tuple(out)
-
 
 
 def _split_basis_origin_for_wyckoff(
@@ -1323,7 +1444,7 @@ def _split_basis_origin_for_wyckoff(
     presentation_basis: list[list[float]] | None,
     presentation_origin: Any,
 ) -> tuple[list[list[float]] | None, Any]:
-    """Return the transform consumed by the Source-only get_new_wyckoff_ port.
+    """Return the transform consumed by Source-only ``get_new_wyckoff_`` splitting.
 
     Complete-mode Wyckoff splitting follows ISO's raw ``data_isotropy``
     subgroup basis/origin, not the public/VALUE CELL presentation basis.  The
@@ -1348,7 +1469,6 @@ def _split_basis_origin_for_wyckoff(
     return presentation_basis, presentation_origin
 
 
-
 def _selected_subgroup_number(selected_opd: dict[str, Any] | None) -> int | None:
     if not isinstance(selected_opd, dict):
         return None
@@ -1362,7 +1482,6 @@ def _selected_subgroup_number(selected_opd: dict[str, Any] | None) -> int | None
         return int(subgroup)
     except (TypeError, ValueError):
         return None
-
 
 
 def _selected_magnetic_group_number(
@@ -1385,551 +1504,18 @@ def _selected_magnetic_group_number(
     return group
 
 
-def _magnetic_groups_in_presentation_order(
-    groups: tuple[Any, ...],
-    ordinary_rows: list[dict[str, Any]],
-    presentation_points: list[list[float]],
-    *,
-    tolerance: float = 1e-7,
-) -> tuple[tuple[Any, tuple[int, ...]], ...] | None:
-    """Join magnetic orbit unions to a complete selected-cell grid partition."""
-
-    if not groups or not ordinary_rows or not presentation_points:
-        return None
-    row_grid_indices: list[tuple[int, ...]] = []
-    used_grid_indices: set[int] = set()
-    for row in ordinary_rows:
-        raw_orbit = row.get("_presentation_orbit_points")
-        if not isinstance(raw_orbit, (list, tuple)) or not raw_orbit:
-            return None
-        orbit_indices: list[int] = []
-        for raw_point in raw_orbit:
-            if not isinstance(raw_point, (list, tuple)) or len(raw_point) != 3:
-                return None
-            try:
-                matches = [
-                    point_index
-                    for point_index, point in enumerate(presentation_points)
-                    if _frac_close(list(raw_point), point, tol=tolerance)
-                ]
-            except (OverflowError, TypeError, ValueError):
-                return None
-            if len(matches) != 1 or matches[0] in used_grid_indices:
-                return None
-            used_grid_indices.add(matches[0])
-            orbit_indices.append(matches[0])
-        if len(set(orbit_indices)) != len(orbit_indices):
-            return None
-        row_grid_indices.append(tuple(sorted(orbit_indices)))
-    if used_grid_indices != set(range(len(presentation_points))):
-        return None
-
-    grouped: list[tuple[Any, tuple[int, ...]]] = []
-    used_rows: set[int] = set()
-    used_group_grid_indices: set[int] = set()
-    try:
-        for group in groups:
-            raw_indices = group.ordinary_orbit_indices
-            if not isinstance(raw_indices, (list, tuple)) or not raw_indices:
-                return None
-            ordinary_indices: list[int] = []
-            for raw_index in raw_indices:
-                if isinstance(raw_index, bool) or not isinstance(raw_index, int):
-                    return None
-                if not 0 <= raw_index < len(ordinary_rows) or raw_index in used_rows:
-                    return None
-                used_rows.add(raw_index)
-                ordinary_indices.append(raw_index)
-            grid_indices = tuple(
-                sorted(
-                    index
-                    for ordinary_index in ordinary_indices
-                    for index in row_grid_indices[ordinary_index]
-                )
-            )
-            multiplicity = group.multiplicity
-            if (
-                not grid_indices
-                or len(set(grid_indices)) != len(grid_indices)
-                or any(index in used_group_grid_indices for index in grid_indices)
-                or isinstance(multiplicity, bool)
-                or not isinstance(multiplicity, int)
-                or multiplicity != len(grid_indices)
-            ):
-                return None
-            used_group_grid_indices.update(grid_indices)
-            grouped.append((group, grid_indices))
-    except (AttributeError, IndexError, TypeError, ValueError):
-        return None
-    if (
-        used_rows != set(range(len(ordinary_rows)))
-        or used_group_grid_indices != set(range(len(presentation_points)))
-    ):
-        return None
-    return tuple(sorted(grouped, key=lambda item: min(item[1])))
-
-
-def _rows_with_presentation_grid_witness(
-    rows: list[dict[str, Any]],
-    presentation_points: list[list[float]],
-    expected_partitions: tuple[tuple[int, ...], ...],
-    *,
-    tolerance: float = 1e-7,
-) -> list[dict[str, Any]] | None:
-    """Attach grid partitions derived from each row's complete orbit points."""
-
-    if not rows or not presentation_points or len(rows) != len(expected_partitions):
-        return None
-    witnessed_rows: list[dict[str, Any]] = []
-    witnessed_partitions: list[tuple[int, ...]] = []
-    used_indices: set[int] = set()
-    for row in rows:
-        raw_orbit = row.get("_mode_row_orbit_points")
-        if not isinstance(raw_orbit, (list, tuple)) or not raw_orbit:
-            return None
-        row_indices: list[int] = []
-        for raw_point in raw_orbit:
-            if not isinstance(raw_point, (list, tuple)) or len(raw_point) != 3:
-                return None
-            try:
-                matches = [
-                    point_index
-                    for point_index, point in enumerate(presentation_points)
-                    if _frac_close(list(raw_point), point, tol=tolerance)
-                ]
-            except (OverflowError, TypeError, ValueError):
-                return None
-            if len(matches) != 1 or matches[0] in used_indices:
-                return None
-            used_indices.add(matches[0])
-            row_indices.append(matches[0])
-        partition = tuple(sorted(row_indices))
-        witnessed_partitions.append(partition)
-        witnessed_rows.append(
-            {
-                **row,
-                "_presentation_grid_indices": list(partition),
-                "_presentation_grid_size": len(presentation_points),
-            }
-        )
-    if (
-        used_indices != set(range(len(presentation_points)))
-        or sorted(witnessed_partitions) != sorted(expected_partitions)
-    ):
-        return None
-    return witnessed_rows
-
-
-def _rows_with_optional_presentation_branch_labels(
-    rows: list[dict[str, Any]],
-    presentation_labels: tuple[str, ...],
-) -> list[dict[str, Any]] | None:
-    """Transport Wyckoff letters without discarding a proved orbit partition."""
-
-    if not presentation_labels:
-        return rows
-    if len(presentation_labels) != len(rows):
-        return None
-    for row, label in zip(rows, presentation_labels, strict=True):
-        match = re.match(r"^(\d+)", str(row.get("site") or ""))
-        if match is None or not isinstance(label, str) or not label:
-            return None
-        row["site"] = f"{match.group(1)}{label}"
-    return rows
-
-
-
-def _magnetic_undistorted_rows_for_site(
-    *,
-    decoder: ModeDataDecoder,
-    magnetic_group: int,
-    parent_sg: int,
-    child_sg: int,
-    label_prefix: str,
-    parent_xyz: tuple[float, float, float] | None,
-    ordinary_rows: list[dict[str, Any]],
-    source_basis: list[list[float]] | None,
-    source_origin: Any,
-    presentation_basis: list[list[float]] | None,
-    presentation_origin: Any,
-    magnetic_subgroup_selection: dict[str, Any] | None = None,
-    parent_setting_id: int | None = None,
-    presentation_grid_points: list[list[float]] | None = None,
-) -> list[dict[str, Any]]:
-    """Merge ordinary child orbits using the selected magnetic group."""
-
-    source_basis_values = _integer_basis_tuple(source_basis)
-    source_origin_record = _origin_record_from_any(source_origin)
-    source_inverse = _fraction_matrix_inverse_3(source_basis or [])
-    presentation_inverse = _fraction_matrix_inverse_3(presentation_basis or [])
-    if (
-        not ordinary_rows
-        or source_basis_values is None
-        or source_origin_record is None
-        or source_inverse is None
-        or presentation_basis is None
-        or presentation_inverse is None
-    ):
-        return []
-    source_matrix = _matrix_from_basis_tuple(source_basis_values)
-    source_origin_vector = _origin_record_vector(source_origin_record)
-    presentation_matrix = tuple(
-        tuple(Fraction(str(value)) for value in row)
-        for row in presentation_basis
-    )
-    presentation_origin_vector = tuple(
-        Fraction(str(value)) for value in _origin_vector(presentation_origin)
-    )
-    try:
-        parent_setting_bridge = _parent_setting_bridge(
-            int(parent_sg), parent_setting_id
-        )
-    except (IndexError, KeyError, TypeError, ValueError, ZeroDivisionError):
-        return []
-
-    def selected_presentation_points() -> list[list[float]]:
-        if presentation_grid_points is not None:
-            try:
-                points = [
-                    [float(point[axis]) for axis in range(3)]
-                    for point in presentation_grid_points
-                    if len(point) == 3
-                ]
-            except (IndexError, OverflowError, TypeError, ValueError):
-                return []
-            if len(points) != len(presentation_grid_points) or not all(
-                math.isfinite(value) for point in points for value in point
-            ):
-                return []
-            return points
-        return _presentation_child_points(
-            parent_sg=int(parent_sg),
-            parent_xyz=parent_xyz,
-            basis=presentation_basis,
-            origin=presentation_origin,
-        )
-
-    def to_standard(point: Any) -> tuple[Fraction, Fraction, Fraction]:
-        parent_cinter = _fraction_vecadd(
-            _fraction_row_multiply(
-                tuple(Fraction(str(value)) for value in point),
-                presentation_matrix,
-            ),
-            presentation_origin_vector,
-        )
-        parent_pml = decoder.xyz_change_setting_point(
-            int(parent_sg),
-            "cinter",
-            "pml",
-            _parent_point_to_default(parent_cinter, parent_setting_bridge),
-        )
-        child_pml = _fraction_row_multiply(
-            _fraction_vecsub(parent_pml, source_origin_vector), source_inverse
-        )
-        return tuple(
-            _fraction_mod01(value)
-            for value in decoder.xyz_change_setting_point(
-                int(child_sg), "pml", "cinter", child_pml
-            )
-        )  # type: ignore[return-value]
-
-    def to_presentation(point: Any) -> list[float]:
-        child_pml = decoder.xyz_change_setting_point(
-            int(child_sg), "cinter", "pml", point
-        )
-        parent_pml = _fraction_vecadd(
-            _fraction_row_multiply(child_pml, source_matrix), source_origin_vector
-        )
-        parent_default_cinter = decoder.xyz_change_setting_point(
-            int(parent_sg), "pml", "cinter", parent_pml
-        )
-        parent_cinter = _parent_point_from_default(
-            parent_default_cinter, parent_setting_bridge
-        )
-        displayed = _fraction_row_multiply(
-            _fraction_vecsub(parent_cinter, presentation_origin_vector),
-            presentation_inverse,
-        )
-        return [float(_fraction_mod01(value)) for value in displayed]
-
-    def selected_correspondence_rows() -> list[dict[str, Any]]:
-        selection = magnetic_subgroup_selection or {}
-        correspondence = selection.get("full_operation_correspondence")
-        if not isinstance(correspondence, (list, tuple)) or not correspondence:
-            return []
-        presentation_points = selected_presentation_points()
-        if not presentation_points:
-            return []
-        standard_points = selected_magnetic_correspondence_standard_points(
-            parent_sg=int(parent_sg),
-            child_sg=int(child_sg),
-            presentation_points=presentation_points,
-            presentation_basis=presentation_basis,
-            presentation_origin=presentation_origin,
-            selected_basis=source_basis,
-            selected_origin=source_origin,
-            full_operation_correspondence=correspondence,
-            parent_setting_id=parent_setting_id,
-        )
-        if len(standard_points) != len(presentation_points):
-            return []
-
-        expected_multiplicity = 0
-        for row in ordinary_rows:
-            source_formula_site = row.get("_source_formula_site")
-            match = re.match(
-                r"^(\d+)",
-                str(source_formula_site or row.get("site") or ""),
-            )
-            if match is None:
-                return []
-            expected_multiplicity += int(match.group(1))
-        if expected_multiplicity != len(presentation_points):
-            return []
-
-        def periodic_match(left: Any, right: Any) -> bool:
-            return all(
-                abs(
-                    float(Fraction(left[axis]) - Fraction(right[axis]))
-                    - round(float(Fraction(left[axis]) - Fraction(right[axis])))
-                )
-                <= 1e-7
-                for axis in range(3)
-            )
-
-        unused = set(range(len(standard_points)))
-        rows: list[dict[str, Any]] = []
-        branch_witnesses: list[tuple[str, Any, int]] = []
-        while unused:
-            seed = min(unused)
-            try:
-                identification = identify_magnetic_wyckoff_branch(
-                    int(magnetic_group),
-                    standard_points[seed],
-                    setting="cinter",
-                )
-                orbit = magnetic_orbit_points(
-                    int(magnetic_group),
-                    identification.representative,
-                    record_setting="cinter",
-                )
-            except (IndexError, KeyError, TypeError, ValueError, ZeroDivisionError):
-                return []
-            component: set[int] = set()
-            for point in orbit:
-                matches = [
-                    index
-                    for index, candidate in enumerate(standard_points)
-                    if periodic_match(point, candidate)
-                ]
-                if len(matches) != 1:
-                    return []
-                component.add(matches[0])
-            if seed not in component or not component <= unused:
-                return []
-            representative_matches = [
-                index
-                for index in component
-                if periodic_match(
-                    standard_points[index], identification.representative
-                )
-            ]
-            if len(representative_matches) != 1:
-                return []
-            representative_index = representative_matches[0]
-            branch_witnesses.append(
-                (
-                    str(identification.row.label),
-                    presentation_points[representative_index],
-                    len(component),
-                )
-            )
-            rows.append(
-                {
-                    "label": f"{label_prefix}_{len(rows) + 1}",
-                    "site": f"{len(component)}{identification.row.label}",
-                    "xyz": list(presentation_points[representative_index]),
-                    "_mode_row_orbit_points": [
-                        list(presentation_points[index])
-                        for index in sorted(component)
-                    ],
-                }
-            )
-            unused.difference_update(component)
-        if len(rows) == len(ordinary_rows) == 1:
-            source_formula_site = str(
-                ordinary_rows[0].get("_source_formula_site") or ""
-            )
-            if (
-                source_formula_site
-                and str(rows[0].get("site") or "") == source_formula_site
-            ):
-                return rows
-        presentation_labels = presentation_branch_labels_from_correspondence(
-            magnetic_group=int(magnetic_group),
-            branches=branch_witnesses,
-        )
-        return (
-            _rows_with_optional_presentation_branch_labels(
-                rows, presentation_labels
-            )
-            or []
-        )
-
-    selected_parent_frame = parent_setting_bridge is not None
-
-    if selected_parent_frame:
-        selected_rows = selected_correspondence_rows()
-        if selected_rows:
-            return selected_rows
-
-    def reference_frame_grid_rows() -> list[dict[str, Any]]:
-        """Use a type-IV reference embedding only when it is the display frame."""
-
-        try:
-            setting = magnetic_group_setting(int(magnetic_group))
-        except (IndexError, KeyError, TypeError, ValueError):
-            return []
-        reference_basis = tuple(
-            tuple(Fraction(int(setting.reference_basis[row * 3 + col])) for col in range(3))
-            for row in range(3)
-        )
-        if (
-            int(setting.magnetic_type) != 4
-            or int(setting.reference_space_group) != int(parent_sg)
-            or presentation_matrix != reference_basis
-        ):
-            return []
-        presentation_points = selected_presentation_points()
-        if not presentation_points:
-            return []
-
-        def periodic_match(left: Any, right: Any) -> bool:
-            for axis in range(3):
-                delta = float(Fraction(left[axis]) - Fraction(str(right[axis])))
-                delta -= round(delta)
-                if abs(delta) > 1e-7:
-                    return False
-            return True
-
-        unused = set(range(len(presentation_points)))
-        rows: list[dict[str, Any]] = []
-        while unused:
-            seed = min(unused)
-            try:
-                orbit = magnetic_orbit_points(
-                    int(magnetic_group),
-                    presentation_points[seed],
-                    record_setting="cinter",
-                )
-                row, _representative = identify_magnetic_wyckoff(
-                    int(magnetic_group), presentation_points[seed]
-                )
-            except (IndexError, KeyError, TypeError, ValueError, ZeroDivisionError):
-                return []
-            component: set[int] = set()
-            for point in orbit:
-                matches = [
-                    index
-                    for index, candidate in enumerate(presentation_points)
-                    if periodic_match(point, candidate)
-                ]
-                if len(matches) != 1:
-                    return []
-                component.add(matches[0])
-            if len(component) != len(orbit) or seed not in component or not component <= unused:
-                return []
-            rows.append(
-                {
-                    "label": f"{label_prefix}_{len(rows) + 1}",
-                    "site": f"{len(orbit)}{row.label}",
-                    "xyz": list(presentation_points[seed]),
-                    "_mode_row_orbit_points": [
-                        list(presentation_points[index])
-                        for index in sorted(component)
-                    ],
-                }
-            )
-            unused.difference_update(component)
-        return rows
-
-    try:
-        groups = group_ordinary_orbits_magnetic(
-            int(magnetic_group),
-            [to_standard(row["xyz"]) for row in ordinary_rows],
-            presentation_tolerance=1e-8,
-        )
-    except (IndexError, KeyError, TypeError, ValueError, ZeroDivisionError):
-        return selected_correspondence_rows() or reference_frame_grid_rows()
-    coverage = sorted(index for group in groups for index in group.ordinary_orbit_indices)
-    if coverage != list(range(len(ordinary_rows))):
-        return selected_correspondence_rows()
-
-    presentation_points = selected_presentation_points()
-    if not presentation_points:
-        return selected_correspondence_rows()
-    ordered_groups = _magnetic_groups_in_presentation_order(
-        tuple(groups),
-        ordinary_rows,
-        presentation_points,
-    )
-    if ordered_groups is None:
-        return selected_correspondence_rows()
-    groups = tuple(group for group, _grid_indices in ordered_groups)
-    group_grid_indices = tuple(
-        grid_indices for _group, grid_indices in ordered_groups
-    )
-
-    grouped_rows: list[dict[str, Any]] = []
-    for index, (group, grid_indices) in enumerate(
-        zip(groups, group_grid_indices, strict=True),
-        start=1,
-    ):
-        row = {
-            "label": f"{label_prefix}_{index}",
-            "site": f"{int(group.multiplicity)}{group.wyckoff_label}",
-            "xyz": to_presentation(group.standard_representative),
-            "_presentation_grid_indices": list(grid_indices),
-            "_presentation_grid_size": len(presentation_points),
-            "_mode_row_orbit_points": [
-                list(presentation_points[grid_index])
-                for grid_index in grid_indices
-            ],
-        }
-        grouped_rows.append(row)
-    presentation_rows = presentation_grid_rows_for_magnetic_groups(
-        magnetic_group=int(magnetic_group),
-        label_prefix=label_prefix,
-        presentation_points=presentation_points,
-        groups=groups,
-        to_standard=to_standard,
-    )
-    if presentation_rows:
-        witnessed_rows = _rows_with_presentation_grid_witness(
-            presentation_rows,
-            presentation_points,
-            group_grid_indices,
-        )
-        if witnessed_rows is None:
-            return selected_correspondence_rows()
-        return witnessed_rows
-    if not selected_parent_frame:
-        selected_rows = selected_correspondence_rows()
-        if selected_rows:
-            return selected_rows
-    return grouped_rows
-
-
-
 def _presentation_basis_candidate(
     basis: list[list[float]] | None,
 ) -> tuple[list[list[float]] | None, str]:
     if basis is None:
         return None, "none"
     identity = ((1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0))
-    is_identity = all(abs(float(basis[row][col]) - identity[row][col]) <= 1e-12 for row in range(3) for col in range(3))
+    is_identity = all(
+        abs(float(basis[row][col]) - identity[row][col]) <= 1e-12
+        for row in range(3)
+        for col in range(3)
+    )
     return basis, "identity" if is_identity else "child_basis"
-
 
 
 def _basis_cinter_to_pml(
@@ -1958,50 +1544,6 @@ def _basis_cinter_to_pml(
     if any(value.denominator != 1 for row in basis_pml for value in row):
         return None
     return tuple(int(value) for row in basis_pml for value in row)
-
-
-
-def _to_child_fractionals(
-    positions: list[Any],
-    basis: list[list[float]] | None,
-    origin: Any,
-) -> list[list[float]] | None:
-    if basis is None:
-        return None
-    inverse = _float_matrix_inverse_3(basis)
-    if inverse is None:
-        return None
-    shift = _origin_vector(origin)
-    out: list[list[float]] = []
-    for position in positions:
-        try:
-            parent = [float(Fraction(str(value))) for value in position]
-        except (TypeError, ValueError):
-            return None
-        child = _row_multiply([parent[index] - shift[index] for index in range(3)], inverse)
-        out.append([_fold01(value) for value in child])
-    return out
-
-
-
-def _presentation_atom_layout(
-    positions: list[Any],
-    basis: list[list[float]] | None,
-    origin: Any,
-    rule: str,
-    child_sg: int | None = None,
-) -> tuple[list[list[float]], list[int], set[int]] | None:
-    child_positions = _to_child_fractionals(positions, basis, origin)
-    if child_positions is None:
-        return None
-    orbit_layout = _child_orbit_display_layout(child_positions, child_sg)
-    if orbit_layout is None:
-        order = list(range(len(child_positions)))
-        representatives = set(order)
-    else:
-        order, representatives = orbit_layout
-    return child_positions, order, representatives
-
 
 
 def _presentation_mode_vectors(

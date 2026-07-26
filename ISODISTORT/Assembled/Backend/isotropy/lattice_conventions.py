@@ -1,8 +1,8 @@
-"""FINDSYM-derived lattice presentation helpers for local ISODISTORT.
+"""FINDSYM lattice-presentation contracts used by local ISODISTORT.
 
-These helpers are runtime-local ports of small FINDSYM routines.  They read the
-shared Source/data_* tables through ``SourceData`` and never call FINDSYM
-binaries or import FINDSYM/Disassembled modules.
+These helpers implement the required numerical rules directly. They read the
+shared Source/data_* tables through ``SourceData`` and do not import
+FINDSYM/Disassembled modules.
 """
 
 from __future__ import annotations
@@ -33,7 +33,7 @@ def _matinv_unimodular(matrix: Iterable[int]) -> tuple[int, ...]:
 
 
 def _matmlt(left: Iterable[int], right: Iterable[int]) -> tuple[int, ...]:
-    """Port upstream ``matmlt_`` storage semantics for flat 3x3 buffers."""
+    """Apply ``matmlt_`` storage semantics to flat 3x3 buffers."""
 
     l = tuple(int(value) for value in left)
     r = tuple(int(value) for value in right)
@@ -338,7 +338,7 @@ _TRICLINIC_OFFDIAG_SNAP = 1.7e-5
 
 
 def _triclinic_ncmp(value: float) -> bool:
-    """Port upstream ``ncmp_``: significant when ``|value| > 1e-6``."""
+    """Apply ``ncmp_`` significance: ``|value| > 1e-6``."""
 
     return abs(value) > _TRICLINIC_NCMP
 
@@ -441,9 +441,9 @@ def _triclinic_lattparam_sign(
 
 
 def _triclinic_lattparam_reduce(gram: list[list[float]], max_outer: int = 10) -> list[list[float]]:
-    """Faithful float port of FINDSYM ``triclinic_lattparam_`` on a Gram matrix.
+    """Apply FINDSYM ``triclinic_lattparam_`` float rules to a Gram matrix.
 
-    Returns the accumulated row transform.  Tie policy is the binary's: NINT
+    Returns the accumulated row transform. The tie policy uses NINT
     pair shears accepted only on a >1e-6 diagonal change, tolerance-stable
     sort, all-negative sign normalization with asymmetric zero defaults, and
     the ``c' = -sign(eta) a - sign(xi) b + c`` sum transform, iterated to a

@@ -11,7 +11,6 @@ from typing import Iterable, overload
 import numpy as np
 
 from ISODISTORT.Assembled.Backend.source.representation import decode_little_sparse_matrix, real_phase_operator
-
 from ISODISTORT.Assembled.Backend.modes.engine.input import Case
 from ISODISTORT.Assembled.Backend.modes.engine.records import (
     LittleKVectorRecord,
@@ -20,7 +19,7 @@ from ISODISTORT.Assembled.Backend.modes.engine.records import (
 
 @dataclass(frozen=True, slots=True)
 class BridgeWeightView(Sequence[float]):
-    """Immutable view of a small matrix in MAIN__'s 48-stride buffer."""
+    """Immutable view of a small matrix in the bridge's 48-stride layout."""
 
     _matrix: tuple[tuple[float, ...], ...]
     _output_length: int
@@ -151,15 +150,6 @@ class IrrepMixin:
             if len(raw) == 5:
                 out.append(tuple(int(x) for x in raw))  # type: ignore[arg-type]
         return tuple(out)
-
-    def generate_space_group_records(self, sg: int) -> tuple[tuple[int, int, int, int, int], ...]:
-        """Return the record list produced by the binary ``generate_space_group_``.
-
-        This differs from the baked parent coset list for some centered groups.
-        The routine copies exactly the parent point-group order worth of
-        records from ``ispace_elements``.
-        """
-        return self.iso.generate_space_group_records(int(sg))
 
     def generated_space_tau(self, sg: int, point_op: int) -> tuple[Fraction, Fraction, Fraction]:
         """Return the generated operation translation for a point operation.
@@ -298,24 +288,6 @@ class IrrepMixin:
         elements = self.iso.irrep_matrices_with_ops(sg, label)
         return tuple(int(element.op_index) for element in elements[3:] if element.op_index is not None)
 
-    def parent_irrep_matrices_for_ops(
-        self,
-        sg: int,
-        label: str,
-        parent_point_ops: Iterable[int],
-    ) -> dict[int, np.ndarray]:
-        """Return parent irrep matrices keyed by requested parent point ops."""
-
-        available = {
-            int(element.op_index): element.D
-            for element in self.iso.irrep_matrices_with_ops(sg, label)[3:]
-            if element.op_index is not None
-        }
-        missing = [int(op) for op in parent_point_ops if int(op) not in available]
-        if missing:
-            raise KeyError(f"parent matrices missing for SG{sg} {label}: {missing}")
-        return {int(op): available[int(op)] for op in parent_point_ops}
-
     def site_pg_element_settings(self, site_pg: int) -> list[tuple[int, ...]]:
         """Return candidate site point-group operation settings.
 
@@ -328,24 +300,11 @@ class IrrepMixin:
         return list(self.iso.site_pg_element_settings(int(site_pg)))
 
     def site_pg_project_records(self, site_pg: int, setting_index0: int = 0) -> tuple[tuple[int, int, int, int, int], ...]:
-        """Return the 5-int records that ``project_`` stores in ``local_408``."""
+        """Return 5-int records for one site point-group operation setting."""
 
         settings = self.site_pg_element_settings(site_pg)
         point_ops = settings[setting_index0]
         return tuple((0, 0, 0, 1, op) for op in point_ops)
-
-    def site_irrep_project_records(
-        self,
-        site_pg: int,
-        pg_irrep: int,
-    ) -> tuple[tuple[int, int, int, int, int], ...]:
-        """Return canonical site operation records for a specific site irrep."""
-
-        matrix_ops = self.site_irrep_operation_order(site_pg, pg_irrep)
-        for setting in self.site_pg_element_settings(site_pg):
-            if setting == matrix_ops:
-                return tuple((0, 0, 0, 1, op) for op in setting)
-        raise ValueError(f"no site setting for PG{site_pg} irrep {pg_irrep} matrix ops {matrix_ops}")
 
     def little_parent_point_ops(self, sg: int, label: str) -> tuple[int, ...]:
         """Return the point operations in the little group for an irrep label."""
@@ -500,12 +459,11 @@ class IrrepMixin:
         translation: tuple[int, int, int, int],
         operation: tuple[int, int, int, int, int],
     ) -> tuple[int, int, int, int, int]:
-        """Port the `vadd_` use in MAIN__ before bridge `get_irreps_`.
+        """Add a fractional translation to a 5-int operation record.
 
-        The supercell loop stores a 4-int fractional translation.  MAIN__ adds
-        it to an `iwyc_coset` 5-int operation record, then keeps the coset
-        point-operation label.  The resulting full operation record is passed
-        to `get_irreps_`.
+        The supercell expansion supplies a 4-int fractional translation. The
+        sum keeps the operation record's point-operation label for subsequent
+        irrep matrix evaluation.
         """
 
         tx, ty, tz, tden = (int(value) for value in translation)
@@ -529,12 +487,10 @@ class IrrepMixin:
         *,
         output_length: int = 2304,
     ) -> list[float]:
-        """Return the active `stack_0490` weights for one bridge event.
+        """Return dense parent-irrep weights for one projection event.
 
-        This isolates the MAIN__ slice immediately before
-        `project_vector_bridge_first_stage(...)`: `vadd_` creates a full
-        operation record and `get_irreps_` returns a matrix.  MAIN__ stores
-        that matrix column-major with a 48-double stride between columns.
+        The parent-irrep matrix is serialized column-major with a 48-value
+        stride between columns for the coefficient-building stage.
         """
 
         matrix = self._bridge_irrep_matrix_for_record(gid, record, case)
@@ -563,7 +519,7 @@ class IrrepMixin:
         record: tuple[int, int, int, int, int],
         case: Case,
     ) -> np.ndarray:
-        """Return the exact matrix consumed before the MAIN__ OPD selector."""
+        """Return the exact parent-irrep matrix before OPD contraction."""
 
         if case.k_params:
             return self.little_phase_matrix_by_gid_record_for_case(gid, record, case)
@@ -579,7 +535,7 @@ class IrrepMixin:
         *,
         output_length: int,
     ) -> list[float]:
-        """Serialize one parent-irrep matrix in MAIN__'s 48-stride layout."""
+        """Serialize one parent-irrep matrix in the bridge's 48-stride layout."""
 
         return BridgeWeightView.from_matrix(
             matrix,
@@ -598,8 +554,8 @@ class IrrepMixin:
         """Return ``D(presentation) D(source)^-1`` before the OPD selector.
 
         This is a Source-only carrier change.  It deliberately acts on the
-        parent-irrep coefficient matrix before MAIN__ contracts that matrix
-        with the OPD/direction rows.  Applying the quotient to the final
+        parent-irrep coefficient matrix before contraction with the
+        OPD/direction rows. Applying the quotient to the final
         ``basis_function`` is too late because that contraction may already
         have removed the companion real-carrier branch.  ``presentation_case``
         is separate because equivalent source/presentation k representatives
@@ -613,33 +569,6 @@ class IrrepMixin:
         quotient = target @ np.linalg.inv(source)
         quotient[np.abs(quotient) < 1e-12] = 0.0
         return quotient
-
-    def project_vector_bridge_weight_buffer_for_presentation(
-        self,
-        gid: int,
-        source_record: tuple[int, int, int, int, int],
-        presentation_record: tuple[int, int, int, int, int],
-        source_case: Case,
-        *,
-        presentation_case: Case | None = None,
-        output_length: int = 2304,
-    ) -> list[float]:
-        """Build the pre-OPD bridge weights after a carrier-gauge quotient.
-
-        The returned buffer is a drop-in replacement for
-        :meth:`project_vector_bridge_weight_buffer_for_record` at the existing
-        ``direct_bridge_coefficients`` / initial bridge call site.  Default
-        binary-faithful callers remain unchanged.
-        """
-
-        return self.project_vector_bridge_weight_view_for_presentation(
-            gid,
-            source_record,
-            presentation_record,
-            source_case,
-            presentation_case=presentation_case,
-            output_length=output_length,
-        ).dense()
 
     def project_vector_bridge_weight_view_for_presentation(
         self,
@@ -674,6 +603,6 @@ class IrrepMixin:
         record: tuple[int, int, int, int, int],
         case: Case,
     ) -> np.ndarray:
-        """Port the type-2 matrix branch of ``get_irreps_`` for nonmagnetic calls."""
+        """Evaluate the type-2 matrix branch of ``get_irreps_`` for nonmagnetic calls."""
 
         return self.little_phase_matrix_by_gid_record_for_case(gid, record, case)

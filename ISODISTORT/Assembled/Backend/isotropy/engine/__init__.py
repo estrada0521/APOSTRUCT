@@ -1,1 +1,1 @@
-"""Faithful Python migration target for upstream `iso`."""
+"""Source-backed isotropy, order-parameter, and subgroup kernels."""

@@ -1,10 +1,8 @@
-"""Magnetic ``id_subgroup_magnetic_`` support helpers.
+"""Magnetic subgroup identification over Source candidate generators.
 
-This module is the next faithful-port frontier for parametric magnetic OPD
-rows.  It intentionally does not try to finish the whole subgroup
-identification routine in one step; the helpers here isolate the magnetic
-point-code, multiplication, and candidate-generator layers that differ from
-the ordinary ``id_subgroup_`` port.
+The search retains magnetic point-operation products and the selected
+candidate path alongside the ordinary subgroup identity. Full Seitz
+correspondences are included when the affine lift is complete.
 """
 
 from __future__ import annotations
@@ -79,7 +77,7 @@ class MagneticFullOperationCorrespondence:
 
 @dataclass(frozen=True)
 class MagneticIdSubgroupSelection:
-    """Faithful first-success identity retained by ``id_subgroup_magnetic_``."""
+    """First-success search provenance returned by ``id_subgroup_magnetic_``."""
 
     base_value_count: int
     candidate_scan_ordinal: int
@@ -98,8 +96,8 @@ class MagneticIdSubgroupResult:
     ordinary_space_group: int
     basis: tuple[int, ...]
     origin: tuple[int, int, int, int]
-    # Excluded from repr/equality so the historical four-field result contract
-    # remains stable while faithful callers can retain the selected search path.
+    # Keep the four-field result identity stable while retaining optional
+    # provenance for callers that need the selected search path.
     selection: MagneticIdSubgroupSelection | None = field(
         default=None,
         compare=False,
@@ -122,10 +120,10 @@ def magnetic_nonmag_point_op(magnetic_point_op: int) -> int:
 
 
 def magnetic_point_mul(left: int, right: int) -> int:
-    """Return the binary ``mag_point_op_mlt`` product.
+    """Return the ``mag_point_op_mlt`` product.
 
-    The table is right-major in the ISO common block, matching the already
-    verified ``generate_spacegroup_magnetic_`` closure port.
+    The Source table is right-major, indexed by right operation and then left
+    operation, as used by magnetic space-group closure.
     """
 
     table = magnetic_data.data().table
@@ -133,7 +131,7 @@ def magnetic_point_mul(left: int, right: int) -> int:
 
 
 def magnetic_group_generators(magnetic_group: int) -> tuple[MagneticOperationRecord, ...]:
-    """Return native ``mag_gen`` records for one 1-based magnetic group."""
+    """Return Source ``mag_gen`` records for one 1-based magnetic group."""
 
     table = magnetic_data.data().table
     group = int(magnetic_group)
@@ -158,8 +156,8 @@ def magnetic_group_candidates_for_operations(
 ) -> tuple[MagneticGroupCandidate, ...]:
     """Return magnetic groups that pass the first point-code filter.
 
-    ``ordinary_space_group`` is optional because the binary discovers it during
-    the full basis/generator search.  It is useful for diagnostics after a
+    ``ordinary_space_group`` is optional because the full basis/generator
+    search determines it.  Supplying it narrows diagnostics after a
     nonmagnetic bridge has identified the ordinary subgroup.
     """
 
@@ -500,7 +498,7 @@ def id_subgroup_magnetic_identify_with_generator_block(
     *,
     ordinary_space_group_hint: int | None = None,
 ) -> MagneticIdSubgroupResult | None:
-    """Port the magnetic candidate/generator branch of ``id_subgroup_magnetic_``.
+    """Evaluate the magnetic candidate/generator branch of ``id_subgroup_magnetic_``.
 
     This mirrors the ordinary ``id_subgroup_`` search, but candidate groups,
     generator matching, and closure use magnetic point-operation labels.

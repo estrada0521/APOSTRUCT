@@ -1,4 +1,4 @@
-"""Small integer lattice helpers ported from ``Source/iso``."""
+"""Integer lattice arithmetic for Source operation records."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from ISODISTORT.Assembled.Backend.lattice_quotient import (
 
 
 def ndet(matrix: list[int] | tuple[int, ...]) -> int:
-    """Port of the 3x3 integer determinant helper ``ndet_``."""
+    """Return the 3x3 integer determinant used by ``ndet_`` callers."""
 
     values = tuple(int(value) for value in matrix[:9])
     if len(values) < 9:
@@ -53,15 +53,15 @@ def _get_new_fractionals_cached(
 ) -> tuple[tuple[int, int, int, int], ...]:
     """Return Source-ordered quotient translations for an integer basis.
 
-    Provenance: B.  The shared exact quotient kernel generates the same
-    ``(x, y, z)`` solutions and restores the Source lexicographic scan order
-    without enumerating the full modular cube.
+    The shared exact quotient kernel generates the same ``(x, y, z)``
+    solutions and restores the Source lexicographic scan order without
+    enumerating the full modular cube.
     """
 
     return integral_row_images_source_order(matrix, matinv_denominator(matrix))
 
 
 def get_new_fractionals(matrix: list[int] | tuple[int, ...]) -> tuple[tuple[int, int, int, int], ...]:
-    """Port of ``get_new_fractionals_`` for 3x3 integer lattices."""
+    """Enumerate ``get_new_fractionals_`` representatives for a 3x3 integer lattice."""
 
     return _get_new_fractionals_cached(tuple(int(value) for value in matrix[:9]))

@@ -1,4 +1,4 @@
-"""Ported ``find_isotropy_subgroup_`` / ``newlat_`` related helpers."""
+"""Subgroup search and integer-superlattice helper facade."""
 
 from ISODISTORT.Assembled.Backend.modes.engine.subgroup_structure.core import IsotropyMixin
 

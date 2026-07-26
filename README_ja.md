@@ -4,6 +4,11 @@
 
 **Distortropy** は **ISODISTORT** の純 Python・オフライン実装です。
 
+<p align="center">
+  <img src="media/distortropy-1.png" alt="Distortropy structure selection" width="49%">
+  <img src="media/distortropy-2.png" alt="Distortropy mode viewer" width="49%">
+</p>
+
 ## Setup
 
 リポジトリをcloneし、依存packageと`isodistort` commandをeditable installします。
@@ -115,11 +120,6 @@ JSON、`.in`または直接指定ではcomplete mode-details textを標準出力
 ```bash
 isodistort serve --host 127.0.0.1 --port 8300
 ```
-
-<p align="center">
-  <img src="media/sample1-1.png" alt="ISODISTORT frontend selection view" width="49%">
-  <img src="media/sample1-2.png" alt="ISODISTORT frontend mode details view" width="49%">
-</p>
 
 ## Validation
 現在も検証を続けています。

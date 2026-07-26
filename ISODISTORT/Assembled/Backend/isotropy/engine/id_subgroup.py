@@ -1,8 +1,7 @@
-"""Ports of the upper ``id_subgroup_`` candidate-mapping logic.
+"""Candidate mapping and origin-congruence logic for ``id_subgroup_``.
 
-This module intentionally covers only the generator mapping layer for now.  The
-origin/translation congruence solve that follows is kept as the next explicit
-frontier.
+The module builds generator mappings, reduces candidate bases, constructs the
+translation equations, and returns the first accepted subgroup and origin.
 """
 
 from __future__ import annotations
@@ -50,16 +49,15 @@ def origin_equation_system(
 ) -> OriginEquationSystem:
     """Build the origin congruences passed to ``solve_eqs_mod_int_``.
 
-    For every accepted generator mapping, upstream forms three equations
+    For every accepted generator mapping, this adapter forms three equations
 
     ``(I - R_i^T) * origin = delta_i``
 
     and stores them in the column-stride-50 matrix handed to
     ``solve_eqs_mod_int_``.  The right-hand side is integerized with the
-    product of the selected generator translation denominators, matching
-    `local_19e0` in the decompile.  The transpose is not a mathematical
-    convention choice; it follows the row-vector storage/access pattern in
-    the upstream loop that reads the 3x3 generator buffer with 12-byte steps.
+    product of the selected generator translation denominators. The transpose
+    follows this adapter's row-vector buffer layout rather than introducing a
+    separate mathematical convention.
     """
 
     if len(generator_matrices) != len(generator_diff_records):
@@ -152,7 +150,7 @@ def input_operation_records_from_inverse(
     inverse_denominator: int,
     input_ops: Sequence[Sequence[int]],
 ) -> tuple[tuple[int, int, int, int, int], ...]:
-    """Port the `id_subgroup_` input operation transform into `local_b98`."""
+    """Transform input operation translations through the inverse subgroup basis."""
 
     matrix = tuple(
         tuple(int(inverse_matrix[row * 3 + col]) for col in range(3))
@@ -177,7 +175,7 @@ def id_subgroup_input_generator_matrices(
     basis: Sequence[int],
     input_ops: Sequence[Sequence[int]],
 ) -> tuple[tuple[tuple[int, int, int], ...], ...]:
-    """Port the input-operation matrix transform into `local_1918`."""
+    """Return integer parent-operation matrices in the subgroup basis."""
 
     inverse, inverse_denominator = _matinv_numerator_denominator(basis)
     lattice = int(data.space["ispace_lattice"][int(parent_sg) - 1])
@@ -226,9 +224,9 @@ def _matmlt_flat(data: SourceData, left: Sequence[int], right: Sequence[Sequence
 
 
 def nice_lattice2_basis(data: SourceData, lattice: int, basis: Sequence[int]) -> tuple[int, ...]:
-    """Port the basis normalization performed by ``nice_lattice2_``.
+    """Normalize a candidate basis with the ``nice_lattice2_`` rules.
 
-    Upstream first maps the basis through the ML lattice's second 3x3 block,
+    The routine first maps the basis through the ML lattice's second 3x3 block,
     repeatedly shortens each basis vector by adding or subtracting another
     basis vector when that strictly lowers the squared length, then maps the
     result back through the first 3x3 block and applies ``reduc3_``.
@@ -310,15 +308,12 @@ def id_subgroup_basis_candidate_from_rowop(
     base_value_count: int,
     candidate_index: int,
 ) -> tuple[tuple[int, int, int], ...] | None:
-    """Rebuild one `id_subgroup_` basis-transform candidate.
+    """Build one integer basis-transform candidate from a reduced row system.
 
-    This ports the small search block between the `rowop_` reduction and the
-    `matinv_(local_19a8, ...)` call.  The reduced equation matrix is stored in
-    the usual column-stride-50 layout.  Non-pivot columns receive mixed-radix
-    trial values from the binary's fixed list
+    The reduced equation matrix uses a column-stride-50 layout. Non-pivot
+    columns receive mixed-radix trial values from the fixed list
     `[0, 1, -1, 2, -2, 3, -3, 4, -4, 6, -6]`; pivot columns are solved by
-    back-substitution.  Upstream accepts only determinant `+1` candidates at
-    this boundary.
+    back-substitution. Only determinant `+1` candidates are returned.
     """
 
     rows = int(row_count)
@@ -330,7 +325,7 @@ def id_subgroup_basis_candidate_from_rowop(
         raise ValueError(f"unsupported base value count: {base}")
 
     def coeff(row: int, col: int) -> int:
-        # `row` and `col` are 1-based; local_40f8 uses leading dimension 50.
+        # `row` and `col` are 1-based; the workspace uses leading dimension 50.
         index = (row - 1) + (col - 1) * 50
         if index >= len(rowop_matrix):
             raise ValueError("rowop matrix dump is too narrow")
@@ -381,11 +376,11 @@ def id_subgroup_identify_with_generator_block(
     flag: int,
     generators_conv: Sequence[int] | None = None,
 ) -> IdSubgroupResult | None:
-    """Port of the `id_subgroup_` outer selection loop.
+    """Identify a subgroup in the candidate order used by ``id_subgroup_``.
 
-    `generators_conv` is retained only as an optional RE fixture hook for old
-    comparisons.  The default path reads generators from `Source/data_space`
-    through `SourceData.get_generators_records`.
+    ``generators_conv`` optionally supplies an initialized generator block for
+    compatibility fixtures. Normal callers read canonical generators from
+    ``Source/data_space`` through ``SourceData.get_generators_records``.
     """
 
     parent = int(parent_sg)
@@ -493,7 +488,7 @@ def rowop_reduce_matrix(
     *,
     leading: int = 50,
 ) -> tuple[int, ...]:
-    """Port ``rowop_`` for the column-stride integer matrices in ISO.
+    """Reduce an ISO column-stride integer matrix with ``rowop_`` rules.
 
     The routine performs integer row elimination over a `leading=50` matrix.
     It searches pivot columns from the diagonal with a skipped-column counter,
@@ -610,11 +605,11 @@ def generator_diff_records(
     basis_transform: Sequence[int],
     candidate_generator_records: Sequence[Sequence[int]] | None = None,
 ) -> tuple[tuple[int, int, int, int], ...]:
-    """Port the translation-difference records built before origin equations.
+    """Build the translation-difference records used by the origin equations.
 
     This boundary starts after the input operation records have already been
-    transformed into the candidate lattice (`local_b98` in the decompile).
-    Upstream applies the inverse of the accepted basis transform to each
+    transformed into the candidate lattice. This adapter applies the
+    inverse of the accepted basis transform to each
     selected input generator translation, subtracts the corresponding
     candidate generator translation, reduces the fraction, and finally wraps
     numerators into `[0, denominator)`.
@@ -643,10 +638,9 @@ def generator_diff_records(
 def _point_code(data: SourceData, point_op: int) -> int:
     """Return the point-operation code used by ``id_subgroup_``.
 
-    The decompile address used in this branch corresponds to
-    ``data_space:ipoint_op_code``.  Despite the tempting nearby table name,
-    this is not ``ipoint_op_order``: e.g. point ops 27 and 28 must compare
-    equal here because both have code 81.
+    This uses ``data_space:ipoint_op_code``, not the nearby
+    ``ipoint_op_order`` table: point operations 27 and 28 compare equal here
+    because both have code 81.
     """
 
     return int(data.space["ipoint_op_code"][int(point_op) - 1])
@@ -655,9 +649,8 @@ def _point_code(data: SourceData, point_op: int) -> int:
 def _point_mul(data: SourceData, left: int, right: int) -> int:
     """Return the 1-based product from ``ipoint_op_mlt``.
 
-    The upstream table is stored row-major in 1-based point-operation labels.
-    The `id_subgroup_` address arithmetic uses a one-byte offset before the
-    first element, which is equivalent to this `(right, left)` indexing.
+    The table is row-major in 1-based point-operation labels. Products use
+    ``(right, left)`` indexing.
     """
 
     return int(data.space["ipoint_op_mlt"][(int(right) - 1) * 72 + (int(left) - 1)])

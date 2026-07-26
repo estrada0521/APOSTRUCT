@@ -34,6 +34,8 @@ FractionMatrix = tuple[
 def _input_fraction(value: Fraction | int | float) -> Fraction:
     """Recover the small rational represented by a presentation float."""
 
+    if isinstance(value, Fraction):
+        return value
     fraction = Fraction(value)
     if isinstance(value, float) or fraction.denominator > 1_000_000_000:
         decimal = Fraction(str(round(float(value), 9)))
@@ -64,7 +66,9 @@ class MagneticWyckoffRow:
     source_ordinal: int
     label: str
     formula: WyckoffFormula
-    formula_records: tuple[FractionRecord, FractionRecord, FractionRecord, FractionRecord]
+    formula_records: tuple[
+        FractionRecord, FractionRecord, FractionRecord, FractionRecord
+    ]
 
 
 @dataclass(frozen=True)
@@ -75,7 +79,9 @@ class MagneticWyckoffBranch:
     operation_index: int
     operation_record: MagneticOperationRecord
     formula: WyckoffFormula
-    formula_records: tuple[FractionRecord, FractionRecord, FractionRecord, FractionRecord]
+    formula_records: tuple[
+        FractionRecord, FractionRecord, FractionRecord, FractionRecord
+    ]
 
 
 @dataclass(frozen=True)
@@ -102,7 +108,9 @@ def _fraction_record(values: Sequence[Fraction]) -> FractionRecord:
     for value in values:
         denominator = math.lcm(denominator, Fraction(value).denominator)
     numerators = [int(Fraction(value) * denominator) for value in values]
-    common = math.gcd(math.gcd(abs(numerators[0]), abs(numerators[1])), abs(numerators[2]))
+    common = math.gcd(
+        math.gcd(abs(numerators[0]), abs(numerators[1])), abs(numerators[2])
+    )
     common = math.gcd(common, denominator)
     if common:
         numerators = [value // common for value in numerators]
@@ -147,7 +155,9 @@ def _cinter_centering_translations(sg: int) -> tuple[FractionPoint, ...]:
         if len(out) == count:
             break
     if len(out) != count:
-        raise ValueError(f"centering translation count {len(out)} != {count} for SG{sg}")
+        raise ValueError(
+            f"centering translation count {len(out)} != {count} for SG{sg}"
+        )
     return tuple(out)
 
 
@@ -165,7 +175,10 @@ def _inverse3(matrix: Sequence[int]) -> tuple[tuple[Fraction, Fraction, Fraction
 def _pml_to_cinter_affine(sg: int) -> tuple[FractionMatrix, FractionPoint]:
     data = source_tables()
     return (
-        tuple(tuple(Fraction(value) for value in row) for row in data.pml_to_cinter_matrix(int(sg))),
+        tuple(
+            tuple(Fraction(value) for value in row)
+            for row in data.pml_to_cinter_matrix(int(sg))
+        ),
         tuple(Fraction(value) for value in data.cml_to_cinter_origin(int(sg))),
     )  # type: ignore[return-value]
 
@@ -173,17 +186,16 @@ def _pml_to_cinter_affine(sg: int) -> tuple[FractionMatrix, FractionPoint]:
 def _pml_point_operation_matrix(sg: int, point_op: int) -> FractionMatrix:
     data = source_tables()
     lattice = int(data.space["ispace_lattice"][int(sg) - 1])
-    code = int(data.space["ipoint_op_psettings"][(lattice - 1) * 72 + int(point_op) - 1])
+    code = int(
+        data.space["ipoint_op_psettings"][(lattice - 1) * 72 + int(point_op) - 1]
+    )
     if code == 0:
         raise KeyError(f"missing PML point operation SG{sg} op{point_op}")
     entries: list[Fraction] = []
     for _ in range(9):
         entries.append(Fraction(code % 3 - 1))
         code //= 3
-    return tuple(
-        tuple(entries[row * 3 + col] for col in range(3))
-        for row in range(3)
-    )  # type: ignore[return-value]
+    return tuple(tuple(entries[row * 3 + col] for col in range(3)) for row in range(3))  # type: ignore[return-value]
 
 
 def _cinter_point_operation(matrix: FractionMatrix) -> int:
@@ -194,7 +206,10 @@ def _cinter_point_operation(matrix: FractionMatrix) -> int:
     integer_target = tuple(int(value) for value in target)
     for point_op in range(1, 73):
         start = (point_op - 1) * 9
-        if tuple(int(value) for value in data.space["ipoint_op"][start : start + 9]) == integer_target:
+        if (
+            tuple(int(value) for value in data.space["ipoint_op"][start : start + 9])
+            == integer_target
+        ):
             return point_op
     raise KeyError(f"cinter point operation not found: {integer_target}")
 
@@ -214,7 +229,9 @@ def _pml_point_operation(sg: int, matrix: FractionMatrix) -> int:
 def _magnetic_point_operation(ordinary_point_op: int, antiunitary: bool) -> int:
     table = magnetic_data().table
     for index, mapped in enumerate(table["mag_point_op_mag2nonmag"]):
-        if int(mapped) == int(ordinary_point_op) and bool(table["mag_point_op_r"][index]) == bool(antiunitary):
+        if int(mapped) == int(ordinary_point_op) and bool(
+            table["mag_point_op_r"][index]
+        ) == bool(antiunitary):
             return index + 1
     raise KeyError(
         f"magnetic point operation not found: ordinary={ordinary_point_op}, r={antiunitary}"
@@ -253,7 +270,7 @@ def _cinter_record_to_pml(
     setting: MagneticGroupSetting,
     record: MagneticOperationRecord,
 ) -> MagneticOperationRecord:
-    """Port the unreduced cinter-to-PML return leg of the binary routine."""
+    """Transform a cinter magnetic operation record back to PML coordinates."""
 
     data = source_tables()
     table = magnetic_data().table
@@ -310,11 +327,15 @@ def magnetic_group_setting(magnetic_group: int) -> MagneticGroupSetting:
         reference_sg = int(table["mag_type4_supergroup"][pointer - 1])
         basis = tuple(
             int(value)
-            for value in table["mag_type4_supergroup_basis"][(pointer - 1) * 9 : pointer * 9]
+            for value in table["mag_type4_supergroup_basis"][
+                (pointer - 1) * 9 : pointer * 9
+            ]
         )
         origin = tuple(
             int(value)
-            for value in table["mag_type4_supergroup_origin"][(pointer - 1) * 4 : pointer * 4]
+            for value in table["mag_type4_supergroup_origin"][
+                (pointer - 1) * 4 : pointer * 4
+            ]
         )  # type: ignore[assignment]
     return MagneticGroupSetting(
         magnetic_group=group,
@@ -339,8 +360,12 @@ def _compose_operations(
         int(setting.ordinary_space_group), ordinary_left, _fraction_values(right[:4])
     )
     left_translation = _fraction_values(left[:4])
-    translation = tuple(left_translation[axis] + rotated_right[axis] for axis in range(3))
-    point_op = int(table["mag_point_op_mlt"][(int(right[4]) - 1) * 144 + int(left[4]) - 1])
+    translation = tuple(
+        left_translation[axis] + rotated_right[axis] for axis in range(3)
+    )
+    point_op = int(
+        table["mag_point_op_mlt"][(int(right[4]) - 1) * 144 + int(left[4]) - 1]
+    )
     x, y, z, denominator = _fraction_record(_fold_point(translation))
     return x, y, z, denominator, point_op
 
@@ -393,7 +418,7 @@ def generate_magnetic_space_group_records(
     *,
     setting: str = "binary",
 ) -> tuple[MagneticOperationRecord, ...]:
-    """Return the faithful binary PML surface or an explicit working setting."""
+    """Return Source PML operation records or an explicit working setting."""
 
     requested = str(setting).strip().lower()
     if requested in {"binary", "pml"}:
@@ -441,7 +466,9 @@ def _transform_reference_formula(
         return formula
     inverse = _inverse3(setting.reference_basis)
     origin = _fraction_values(setting.reference_origin)
-    base = _row_multiply(tuple(formula[0][axis] - origin[axis] for axis in range(3)), inverse)
+    base = _row_multiply(
+        tuple(formula[0][axis] - origin[axis] for axis in range(3)), inverse
+    )
     parameters = tuple(_row_multiply(vector, inverse) for vector in formula[1:])
     return (base, *parameters)  # type: ignore[return-value]
 
@@ -451,12 +478,14 @@ def _nice_wyckoff_pml_formula(
     *,
     sg: int,
 ) -> WyckoffFormula:
-    """Port the spatial-formula canonicalization in ``nice_wyckoff_``."""
+    """Canonicalize a spatial formula with ``nice_wyckoff_`` rules."""
 
     pml_to_cinter, origin = _pml_to_cinter_affine(int(sg))
     cinter_to_pml = _matrix_inverse(pml_to_cinter)
     cinter_parameters = [_row_multiply(vector, pml_to_cinter) for vector in formula[1:]]
-    active_slots = [index for index, vector in enumerate(cinter_parameters) if any(vector)]
+    active_slots = [
+        index for index, vector in enumerate(cinter_parameters) if any(vector)
+    ]
     parameter_matrix = Matrix(cinter_parameters)
     reduced, pivots = parameter_matrix.rref()
     canonical_cinter = [
@@ -465,7 +494,9 @@ def _nice_wyckoff_pml_formula(
         if any(reduced[row, col] != 0 for col in range(3))
     ]
     if len(canonical_cinter) != len(active_slots):
-        raise ValueError(f"dependent magnetic Wyckoff parameter slots for SG{sg}: {formula}")
+        raise ValueError(
+            f"dependent magnetic Wyckoff parameter slots for SG{sg}: {formula}"
+        )
 
     transformed_base = _row_multiply(formula[0], pml_to_cinter)
     cinter_base = _fold_point(
@@ -474,8 +505,7 @@ def _nice_wyckoff_pml_formula(
     for vector, pivot in zip(canonical_cinter, pivots):
         coefficient = cinter_base[int(pivot)]
         cinter_base = tuple(
-            cinter_base[axis] - coefficient * vector[axis]
-            for axis in range(3)
+            cinter_base[axis] - coefficient * vector[axis] for axis in range(3)
         )  # type: ignore[assignment]
     pml_base = _row_multiply(
         tuple(cinter_base[axis] - origin[axis] for axis in range(3)),
@@ -506,7 +536,9 @@ def _magnetic_wyckoff_rows_cached(
     data = source_tables()
     setting = magnetic_group_setting(int(magnetic_group))
     out: list[MagneticWyckoffRow] = []
-    for ordinal, row in enumerate(data.wyckoff_rows(setting.reference_space_group), start=1):
+    for ordinal, row in enumerate(
+        data.wyckoff_rows(setting.reference_space_group), start=1
+    ):
         formula = _nice_wyckoff_pml_formula(
             _transform_reference_formula(data.wyckoff_fraction_vectors(row), setting),
             sg=setting.ordinary_space_group,
@@ -545,14 +577,12 @@ def magnetic_wyckoff_rows(
 
 
 def _reduce_bns_formula_base(base: FractionPoint, *, sg: int) -> FractionPoint:
-    """Port the PML-to-cinter reduction used by get_wyckoff_all_magnetic_."""
+    """Reduce a PML formula to cinter for ``get_wyckoff_all_magnetic_``."""
 
     pml_to_cinter, origin = _pml_to_cinter_affine(int(sg))
     cinter_to_pml = _matrix_inverse(pml_to_cinter)
     transformed = _row_multiply(base, pml_to_cinter)
-    reduced = _fold_point(
-        tuple(transformed[axis] + origin[axis] for axis in range(3))
-    )
+    reduced = _fold_point(tuple(transformed[axis] + origin[axis] for axis in range(3)))
     return _row_multiply(
         tuple(reduced[axis] - origin[axis] for axis in range(3)),
         cinter_to_pml,
@@ -570,7 +600,7 @@ def _magnetic_wyckoff_formula_branches_cached(
     row_ordinal: int,
     output_setting: str,
 ) -> tuple[MagneticWyckoffBranch, ...]:
-    """Port the spatial branch loop in get_wyckoff_all_magnetic_."""
+    """Evaluate the spatial branch loop in ``get_wyckoff_all_magnetic_``."""
 
     group = int(magnetic_group)
     row_index = int(row_ordinal)
@@ -579,7 +609,9 @@ def _magnetic_wyckoff_formula_branches_cached(
     table = magnetic_data().table
     rows = magnetic_wyckoff_rows(group, setting="bns")
     if row_index < 1 or row_index > len(rows):
-        raise KeyError(f"magnetic Wyckoff row {row_index} out of range for group {group}")
+        raise KeyError(
+            f"magnetic Wyckoff row {row_index} out of range for group {group}"
+        )
     row = rows[row_index - 1]
     records = generate_magnetic_space_group_records(group, setting="binary")
     if not records:
@@ -589,9 +621,7 @@ def _magnetic_wyckoff_formula_branches_cached(
         (1, records[0], row.formula)
     ]
     for operation_index, record in enumerate(records[1:], start=2):
-        ordinary_point_op = int(
-            table["mag_point_op_mag2nonmag"][int(record[4]) - 1]
-        )
+        ordinary_point_op = int(table["mag_point_op_mag2nonmag"][int(record[4]) - 1])
         translation = _fraction_values(record[:4])
         rotated_base = data.vrot_fraction(
             int(setting.ordinary_space_group), ordinary_point_op, row.formula[0]
@@ -627,18 +657,14 @@ def _magnetic_wyckoff_formula_branches_cached(
         branches, start=1
     ):
         if output_setting == "cinter":
-            formula = _formula_pml_to_cinter(
-                formula, int(setting.ordinary_space_group)
-            )
+            formula = _formula_pml_to_cinter(formula, int(setting.ordinary_space_group))
         out.append(
             MagneticWyckoffBranch(
                 source_ordinal=source_ordinal,
                 operation_index=operation_index,
                 operation_record=record,
                 formula=formula,
-                formula_records=tuple(
-                    _fraction_record(vector) for vector in formula
-                ),  # type: ignore[arg-type]
+                formula_records=tuple(_fraction_record(vector) for vector in formula),  # type: ignore[arg-type]
             )
         )
     return tuple(out)
@@ -669,12 +695,10 @@ def _formula_solver(
     """Return RREF and row operations for a Wyckoff parameter matrix."""
 
     reduced = [
-        [Fraction(parameters[column][row]) for column in range(3)]
-        for row in range(3)
+        [Fraction(parameters[column][row]) for column in range(3)] for row in range(3)
     ]
     transform = [
-        [Fraction(int(row == column)) for column in range(3)]
-        for row in range(3)
+        [Fraction(int(row == column)) for column in range(3)] for row in range(3)
     ]
     pivots: list[int] = []
     pivot_row = 0
@@ -686,8 +710,14 @@ def _formula_solver(
         if source_row is None:
             continue
         if source_row != pivot_row:
-            reduced[pivot_row], reduced[source_row] = reduced[source_row], reduced[pivot_row]
-            transform[pivot_row], transform[source_row] = transform[source_row], transform[pivot_row]
+            reduced[pivot_row], reduced[source_row] = (
+                reduced[source_row],
+                reduced[pivot_row],
+            )
+            transform[pivot_row], transform[source_row] = (
+                transform[source_row],
+                transform[pivot_row],
+            )
         scale = reduced[pivot_row][column]
         reduced[pivot_row] = [value / scale for value in reduced[pivot_row]]
         transform[pivot_row] = [value / scale for value in transform[pivot_row]]
@@ -720,7 +750,7 @@ def _formula_solution(
     formula: WyckoffFormula,
     point: FractionPoint,
 ) -> tuple[Fraction, Fraction, Fraction] | None:
-    # B: a rank-zero Source formula is exactly one point on the periodic cell.
+    # A rank-zero Source formula is exactly one point on the periodic cell.
     if not any(value for parameter in formula[1:] for value in parameter):
         return (
             (Fraction(0), Fraction(0), Fraction(0))
@@ -737,8 +767,7 @@ def _formula_solution(
     )
     for shift in itertools.product(*shift_ranges):
         target = tuple(
-            point[axis] + shift[axis] - formula[0][axis]
-            for axis in range(3)
+            point[axis] + shift[axis] - formula[0][axis] for axis in range(3)
         )
         transformed = tuple(
             sum(transform[row][axis] * target[axis] for axis in range(3))
@@ -763,7 +792,7 @@ def identify_magnetic_wyckoff_branch(
     *,
     setting: str = "cinter",
 ) -> MagneticWyckoffIdentification:
-    """Port id_wyckoff2_magnetic_ row/branch first-success traversal."""
+    """Apply ``id_wyckoff2_magnetic_`` row/branch first-success traversal."""
 
     requested = str(setting).strip().lower()
     if requested in {"bns", "pml", "binary"}:
@@ -786,8 +815,7 @@ def identify_magnetic_wyckoff_branch(
             for centering in centerings:
                 formula = (
                     tuple(
-                        branch.formula[0][axis] + centering[axis]
-                        for axis in range(3)
+                        branch.formula[0][axis] + centering[axis] for axis in range(3)
                     ),
                     *branch.formula[1:],
                 )
@@ -797,8 +825,7 @@ def identify_magnetic_wyckoff_branch(
                 representative = tuple(
                     formula[0][axis]
                     + sum(
-                        solution[index] * formula[index + 1][axis]
-                        for index in range(3)
+                        solution[index] * formula[index + 1][axis] for index in range(3)
                     )
                     for axis in range(3)
                 )
@@ -830,7 +857,7 @@ def magnetic_orbit_points(
     magnetic_records: Sequence[MagneticOperationRecord] | None = None,
     record_setting: str = "cinter",
 ) -> tuple[FractionPoint, ...]:
-    """Return one full centered orbit in binary magnetic-operation order."""
+    """Return one full centered orbit in Source magnetic-operation order."""
 
     setting = magnetic_group_setting(int(magnetic_group))
     records = (
@@ -906,7 +933,9 @@ def group_ordinary_orbits_magnetic(
     )
     normalized: list[tuple[FractionPoint, ...]] = []
     for item in ordinary_orbits:
-        if len(item) == 3 and all(not isinstance(value, (list, tuple)) for value in item):
+        if len(item) == 3 and all(
+            not isinstance(value, (list, tuple)) for value in item
+        ):
             point = _fold_point(tuple(_input_fraction(value) for value in item))  # type: ignore[arg-type]
             normalized.append(
                 _magnetic_unitary_orbit(
@@ -925,7 +954,9 @@ def group_ordinary_orbits_magnetic(
         for point in orbit:
             previous = point_to_orbit.setdefault(point, index)
             if previous != index:
-                raise ValueError(f"ordinary input orbits overlap: {previous} and {index}, point={point}")
+                raise ValueError(
+                    f"ordinary input orbits overlap: {previous} and {index}, point={point}"
+                )
 
     tolerance = (
         None
@@ -961,7 +992,9 @@ def group_ordinary_orbits_magnetic(
             base_image = _apply_operation(
                 setting, record, representative, record_setting=record_setting
             )
-            for centering in _cinter_centering_translations(setting.ordinary_space_group):
+            for centering in _cinter_centering_translations(
+                setting.ordinary_space_group
+            ):
                 image = _fold_point(
                     tuple(base_image[axis] + centering[axis] for axis in range(3))
                 )
@@ -995,7 +1028,9 @@ def group_ordinary_orbits_magnetic(
             base_image = _apply_operation(
                 setting, record, representative, record_setting=record_setting
             )
-            for centering in _cinter_centering_translations(setting.ordinary_space_group):
+            for centering in _cinter_centering_translations(
+                setting.ordinary_space_group
+            ):
                 image = _fold_point(
                     tuple(base_image[axis] + centering[axis] for axis in range(3))
                 )

@@ -86,9 +86,9 @@ class DynamicIsotropyFile:
 def dynamic_row_write_order_key(row: DynamicIsotropyRow) -> tuple[int, int]:
     """Return the final ``*.iso`` ordering key used by ``get_isotropy_``.
 
-    GDB row-write probes observe internal search order.  The binary writes
-    those candidates to a temporary file, then rewinds it and emits final rows
-    grouped by OPD dimension (`P`, `C`, `S`, `nD`) and occurrence index.
+    Candidate discovery order is normalized to the file emission order:
+    rows are grouped by OPD dimension (`P`, `C`, `S`, `nD`) and occurrence
+    index.
     """
 
     label = row.direction.strip()

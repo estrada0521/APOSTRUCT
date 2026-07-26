@@ -1,8 +1,8 @@
-"""Ports of ``solve_eqs_mod_int_`` used by ``id_subgroup_``.
+"""Modular equation solving for the ``id_subgroup_`` kernel.
 
-The current frontier needs the ``ifirst=1`` path used by ``id_subgroup_``:
-return a single representative solution of ``A x = rhs`` modulo an integer
-denominator, in the same numerator/denominator convention as the ISO binary.
+The ``ifirst=1`` contract returns one representative solution of
+``A x = rhs`` modulo an integer denominator, using the numerator/denominator
+record convention shared by the Source operation tables.
 """
 
 from __future__ import annotations
@@ -57,7 +57,7 @@ def _row_echelon_form_iso(
     matrix: Sequence[Sequence[int]],
     transform: Sequence[Sequence[int]],
 ) -> tuple[list[list[int]], list[list[int]]]:
-    """Port ``row_echelon_form_`` for the integer SNF solver.
+    """Apply ``row_echelon_form_`` rules for the integer SNF solver.
 
     The ISO routine augments the active matrix with the row-transform matrix,
     repeatedly chooses the smallest nonzero pivot in the active column, applies
@@ -104,7 +104,7 @@ def _row_echelon_form_iso(
 def _smith_normal_decomp_iso(
     rows: tuple[tuple[int, ...], ...],
 ) -> tuple[tuple[tuple[int, ...], ...], tuple[tuple[int, ...], ...], tuple[tuple[int, ...], ...]]:
-    """Port ``smith_normal_form_`` closely enough for solution representatives."""
+    """Compute the ``smith_normal_form_`` decomposition needed for solution representatives."""
 
     matrix = [list(row) for row in rows]
     row_count = len(matrix)

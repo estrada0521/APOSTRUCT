@@ -1,6 +1,6 @@
 """Source-only dynamic-k subgroup-to-order-parameter selection.
 
-This is the Assembled copy-port boundary for the numerical part of ISO
+This module computes the dynamic invariant-direction surface for ISO
 ``DISPLAY DIRECTION``.  It consumes a selected child subgroup embedding and
 returns invariant directions in Source k-family/irrep order.  Web presentation
 and FINAL values are deliberately outside this module.
@@ -21,8 +21,9 @@ import numpy as np
 
 from ISODISTORT.Assembled.Backend.exactmath import (
     fraction_matrix_inverse3,
-    integer_adjugate3,
-    integer_determinant3,
+)
+from ISODISTORT.Assembled.Backend.lattice_quotient import (
+    reciprocal_mesh_source_order as _ordered_reciprocal_mesh,
 )
 from ISODISTORT.Assembled.Backend.modes.engine.input import Case
 
@@ -275,7 +276,7 @@ class KvecStandardEmbedding:
 
 @dataclass(frozen=True)
 class KvecStandardProvenance:
-    """Source-order provenance retained from the binary k-vector scan."""
+    """Source-order provenance retained from the k-vector scan."""
 
     sg: int
     representative_gid: int
@@ -298,9 +299,9 @@ class KvecStandardProvenance:
 class KvecStandardCarrierBridge:
     """Source-real presentation helper derived from standardization provenance.
 
-    The binary ``kvec_standard_`` routine itself mutates only the parameter
-    record and changed flag; this carrier matrix is a higher-level Source-only
-    construction for the type-2/3 complex ledger.
+    The standardized parameter record and changed flag do not define a global
+    carrier; this matrix is a higher-level local construction for the type-2/3
+    complex ledger.
     """
 
     provenance: KvecStandardProvenance
@@ -327,7 +328,7 @@ class KvecStandardType1ProjectSurface:
     """Paired source/standard type-1 projection surfaces.
 
     The right quotient is Source-derived metadata at the selected operation;
-    it is not a binary-returned global carrier or a Web print selector.
+    it is not a global carrier or a Web print selector.
     """
 
     provenance: KvecStandardProvenance
@@ -336,90 +337,6 @@ class KvecStandardType1ProjectSurface:
     selected_operation_source_matrix: tuple[tuple[complex, ...], ...]
     selected_operation_standard_matrix: tuple[tuple[complex, ...], ...]
     selected_operation_right_quotient: tuple[tuple[complex, ...], ...]
-
-
-def _reciprocal_mesh_signature(
-    adjugate: Sequence[int],
-    signed_det: int,
-    rhs: Sequence[int],
-) -> tuple[int, int, int]:
-    """Return the exact modulo-determinant reciprocal-mesh signature."""
-
-    det = abs(int(signed_det))
-    sign = 1 if int(signed_det) > 0 else -1
-    return (
-        sign * sum(int(adjugate[col]) * int(rhs[col]) for col in range(3)) % det,
-        sign * sum(int(adjugate[3 + col]) * int(rhs[col]) for col in range(3)) % det,
-        sign * sum(int(adjugate[6 + col]) * int(rhs[col]) for col in range(3)) % det,
-    )
-
-
-def _ordered_reciprocal_mesh(basis: Sequence[int]) -> tuple[tuple[Fraction, Fraction, Fraction], ...]:
-    """B: enumerate the established reciprocal mesh in exact Source order.
-
-    The former cubic scan revisited each residue class along every axis.  For
-    fixed first/second coordinates, the third-axis values form one coset of a
-    cyclic subgroup.  Once that coset has appeared, no later third-axis value
-    can add a point.  Identifying the coset with exact integer residues keeps
-    the first-occurrence order while reducing the worst scan to determinant
-    squared.
-    """
-
-    values = tuple(int(value) for value in basis)
-    if len(values) < 9:
-        raise IndexError("tuple index out of range")
-    signed_det = integer_determinant3(values[:9])
-    det = abs(signed_det)
-    if det <= 0:
-        return ()
-    adj = integer_adjugate3(values[:9])
-    third_offsets: list[tuple[int, int, int]] = []
-    seen_third_offsets: set[tuple[int, int, int]] = set()
-    for third in range(det, 0, -1):
-        offset = _reciprocal_mesh_signature(adj, signed_det, (0, 0, third))
-        if offset in seen_third_offsets:
-            continue
-        seen_third_offsets.add(offset)
-        third_offsets.append(offset)
-
-    coset_key_by_base: dict[tuple[int, int, int], tuple[tuple[int, int, int], ...]] = {}
-    seen_cosets: set[tuple[tuple[int, int, int], ...]] = set()
-    seen: set[tuple[int, int, int]] = set()
-    out: list[tuple[Fraction, Fraction, Fraction]] = []
-    for first in range(det, 0, -1):
-        for second in range(det, 0, -1):
-            base = _reciprocal_mesh_signature(adj, signed_det, (first, second, 0))
-            coset_key = coset_key_by_base.get(base)
-            if coset_key is None:
-                coset_members = tuple(
-                    tuple((base[row] + offset[row]) % det for row in range(3))
-                    for offset in third_offsets
-                )
-                coset_key = tuple(sorted(coset_members))
-                for member in coset_members:
-                    coset_key_by_base[member] = coset_key
-            if coset_key in seen_cosets:
-                continue
-            seen_cosets.add(coset_key)
-            for offset in third_offsets:
-                signature = (
-                    (base[0] + offset[0]) % det,
-                    (base[1] + offset[1]) % det,
-                    (base[2] + offset[2]) % det,
-                )
-                if signature in seen:
-                    continue
-                seen.add(signature)
-                out.append(
-                    (
-                        Fraction(signature[0], det),
-                        Fraction(signature[1], det),
-                        Fraction(signature[2], det),
-                    )
-                )
-                if len(out) == det:
-                    return tuple(out)
-    return tuple(out)
 
 
 def _key(vector: Sequence[Fraction]) -> tuple[tuple[int, int], ...]:
@@ -724,7 +641,7 @@ def _kvec_standard_point_operations_for_sg(
     decoder: Any,
     sg: int,
 ) -> tuple[tuple[int, tuple[int, ...]], ...]:
-    """Return the parent point operations scanned by binary kvec_standard_."""
+    """Return Source parent operations in standardization-adapter scan order."""
 
     operations: list[int] = []
     for record in decoder.generate_space_group_records(int(sg)):
@@ -793,7 +710,7 @@ def _first_little_k_cinter_affine_cached(
     sg: int,
     gid: int,
 ) -> tuple[tuple[Fraction, Fraction, Fraction], ...] | None:
-    """B: transport the first Source arm's affine pieces once into cinter."""
+    """Transport the first Source arm's affine pieces once into cinter."""
 
     pieces = _first_little_k_affine_by_gid_cached(decoder, int(gid))
     if pieces is None:

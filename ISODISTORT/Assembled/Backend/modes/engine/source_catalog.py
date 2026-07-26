@@ -1,9 +1,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
-
-import numpy as np
 
 from ISODISTORT.Assembled.Backend.exactmath import integer_determinant3
 from ISODISTORT.Assembled.Backend.modes.engine.records import (
@@ -13,23 +10,28 @@ from ISODISTORT.Assembled.Backend.modes.engine.records import (
     WyckoffRow,
     WyckoffSubduction,
 )
-from ISODISTORT.Assembled.Backend.source.iso_data import ISOData
 from ISODISTORT.Assembled.Backend.source.tables import SOURCE, SourceTables
 
 
 class ModeSourceCatalogMixin:
-    def __init__(self, data_dir: str | Path = SOURCE, *, iso: Any | None = None):
+    def __init__(
+        self,
+        data_dir: str | Path = SOURCE,
+        *,
+        tables: SourceTables | None = None,
+    ):
         self.data_dir = Path(data_dir)
-        if iso is None:
-            self.iso = ISOData(self.data_dir)
+        if tables is None:
+            tables = SourceTables(self.data_dir)
         else:
-            table_dir = Path(getattr(iso, "data_dir", self.data_dir))
+            table_dir = Path(tables.source)
             if table_dir.resolve() != self.data_dir.resolve():
                 raise ValueError(
                     f"mode table directory mismatch: {table_dir} != {self.data_dir}"
                 )
-            self.iso = iso
-        self.images = self.iso.images
+        self.tables = tables
+        self.iso = tables.iso
+        self.images = tables.images
 
     def old_irrep_id(self, sg: int, label: str) -> int:
         return self.iso.old_irrep_id(sg, label)
@@ -43,57 +45,24 @@ class ModeSourceCatalogMixin:
         ]
         if len(gids) != 1:
             raise KeyError(f"expected one little irrep for SG{sg} {label}, got {gids}")
-        gid = gids[0]
-        real2_pointer = int(self.iso.little["little_irr_real2_pointer"][gid - 1])
-        return LittleIrrepRecord(
-            gid=gid,
-            old_id=old_id,
-            label=self.iso.little["little_irr_full_label"][gid - 1].strip(),
-            full_dim=int(self.iso.little["little_irr_full_dim"][gid - 1]),
-            irrep_type=int(self.iso.little["little_irr_type"][gid - 1]),
-            lif=int(self.iso.little["little_irr_lif"][gid - 1]),
-            real_pointer=int(self.iso.little["little_irr_real_pointer"][gid - 1]),
-            real2_pointer=real2_pointer,
-            real2_slice=self._pointed_slice(
-                self.iso.little["little_irr_real2_pointer"],
-                self.iso.little["little_irr_real2"],
-                gid,
-            ),
-        )
+        return self.little_record_by_gid(gids[0])
 
     def little_record_by_gid(self, gid: int) -> LittleIrrepRecord:
-        """Return little-irrep metadata by the native data_little row id.
+        """Return little-irrep metadata by its `data_little` row id.
 
         Some `little_irr_full_label` values are combined labels that are not
-        directly present as `data_irreps:irrep_label`.  The upstream path
-        already has the little row / old irrep id, so broad comparisons should
-        not depend on label reverse lookup.
+        directly present as `data_irreps:irrep_label`. Callers that already
+        have the little-row id therefore need not depend on label reverse
+        lookup.
         """
 
-        gid = int(gid)
-        real2_pointer = int(self.iso.little["little_irr_real2_pointer"][gid - 1])
-        return LittleIrrepRecord(
-            gid=gid,
-            old_id=int(self.iso.little["little_irr_old"][gid - 1]),
-            label=self.iso.little["little_irr_full_label"][gid - 1].strip(),
-            full_dim=int(self.iso.little["little_irr_full_dim"][gid - 1]),
-            irrep_type=int(self.iso.little["little_irr_type"][gid - 1]),
-            lif=int(self.iso.little["little_irr_lif"][gid - 1]),
-            real_pointer=int(self.iso.little["little_irr_real_pointer"][gid - 1]),
-            real2_pointer=real2_pointer,
-            real2_slice=self._pointed_slice(
-                self.iso.little["little_irr_real2_pointer"],
-                self.iso.little["little_irr_real2"],
-                gid,
-            ),
-        )
+        return self.tables.little_record_by_gid(gid)
 
     def isotropy_rows_for_old_irrep(self, old_id: int) -> tuple[IsotropySubgroupRow, ...]:
         """Return `data_isotropy` candidates attached to an old irrep id.
 
-        MAIN__ scans these rows when it chooses the transformation printed as
-        "Vectors defining superlattice".  The exact row-selection rule is still
-        being ported, so this helper exposes all candidates.
+        These rows describe candidate transformations for "Vectors defining
+        superlattice". This helper exposes the complete Source candidate range.
         """
 
         old_id = int(old_id)
@@ -129,13 +98,16 @@ class ModeSourceCatalogMixin:
 
     irrep_label_for_old_id = SourceTables.irrep_label_for_old_id
     isotropy_subductions_for_row = SourceTables.isotropy_subductions_for_row
+    generate_space_group_records = SourceTables.generate_space_group_records
+    wyckoff_fraction_vectors = SourceTables.wyckoff_fraction_vectors
+    vrot_fraction = SourceTables.vrot_fraction
+    wyc_pg_elements_records = SourceTables.wyc_pg_elements_records
 
     def isotropy_orderparam_matrix(self, row_id: int, full_dim: int) -> tuple[tuple[float, ...], ...]:
         """Return the real order-parameter matrix for one `data_isotropy` row.
 
-        MAIN__ reads `isotropy_orderparam_pointer` and converts the stored
-        constant codes with `constant_()` before building the atom/mode source
-        matrix consumed by the `project_` -> `project_vector_` bridge.  The
+        Stored constant codes begin at `isotropy_orderparam_pointer` and decode
+        into the atom/mode source matrix consumed by the projection bridge. The
         matrix has `isotropy_orderparam_dim[row]` rows and `full_dim` columns.
         """
 
@@ -171,12 +143,12 @@ class ModeSourceCatalogMixin:
     space_group_point_group_order = SourceTables.space_group_point_group_order
 
     def canonical_isotropy_row(self, rows: tuple[IsotropySubgroupRow, ...]) -> IsotropySubgroupRow | None:
-        """Return the fixed-k isotropy row selected by MAIN__ for mode sources.
+        """Return the fixed-k isotropy row selected for mode sources.
 
         The fixed-k branch minimizes the number of free order-parameter
         parameters, then the determinant of the subgroup basis.  Ties prefer
         larger subgroup point-group order and finally the generator-list flag
-        used by MAIN__ for point operations 25/61.
+        used for point operations 25/61.
         """
 
         best: IsotropySubgroupRow | None = None
@@ -220,20 +192,10 @@ class ModeSourceCatalogMixin:
         )
 
     def wyckoff_rows(self, sg: int) -> list[WyckoffRow]:
-        start = int(self.iso.wyckoff["iwyckoff_pointer"][sg - 1])
-        count = int(self.iso.wyckoff["iwyckoff_count"][sg - 1])
-        rows = []
-        for offset0 in range(count):
-            row_id = start + offset0
-            rows.append(
-                WyckoffRow(
-                    offset0=offset0,
-                    row_id=row_id,
-                    label=self.iso.wyckoff["wyckoff_label"][row_id - 1].strip(),
-                    site_pg=int(self.iso.wyckoff["iwyckoff_pg"][row_id - 1]),
-                )
-            )
-        return rows
+        # Preserve the mode facade's index/type failures before the
+        # neutral Source facade performs its broader int coercion.
+        self.iso.wyckoff["iwyckoff_pointer"][sg - 1]
+        return self.tables.wyckoff_rows(sg)
 
     def wyckoff_subductions(self, sg: int, label: str) -> list[WyckoffSubduction]:
         old_id = self.old_irrep_id(sg, label)
@@ -289,35 +251,16 @@ class ModeSourceCatalogMixin:
 
     def site_vector_reps(self, site_pg: int) -> tuple[int, ...]:
         values = self.iso.wyckoff["iwyckoff_pg_vector_reps"]
-        return tuple(int(x) for x in values[(site_pg - 1) * 6:site_pg * 6])
-
-    def site_vector_basis_codes(self, site_pg: int) -> tuple[int, ...]:
-        values = self.iso.wyckoff["iwyckoff_pg_vector_basis"]
-        return tuple(int(x) for x in values[(site_pg - 1) * 18:site_pg * 18])
+        start = (site_pg - 1) * 6
+        values[start:start + 6]
+        return self.tables.site_vector_reps(site_pg)
 
     def site_pg_irrep_old_id(self, site_pg: int, pg_irrep: int) -> int:
-        start = (site_pg - 1) * 12
-        old_id = int(self.iso.wyckoff["iwyckoff_pg_irrep"][start + pg_irrep - 1])
-        if old_id == 0:
-            raise KeyError(f"PG{site_pg} irrep {pg_irrep} is not defined")
-        return old_id
+        index = (site_pg - 1) * 12 + pg_irrep - 1
+        self.iso.wyckoff["iwyckoff_pg_irrep"][index]
+        return self.tables.site_pg_irrep_old_id(site_pg, pg_irrep)
 
-    def site_pg_irrep_label(self, site_pg: int, pg_irrep: int) -> str:
-        start = (site_pg - 1) * 12
-        return self.iso.wyckoff["wyckoff_pg_irrep_label"][start + pg_irrep - 1].strip()
-
-    def site_irrep_matrices(
-        self,
-        site_pg: int,
-        pg_irrep: int,
-    ) -> dict[int, np.ndarray]:
-        """Return site-irrep matrices keyed by canonical site point-op index."""
-
-        old_id = self.site_pg_irrep_old_id(site_pg, pg_irrep)
-        sg = int(self.iso.irreps["irrep_space_group"][old_id - 1])
-        label = self.iso.irreps["irrep_label"][old_id - 1].strip()
-        elements = self.iso.irrep_matrices_with_ops(sg, label)
-        return {int(element.op_index): element.D for element in elements[3:] if element.op_index is not None}
+    site_pg_irrep_label = SourceTables.site_pg_irrep_label
 
     def little_gid_for_old_id(self, old_id: int) -> int:
         """Return the unique little-row id for one exact Source old-irrep id."""
@@ -338,12 +281,3 @@ class ModeSourceCatalogMixin:
                 f"got {list(matches)}"
             )
         return int(matches[0])
-
-    @staticmethod
-    def _pointed_slice(pointers: list[int], values: list[int], owner_index1: int) -> tuple[int, ...]:
-        pointer = int(pointers[owner_index1 - 1])
-        if pointer == 0:
-            return tuple()
-        later = sorted({int(p) for p in pointers if int(p) > pointer})
-        end = later[0] if later else len(values) + 1
-        return tuple(int(x) for x in values[pointer - 1:end - 1])
