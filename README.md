@@ -24,14 +24,7 @@ command in editable mode:
 python -m pip install -e .
 ```
 
-Place the following nine group-theory table files in `Source/` at the
-repository root. They are distributed with the BYU ISOTROPY Software Suite
-<https://iso.byu.edu/>.
-
-```text
-const.dat  data_isotropy.txt  data_irreps.txt  data_images.txt  data_little.txt
-data_magnetic.txt  data_space.txt  data_ssgmag.txt  data_wyckoff.txt
-```
+The required BYU ISOTROPY group-theory tables are included in `Source/`.
 
 ## How to Use
 
