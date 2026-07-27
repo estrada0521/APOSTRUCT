@@ -21,13 +21,7 @@ BYU ISOTROPYの群論tableから、k vector・既約表現・秩序変数方向�
 python -m pip install -e .
 ```
 
-群論テーブル 9 ファイルをリポジトリ直下の `Source/` に置いてください（BYU の ISOTROPY
-Software Suite <https://iso.byu.edu/> に含まれます）。
-
-```
-const.dat  data_isotropy.txt  data_irreps.txt  data_images.txt  data_little.txt
-data_magnetic.txt  data_space.txt  data_ssgmag.txt  data_wyckoff.txt
-```
+必要なBYU ISOTROPY群論tableは`Source/`に同封されています。
 
 ## How to Use
 

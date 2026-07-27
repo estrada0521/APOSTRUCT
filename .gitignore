@@ -1,5 +1,14 @@
 # Upstream group-theory tables — user-provided, not redistributed here (see README.md)
-/Source/
+/Source/*
+!/Source/const.dat
+!/Source/data_images.txt
+!/Source/data_irreps.txt
+!/Source/data_isotropy.txt
+!/Source/data_little.txt
+!/Source/data_magnetic.txt
+!/Source/data_space.txt
+!/Source/data_ssgmag.txt
+!/Source/data_wyckoff.txt
 
 # Python
 __pycache__/
