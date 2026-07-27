@@ -5,7 +5,15 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "distortropy"
 version = "0.1.0"
-description = "Pure-Python, offline ISODISTORT implementation"
+description = "Pure-Python implementation of the ISODISTORT calculation engine"
+keywords = [
+  "ISODISTORT",
+  "ISOTROPY",
+  "crystallography",
+  "group theory",
+  "magnetic structures",
+  "symmetry modes",
+]
 readme = "README.md"
 requires-python = ">=3.11"
 classifiers = [
