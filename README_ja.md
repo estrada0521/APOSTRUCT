@@ -2,7 +2,11 @@
 
 [English](README.md)
 
-**Distortropy** は **ISODISTORT** の純 Python・オフライン実装です。
+**Distortropy** は **ISODISTORT の計算エンジンを内部実装した、オープンソースの
+純 Python 実装**です。BYU の Web serviceを呼び出すwrapperではありません。CIFと
+BYU ISOTROPYの群論tableから、k vector・既約表現・秩序変数方向・isotropy subgroupを
+導出し、displacive・magnetic・strain mode definitionをDistortropy自身が構成します。
+全ての計算はlocalかつofflineで実行されます。
 
 <p align="center">
   <img src="media/distortropy-1.png" alt="Distortropy structure selection" width="49%">

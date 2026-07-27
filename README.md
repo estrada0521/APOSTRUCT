@@ -2,7 +2,13 @@
 
 [日本語](README_ja.md)
 
-**Distortropy** is a pure-Python, offline implementation of **ISODISTORT**.
+**Distortropy** is an open-source, pure-Python implementation of the
+**ISODISTORT calculation engine**, not a wrapper around the BYU web service.
+It performs the symmetry and group-theory calculations itself: deriving k
+vectors and irreducible representations, enumerating order-parameter
+directions and isotropy subgroups, and constructing displacive, magnetic, and
+strain mode definitions from CIF data and BYU ISOTROPY tables. All computations
+run locally and offline.
 
 <p align="center">
   <img src="media/distortropy-1.png" alt="Distortropy structure selection" width="49%">
