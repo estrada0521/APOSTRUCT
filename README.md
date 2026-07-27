@@ -135,10 +135,7 @@ isodistort serve --host 127.0.0.1 --port 8300
 
 ## Validation
 
-Validation against the reference implementation is ongoing. For practical
-inputs, physically non-equivalent output is uncommon, but exact equivalence is
-not guaranteed. Differences are more likely for heavy, nontrivial cases such
-as the multi-k example above.
+See [Validation methodology and results](Validation.md).
 
 ## Notice
 
