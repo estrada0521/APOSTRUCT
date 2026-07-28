@@ -115,33 +115,6 @@ def _type3_parametric_component_print_order(modes: list[list[list[float]]]) -> l
         else:
             out.extend(chunk)
     return out if changed else modes
-def _type3_parametric_scalar_plane_print_order(modes: list[list[list[float]]]) -> list[list[list[float]]]:
-    if len(modes) != 6:
-        return modes
-    counts = [len(_active_mode_indices(mode)) for mode in modes]
-    if counts == [12, 12, 8, 4, 8, 4]:
-        return [modes[0], modes[1], modes[2], modes[4], modes[3], modes[5]]
-    return modes
-def _type3_parametric_second_arm_phase(modes: list[list[list[float]]]) -> list[list[list[float]]]:
-    """Apply the second-arm sign convention for paired type-3 modes."""
-
-    if len(modes) != 6:
-        return modes
-    counts = [len(_active_mode_indices(mode)) for mode in modes]
-    if counts != [12, 12, 8, 8, 8, 8]:
-        return modes
-    half_index = len(modes[0]) // 2 if modes and modes[0] else 0
-    out: list[list[list[float]]] = []
-    for mode_index, mode in enumerate(modes):
-        if mode_index % 2 == 0:
-            out.append(mode)
-            continue
-        phased = []
-        for atom_index, vector in enumerate(mode):
-            sign = -1.0 if atom_index >= half_index else 1.0
-            phased.append([sign * float(component) for component in vector])
-        out.append(phased)
-    return out
 def _combine_modes(
     modes: list[list[list[float]]],
     terms: tuple[tuple[int, float], ...],

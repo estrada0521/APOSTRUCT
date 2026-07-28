@@ -13,6 +13,10 @@ from ISODISTORT.Assembled.Backend.exactmath import (
 )
 from ISODISTORT.Assembled.Backend.source.magnetic import data as magnetic_data
 from ISODISTORT.Assembled.Backend.source.tables import source_tables
+from ISODISTORT.Assembled.Backend.source.magnetic_operations import (
+    _pml_point_operation_matrix,
+    generate_magnetic_space_group_records,
+)
 from ISODISTORT.Assembled.Backend.modes.periodic import (
     periodic_fraction_float_close3,
 )
@@ -23,8 +27,6 @@ from ISODISTORT.Assembled.Backend.modes.presentation import (
 )
 from ISODISTORT.Assembled.Backend.modes.structure.magnetic_wyckoff import (
     _input_fraction,
-    _pml_point_operation_matrix,
-    generate_magnetic_space_group_records,
     identify_magnetic_wyckoff_branch,
     magnetic_orbit_points,
 )
