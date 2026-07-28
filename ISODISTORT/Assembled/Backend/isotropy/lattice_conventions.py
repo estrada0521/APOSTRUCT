@@ -13,13 +13,85 @@ import math
 from typing import Iterable, Sequence
 
 from ISODISTORT.Assembled.Backend.exactmath import (
+    fraction_matrix_inverse3,
+    fraction_matrix_multiply3,
+    fraction_row_multiply3,
     integer_adjugate3,
     integer_determinant3,
 )
 from ISODISTORT.Assembled.Backend.isotropy.engine.source_data import SourceData
+from ISODISTORT.Assembled.Backend.source import magnetic as magnetic_data
+from ISODISTORT.Assembled.Backend.source.magnetic_operations import (
+    generate_magnetic_space_group_records,
+)
 
 
 ATOL = 1e-5
+
+
+@lru_cache(maxsize=None)
+def _magnetic_operation_set(
+    data: SourceData,
+    magnetic_group: int,
+) -> frozenset[tuple[tuple[Fraction, ...], tuple[Fraction, ...], bool]]:
+    table = magnetic_data.data().table
+    operations = set()
+    for record in generate_magnetic_space_group_records(
+        int(magnetic_group),
+        setting="cinter",
+    ):
+        magnetic_point_op = int(record[4])
+        point_op = int(table["mag_point_op_mag2nonmag"][magnetic_point_op - 1])
+        start = (point_op - 1) * 9
+        rotation = tuple(Fraction(value) for value in data.space["ipoint_op"][start:start + 9])
+        translation = tuple(
+            Fraction(int(record[axis]), int(record[3])) % 1
+            for axis in range(3)
+        )
+        operations.add(
+            (
+                rotation,
+                translation,
+                bool(table["mag_point_op_r"][magnetic_point_op - 1]),
+            )
+        )
+    return frozenset(operations)
+
+
+def _magnetic_basis_candidate_preserves_group(
+    data: SourceData,
+    magnetic_group: int,
+    source_basis: Sequence[Sequence[Fraction]],
+    candidate_basis: Sequence[Sequence[Fraction]],
+) -> bool:
+    """Return whether a display basis keeps the selected BNS setting fixed."""
+
+    source_inverse = fraction_matrix_inverse3(source_basis)
+    transform = fraction_matrix_multiply3(candidate_basis, source_inverse)
+    transform_inverse = fraction_matrix_inverse3(transform)
+    source_operations = _magnetic_operation_set(data, int(magnetic_group))
+    transformed_operations = set()
+    for rotation_flat, translation, antiunitary in source_operations:
+        rotation = tuple(
+            tuple(rotation_flat[row * 3 + col] for col in range(3))
+            for row in range(3)
+        )
+        transformed_rotation = fraction_matrix_multiply3(
+            fraction_matrix_multiply3(transform, rotation),
+            transform_inverse,
+        )
+        transformed_translation = tuple(
+            value % 1
+            for value in fraction_row_multiply3(translation, transform_inverse)
+        )
+        transformed_operations.add(
+            (
+                tuple(value for row in transformed_rotation for value in row),
+                transformed_translation,
+                antiunitary,
+            )
+        )
+    return frozenset(transformed_operations) == source_operations
 
 
 def _matinv_unimodular(matrix: Iterable[int]) -> tuple[int, ...]:
@@ -576,14 +648,28 @@ def present_opd_basis_rows(
     data: SourceData | None = None,
     parametric: bool = False,
     coupled: bool = False,
+    magnetic_group: int | None = None,
 ) -> list[list[Fraction]]:
-    """Apply OPD-table lattice presentation transforms for a subgroup basis."""
+    """Apply OPD-table lattice presentation transforms for a subgroup basis.
 
-    rows = _triclinic_lattparam_basis_candidate(int(subgroup), basis_rows, parent_cell)
+    A magnetic display transform is admissible only when it keeps the selected
+    BNS operation set in the setting named by the output label.
+    """
+
+    source_rows = [[Fraction(value) for value in row] for row in basis_rows]
+    rows = _triclinic_lattparam_basis_candidate(int(subgroup), source_rows, parent_cell)
     rows = _hex_trig_basal_basis_candidate(
         int(subgroup),
         rows,
         parametric=parametric,
         coupled=coupled,
     )
-    return _findsym_monoclinic_lattparam_basis_candidate(int(subgroup), rows, parent_cell, data=data)
+    rows = _findsym_monoclinic_lattparam_basis_candidate(int(subgroup), rows, parent_cell, data=data)
+    if magnetic_group is not None and not _magnetic_basis_candidate_preserves_group(
+        data or _default_source_data(),
+        int(magnetic_group),
+        source_rows,
+        rows,
+    ):
+        return source_rows
+    return rows

@@ -14,14 +14,11 @@ from ISODISTORT.Assembled.Backend.modes.engine.input import Case
 from ISODISTORT.Assembled.Backend.modes.engine.project.mode_forms import (
     _add_mode_vectors,
     _apply_fractional_vector_transform,
-    _combined_type1_real_pair_orderparam_rows,
     _normalize_mode_vectors,
     _regroup_repeated_component_modes,
     _type1_parametric_scalar_plane_print_order,
     _type3_parametric_component_print_order,
     _type3_parametric_kdim2_print_basis,
-    _type3_parametric_scalar_plane_print_order,
-    _type3_parametric_second_arm_phase,
     _type3_real_print_modes,
 )
 from ISODISTORT.Assembled.Backend.modes.engine.project.main_bridge import (
@@ -625,52 +622,7 @@ def pipeline_trace(
                         ):
                             opd_groups = [([source_rows[i]], 1) for i in range(source_row_count)]  # type: ignore[index]
                         elif little.irrep_type == 1:
-                            if (
-                                case.k_params
-                                and source_row_count == 2
-                                and int(source.get("bridge_project_count", 0)) + 1 == int(little.full_dim)
-                                and len(source_rows[0]) >= 2  # type: ignore[index]
-                                and len(source_rows[1]) >= 2  # type: ignore[index]
-                                and abs(float(source_rows[0][0]) - 1.0) <= 1e-12  # type: ignore[index]
-                                and all(abs(float(value)) <= 1e-12 for value in source_rows[0][1:])  # type: ignore[index]
-                                and abs(float(source_rows[1][1]) - 1.0) <= 1e-12  # type: ignore[index]
-                                and abs(float(source_rows[1][0])) <= 1e-12  # type: ignore[index]
-                                and all(abs(float(value)) <= 1e-12 for value in source_rows[1][2:])  # type: ignore[index]
-                            ):
-                                row_index = 1
-                                opd_groups = [([source_rows[row_index]], 1)]  # type: ignore[index]
-                            else:
-                                use_first_real_row = False
-                                if int(little.full_dim) == 4 and source_row_count == 2:
-                                    left = [float(value) for value in source_rows[0]]  # type: ignore[index]
-                                    right = [float(value) for value in source_rows[1]]  # type: ignore[index]
-                                    use_first_real_row = (
-                                        len(left) >= 4
-                                        and len(right) >= 4
-                                        and abs(left[0] - 1.0) <= 1e-12
-                                        and abs(left[1]) <= 1e-12
-                                        and abs(left[3]) <= 1e-12
-                                        and abs(right[0]) <= 1e-12
-                                        and abs(right[1] - 1.0) <= 1e-12
-                                        and abs(right[2]) <= 1e-12
-                                        and abs(left[2] - right[3]) <= 1e-12
-                                        and abs(left[2]) > 2.0
-                                    )
-                                combined_real_pair = (
-                                    _combined_type1_real_pair_orderparam_rows(source_rows)  # type: ignore[arg-type]
-                                    if (
-                                        int(little.full_dim) == 4
-                                        and source_row_count == 2
-                                        and not use_first_real_row
-                                    )
-                                    else None
-                                )
-                                if use_first_real_row:
-                                    opd_groups = [([source_rows[0]], 1)]  # type: ignore[index]
-                                elif combined_real_pair is not None:
-                                    opd_groups = [(combined_real_pair, 1)]
-                                else:
-                                    opd_groups = [([source_rows[0]], 1)]  # type: ignore[index]
+                            opd_groups = [([source_rows[0]], 1)]  # type: ignore[index]
                         elif (
                             two_row_slots
                             and source_row_count >= 4
@@ -770,14 +722,6 @@ def pipeline_trace(
                                         output_length=360,
                                     )
                                 )
-                                if type1_dim4_identity_pair:
-                                    # The second real local-vector partner has
-                                    # the opposite sign in the final parametric
-                                    # full-dimension-four assembly.
-                                    for row_slot in range(max(0, int(opd_row_count))):
-                                        index = row_slot * 3 + 1
-                                        if index < len(basis_function):
-                                            basis_function[index] *= -1.0
                                 project_vector_count = (
                                     int(project_count)
                                     if emit_all_project_families
@@ -804,8 +748,6 @@ def pipeline_trace(
                                             mode_index = emitted_index * opd_row_count + row_index
                                             offset = emitted_index * 144 + 3 * row_index
                                             vector = [float(output[offset + axis]) for axis in range(3)]
-                                            if type1_dim4_identity_pair and int(prep.get("vector_dim", 0)) == 1:
-                                                vector[1] *= -1.0
                                             source_modes[mode_index][atom_index] = finalize_vector(vector)
                                 else:
                                     while len(source_modes) < emitted:
@@ -813,8 +755,6 @@ def pipeline_trace(
                                     for emitted_index in range(max(0, emitted)):
                                         offset = emitted_index * 144
                                         vector = [float(output[offset + axis]) for axis in range(3)]
-                                        if type1_dim4_identity_pair and int(prep.get("vector_dim", 0)) == 1:
-                                            vector[1] *= -1.0
                                         source_modes[emitted_index][atom_index] = finalize_vector(vector)
                             opd_mode_blocks.append([_normalize_mode_vectors(mode) for mode in source_modes])
                         mode_block_summaries_by_gid[little.gid].append({
@@ -892,8 +832,6 @@ def pipeline_trace(
                         return []
                     if little.irrep_type == 3:
                         modes = _type3_real_print_modes(modes)
-                        if case.k_params and int(little.full_dim) != 48:
-                            modes = _type3_parametric_second_arm_phase(modes)
                     return _regroup_repeated_component_modes(modes)
 
                 def local_vector_for(component_start: int, vector_setting: int) -> list[float]:
@@ -1016,9 +954,6 @@ def pipeline_trace(
                 mode_vectors_by_gid[little.gid] = _type3_parametric_component_print_order(
                     mode_vectors_by_gid[little.gid]
                 )
-                mode_vectors_by_gid[little.gid] = _type3_parametric_scalar_plane_print_order(
-                    mode_vectors_by_gid[little.gid]
-                )
             mode_vectors_by_gid[little.gid] = _regroup_repeated_component_modes(mode_vectors_by_gid[little.gid])
             if little.irrep_type == 1 and case.k_params:
                 mode_vectors_by_gid[little.gid] = _type1_parametric_scalar_plane_print_order(
@@ -1026,9 +961,6 @@ def pipeline_trace(
                     allow_support_pairing=int(vector_setting) == 1,
                 )
             if little.irrep_type == 3 and case.k_params:
-                mode_vectors_by_gid[little.gid] = _type3_parametric_scalar_plane_print_order(
-                    mode_vectors_by_gid[little.gid]
-                )
                 if 143 <= int(case.sg) <= 194 and int(little.full_dim) == 12:
                     mode_vectors_by_gid[little.gid] = _type3_parametric_kdim2_print_basis(
                         mode_vectors_by_gid[little.gid]

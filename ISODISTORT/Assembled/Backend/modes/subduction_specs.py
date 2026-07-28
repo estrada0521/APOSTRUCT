@@ -1405,6 +1405,12 @@ def _coupled_render_specs(
     )
     if basis is None or not operations:
         return []
+    slot_source_rows = iso.get("slot_source_numeric_rows") or []
+    slot_domain_indices = iso.get("direction_domain_indices") or []
+    if len(slot_source_rows) != len(selected_slots) or len(
+        slot_domain_indices
+    ) != len(selected_slots):
+        raise ValueError("coupled OPD does not retain one Source domain per slot")
     subgroup = iso.get("subgroup") if isinstance(iso.get("subgroup"), dict) else {}
     magnetic_embedding = bool(subgroup.get("ordinary_number"))
     table = magnetic_data().table if magnetic_embedding else None
@@ -1442,6 +1448,18 @@ def _coupled_render_specs(
                 int(value)
                 for value in slot.get("source_kparam") or (0, 0, 0, 1)
             )
+        selected_source_rows = None
+        if int(slot_domain_indices[index]) == 0:
+            selected_source_rows = [
+                [float(value) for value in row] for row in slot_source_rows[index]
+            ]
+            full_dim = int(decoder.little_record_by_gid(int(gid)).full_dim)
+            if not selected_source_rows or any(
+                len(row) != full_dim for row in selected_source_rows
+            ):
+                raise ValueError(
+                    f"selected coupled slot {index + 1} Source OPD width differs from its irrep"
+                )
         primary_slots.append(
             {
                 "order": index,
@@ -1450,6 +1468,7 @@ def _coupled_render_specs(
                 "k_label": str((slot.get("kpoint") or {}).get("label") or ""),
                 "source_kparam": source_kparam,
                 "case_k_params": _k_params(slot.get("k_params") or {}),
+                "source_numeric_rows": selected_source_rows,
             }
         )
     specs: list[tuple[int, dict[str, Any], str, int, str]] = []
@@ -1477,6 +1496,13 @@ def _coupled_render_specs(
                 and all(len(values) == len(direction_matrix[0]) for values in direction_matrix)
                 else 0
             )
+            if primary_slot is not None and primary_slot["source_numeric_rows"] is not None:
+                selected_rows = primary_slot["source_numeric_rows"]
+                source_free_count = len(selected_rows)
+                direction_matrix = [
+                    [selected_rows[free][coordinate] for free in range(source_free_count)]
+                    for coordinate in range(len(selected_rows[0]))
+                ]
             return {
                 "old_id": old_id,
                 "little_type": little_type,

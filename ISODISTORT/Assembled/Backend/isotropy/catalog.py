@@ -1036,6 +1036,7 @@ def _dynamic_magnetic_isotropy_row(
         parent_cell,
         data=_subgroup_core_data(),
         parametric=True,
+        magnetic_group=subgroup_magnetic_group,
     )
     det = abs(integer_determinant3(basis_values))
     source_matrix = _dynamic_source_matrix(row)
@@ -1157,6 +1158,7 @@ def magnetic_opd_rows(
             parent_cell,
             data=_subgroup_core_data(),
             parametric=False,
+            magnetic_group=int(row.subgroup_magnetic_group),
         )
         source = _magnetic_source_orderparam(dec, row)
         selection_payload: dict[str, Any] | None = None

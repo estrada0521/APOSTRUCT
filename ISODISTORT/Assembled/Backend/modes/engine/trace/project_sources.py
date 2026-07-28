@@ -7,7 +7,6 @@ from typing import Any
 import numpy as np
 
 from ISODISTORT.Assembled.Backend.modes.engine.input import Case
-from ISODISTORT.Assembled.Backend.modes.engine.project.mode_forms import _parametric_type1_real_orderparam_rows
 from ISODISTORT.Assembled.Backend.modes.engine.records import WyckoffRow
 
 
@@ -336,11 +335,6 @@ def project_vector_orderparam_source_trace(
                             if count == 1:
                                 break
                 matrix = [[float(value) for value in dir_row] for dir_row in direction]
-                if int(little.irrep_type) == 1:
-                    matrix = (
-                        _parametric_type1_real_orderparam_rows(matrix, case, int(little.full_dim))
-                        or matrix
-                    )
             except Exception:
                 continue
         else:

@@ -111,13 +111,13 @@ It consists of 458 zero-K cases, 28 nonzero Type I/III cases, 412 nonzero Type I
 |---|---:|
 | Population / inputs / CIFs | 927 / 927 / 927 |
 | Validated and Judged | 927 |
-| Strict pass | 772 |
-| Physical-only pass | 154 |
-| Physical fail | 1 |
+| Strict pass | 783 |
+| Physical-only pass | 144 |
+| Physical fail | 0 |
 | Unjudged | 0 |
 
-- **Physical pass: 926 / 927 = 99.89%**
-- **Strict pass: 772 / 927 = 83.28%**
+- **Physical pass: 927 / 927 = 100.00%**
+- **Strict pass: 783 / 927 = 84.47%**
 
 #### By K signature
 
@@ -125,9 +125,9 @@ As in the MP pool, entries are aggregated by the number of F and P slots without
 
 | K composition (order-independent) | Population | Physical pass | Strict pass |
 |---|---:|---:|---:|
-| F | 798 | 798 (100.00%) | 670 (83.96%) |
-| P | 40 | 39 (97.50%) | 30 (75.00%) |
-| FF | 84 | 84 (100.00%) | 67 (79.76%) |
+| F | 798 | 798 (100.00%) | 679 (85.09%) |
+| P | 40 | 40 (100.00%) | 30 (75.00%) |
+| FF | 84 | 84 (100.00%) | 69 (82.14%) |
 | FP | 1 | 1 (100.00%) | 1 (100.00%) |
 | PP | 3 | 3 (100.00%) | 3 (100.00%) |
 | FPP | 1 | 1 (100.00%) | 1 (100.00%) |
@@ -150,7 +150,7 @@ The remaining long tail will therefore be assessed along two separate axes.
 The completed authorities for this snapshot are as follows.
 
 - MP pool: runtime `6b9aa754cf70`, comparator `ae1ad1486dbb`
-- MAGNDATA: runtime `8de66d3c6833`, comparator `validation.v7+5507c46b3259`
+- MAGNDATA: runtime `000ce2ae1f98`, comparator `validation.v7+e276b8fbd237`
 
 Computation time limits, Web acquisition failures, Local timeouts, and malformed inputs are recorded as operational failures separately from scientific Physical/Strict verdicts.
 Particularly for heavy multi-K and parametric cases, there is a long tail in computation time as well as in output correctness.

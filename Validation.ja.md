@@ -111,13 +111,13 @@ primary IRの欠落・Source labelの非一意性・BNS欠落・Web側との不�
 |---|---:|
 | 母集団 / 入力 / CIF | 927 / 927 / 927 |
 | Validation 済み・Judged | 927 |
-| Strict pass | 772 |
-| Physical-only pass | 154 |
-| Physical fail | 1 |
+| Strict pass | 783 |
+| Physical-only pass | 144 |
+| Physical fail | 0 |
 | Unjudged | 0 |
 
-- **Physical pass: 926 / 927 = 99.89%**
-- **Strict pass: 772 / 927 = 83.28%**
+- **Physical pass: 927 / 927 = 100.00%**
+- **Strict pass: 783 / 927 = 84.47%**
 
 #### K-signature 別
 
@@ -125,9 +125,9 @@ MP poolと同様に、slot順ではなくF/Pの個数で集約しています。
 
 | K構成（順序不問） | 母数 | Physical pass | Strict pass |
 |---|---:|---:|---:|
-| F | 798 | 798 (100.00%) | 670 (83.96%) |
-| P | 40 | 39 (97.50%) | 30 (75.00%) |
-| FF | 84 | 84 (100.00%) | 67 (79.76%) |
+| F | 798 | 798 (100.00%) | 679 (85.09%) |
+| P | 40 | 40 (100.00%) | 30 (75.00%) |
+| FF | 84 | 84 (100.00%) | 69 (82.14%) |
 | FP | 1 | 1 (100.00%) | 1 (100.00%) |
 | PP | 3 | 3 (100.00%) | 3 (100.00%) |
 | FPP | 1 | 1 (100.00%) | 1 (100.00%) |
@@ -150,7 +150,7 @@ Distortropy の検証では、Web と Local の両方を対象に、表示され
 このスナップショットの完了済み authority は次の通りです。
 
 - MP pool: runtime `6b9aa754cf70`、comparator `ae1ad1486dbb`
-- MAGNDATA: runtime `8de66d3c6833`、comparator `validation.v7+5507c46b3259`
+- MAGNDATA: runtime `000ce2ae1f98`、comparator `validation.v7+e276b8fbd237`
 
 また、計算時間制限、Web 側の取得失敗、Local 側の timeout、malformed input は、科学的な Physical/Strict 判定とは別の運用上の失敗として記録します。
 特に重い multi-K・parametric ケースでは、結果の正しさだけでなく計算時間にも long tail があります。
