@@ -68,15 +68,15 @@ The pass rates below therefore represent the achievement rate of a **stratified 
 | K composition (order-independent) | Population | Judged | Physical pass | Strict pass | Unjudged |
 |---|---:|---:|---:|---:|---:|
 | F | 788 | 788 | 782 (99.24%) | 512 (64.97%) | 0 |
-| P | 761 | 748 | 685 (91.58%) | 212 (28.34%) | 13 |
 | FF | 297 | 294 | 293 (99.66%) | 186 (63.27%) | 3 |
-| FP | 141 | 140 | 123 (87.86%) | 32 (22.86%) | 1 |
-| PP | 24 | 22 | 16 (72.73%) | 2 (9.09%) | 2 |
 | FFF | 189 | 185 | 185 (100.00%) | 66 (35.68%) | 4 |
-| FFP | 490 | 477 | 423 (88.68%) | 50 (10.48%) | 13 |
-| FPP | 40 | 36 | 21 (58.33%) | 1 (2.78%) | 4 |
 | FFFF | 202 | 200 | 200 (100.00%) | 70 (35.00%) | 2 |
+| P | 761 | 748 | 685 (91.58%) | 212 (28.34%) | 13 |
+| PP | 24 | 22 | 16 (72.73%) | 2 (9.09%) | 2 |
+| FP | 141 | 140 | 123 (87.86%) | 32 (22.86%) | 1 |
+| FFP | 490 | 477 | 423 (88.68%) | 50 (10.48%) | 13 |
 | FFFP | 273 | 258 | 221 (85.66%) | 11 (4.26%) | 15 |
+| FPP | 40 | 36 | 21 (58.33%) | 1 (2.78%) | 4 |
 
 ### MAGNDATA: Practical Population
 
@@ -126,10 +126,10 @@ As in the MP pool, entries are aggregated by the number of F and P slots without
 | K composition (order-independent) | Population | Physical pass | Strict pass |
 |---|---:|---:|---:|
 | F | 798 | 798 (100.00%) | 679 (85.09%) |
-| P | 40 | 40 (100.00%) | 30 (75.00%) |
 | FF | 84 | 84 (100.00%) | 69 (82.14%) |
-| FP | 1 | 1 (100.00%) | 1 (100.00%) |
+| P | 40 | 40 (100.00%) | 30 (75.00%) |
 | PP | 3 | 3 (100.00%) | 3 (100.00%) |
+| FP | 1 | 1 (100.00%) | 1 (100.00%) |
 | FPP | 1 | 1 (100.00%) | 1 (100.00%) |
 
 The result is clearly better than for the stress population because, even for the same K signature, the stress population intentionally contains many difficult and complex cases.
