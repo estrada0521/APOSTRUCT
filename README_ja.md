@@ -119,6 +119,8 @@ JSON、`.in`または直接指定ではcomplete mode-details textを標準出力
 isodistort serve --host 127.0.0.1 --port 8300
 ```
 
+Invariants計算は現時点ではこのGUIから利用できます。
+
 ## Validation
 
 検証方法と結果は[Validation.ja.md](Validation.ja.md)を参照してください。

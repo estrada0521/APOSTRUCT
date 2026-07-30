@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from fractions import Fraction
+from functools import lru_cache
+from numbers import Integral
 import re
-from typing import Any
+from typing import Any, Sequence
 
-from ISODISTORT.Assembled.Backend.exactmath import (
-    fraction_matrix_inverse3 as _matrix_inverse_3,
-    fraction_matrix_multiply3 as _row_matrix_multiply,
+from ISODISTORT.Assembled.Backend.source.iso_data import (
+    reciprocal_to_cinter_matrix_from_table,
 )
 from ISODISTORT.Assembled.Backend.source.tables import SourceTables, source_tables
 
@@ -17,6 +19,30 @@ GREEK = {"GM": "Γ", "DT": "Δ", "LD": "Λ", "SM": "Σ"}
 PARAMS = ("", "α", "β", "γ")
 ISODISTORT_K_PARAMS = ("a", "b", "g")
 TYPE_LABEL = {1: "real", 2: "type 2", 3: "type 3"}
+
+
+@dataclass(frozen=True, slots=True)
+class KCoordinateMap:
+    """Exact affine coordinates behind one displayed K-family expression."""
+
+    parameter_names: tuple[str, ...]
+    origin: tuple[Fraction, Fraction, Fraction]
+    columns: tuple[tuple[Fraction, Fraction, Fraction], ...]
+
+    def evaluate(
+        self,
+        parameters: Sequence[Fraction],
+    ) -> tuple[Fraction, Fraction, Fraction]:
+        if len(parameters) != len(self.columns):
+            raise ValueError("K-family parameter count does not match its coordinate map")
+        return tuple(
+            self.origin[axis]
+            + sum(
+                Fraction(parameters[index]) * column[axis]
+                for index, column in enumerate(self.columns)
+            )
+            for axis in range(3)
+        )  # type: ignore[return-value]
 
 
 def _strip(value: Any) -> str:
@@ -140,43 +166,6 @@ def _apply_k_matrix(
                     transformed = tuple(value / scale for value in transformed)
         out.append(transformed)  # type: ignore[arg-type]
     return tuple(out)
-
-
-def _matrix_from_data(raw: list[Any], den: int) -> tuple[tuple[Fraction, Fraction, Fraction], ...]:
-    if den == 0:
-        raise ValueError("zero denominator in setting matrix")
-    return tuple(
-        tuple(Fraction(int(raw[3 * row + col]), den) for col in range(3))
-        for row in range(3)
-    )  # type: ignore[return-value]
-
-
-def _matrix_from_inter_data(raw: list[Any], den: int) -> tuple[tuple[Fraction, Fraction, Fraction], ...]:
-    if den == 0:
-        raise ValueError("zero denominator in inter setting matrix")
-    return tuple(
-        tuple(Fraction(int(raw[4 * row + col]), den) for col in range(3))
-        for row in range(3)
-    )  # type: ignore[return-value]
-
-
-def _reciprocal_pml_to_cinter_matrix(dec: SourceTables, sg: int) -> tuple[tuple[Fraction, Fraction, Fraction], ...]:
-    lattice = int(dec.space["ispace_lattice"][sg - 1])
-    ml_raw = dec.space["lattice_ml"][(lattice - 1) * 36 + 9:(lattice - 1) * 36 + 18]
-    ml_den = int(dec.space["lattice_ml_denom"][(lattice - 1) * 2])
-    pml_to_cml = _matrix_from_data(ml_raw, ml_den)
-
-    choice = int(dec.space["ispace_inter_choice"][sg - 1])
-    inter_raw = dec.space["ispace_settings_inter"][(choice - 1) * 32:(choice - 1) * 32 + 16]
-    inter_den = int(inter_raw[15])
-    cml_to_cinter = _matrix_from_inter_data(inter_raw, inter_den)
-
-    direct = _row_matrix_multiply(pml_to_cml, cml_to_cinter)
-    inverse = _matrix_inverse_3(direct)
-    return tuple(
-        tuple(inverse[col][row] for col in range(3))
-        for row in range(3)
-    )  # type: ignore[return-value]
 
 
 def _apply_fraction_k_matrix(
@@ -314,7 +303,10 @@ def _fmt_isodistort_k_vector(
     display_records = _isodistort_k_records(records, lattice, symbol, label)
     param_names: dict[int, str] = {}
     if dec is not None and sg is not None and int(lattice) in {9, 10, 13, 14}:
-        display_records = _apply_fraction_k_matrix(records, _reciprocal_pml_to_cinter_matrix(dec, int(sg)))
+        display_records = _apply_fraction_k_matrix(
+            records,
+            reciprocal_to_cinter_matrix_from_table(dec.space, int(sg), "pml"),
+        )
         display_records, param_names = _canonicalize_k_display_records(display_records)
     if display_records and all(value == 0 for value in display_records[0]) and len(display_records) > 1:
         if label == "GP":
@@ -356,6 +348,43 @@ def _parse_k_record(raw: list[int]) -> tuple[tuple[Fraction, Fraction, Fraction]
         else:
             vectors.append((_frac(x, den), _frac(y, den), _frac(z, den)))
     return tuple(vectors)
+
+
+def _coordinate_map(expression: str) -> KCoordinateMap:
+    match = re.fullmatch(r"\((.*)\)", str(expression).strip())
+    if match is None:
+        raise ValueError("K-family display expression must contain three components")
+    components = tuple(part.strip() for part in match.group(1).split(","))
+    if len(components) != 3:
+        raise ValueError("K-family display expression must contain three components")
+    present = set(
+        re.findall(r"(?<![A-Za-z])([abg])(?![A-Za-z])", match.group(1))
+    )
+    names = tuple(name for name in ISODISTORT_K_PARAMS if name in present)
+
+    def evaluate(values: tuple[Fraction, ...]) -> tuple[Fraction, Fraction, Fraction]:
+        params = {
+            name: str(value)
+            for name, value in zip(names, values, strict=True)
+        }
+        if not params:
+            params = {"_single": "0"}
+        result = tuple(evaluate_k_component(component, params) for component in components)
+        if any(value is None for value in result):
+            raise ValueError("K-family display expression is not affine rational")
+        return result  # type: ignore[return-value]
+
+    zero = tuple(Fraction(0) for _ in names)
+    origin = evaluate(zero)
+    columns = []
+    for index in range(len(names)):
+        values = list(zero)
+        values[index] = Fraction(1)
+        point = evaluate(tuple(values))
+        columns.append(
+            tuple(point[axis] - origin[axis] for axis in range(3))
+        )
+    return KCoordinateMap(names, origin, tuple(columns))  # type: ignore[arg-type]
 
 
 def _gcd(left: int, right: int) -> int:
@@ -504,6 +533,34 @@ def _has_extra_k_slot(dec: SourceTables, sg: int, kslot: int) -> bool:
     )
 
 
+def k_coordinate_map_for_slot(sg_number: int, kslot: int) -> KCoordinateMap:
+    """Return the exact displayed affine map for one available Source K slot."""
+
+    if isinstance(sg_number, bool) or not isinstance(sg_number, Integral):
+        raise TypeError("space-group number must be an exact integer")
+    if isinstance(kslot, bool) or not isinstance(kslot, Integral):
+        raise TypeError("K slot must be an exact integer")
+    sg = int(sg_number)
+    slot = int(kslot)
+    if not 1 <= sg <= 230:
+        raise ValueError("space-group number must be between 1 and 230")
+    if not 1 <= slot <= 27:
+        raise ValueError("K slot must be between 1 and 27")
+    dec = source_tables()
+    lattice = int(dec.space["ispace_lattice"][sg - 1])
+    count = int(dec.little["little_k_count"][lattice - 1])
+    if slot > count and not _has_extra_k_slot(dec, sg, slot):
+        raise ValueError(f"space group {sg} has no Source K slot {slot}")
+    return _k_coordinate_map_for_slot(sg, slot)
+
+
+@lru_cache(maxsize=256)
+def _k_coordinate_map_for_slot(sg: int, slot: int) -> KCoordinateMap:
+    dec = source_tables()
+    info = _k_slot_info(dec, sg, slot)
+    return _coordinate_map(str(info["isodistort_kvector"]))
+
+
 def kpoints(sg_number: int) -> dict[str, Any]:
     dec = source_tables()
     sg = int(sg_number)
@@ -519,6 +576,7 @@ def kpoints(sg_number: int) -> dict[str, Any]:
         irreps = _little_irreps(dec, sg, kslot)
         row = {
             **info,
+            "sg_specific": is_extra,
             "star": _star_vectors(dec, sg, kslot, int(info["dimension"])),
             "n_irreps": len(irreps),
             "irreps": irreps,
@@ -540,6 +598,7 @@ def kpoints(sg_number: int) -> dict[str, Any]:
             "ml_symbol": _strip(dec.space["space_label_ml"][sg - 1]),
             "crystal_class": _strip(dec.space["space_label"][sg - 1]),
             "lattice": lattice,
+            "lattice_type": _strip(dec.space["lattice_label"][lattice - 1]),
             "point_group": point_group,
             "point_group_order": int(dec.space["ipoint_group_order"][point_group - 1]),
         },

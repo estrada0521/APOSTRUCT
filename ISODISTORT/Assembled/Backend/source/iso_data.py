@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Decoder for selected ISOTROPY/ISO-IR Source data tables.
 
@@ -15,18 +14,124 @@ from dataclasses import dataclass
 from fractions import Fraction
 from functools import lru_cache
 from pathlib import Path
-import itertools
 import math
 import re
-from typing import Dict, Iterable, List, Sequence, Tuple
+from typing import Any, Dict, Iterable, List, Mapping, Sequence, Tuple
 
 import numpy as np
+
+from ISODISTORT.Assembled.Backend.exactmath import (
+    fraction_identity3,
+    fraction_matrix_inverse3,
+    fraction_matrix_multiply3,
+)
 
 _SECTION = re.compile(r"^[a-z][a-z0-9_]*$")
 _NUMBER = re.compile(r"[-+]?\d+(?:\.\d*)?(?:[Ee][-+]?\d+)?")
 
 Frac3 = Tuple[Fraction, Fraction, Fraction]
 SpaceOp = Tuple[int, Frac3]  # 1-based point-op index, fractional translation tau
+Matrix3 = tuple[tuple[Fraction, Fraction, Fraction], ...]
+
+
+def pml_to_cml_matrix_from_table(
+    space: Mapping[str, Sequence[Any]],
+    sg: int,
+) -> Matrix3:
+    lattice = int(space["ispace_lattice"][int(sg) - 1])
+    raw = space["lattice_ml"][(lattice - 1) * 36 + 9:(lattice - 1) * 36 + 18]
+    denominator = int(space["lattice_ml_denom"][(lattice - 1) * 2])
+    if denominator == 0:
+        raise ValueError(f"zero lattice_ml pml->cml denominator for lattice {lattice}")
+    return tuple(
+        tuple(Fraction(int(raw[3 * row + column]), denominator) for column in range(3))
+        for row in range(3)
+    )  # type: ignore[return-value]
+
+
+def setting_to_cinter_affine_from_table(
+    space: Mapping[str, Sequence[Any]],
+    sg: int,
+    setting: str,
+    setting_id: int | None = None,
+) -> tuple[Matrix3, Frac3]:
+    """Decode a Source setting as an affine row transform to cinter."""
+
+    name = str(setting).strip().lower()
+    if name == "cinter":
+        return fraction_identity3(), (Fraction(0), Fraction(0), Fraction(0))
+    if name not in {"cml", "pml"}:
+        raise KeyError(f"unsupported setting {name!r}")
+
+    pml_to_cml = pml_to_cml_matrix_from_table(space, sg) if name == "pml" else None
+    choice = int(setting_id or space["ispace_inter_choice"][int(sg) - 1])
+    raw = tuple(int(value) for value in space["ispace_settings_inter"][(choice - 1) * 32:(choice - 1) * 32 + 16])
+    if len(raw) != 16:
+        raise IndexError(f"inter setting choice out of range: {choice}")
+    denominator = raw[15]
+    if denominator == 0:
+        raise ValueError(f"zero ispace_settings_inter denominator for SG{sg} choice {choice}")
+    matrix: Matrix3 = tuple(
+        tuple(Fraction(raw[4 * row + column], denominator) for column in range(3))
+        for row in range(3)
+    )  # type: ignore[assignment]
+    origin: Frac3 = tuple(Fraction(raw[12 + axis], denominator) for axis in range(3))  # type: ignore[assignment]
+    if pml_to_cml is not None:
+        matrix = fraction_matrix_multiply3(pml_to_cml, matrix)
+    return matrix, origin
+
+
+def reciprocal_to_cinter_matrix_from_table(
+    space: Mapping[str, Sequence[Any]],
+    sg: int,
+    setting: str,
+) -> Matrix3:
+    """Decode the reciprocal-coordinate transform to cinter."""
+
+    inverse = fraction_matrix_inverse3(setting_to_cinter_affine_from_table(space, sg, setting)[0])
+    return tuple(tuple(inverse[column][row] for column in range(3)) for row in range(3))  # type: ignore[return-value]
+
+
+def setting_change_matrix_from_table(
+    space: Mapping[str, Sequence[Any]],
+    sg: int,
+    from_setting: str,
+    to_setting: str,
+) -> Matrix3:
+    """Decode the Source direct-space row transform between named settings."""
+
+    cml_to_cinter = setting_to_cinter_affine_from_table(space, sg, "cml")[0]
+    to_cinter = {
+        "cinter": fraction_identity3(),
+        "cml": cml_to_cinter,
+        "pml": setting_to_cinter_affine_from_table(space, sg, "pml")[0],
+    }
+    source = str(from_setting).strip().lower()
+    target = str(to_setting).strip().lower()
+    if source not in to_cinter or target not in to_cinter:
+        raise KeyError(f"unsupported setting transform {source!r}->{target!r}")
+    return fraction_matrix_multiply3(
+        to_cinter[source],
+        fraction_matrix_inverse3(to_cinter[target]),
+    )
+
+
+def generate_space_group_records_from_table(
+    space: Mapping[str, Sequence[Any]],
+    sg: int,
+) -> tuple[tuple[int, int, int, int, int], ...]:
+    """Decode the Source operation records for one ordinary space group."""
+
+    sg = int(sg)
+    point_group = int(space["ispace_point_group"][sg - 1])
+    count = int(space["ipoint_group_order"][point_group - 1])
+    pointer = int(space["ispace_elements_pointer"][sg - 1])
+    out: list[tuple[int, int, int, int, int]] = []
+    for index in range(count):
+        raw = space["ispace_elements"][5 * (pointer - 1 + index):5 * (pointer + index)]
+        if len(raw) == 5:
+            out.append(tuple(int(value) for value in raw))  # type: ignore[arg-type]
+    return tuple(out)
 
 
 def _split_sections(path: Path):
@@ -244,16 +349,7 @@ class ISOData:
     # ------------------------------------------------------------------
     @lru_cache(maxsize=None)
     def generate_space_group_records(self, sg: int) -> tuple[tuple[int, int, int, int, int], ...]:
-        sg = int(sg)
-        point_group = int(self.space["ispace_point_group"][sg - 1])
-        count = int(self.space["ipoint_group_order"][point_group - 1])
-        pointer = int(self.space["ispace_elements_pointer"][sg - 1])
-        out: list[tuple[int, int, int, int, int]] = []
-        for index in range(count):
-            raw = self.space["ispace_elements"][5 * (pointer - 1 + index):5 * (pointer + index)]
-            if len(raw) == 5:
-                out.append(tuple(int(value) for value in raw))  # type: ignore[arg-type]
-        return tuple(out)
+        return generate_space_group_records_from_table(self.space, int(sg))
 
     @lru_cache(maxsize=None)
     def site_pg_element_settings(self, site_pg: int) -> tuple[tuple[int, ...], ...]:
@@ -412,109 +508,3 @@ class ISOData:
         return result
 
     # ------------------------------------------------------------------
-    # Minimal displacement-character utilities for runtime comparisons
-    # ------------------------------------------------------------------
-    def wyckoff_seed(self, sg: int, wyckoff_label: str) -> Frac3:
-        start = self.wyckoff["iwyckoff_pointer"][sg - 1] - 1
-        end = self.wyckoff["iwyckoff_pointer"][sg] - 1 if sg < 230 else len(self.wyckoff["wyckoff_label"])
-        for wi in range(start, end):
-            if self.wyckoff["wyckoff_label"][wi].strip() == wyckoff_label:
-                x, y, z, den = self.wyckoff["iwyckoff_fract"][16 * wi:16 * wi + 4]
-                return Fraction(x, den), Fraction(y, den), Fraction(z, den)
-        raise KeyError(f"Wyckoff {wyckoff_label!r} not found for SG{sg}")
-
-    def wyckoff_orbit(self, sg: int, wyckoff_label: str) -> List[Frac3]:
-        seed = self.wyckoff_seed(sg, wyckoff_label)
-        out: List[Frac3] = []
-        seen = set()
-        for op, tau in self.space_ops(sg):
-            R = self.point_ops[op - 1]
-            y = tuple(
-                (sum(Fraction(int(R[i, j])) * seed[j] for j in range(3)) + tau[i]) % 1
-                for i in range(3)
-            )
-            if y not in seen:
-                seen.add(y)
-                out.append(y)  # type: ignore[arg-type]
-        return out
-
-    @staticmethod
-    def _lcm_denominators(fracs: Iterable[Fraction]) -> int:
-        den = 1
-        for f in fracs:
-            den = den * f.denominator // math.gcd(den, f.denominator)
-        return den
-
-    def displacement_characters(self, sg: int, wyckoff_label: str, supercell=(2, 2, 2)):
-        ops = self.space_ops(sg)
-        positions = self.wyckoff_orbit(sg, wyckoff_label)
-        N = np.array(supercell, dtype=int)
-        den = self._lcm_denominators(
-            [f for p in positions for f in p] + [f for _op, tau in ops for f in tau]
-        )
-
-        atoms = []
-        key_to_idx = {}
-        for si, p in enumerate(positions):
-            p_int = np.array([int(f * den) for f in p], dtype=int)
-            for cell in itertools.product(*(range(n) for n in N)):
-                cell_arr = np.array(cell, dtype=int)
-                idx = len(atoms)
-                atoms.append((si, cell_arr, p_int))
-                key = tuple(((den * cell_arr + p_int) % (den * N)).tolist())
-                key_to_idx[key] = idx
-
-        chars = []
-        op_translations = []
-        for op, tau in ops:
-            R = self.point_ops[op - 1]
-            trR = int(np.trace(R))
-            tau_int = np.array([int(f * den) for f in tau], dtype=int)
-            for n in itertools.product(*(range(x) for x in N)):
-                n_arr = np.array(n, dtype=int)
-                total = 0
-                for idx, (_si, cell, p_int) in enumerate(atoms):
-                    x = den * cell + p_int
-                    y = (R @ x + tau_int + den * n_arr) % (den * N)
-                    if key_to_idx.get(tuple(y.tolist())) == idx:
-                        total += trR
-                chars.append(total)
-                op_translations.append((op, tau, tuple(n)))
-        return op_translations, np.array(chars, dtype=complex)
-
-    def irrep_characters_on_supercell(self, sg: int, label: str, supercell=(2, 2, 2)):
-        elements = self.irrep_matrices_with_ops(sg, label)
-        translations = [x.D for x in elements[:3]]
-        cosets = elements[3:]
-        N = tuple(supercell)
-        chars = []
-        for elem in cosets:
-            for n in itertools.product(*(range(x) for x in N)):
-                T = np.eye(elem.D.shape[0], dtype=complex)
-                for ax, power in enumerate(n):
-                    if power:
-                        T = T @ np.linalg.matrix_power(translations[ax], power)
-                chars.append(np.trace(T @ elem.D))
-        return np.array(chars, dtype=complex)
-
-    def multiplicities(self, sg: int, wyckoff_label: str, labels: Sequence[str], supercell=(2, 2, 2)):
-        _ops, disp = self.displacement_characters(sg, wyckoff_label, supercell)
-        out = {}
-        for label in labels:
-            chi = self.irrep_characters_on_supercell(sg, label, supercell)
-            if len(chi) != len(disp):
-                raise ValueError("character vectors have different lengths")
-            mult = np.vdot(chi, disp) / np.vdot(chi, chi)
-            old_id = self.old_irrep_id(sg, label)
-            dim = self.irrep_dim(old_id)
-            out[label] = (mult, dim, mult * dim)
-        return out
-
-
-if __name__ == "__main__":
-    iso = ISOData(Path(__file__).resolve().parent)
-    for sg, label in [(221, "X1+"), (62, "X1")]:
-        elems = iso.irrep_matrices_with_ops(sg, label)
-        print(f"SG{sg} {label}: {len(elems)} matrices = 3 translations + {len(elems) - 3} coset reps")
-        for e in elems[:6]:
-            print(e.op_label, e.tau, "trace", np.trace(e.D))

@@ -13,12 +13,16 @@ import numpy as np
 from ISODISTORT.Assembled.Backend.source.representation import decode_little_sparse_matrix, real_phase_operator
 
 from ISODISTORT.Assembled.Backend.exactmath import (
-    fraction_identity3,
     fraction_matrix_inverse3,
-    fraction_matrix_multiply3,
 )
 from ISODISTORT.Assembled.Backend.source import magnetic as magnetic_data
-from ISODISTORT.Assembled.Backend.source.iso_data import ISOData
+from ISODISTORT.Assembled.Backend.source.iso_data import (
+    ISOData,
+    generate_space_group_records_from_table,
+    pml_to_cml_matrix_from_table,
+    setting_change_matrix_from_table,
+    setting_to_cinter_affine_from_table,
+)
 from ISODISTORT.Assembled.Backend.source.tables import (
     SOURCE,
     SPACE_SETTINGS_CINTER_BASE,
@@ -91,15 +95,7 @@ class SourceData:
     def generate_space_group_records(self, sg: int) -> tuple[tuple[int, int, int, int, int], ...]:
         """Return the operation records assembled by ``generate_space_group_``."""
 
-        sg = int(sg)
-        point_group = int(self.space["ispace_point_group"][sg - 1])
-        count = int(self.space["ipoint_group_order"][point_group - 1])
-        pointer = int(self.space["ispace_elements_pointer"][sg - 1])
-        raw = self.space["ispace_elements"][(pointer - 1) * 5 : (pointer - 1 + count) * 5]
-        return tuple(
-            tuple(int(value) for value in raw[offset : offset + 5])
-            for offset in range(0, len(raw), 5)
-        )
+        return generate_space_group_records_from_table(self.space, int(sg))
 
     def magnetic_parent_group_for_space_group(self, sg: int) -> int:
         """Return the first magnetic group used by ``SETTING MAGNETIC``."""
@@ -216,34 +212,6 @@ class SourceData:
         if len(raw) != 16:
             raise IndexError(f"inter setting index out of range: {setting_index}")
         return tuple(raw[row * 4 + col] for row in range(3) for col in range(3))
-
-    def matching_inter_setting_transforms(
-        self,
-        transform: tuple[int, ...] | list[int],
-        *,
-        child_sg: int | None = None,
-    ) -> tuple[dict[str, Any], ...]:
-        """Find ``data_space`` inter-setting records with this 3x3 transform."""
-
-        target = tuple(int(value) for value in transform[:9])
-        out: list[dict[str, Any]] = []
-        count = len(self.space["ispace_inter_number"])
-        for index in range(1, count + 1):
-            sg = int(self.space["ispace_inter_number"][index - 1])
-            if child_sg is not None and sg != int(child_sg):
-                continue
-            for half in (0, 1):
-                if self.inter_setting_basis_transform(index, half) != target:
-                    continue
-                out.append({
-                    "setting_index": index,
-                    "half": half,
-                    "space_group": sg,
-                    "axis": str(self.space["space_inter_axis"][index - 1]),
-                    "abc": str(self.space["space_inter_abc"][index - 1]),
-                    "label": str(self.space["space_inter_label_full"][index - 1]).strip(),
-                })
-        return tuple(out)
 
     def point_operation_matrix(self, point_op: int) -> tuple[int, ...]:
         """Return a 3x3 point-operation matrix from ``ipoint_op``."""
@@ -362,37 +330,13 @@ class SourceData:
         return (rx % rden, ry % rden, rz % rden, rden, op)
 
     def _pml_to_cml_matrix(self, sg: int) -> tuple[tuple[Fraction, Fraction, Fraction], ...]:
-        lattice = int(self.space["ispace_lattice"][int(sg) - 1])
-        raw = self.space["lattice_ml"][(lattice - 1) * 36 + 9 : (lattice - 1) * 36 + 18]
-        den = int(self.space["lattice_ml_denom"][(lattice - 1) * 2])
-        if den == 0:
-            raise ValueError(f"zero lattice_ml pml->cml denominator for lattice {lattice}")
-        return tuple(
-            tuple(Fraction(int(raw[3 * row + col]), den) for col in range(3))
-            for row in range(3)
-        )  # type: ignore[return-value]
+        return pml_to_cml_matrix_from_table(self.space, sg)
 
     def _cml_to_cinter_matrix(self, sg: int) -> tuple[tuple[Fraction, Fraction, Fraction], ...]:
-        choice = int(self.space["ispace_inter_choice"][int(sg) - 1])
-        raw = tuple(
-            int(value)
-            for value in self.space["ispace_settings_inter"][(choice - 1) * 32 : (choice - 1) * 32 + 16]
-        )
-        if len(raw) != 16:
-            raise IndexError(f"inter setting choice out of range: {choice}")
-        den = int(raw[15])
-        if den == 0:
-            raise ValueError(f"zero inter-setting denominator for SG{sg}")
-        return tuple(
-            tuple(Fraction(raw[4 * row + col], den) for col in range(3))
-            for row in range(3)
-        )  # type: ignore[return-value]
+        return setting_to_cinter_affine_from_table(self.space, sg, "cml")[0]
 
     def _pml_to_cinter_matrix(self, sg: int) -> tuple[tuple[Fraction, Fraction, Fraction], ...]:
-        return fraction_matrix_multiply3(
-            self._pml_to_cml_matrix(sg),
-            self._cml_to_cinter_matrix(sg),
-        )
+        return setting_to_cinter_affine_from_table(self.space, sg, "pml")[0]
 
     def setting_change_matrix(
         self,
@@ -400,17 +344,11 @@ class SourceData:
         from_setting: str,
         to_setting: str,
     ) -> tuple[tuple[Fraction, Fraction, Fraction], ...]:
-        identity = fraction_identity3()
-        to_cinter = {
-            "cinter": identity,
-            "cml": self._cml_to_cinter_matrix(sg),
-            "pml": self._pml_to_cinter_matrix(sg),
-        }
-        source = str(from_setting).strip().lower()
-        target = str(to_setting).strip().lower()
-        return fraction_matrix_multiply3(
-            to_cinter[source],
-            fraction_matrix_inverse3(to_cinter[target]),
+        return setting_change_matrix_from_table(
+            self.space,
+            sg,
+            from_setting,
+            to_setting,
         )
 
     @staticmethod
@@ -962,14 +900,6 @@ class SourceData:
         return self._search_newlat_basis(gid, kparam, orderparam, contains=previous_basis)
 
     @staticmethod
-    def _matmul3(left: tuple[int, ...] | list[int], right: tuple[int, ...] | list[int]) -> tuple[int, ...]:
-        out: list[int] = []
-        for row in range(3):
-            for col in range(3):
-                out.append(sum(int(left[row * 3 + k]) * int(right[k * 3 + col]) for k in range(3)))
-        return tuple(out)
-
-    @staticmethod
     def _basis_transform_matrix(old_basis: tuple[int, ...] | list[int], new_basis: tuple[int, ...] | list[int]) -> tuple[int, ...]:
         inv = SourceData._inverse_fraction_matrix(old_basis)
         out: list[int] = []
@@ -1003,29 +933,8 @@ class SourceData:
         )
 
     @staticmethod
-    def _operation_fraction_part(record: tuple[int, int, int, int, int]) -> tuple[int, int, int, int]:
-        return (int(record[0]), int(record[1]), int(record[2]), int(record[3]))
-
-    @staticmethod
     def _fraction_values(fraction: tuple[int, int, int, int]) -> tuple[Fraction, Fraction, Fraction]:
         return tuple(Fraction(int(fraction[axis]), int(fraction[3])) for axis in range(3))  # type: ignore[return-value]
-
-    @staticmethod
-    def _fraction_record_from_values(values: tuple[Fraction, Fraction, Fraction]) -> tuple[int, int, int, int]:
-        denominator = 1
-        for value in values:
-            denominator = math.lcm(denominator, value.denominator)
-        numerators = [int(value * denominator) for value in values]
-        return _reduce_fraction_vector((numerators[0], numerators[1], numerators[2], denominator))
-
-    @staticmethod
-    def _fraction_add(
-        left: tuple[int, int, int, int],
-        right: tuple[int, int, int, int],
-    ) -> tuple[int, int, int, int]:
-        left_values = SourceData._fraction_values(left)
-        right_values = SourceData._fraction_values(right)
-        return SourceData._fraction_record_from_values(tuple(left_values[i] + right_values[i] for i in range(3)))
 
     def _kernel_fraction_index_for_delta(
         self,

@@ -1,156 +1,181 @@
-# Validation Status of Distortropy
+# Validation Status
 
-Distortropy is validated through both comparison with the public Web version of ISODISTORT and mathematical checks independent of the Web implementation.
-The figures in this document are a snapshot as of **July 27, 2026**.
+Validation is carried out by comparison with the output of the public Web version of ISODISTORT, together with mathematical checks that are independent of the Web implementation.
+The figures in this document are a snapshot **as of July 30, 2026**.
+For each Web branch, they refer to the most recent Validation output produced by a local runtime that has been landed on main.
 
 ## Verdicts
 
 The unit of validation is a pair consisting of one input structure and one order-parameter direction (OPD).
 
-- **Strict pass**: The OPD display setting, child structure, mode types, mode counts, atom correspondence, normalization factors, and vectors agree exactly with the Web output within the accepted numerical precision.
-- **Physical pass**: Even if the displayed mode order, signs, basis choice within the same mode space, or equivalent crystallographic setting differ, the child structure and the physical mode space spanned by the modes are equivalent, and the differences are purely conventional.
+- **Strict pass**: The display setting of the OPD, the child structure, and the mode types, mode counts, atom correspondence, normalization factors, and vectors agree exactly with the Web output, including their order.
+- **Physical pass**: Even when there are differences in the displayed mode order, in signs, in the choice of basis within the same mode space, or in equivalent crystallographic settings, the child structure and the physical mode space that is spanned are equivalent, and only purely conventional differences, such as the choice of basis, remain.
   Every Strict pass is also included in Physical pass.
-- **Physical fail**: The OPD does not exist, the child structure is physically different, required modes are missing, or the mode vectors do not span the same physical space and are physically different from the reference implementation (as discussed below, this definition has a minor qualification because some outputs from the reference implementation do not satisfy mathematical requirements).
+- **Physical fail**: The OPD does not exist, the child structure is physically different, required modes are missing, or the mode vectors do not span the same physical space — that is, the result is physically different from the reference implementation. Potential candidate Physical passes, in which neither the reference implementation nor the local implementation violates mathematics but a non-trivial physical equivalence could not be decided, are also treated conservatively as fail.
+
+## Definition of the Valid Population
+
+Two necessary-condition checks are applied to each output.
+
+- **Mode basis:** exact rational linear independence of the complete displayed mode basis
+- **Group invariance:** invariance of the displayed mode fields under the reported subgroup operations, in the settings maintained by the verifier
+
+The Validation population consists of the branches for which both Web and Local have been computed and for which the Web output was not refuted by either check.
 
 ## Two Validation Populations
 
-### MP pool: Broad Stress Population
+### MP pool: broad stress population
 
-This population is based on structures from Materials Project and broadly includes fixed K points, parametric K points, multi-K inputs, and general OPDs.
+A population based on structures derived from the Materials Project, broadly including fixed K, parametric K, multi-K, and general OPDs.
 
 #### Selection of the structure pool
 
-The CIF pool was created from Materials Project.
-Structures in the same space group with the same combination of occupied Wyckoff-site multiplicities and letters were treated as the same topology, and only one structure was acquired for each `(space group, occupied Wyckoff pattern)`.
-Structures differing only by element substitution, or only by free coordinates within the same Wyckoff pattern, were removed as duplicates at this stage.
-The resulting pool contains **19,086 CIFs**.
-As of this snapshot, 2,665 of those CIFs are used in the Web population below.
+The CIF pool was created from the Materials Project.
+Structures in the same space group whose combinations of occupied Wyckoff site multiplicities and letters coincide are regarded as the same topology, and only one entry was acquired per `(space group, occupied Wyckoff pattern)`.
+Structures that differ only by elemental substitution, and structures that differ only in the free coordinates of the same Wyckoff pattern, were removed as duplicates at this stage.
+The pool obtained in this way contains **19,086 CIFs**.
+Of these, **2,665 CIFs** have actually been used in the Web populations described below at this point.
 
-#### Input sampling
+#### Sampling of inputs
 
-The current population is not a single simple random sample, but the union of multiple reproducible campaigns.
-Each campaign records its seed, filters, target count, and generated ordered input IDs.
+The current population is not a single simple random sampling, but the union of several reproducible campaigns.
+Each campaign records its seed, filters, target count, and the ordered input IDs that were generated.
 
-1. CIFs are filtered by properties such as space group, crystal system, centering, site count, and atom count.
-2. Depending on the campaign, a space-group, crystal-system, or centering bucket is first selected uniformly, followed by uniform selection of a CIF within that bucket.
-   Some comparison campaigns instead select from all candidates without using buckets.
-3. Strain and the enabled or disabled displacive and magnetic modes for each element are selected.
-   Under random selection, each element is selected independently, while the population also includes strata fixed to ordinary-only, magnetic-only, mixed, and similar conditions.
-4. Between one and four K slots are selected, together with the number and placement of fixed and parametric K points.
-   Multi-parametric inputs, alternate parametric-slot positions, multidimensional parametric K points, and multi-K inputs that were sparse in the initial population were explicitly supplemented in later campaigns.
-5. For each slot, only K/IR combinations that are valid in Source for the space group, the Wyckoff rows occupied by the selected elements, and the mode kind are enumerated, and a candidate is selected from that set.
-6. Parametric K values are selected by enumerating reduced rational numbers within the Source domain with denominators no greater than 6 and deduplicating their canonical values.
-7. After the Web OPD list is obtained, the 1-based ordinal explicitly specified by the campaign is collected.
-   If multiple OPDs are collected for one input, each is counted as a separate branch.
+1. CIFs are filtered by space group, crystal system, centering, number of sites, number of atoms, and so on.
+2. Depending on the campaign, a bucket of space group, crystal system, or centering is selected uniformly first, and then a CIF within that bucket is selected uniformly.
+   For comparison, campaigns that select from all candidates without using buckets are also included.
+3. Strain, and the enablement or disablement of displacive and magnetic modes for each element, are selected.
+   When random selection is specified, each element is selected independently, but strata fixed to ordinary-only, magnetic-only, mixed, and so on are also included.
+4. The number of K slots is selected in the range from 1 to 4, and the number and arrangement of fixed and parametric slots are selected.
+   Multi-parametric configurations, different positions of the parametric slots, multi-dimensional parametric K, and multi-K, which were thin in the initial population, were explicitly supplemented in later campaigns.
+5. For each slot, only the K/IR combinations that are valid in Source for that space group, for the Wyckoff rows of the selected elements, and for the mode kind are enumerated, and the selection is made from those candidates.
+6. The values of parametric K are enumerated as irreducible rational numbers within the Source domain with a denominator of at most 6, and are selected from the set obtained after removing duplicates of the canonical values.
+7. After the OPD list has been obtained from the Web, the 1-based ordinals explicitly specified by the campaign are collected.
+   When several OPDs are collected from a single input, each is counted as a separate branch.
 
-The pass rates below therefore represent the achievement rate of a **stratified stress test** centered on random sampling while intentionally increasing the weight of difficult, underrepresented shapes.
+The pass rates below are therefore **the achievement rates of a stratified stress test**, centred on random sampling but with the difficult configurations that were lacking deliberately made heavier.
+
+#### Results
 
 | Item | Count |
 |---|---:|
-| Web population | 3,206 branches |
-| Inputs / CIFs | 3,094 / 2,665 |
-| Validated | 3,195 |
-| Judged | 3,148 |
-| Strict pass | 1,142 |
-| Physical-only pass | 1,807 |
-| Physical fail | 199 |
-| Unjudged | 47 |
-| Not yet validated | 11 |
+| Valid Validation population | 3,096 |
+| Strict pass | 1,421 |
+| Physical pass | 3,082 |
+| Physical fail | 14 |
 
-- **Physical pass: 2,949 / 3,148 = 93.68%**
-- **Strict pass: 1,142 / 3,148 = 36.28%**
-- If Unjudged cases are conservatively counted as failures, the Physical pass rate is **2,949 / 3,195 = 92.30%**.
+- **Physical pass: 3,082 / 3,096 = 99.55%**
+- **Strict pass: 1,421 / 3,096 = 45.90%**
 
-#### By K signature
+#### By K-signature
 
-`F` denotes a fixed K point and `P` denotes a parametric K point.
+`F` denotes a fixed K and `P` denotes a parametric K.
+Every column uses the Validation population defined above.
 
-| K composition (order-independent) | Population | Judged | Physical pass | Strict pass | Unjudged |
-|---|---:|---:|---:|---:|---:|
-| F | 788 | 788 | 782 (99.24%) | 512 (64.97%) | 0 |
-| FF | 297 | 294 | 293 (99.66%) | 186 (63.27%) | 3 |
-| FFF | 189 | 185 | 185 (100.00%) | 66 (35.68%) | 4 |
-| FFFF | 202 | 200 | 200 (100.00%) | 70 (35.00%) | 2 |
-| P | 761 | 748 | 685 (91.58%) | 212 (28.34%) | 13 |
-| PP | 24 | 22 | 16 (72.73%) | 2 (9.09%) | 2 |
-| FP | 141 | 140 | 123 (87.86%) | 32 (22.86%) | 1 |
-| FFP | 490 | 477 | 423 (88.68%) | 50 (10.48%) | 13 |
-| FFFP | 273 | 258 | 221 (85.66%) | 11 (4.26%) | 15 |
-| FPP | 40 | 36 | 21 (58.33%) | 1 (2.78%) | 4 |
+| K configuration (order-independent) | Validation population | Physical pass | Strict pass |
+|---|---:|---:|---:|
+| F | 788 | 788 (100.00%) | 637 (80.84%) |
+| FF | 294 | 294 (100.00%) | 226 (76.87%) |
+| FFF | 185 | 185 (100.00%) | 97 (52.43%) |
+| FFFF | 200 | 200 (100.00%) | 124 (62.00%) |
+| P | 724 | 722 (99.72%) | 214 (29.56%) |
+| PP | 20 | 18 (90.00%) | 1 (5.00%) |
+| FP | 130 | 130 (100.00%) | 39 (30.00%) |
+| FFP | 459 | 457 (99.56%) | 59 (12.85%) |
+| FFFP | 261 | 261 (100.00%) | 22 (8.43%) |
+| FPP | 34 | 26 (76.47%) | 2 (5.88%) |
+| FFPP | 1 | 1 (100.00%) | 0 (0.00%) |
 
-### MAGNDATA: Practical Population
+### MAGNDATA: practical population
 
-This population is based on experimentally realized magnetic structures recorded in MAGNDATA.
-Its purpose is to evaluate reliability on practical inputs.
+A population based on the experimentally realized magnetic structures recorded in MAGNDATA.
+Its purpose is to examine the reliability against practical inputs.
 
 #### Selection of structures and inputs
 
-Rather than passing the MAGNDATA mcif directly to Local, a normal CIF for the same parent structure was obtained first from Materials Project and then from the Crystallography Open Database (COD).
+Rather than entering the MAGNDATA mcif directly into Local, an ordinary CIF of the same parent structure was obtained from the Materials Project, and then from the Crystallography Open Database (COD).
 
-The MAGNDATA parent space group was required when matching parent CIFs, and a record was adopted only when uniqueness could be established under one of the following conditions.
-No arbitrary candidate was selected from an ambiguous set.
+For the correspondence of the parent CIF, the parent SG of MAGNDATA was required, and only cases in which uniqueness such as the following could be confirmed were adopted.
+No arbitrary single entry was chosen from among ambiguous candidates.
 
-- Exactly one MP candidate matched the MAGNDATA/mcif chemical formula, ignoring element order: 495 cases
-- A unique MP candidate matched the chemical formula on the MAGNDATA top page: 153 cases
-- A unique MP candidate was identified by the recorded ICSD ID: 344 cases
-- A unique COD candidate was identified by combining the chemical formula, DOI, citation, or element set with the parent space group: 59 cases
+- Exactly one candidate matches the chemical formula of the MAGNDATA/mcif, ignoring the order of elements: 495 from MP
+- Uniquely matches the chemical formula on the MAGNDATA top page: 153 from MP
+- Uniquely corresponds by way of a recorded ICSD ID: 344 from MP
+- Uniquely corresponds by combining the chemical formula, DOI, citation, and element set with the parent SG: 59 from COD
 
-This procedure matched parent CIFs for **1,051 cases**.
+With the above, **1,051** parent CIFs could be matched.
 
-Input generation uses only information that can be read directly from the mcif rather than inferred.
+For input generation, only information that can be read directly from the mcif, rather than inferred, is used.
 
-- The primary IR is mapped to a unique Source IR label, and the K point belonging to that IR is entered into the slot
-- The BNS number recorded in the mcif is used directly as the child magnetic space group
-- If at least one site of an element has a magnetic moment, magnetic mode is enabled for that entire element
-- If the primary IR contains an ordinary component, displacive mode is enabled for all elements, and strain is disabled
+- The primary IR is mapped to a unique IR label in Source, and the K belonging to that IR is placed in a slot
+- For the child magnetic space group, the BNS number recorded in the mcif is used as it is
+- If even one site of a given element carries a magnetic moment, that element as a whole is turned magnetic-on
+- If the primary IR has an ordinary component, all elements are turned displacive-on, and strain is turned off
 
-After excluding cases with missing primary IRs, non-unique Source labels, missing BNS numbers, or inconsistencies with the Web implementation, the final Validation population contains **927 cases**.
-It consists of 458 zero-K cases, 28 nonzero Type I/III cases, 412 nonzero Type IV cases, 19 two-K cases, and 10 cases with three or more K points.
+Excluding a missing primary IR or BNS, a non-unique Source label, and invalid mcif records that cannot be submitted to the Web as the same input and OPD, the final Validation population is **927** entries.
+It consists of 458 zero-K, 28 nonzero Type I/III, 412 nonzero Type IV, 19 two-K, and 10 three-or-more-K entries.
 
 | Item | Count |
 |---|---:|
 | Population / inputs / CIFs | 927 / 927 / 927 |
-| Validated and Judged | 927 |
-| Strict pass | 783 |
-| Physical-only pass | 144 |
+| Validated and judged | 927 |
+| Strict pass | 801 |
+| Physical pass | 927 |
 | Physical fail | 0 |
-| Unjudged | 0 |
 
 - **Physical pass: 927 / 927 = 100.00%**
-- **Strict pass: 783 / 927 = 84.47%**
+- **Strict pass: 801 / 927 = 86.41%**
 
-#### By K signature
+#### By K-signature
 
-As in the MP pool, entries are aggregated by the number of F and P slots without distinguishing slot order.
-
-| K composition (order-independent) | Population | Physical pass | Strict pass |
+| K configuration (order-independent) | Population | Physical pass | Strict pass |
 |---|---:|---:|---:|
-| F | 798 | 798 (100.00%) | 679 (85.09%) |
+| F | 798 | 798 (100.00%) | 697 (87.34%) |
 | FF | 84 | 84 (100.00%) | 69 (82.14%) |
 | P | 40 | 40 (100.00%) | 30 (75.00%) |
 | PP | 3 | 3 (100.00%) | 3 (100.00%) |
 | FP | 1 | 1 (100.00%) | 1 (100.00%) |
 | FPP | 1 | 1 (100.00%) | 1 (100.00%) |
 
-The result is clearly better than for the stress population because, even for the same K signature, the stress population intentionally contains many difficult and complex cases.
+## Limits of Validation
 
-## Web Comparison and Mathematical Checks
+**65** cases have been confirmed so far that fall outside the valid population because of a mathematical violation on the Web side.
+Among the corresponding Local outputs, 64 satisfied the two current checks and 1 was refuted.
+Since this does not constitute a proof of Local, these cases are treated as subjects requiring verification by the stronger mathematical checks to come.
 
-Agreement with the Web implementation is an important compatibility metric, but the Web implementation is not treated as the sole source of truth.
-Distortropy checks both Web and Local outputs against necessary conditions, including the exact rational rank of the displayed mode basis, without assuming that either output is correct.
+## Computational Performance
 
-External blind A/B audits confirmed that both Web and Local outputs include cases that do not satisfy necessary mathematical conditions on the displayed subgroup or mode basis.
-The remaining long tail will therefore be assessed along two separate axes.
+The performance population consists of the branches within the valid Validation population for which `wall_s` is recorded for both Web and Local.
+The Web time measures the interval from the CIF upload to the conversion of the Complete Mode Details into text.
+The Local time measures the local mode-details computation itself.
+Because the execution environments differ, the figures below are reference values and not a direct comparison of speed.
 
-1. **Web compatibility**: Whether the output agrees with the Web implementation at the Strict or Physical level.
-2. **Independent mathematics**: Whether it satisfies group-action invariance, basis independence, and related conditions.
+| Performance population | Local median | Web median | Local p95 | Web p95 |
+|---:|---:|---:|---:|---:|
+| 2,114 / 4,023 | 1.23 s | 8.37 s | 52.07 s | 31.84 s |
 
-## Reproducibility and Notes
+```text
+          0.1                 1                  10                100 s
+Local     |--------[==========│=============]-----------------|
+        p5=0.13  Q1=0.35  median=1.23  Q3=6.40  p95=52.07
+Web                                          [│==]--------|
+        p5=7.32  Q1=7.49  median=8.37  Q3=10.69  p95=31.84
+```
 
-The completed authorities for this snapshot are as follows.
+### Performance by K-signature
 
-- MP pool: runtime `6b9aa754cf70`, comparator `ae1ad1486dbb`
-- MAGNDATA: runtime `000ce2ae1f98`, comparator `validation.v7+e276b8fbd237`
+| K configuration (order-independent) | Performance population | Local median | Web median | Local p95 | Web p95 |
+|---|---:|---:|---:|---:|---:|
+| F | 951 | 0.37 s | 7.48 s | 2.57 s | 7.94 s |
+| FF | 163 | 0.79 s | 8.79 s | 4.98 s | 10.67 s |
+| FFF | 52 | 1.87 s | 9.24 s | 13.03 s | 29.05 s |
+| FFFF | 47 | 2.22 s | 9.30 s | 12.50 s | 20.05 s |
+| P | 250 | 3.43 s | 8.49 s | 60.47 s | 29.16 s |
+| PP | 23 | 14.73 s | 13.47 s | 98.42 s | 61.71 s |
+| FP | 131 | 5.23 s | 10.58 s | 85.47 s | 41.10 s |
+| FFP | 243 | 8.80 s | 11.84 s | 73.62 s | 47.34 s |
+| FFFP | 218 | 13.71 s | 15.00 s | 90.13 s | 62.02 s |
+| FPP | 35 | 14.11 s | 14.02 s | 97.78 s | 53.72 s |
+| FFPP | 1 | 96.40 s | 66.64 s | 96.40 s | 66.64 s |
 
-Computation time limits, Web acquisition failures, Local timeouts, and malformed inputs are recorded as operational failures separately from scientific Physical/Strict verdicts.
-Particularly for heavy multi-K and parametric cases, there is a long tail in computation time as well as in output correctness.
+A clear long tail remains on the Local side for the stress cases that include parametric K and multi-K.

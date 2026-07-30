@@ -1,7 +1,4 @@
-"""Undistorted-structure construction helpers for modes.
-
-Extracted mechanically from the former monolithic runtime.
-"""
+"""Undistorted-structure construction helpers for modes."""
 
 from __future__ import annotations
 
@@ -58,74 +55,12 @@ from ISODISTORT.Assembled.Backend.modes.common import (
     _fraction_vecadd,
     _fraction_vecsub,
     _isotropy_from_opd_row,
-    _mat4_multiply_fraction,
     _matrix_from_basis_tuple,
-    _normalize_setting_matrix,
     _origin_record_vector,
     _origin_vector,
     _row_multiply,
 )
-from ISODISTORT.Assembled.Backend.modes.site_transport import (
-    _parent_setting_bridge,
-    _source_default_wyckoff_params,
-)
-
-
-def _display_basis_origin_matrix(
-    basis: list[list[float]],
-    origin: tuple[int, int, int, int] | Any,
-) -> list[list[Fraction]]:
-    origin_values = _origin_vector(origin)
-    return [
-        [Fraction(str(basis[row][col])).limit_denominator(1000000) for col in range(3)]
-        + [Fraction(0)]
-        for row in range(3)
-    ] + [
-        [
-            Fraction(str(origin_values[col])).limit_denominator(1000000)
-            for col in range(3)
-        ]
-        + [Fraction(1)]
-    ]
-
-
-def _internal_split_basis_origin(
-    data: SourceTables,
-    *,
-    parent_sg: int,
-    child_sg: int,
-    display_basis: list[list[float]],
-    display_origin: Any,
-) -> tuple[list[list[float]], tuple[int, int, int, int]] | None:
-    try:
-        parent_choice = int(data.space["ispace_inter_choice"][int(parent_sg) - 1])
-        child_choice = int(data.space["ispace_inter_choice"][int(child_sg) - 1])
-        left = _mat4_multiply_fraction(
-            _normalize_setting_matrix(data._inter_matrix_by_id(child_choice, 1)),  # noqa: SLF001
-            _normalize_setting_matrix(data._space_cinter_base_matrix(int(child_sg), 0)),  # noqa: SLF001
-        )
-        right = _mat4_multiply_fraction(
-            _normalize_setting_matrix(
-                data._space_cinter_base_matrix(int(parent_sg), 1)
-            ),  # noqa: SLF001
-            _normalize_setting_matrix(data._inter_matrix_by_id(parent_choice, 0)),  # noqa: SLF001
-        )
-        internal = _mat4_multiply_fraction(
-            _mat4_multiply_fraction(
-                data._mat4_inverse_fraction(left),
-                _display_basis_origin_matrix(display_basis, display_origin),
-            ),  # noqa: SLF001
-            data._mat4_inverse_fraction(right),  # noqa: SLF001
-        )
-    except Exception:
-        return None
-    basis = [[float(internal[row][col]) for col in range(3)] for row in range(3)]
-    origin_values = [internal[3][col] for col in range(3)]
-    den = 1
-    for value in origin_values:
-        den = math.lcm(den, value.denominator)
-    origin = tuple(int(value * den) for value in origin_values) + (den,)
-    return basis, origin  # type: ignore[return-value]
+from ISODISTORT.Assembled.Backend.modes.site_transport import _parent_setting_bridge
 
 
 def _web_magnetic_occurrence_gauge(
@@ -188,8 +123,7 @@ def _source_child_atom_layout_for_site(
     label_prefix: str,
     split_basis: list[list[float]] | None,
     split_origin: Any,
-    parent_setting_id: int | None = None,
-    symmetry_operations: list[str] | None = None,
+    parent_params: dict[str, float] | None,
 ) -> ChildAtomLayout:
     """Construct the complete child atom layout from Source occurrences."""
 
@@ -198,12 +132,6 @@ def _source_child_atom_layout_for_site(
     parent_space_group = _exact_space_group_number(sg, "parent space group")
     child_space_group = _exact_space_group_number(child_sg, "child space group")
     data = _assembled_data()
-    parent_params = _source_default_wyckoff_params(
-        parent_space_group,
-        site,
-        parent_setting_id,
-        list(symmetry_operations or []),
-    )
     formula_rows = undistorted_rows_from_wyckoff_split(
         data,
         parent_sg=parent_space_group,
@@ -538,14 +466,6 @@ def _child_presentation_setting(
         child_to_display_origin,
         selected_actions,
     )
-
-
-def _child_presentation_setting_ids(
-    **kwargs: Any,
-) -> tuple[int, ...]:
-    """Compatibility view of the exact child-presentation setting identity."""
-
-    return _child_presentation_setting(**kwargs)[0]
 
 
 def _fraction_floor(value: Fraction) -> int:
@@ -1107,7 +1027,6 @@ def _present_child_atom_layout(
         int(parent_sg),
         source_row,
         presentation_basis_pml,
-        site_params,
     )
     if len(raw_fractionals) != len(raw_records) or not raw_fractionals:
         raise ValueError("Source atom positions and operation records differ")
@@ -1438,12 +1357,8 @@ def _subgroup_parent_operation_records(
 
 def _split_basis_origin_for_wyckoff(
     *,
-    parent_sg: int,
-    child_sg: int | None,
     selected_opd: dict[str, Any] | None,
-    presentation_basis: list[list[float]] | None,
-    presentation_origin: Any,
-) -> tuple[list[list[float]] | None, Any]:
+) -> tuple[list[list[float]], tuple[int, int, int, int]]:
     """Return the transform consumed by Source-only ``get_new_wyckoff_`` splitting.
 
     Complete-mode Wyckoff splitting follows ISO's raw ``data_isotropy``
@@ -1452,21 +1367,11 @@ def _split_basis_origin_for_wyckoff(
     transform closes the child Wyckoff orbit buffer used by ``get_new_wyckoff_``.
     """
 
-    source_basis = _source_split_basis_from_opd_row(selected_opd)
-    source_origin = _source_split_origin_from_opd_row(selected_opd)
-    if source_basis is not None and source_origin is not None:
-        return source_basis, source_origin
-    if child_sg is not None and presentation_basis is not None:
-        internal = _internal_split_basis_origin(
-            _assembled_data(),
-            parent_sg=int(parent_sg),
-            child_sg=int(child_sg),
-            display_basis=presentation_basis,
-            display_origin=presentation_origin,
-        )
-        if internal is not None:
-            return internal
-    return presentation_basis, presentation_origin
+    basis, origin = _selected_source_subgroup_transform(selected_opd)
+    return (
+        [[float(basis[row * 3 + column]) for column in range(3)] for row in range(3)],
+        origin,
+    )
 
 
 def _selected_subgroup_number(selected_opd: dict[str, Any] | None) -> int | None:

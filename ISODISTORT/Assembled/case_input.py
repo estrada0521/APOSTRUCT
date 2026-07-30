@@ -225,7 +225,7 @@ def load_case(path: Path) -> AssembledCase:
     resolved = Path(path).expanduser().resolve()
     if not resolved.is_file():
         raise ValueError(f"case file does not exist: {resolved}")
-    text = resolved.read_text()
+    text = resolved.read_text(encoding="utf-8")
     if resolved.suffix.casefold() == ".json":
         try:
             payload = json.loads(text)
@@ -313,10 +313,28 @@ def pipeline_request(
     *,
     require_irreps: bool,
     default_displacive: bool = False,
+    allow_empty_distortion: bool = False,
 ) -> dict[str, Any]:
     if not case.structure.is_file():
         raise ValueError(f"structure CIF does not exist: {case.structure}")
-    cif_info = read_cif_summary(case.structure)
+    return pipeline_request_from_cif_info(
+        case,
+        read_cif_summary(case.structure),
+        require_irreps=require_irreps,
+        default_displacive=default_displacive,
+        allow_empty_distortion=allow_empty_distortion,
+    )
+
+
+def pipeline_request_from_cif_info(
+    case: AssembledCase,
+    cif_info: Mapping[str, Any],
+    *,
+    require_irreps: bool,
+    default_displacive: bool = False,
+    allow_empty_distortion: bool = False,
+) -> dict[str, Any]:
+    cif_info = dict(cif_info)
     site_types: list[str] = []
     for index, atom in enumerate(cif_info.get("atom_sites") or [], 1):
         name = str(atom.get("type") or atom.get("label") or index)
@@ -336,7 +354,12 @@ def pipeline_request(
     ]
     if not case.sites and default_displacive:
         displacive = list(range(1, len(site_types) + 1))
-    if not case.strain and not displacive and not magnetic:
+    if (
+        not allow_empty_distortion
+        and not case.strain
+        and not displacive
+        and not magnetic
+    ):
         raise ValueError("case must include strain, displacive, or magnetic distortion")
 
     catalog = kpoints(int(cif_info["parent"]["number"]))["kpoints"]
@@ -389,4 +412,5 @@ __all__ = [
     "case_from_json",
     "load_case",
     "pipeline_request",
+    "pipeline_request_from_cif_info",
 ]

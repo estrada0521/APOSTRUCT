@@ -23,7 +23,11 @@ from ISODISTORT.Assembled.Backend.exactmath import (  # noqa: E402
     fraction_matrix_multiply3,
     integer_determinant3,
 )
-from ISODISTORT.Assembled.Backend.source.iso_data import ISOData  # noqa: E402
+from ISODISTORT.Assembled.Backend.source.iso_data import (  # noqa: E402
+    ISOData,
+    pml_to_cml_matrix_from_table,
+    setting_to_cinter_affine_from_table,
+)
 
 # Distributed data_ text is the single source of truth (shared upstream Source/).
 SOURCE = ROOT / "Source"
@@ -153,48 +157,24 @@ class SourceTables:
         sg: int,
         setting_id: int | None = None,
     ) -> tuple[tuple[Fraction, Fraction, Fraction], ...]:
-        choice = int(setting_id or self.space["ispace_inter_choice"][int(sg) - 1])
-        raw = tuple(int(x) for x in self.space["ispace_settings_inter"][(choice - 1) * 32:(choice - 1) * 32 + 16])
-        den = int(raw[15])
-        if den == 0:
-            raise ValueError(f"zero ispace_settings_inter denominator for SG{sg} choice {choice}")
-        return tuple(
-            tuple(Fraction(raw[4 * row + col], den) for col in range(3))
-            for row in range(3)
-        )  # type: ignore[return-value]
+        return setting_to_cinter_affine_from_table(self.space, sg, "cml", setting_id)[0]
 
     def cml_to_cinter_origin(
         self,
         sg: int,
         setting_id: int | None = None,
     ) -> tuple[Fraction, Fraction, Fraction]:
-        choice = int(setting_id or self.space["ispace_inter_choice"][int(sg) - 1])
-        raw = tuple(int(x) for x in self.space["ispace_settings_inter"][(choice - 1) * 32:(choice - 1) * 32 + 16])
-        den = int(raw[15])
-        if den == 0:
-            raise ValueError(f"zero ispace_settings_inter denominator for SG{sg} choice {choice}")
-        return tuple(Fraction(raw[12 + axis], den) for axis in range(3))  # type: ignore[return-value]
+        return setting_to_cinter_affine_from_table(self.space, sg, "cml", setting_id)[1]
 
     def pml_to_cml_matrix(self, sg: int) -> tuple[tuple[Fraction, Fraction, Fraction], ...]:
-        lattice = int(self.space["ispace_lattice"][int(sg) - 1])
-        raw = tuple(int(x) for x in self.space["lattice_ml"][(lattice - 1) * 36 + 9:(lattice - 1) * 36 + 18])
-        den = int(self.space["lattice_ml_denom"][(lattice - 1) * 2])
-        if den == 0:
-            raise ValueError(f"zero lattice_ml pml->cml denominator for lattice {lattice}")
-        return tuple(
-            tuple(Fraction(raw[3 * row + col], den) for col in range(3))
-            for row in range(3)
-        )  # type: ignore[return-value]
+        return pml_to_cml_matrix_from_table(self.space, sg)
 
     def pml_to_cinter_matrix(
         self,
         sg: int,
         setting_id: int | None = None,
     ) -> tuple[tuple[Fraction, Fraction, Fraction], ...]:
-        return fraction_matrix_multiply3(
-            self.pml_to_cml_matrix(sg),
-            self.cml_to_cinter_matrix(sg, setting_id),
-        )
+        return setting_to_cinter_affine_from_table(self.space, sg, "pml", setting_id)[0]
 
     @staticmethod
     def transform_basis_rows(

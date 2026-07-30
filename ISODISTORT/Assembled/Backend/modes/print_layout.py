@@ -1,7 +1,4 @@
-"""Mode presentation layout helpers.
-
-Extracted mechanically from the former monolithic runtime.
-"""
+"""Mode presentation layout helpers."""
 
 from __future__ import annotations
 

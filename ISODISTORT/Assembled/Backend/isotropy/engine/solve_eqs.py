@@ -121,7 +121,7 @@ def _smith_normal_decomp_iso(
         if not _has_offdiagonal(matrix):
             break
     else:
-        raise RuntimeError("smith_normal_form_ port did not converge")
+            raise RuntimeError("Smith normal form did not converge")
     # Upstream transposes the column-transform buffer before returning.
     return (
         tuple(tuple(int(value) for value in row) for row in matrix),

@@ -247,6 +247,12 @@ def render_mode_detail_text(
     parent = backend_state.get("space_group") or input_info.get("parent") or {}
     selected = backend_state.get("selected") or {}
     mode_details = selected.get("mode_details") or {}
+    status = mode_details.get("status")
+    if status not in (None, "ok"):
+        reason = mode_details.get("reason")
+        raise ValueError(
+            str(reason) if reason else f"mode details returned status {status!r}"
+        )
     parent_lattice = input_info.get("lattice") or {}
     _opd = selected.get("orderparam")
     _opd_iso = (

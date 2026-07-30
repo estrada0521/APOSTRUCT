@@ -11,10 +11,16 @@ class IsotropyKVectorMixin:
         """Return the Miller-Love k-slot for a displayed k label."""
 
         lattice = int(self.iso.space["ispace_lattice"][sg - 1])
-        count = int(self.iso.little["little_k_count"][lattice - 1])
+        available_slots = {
+            int(self.iso.little["little_irr_k"][gid - 1])
+            for gid, row_sg in enumerate(
+                self.iso.little["little_irr_space_group"], start=1
+            )
+            if int(row_sg) == int(sg)
+        }
         matches = [
             kslot
-            for kslot in range(1, count + 1)
+            for kslot in sorted(available_slots)
             if self.iso.little["little_k_label"][(lattice - 1) * 27 + kslot - 1].strip() == label
         ]
         if len(matches) != 1:

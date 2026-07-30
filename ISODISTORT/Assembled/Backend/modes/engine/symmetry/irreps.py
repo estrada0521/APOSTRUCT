@@ -78,18 +78,6 @@ class BridgeWeightView(Sequence[float]):
         values = self._matrix[row]
         return values[column] if column < len(values) else 0.0
 
-    def dense(self) -> list[float]:
-        if self._dense_fallback is not None:
-            return list(self._dense_fallback)
-        out = [0.0] * len(self)
-        for row, values in enumerate(self._matrix):
-            for column, value in enumerate(values):
-                index = row + column * 48
-                if index < len(out):
-                    out[index] = value
-        return out
-
-
 class IrrepMixin:
     def generated_space_point_op_positions(self, sg: int) -> dict[int, int]:
         """Return the point-op -> internal position map used by `get_irrep4_ssgn_`.
@@ -201,7 +189,7 @@ class IrrepMixin:
 
         Generated Source records remain the primary matrix authority because
         centered groups may contain several records with the same point-op.
-        A Stage1 representative transport can legitimately produce a full
+        A representative transport can legitimately produce a full
         translation absent from that table; only then is the canonical matrix
         selected by point-op while the caller retains the full translation for
         its Bloch phase.
@@ -479,27 +467,6 @@ class IrrepMixin:
         return tuple(int(value * den) for value in values) + (den, op)  # type: ignore[return-value]
 
     @lru_cache(maxsize=32768)
-    def project_vector_bridge_weight_buffer_for_record(
-        self,
-        gid: int,
-        record: tuple[int, int, int, int, int],
-        case: Case,
-        *,
-        output_length: int = 2304,
-    ) -> list[float]:
-        """Return dense parent-irrep weights for one projection event.
-
-        The parent-irrep matrix is serialized column-major with a 48-value
-        stride between columns for the coefficient-building stage.
-        """
-
-        matrix = self._bridge_irrep_matrix_for_record(gid, record, case)
-        return self._project_vector_bridge_weight_buffer_from_matrix(
-            matrix,
-            output_length=output_length,
-        )
-
-    @lru_cache(maxsize=32768)
     def project_vector_bridge_weight_view_for_record(
         self,
         gid: int,
@@ -527,74 +494,6 @@ class IrrepMixin:
             gid,
             record,
             self.operation_record_phases(gid, record),
-        )
-
-    @staticmethod
-    def _project_vector_bridge_weight_buffer_from_matrix(
-        matrix: np.ndarray,
-        *,
-        output_length: int,
-    ) -> list[float]:
-        """Serialize one parent-irrep matrix in the bridge's 48-stride layout."""
-
-        return BridgeWeightView.from_matrix(
-            matrix,
-            output_length=output_length,
-        ).dense()
-
-    def project_vector_bridge_presentation_quotient(
-        self,
-        gid: int,
-        source_record: tuple[int, int, int, int, int],
-        presentation_record: tuple[int, int, int, int, int],
-        source_case: Case,
-        *,
-        presentation_case: Case | None = None,
-    ) -> np.ndarray:
-        """Return ``D(presentation) D(source)^-1`` before the OPD selector.
-
-        This is a Source-only carrier change.  It deliberately acts on the
-        parent-irrep coefficient matrix before contraction with the
-        OPD/direction rows. Applying the quotient to the final
-        ``basis_function`` is too late because that contraction may already
-        have removed the companion real-carrier branch.  ``presentation_case``
-        is separate because equivalent source/presentation k representatives
-        (for example ``-2/3`` and ``+2/3``) use conjugate real-carrier phase
-        matrices even when they share a gid and reciprocal point modulo one.
-        """
-
-        target_case = source_case if presentation_case is None else presentation_case
-        source = self._bridge_irrep_matrix_for_record(int(gid), source_record, source_case)
-        target = self._bridge_irrep_matrix_for_record(int(gid), presentation_record, target_case)
-        quotient = target @ np.linalg.inv(source)
-        quotient[np.abs(quotient) < 1e-12] = 0.0
-        return quotient
-
-    def project_vector_bridge_weight_view_for_presentation(
-        self,
-        gid: int,
-        source_record: tuple[int, int, int, int, int],
-        presentation_record: tuple[int, int, int, int, int],
-        source_case: Case,
-        *,
-        presentation_case: Case | None = None,
-        output_length: int = 2304,
-    ) -> BridgeWeightView:
-        """Return presentation-corrected weights as a compact matrix view."""
-
-        source = self._bridge_irrep_matrix_for_record(int(gid), source_record, source_case)
-        quotient = self.project_vector_bridge_presentation_quotient(
-            int(gid),
-            source_record,
-            presentation_record,
-            source_case,
-            presentation_case=presentation_case,
-        )
-        corrected = quotient @ source
-        corrected[np.abs(corrected) < 1e-12] = 0.0
-        return BridgeWeightView.from_matrix(
-            corrected,
-            output_length=output_length,
         )
 
     def get_irreps_matrix_for_case(

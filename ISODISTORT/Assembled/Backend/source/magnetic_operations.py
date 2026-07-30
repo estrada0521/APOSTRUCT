@@ -38,7 +38,7 @@ class MagneticGroupSetting:
     reference_origin: FractionRecord
 
 
-def _fraction_record(values: Sequence[Fraction]) -> FractionRecord:
+def fraction_record(values: Sequence[Fraction]) -> FractionRecord:
     denominator = 1
     for value in values:
         denominator = math.lcm(denominator, Fraction(value).denominator)
@@ -53,7 +53,7 @@ def _fraction_record(values: Sequence[Fraction]) -> FractionRecord:
     return numerators[0], numerators[1], numerators[2], denominator
 
 
-def _fraction_values(record: Sequence[int]) -> FractionPoint:
+def fraction_values(record: Sequence[int]) -> FractionPoint:
     denominator = int(record[3])
     if denominator == 0:
         return Fraction(0), Fraction(0), Fraction(0)
@@ -147,7 +147,7 @@ def _pml_record_to_cinter(
         fraction_matrix_multiply3(cinter_to_pml, pml_rotation), pml_to_cinter
     )
     transformed_translation = fraction_row_multiply3(
-        _fraction_values(record[:4]), pml_to_cinter
+        fraction_values(record[:4]), pml_to_cinter
     )
     rotated_origin = fraction_row_multiply3(origin, cinter_rotation)
     cinter_translation = tuple(
@@ -159,7 +159,7 @@ def _pml_record_to_cinter(
         ordinary_cinter,
         bool(table["mag_point_op_r"][int(record[4]) - 1]),
     )
-    x, y, z, denominator = _fraction_record(_fold_point(cinter_translation))
+    x, y, z, denominator = fraction_record(_fold_point(cinter_translation))
     return x, y, z, denominator, magnetic_cinter
 
 
@@ -187,7 +187,7 @@ def _cinter_record_to_pml(
         fraction_matrix_multiply3(pml_to_cinter, cinter_rotation),
         cinter_to_pml,
     )
-    cinter_translation = _fraction_values(record[:4])
+    cinter_translation = fraction_values(record[:4])
     rotated_origin = fraction_row_multiply3(origin, cinter_rotation)
     pml_translation = fraction_row_multiply3(
         tuple(
@@ -201,7 +201,7 @@ def _cinter_record_to_pml(
         ordinary_pml,
         bool(table["mag_point_op_r"][int(record[4]) - 1]),
     )
-    x, y, z, denominator = _fraction_record(pml_translation)
+    x, y, z, denominator = fraction_record(pml_translation)
     return x, y, z, denominator, magnetic_pml
 
 
@@ -254,16 +254,16 @@ def _compose_operations(
     table = magnetic_data().table
     ordinary_left = int(table["mag_point_op_mag2nonmag"][int(left[4]) - 1])
     rotated_right = data.vrot_fraction(
-        int(setting.ordinary_space_group), ordinary_left, _fraction_values(right[:4])
+        int(setting.ordinary_space_group), ordinary_left, fraction_values(right[:4])
     )
-    left_translation = _fraction_values(left[:4])
+    left_translation = fraction_values(left[:4])
     translation = tuple(
         left_translation[axis] + rotated_right[axis] for axis in range(3)
     )
     point_op = int(
         table["mag_point_op_mlt"][(int(right[4]) - 1) * 144 + int(left[4]) - 1]
     )
-    x, y, z, denominator = _fraction_record(_fold_point(translation))
+    x, y, z, denominator = fraction_record(_fold_point(translation))
     return x, y, z, denominator, point_op
 
 

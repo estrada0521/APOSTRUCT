@@ -222,7 +222,7 @@ class ModeSourceCatalogMixin:
         """Return Wyckoff subductions for a native little-irrep row.
 
         Fixed special-point irreps point back to ``data_irreps`` via
-        ``little_irr_old`` and use the historical ``iwyckoff_*`` tables.
+        ``little_irr_old`` and use the static ``iwyckoff_*`` tables.
         Parametric k irreps have ``little_irr_old == 0``; the mode kernel then uses the
         parallel ``little_subduce_*`` tables keyed directly by the little row.
         """

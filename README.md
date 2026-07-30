@@ -28,14 +28,14 @@ The required BYU ISOTROPY group-theory tables are included in `Source/`.
 
 ## How to Use
 
-A structure is provided either as a CIF file, or — for quick queries without a
-file — directly by space group and Wyckoff positions via `--sg` / `--wyckoff`,
+A structure is provided either as a CIF file, or, for quick queries without a
+file, directly by space group and Wyckoff positions via `--sg` / `--wyckoff`,
 accepted anywhere a CIF is.
 
 ```bash
 # 0. Show the parsed structure: space group, sites, Wyckoff positions
 isodistort info structure.cif
-isodistort info --sg 205 --wyckoff a c        # on the fly, no CIF
+isodistort info --sg 205 --wyckoff a c
 
 # 1. Enumerate k points for the parent space group
 isodistort kpoints structure.cif
@@ -47,7 +47,8 @@ isodistort irreps structure.cif \
   --k GP 1/3 1/4 2/5 \
   --k B 1/3 2/5 \
   --k W 1/4
-# without a CIF: isodistort irreps --sg 62 --wyckoff a c --k L --k GP 1/3 1/4 2/5 ...
+# without a CIF:
+# isodistort irreps --sg 205 --wyckoff a c --k GM
 
 # 3. Enumerate order-parameter directions (OPDs) for selected irreps
 isodistort opds structure.cif \
@@ -132,6 +133,8 @@ Start the standalone local server to use the graphical interface:
 ```bash
 isodistort serve --host 127.0.0.1 --port 8300
 ```
+
+Invariant calculations are currently available through this graphical interface.
 
 ## Validation
 

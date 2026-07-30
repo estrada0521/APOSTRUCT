@@ -74,10 +74,6 @@ def admitted_occurrence_alias_spec_orders(
     return frozenset(admitted)
 
 
-MagneticOccurrenceSiteEmission = OccurrenceSiteEmission
-admitted_magnetic_occurrence_alias_spec_orders = admitted_occurrence_alias_spec_orders
-
-
 def _exact_source_direction_matrix(
     value: object,
 ) -> tuple[tuple[float, ...], ...] | None:

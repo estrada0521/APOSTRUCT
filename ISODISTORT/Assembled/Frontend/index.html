@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ISODISTORT Assembled</title>
   <link rel="stylesheet" href="theme.css?v=1">
-  <link rel="stylesheet" href="tool.css?v=54">
+  <link rel="stylesheet" href="tool.css?v=79">
   <script type="importmap">
     {
       "imports": {
@@ -50,7 +50,7 @@
     </section>
 
     <section class="block" id="irrep-section" hidden>
-      <p class="block-title">4. Choose an IR: <button class="primary-action" id="irrep-ok" type="button">OK</button></p>
+      <p class="block-title">4. Choose an IR: <button class="primary-action" id="irrep-ok" type="button">OK</button><span id="irrep-calculating" class="step-calculating" aria-live="polite"></span></p>
       <p class="irrep-select-block">
         <span>IR:</span>
         <span id="irrep-selectors"></span>
@@ -58,18 +58,24 @@
     </section>
 
     <section class="block" id="opd-section" hidden>
-      <p class="block-title">5. Finish selecting the distortion mode by choosing an order parameter direction: <button class="primary-action" id="opd-ok" type="button">OK</button></p>
+      <p class="block-title">5. Finish selecting the distortion mode by choosing an order parameter direction: <button class="primary-action" id="opd-ok" type="button">OK</button><span id="opd-calculating" class="step-calculating" aria-live="polite"></span></p>
       <div id="opd-options"></div>
     </section>
 
     <section class="block" id="mode-details-section" hidden>
-      <p class="block-title">6. Mode details:</p>
-      <label class="mode-details-view-switch">View:
-        <select id="mode-details-view-select">
-          <option value="text">Complete mode details</option>
-          <option value="viewer">Interactive viewer</option>
-        </select>
-      </label>
+      <div class="mode-details-heading">
+        <label class="block-title mode-details-view-switch">6. Select:
+          <select id="mode-details-view-select">
+            <option value="text">Complete mode details</option>
+            <option value="viewer">Interactive viewer</option>
+            <option value="invariants">Invariants</option>
+          </select>
+        </label>
+        <div class="mode-details-height-control">
+          <label>Height × <input id="mode-details-height-scale" class="tiny-input" type="number" min="0.5" max="4" step="0.1" value="1" inputmode="decimal" required></label>
+          <button class="primary-action" id="mode-details-height-change" type="button">Change</button>
+        </div>
+      </div>
       <div class="mode-details-layout">
         <div id="mode-details-text-panel" role="tabpanel">
           <pre id="mode-details-output" class="mode-details-output"></pre>
@@ -80,27 +86,42 @@
               <div id="mode-viewer-controls" class="mode-viewer-controls"></div>
             </aside>
             <div class="mode-viewer-resizer" role="separator" aria-label="Resize mode controls" aria-orientation="vertical" tabindex="0"></div>
-            <div class="mode-viewer-canvas-wrap">
-              <canvas id="mode-viewer-canvas"></canvas>
-              <div id="mode-viewer-empty" class="mode-viewer-empty">Calculate mode details to open the viewer</div>
+            <div class="mode-viewer-stage">
               <div class="mode-viewer-display-options">
                 <label><input id="mode-viewer-arrow-only" type="checkbox"> Arrows only</label>
                 <label><input id="mode-viewer-bonds" type="checkbox" checked> Bonds</label>
                 <label><input id="mode-viewer-polyhedra" type="checkbox" checked> Polyhedra</label>
-                <label class="mode-viewer-opacity">Poly opacity
+                <label class="mode-viewer-opacity">Opacity
                   <input id="mode-viewer-poly-opacity" type="range" min="0" max="100" step="5" value="70">
                   <output id="mode-viewer-poly-opacity-value">70%</output>
                 </label>
               </div>
+              <div class="mode-viewer-canvas-wrap">
+                <canvas id="mode-viewer-canvas"></canvas>
+                <button class="mode-viewer-home" id="mode-viewer-home" type="button" aria-label="Restore default view" title="Restore default view">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.2 12 3l9 8.2v9.3h-6.1v-6.2H9.1v6.2H3z"/></svg>
+                </button>
+                <div id="mode-viewer-empty" class="mode-viewer-empty">Calculate mode details to open the viewer</div>
+              </div>
             </div>
           </div>
+        </section>
+        <section id="mode-details-invariants-panel" class="mode-invariants-panel" role="tabpanel" aria-label="Invariants" hidden>
+          <div id="invariants-domains" class="mode-invariants-domains" hidden></div>
+          <div class="mode-invariants-controls">
+            <label>Minimum degree: <input id="invariants-degree-min" class="tiny-input" type="number" min="1" max="12" value="2"></label>
+            <label>Maximum degree: <input id="invariants-degree-max" class="tiny-input" type="number" min="1" max="12" value="4"></label>
+            <button class="primary-action" id="invariants-calculate" type="button">Calculate</button>
+          </div>
+          <div id="invariants-error" class="error" hidden></div>
+          <div id="invariants-results" class="mode-invariants-results" hidden></div>
         </section>
       </div>
     </section>
   </main>
 
   <script type="module">
-    import { ModeStructureViewer } from "./mode3d.js?v=27";
+    import { ModeStructureViewer } from "./mode3d.js?v=47";
 
     const state = {
       cif: "",
@@ -113,15 +134,48 @@
       orderparamIndex: 1,
       modeSet: "strain_displacive",
       distortionSelection: null,
+      invariantSecondaryKeys: new Set(),
+      modeDetailText: null,
+      modeDetailTextLoading: false,
+      modeDetailTextRendered: false,
       running: false,
     };
 
     const $ = id => document.getElementById(id);
+    function renderModeDetailText(output, text) {
+      const fragment = document.createDocumentFragment();
+      const source = String(text || "");
+      const headingPattern = /^(Parent structure|Subgroup details|Undistorted superstructure|Displacive mode definitions|Magnetic mode definitions|Parent-cell strain mode definitions)$/gm;
+      let cursor = 0;
+      for (const match of source.matchAll(headingPattern)) {
+        fragment.append(document.createTextNode(source.slice(cursor, match.index)));
+        const heading = document.createElement("span");
+        heading.className = "mode-details-section-heading";
+        heading.textContent = match[0];
+        fragment.append(heading);
+        cursor = match.index + match[0].length;
+      }
+      fragment.append(document.createTextNode(source.slice(cursor)));
+      output.replaceChildren(fragment);
+    }
+
+    function ensureModeDetailText() {
+      if (state.modeDetailTextRendered || state.modeDetailTextLoading) return;
+      const output = $("mode-details-output");
+      if (state.modeDetailText !== null) {
+        renderModeDetailText(output, state.modeDetailText);
+        state.modeDetailTextRendered = true;
+        return;
+      }
+      renderModeDetailText(output, "");
+      state.modeDetailTextRendered = true;
+    }
 
     const modeViewer = new ModeStructureViewer({
       canvas: $("mode-viewer-canvas"),
       empty: $("mode-viewer-empty"),
       controls: $("mode-viewer-controls"),
+      homeButton: $("mode-viewer-home"),
       arrowOnlyInput: $("mode-viewer-arrow-only"),
       bondsInput: $("mode-viewer-bonds"),
       polyhedraInput: $("mode-viewer-polyhedra"),
@@ -132,6 +186,23 @@
     const modeWorkspace = document.querySelector(".mode-viewer-workspace");
     const modeSidebar = document.querySelector(".mode-viewer-sidebar");
     const modeResizer = document.querySelector(".mode-viewer-resizer");
+    const MODE_DETAILS_BASE_HEIGHT = 1000;
+
+    function changeModeDetailsHeight() {
+      const input = $("mode-details-height-scale");
+      if (!input.reportValidity()) return;
+      const multiplier = Number(input.value);
+      if (!Number.isFinite(multiplier)) return;
+      document.querySelector(".mode-details-layout").style.setProperty(
+        "--mode-details-height",
+        `${MODE_DETAILS_BASE_HEIGHT * multiplier}px`,
+      );
+      if ($("mode-details-view-select").value === "viewer") {
+        requestAnimationFrame(() => modeViewer.refreshLayout(true));
+      }
+    }
+
+    $("mode-details-height-change").addEventListener("click", changeModeDetailsHeight);
 
     function setModeSidebarWidth(width) {
       if (!modeWorkspace || !modeSidebar || !modeResizer) return;
@@ -190,9 +261,13 @@
 
     function setModeDetailsView(view) {
       const showViewer = view === "viewer";
-      $("mode-details-text-panel").hidden = showViewer;
+      const showInvariants = view === "invariants";
+      if (!showViewer && !showInvariants) ensureModeDetailText();
+      $("mode-details-text-panel").hidden = showViewer || showInvariants;
       $("mode-details-viewer-panel").hidden = !showViewer;
-      $("mode-details-view-select").value = showViewer ? "viewer" : "text";
+      $("mode-details-invariants-panel").hidden = !showInvariants;
+      document.querySelector(".mode-details-layout").classList.toggle("is-invariants", showInvariants);
+      $("mode-details-view-select").value = showViewer ? "viewer" : showInvariants ? "invariants" : "text";
       if (showViewer) requestAnimationFrame(() => modeViewer.refreshLayout());
     }
 
@@ -240,15 +315,183 @@
       node.textContent = message;
     }
 
-    async function postJSON(url, payload) {
+    async function postJSON(url, payload, options = {}) {
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
+        signal: options.signal,
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || res.statusText);
       return data;
+    }
+
+    function appendPolynomial(container, expression) {
+      let cursor = 0;
+      for (const match of String(expression || "").matchAll(/\^(\d+)/g)) {
+        container.append(document.createTextNode(String(expression).slice(cursor, match.index)));
+        const exponent = document.createElement("sup");
+        exponent.textContent = match[1];
+        container.append(exponent);
+        cursor = match.index + match[0].length;
+      }
+      container.append(document.createTextNode(String(expression || "").slice(cursor)));
+    }
+
+    function invariantFactors(backendState = state.backendState) {
+      const factors = backendState?.selected?.opd_factors;
+      const primary = Array.isArray(factors) ? factors : [];
+      const secondary = backendState?.selected?.mode_details?.secondary_opd_factors;
+      return primary.concat(
+        (Array.isArray(secondary) ? secondary : []).filter(factor => (
+          state.invariantSecondaryKeys.has(invariantFactorKey(factor))
+        )),
+      );
+    }
+
+    function invariantFactorKey(factor) {
+      return [factor.gid, factor.magnetic ? 1 : 0, factor.opd, factor.domain].join(":");
+    }
+
+    function invariantParameterName(index) {
+      let value = Number(index) + 1;
+      let name = "";
+      while (value > 0) {
+        value -= 1;
+        name = String.fromCharCode(97 + (value % 26)) + name;
+        value = Math.floor(value / 26);
+      }
+      return name;
+    }
+
+    function shiftedInvariantOpd(expression, parameterCount, parameterOffset) {
+      const replacements = new Map();
+      for (let index = 0; index < Number(parameterCount || 0); index += 1) {
+        replacements.set(invariantParameterName(index), invariantParameterName(parameterOffset + index));
+      }
+      return String(expression || "").replace(/[a-z]+/g, name => replacements.get(name) || name);
+    }
+
+    function secondaryDomainDisplay(factor, parameterOffset) {
+      const presentation = factor.domain_presentation;
+      if (!presentation) return factor.domain_display || "";
+      const displayOpd = shiftedInvariantOpd(
+        presentation.display_opd,
+        factor.parameter_count,
+        parameterOffset,
+      );
+      let text = `${factor.opd}(${factor.domain}) ${displayOpd}`;
+      if (presentation.subgroup) text += ` ${presentation.subgroup}`;
+      if (presentation.basis) text += `, basis={${presentation.basis}}`;
+      if (presentation.origin) text += `, origin=${presentation.origin}`;
+      return text;
+    }
+
+    function invariantRequestFactors() {
+      return invariantFactors().map(factor => ({
+        slot: factor.slot,
+        gid: factor.gid,
+        label: factor.label,
+        magnetic: factor.magnetic,
+        k_parameters: factor.k_parameters,
+        opd: factor.opd,
+        domain: factor.domain,
+        parameter_offset: factor.parameter_offset,
+      }));
+    }
+
+    function renderInvariantDomains(backendState = state.backendState) {
+      const primary = backendState?.selected?.opd_factors;
+      const secondary = backendState?.selected?.mode_details?.secondary_opd_factors;
+      const rows = (Array.isArray(primary) ? primary : []).map(factor => {
+        const line = document.createElement("div");
+        line.className = "mode-invariants-domain-row";
+        line.textContent = `${factor.label || ""}: ${factor.domain_display || ""}`;
+        return line;
+      });
+      const secondaryFactors = Array.isArray(secondary) ? secondary : [];
+      if (secondaryFactors.length) {
+        const heading = document.createElement("div");
+        heading.className = "mode-invariants-secondary-heading";
+        heading.textContent = "Secondary IRs:";
+        rows.push(heading);
+      }
+      for (const factor of secondaryFactors) {
+        const label = document.createElement("label");
+        label.className = "mode-invariants-domain-row mode-invariants-secondary-row";
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        const key = invariantFactorKey(factor);
+        checkbox.checked = state.invariantSecondaryKeys.has(key);
+        checkbox.addEventListener("change", () => {
+          if (checkbox.checked) state.invariantSecondaryKeys.add(key);
+          else state.invariantSecondaryKeys.delete(key);
+          clearInvariantResult();
+          $("invariants-calculate").disabled = invariantFactors().length === 0;
+        });
+        label.append(checkbox, document.createTextNode(
+          `${factor.label || ""}: ${secondaryDomainDisplay(factor, Number(factor.parameter_offset || 0))}`,
+        ));
+        rows.push(label);
+      }
+      $("invariants-domains").replaceChildren(...rows);
+      $("invariants-domains").hidden = rows.length === 0;
+    }
+
+    function clearInvariantResult() {
+      $("invariants-error").hidden = true;
+      $("invariants-error").textContent = "";
+      $("invariants-results").replaceChildren();
+      $("invariants-results").hidden = true;
+    }
+
+    function renderInvariantResult(result) {
+      const blocks = (result.degrees || []).map(degree => {
+        const block = document.createElement("section");
+        block.className = "mode-invariants-degree";
+        const heading = document.createElement("h3");
+        heading.textContent = `Degree ${degree.degree}`;
+        block.append(heading);
+        const list = document.createElement("div");
+        list.className = "mode-invariants-list";
+        for (const invariant of degree.invariants || []) {
+          const code = document.createElement("code");
+          appendPolynomial(code, invariant);
+          list.append(code);
+        }
+        block.append(list);
+        return block;
+      });
+      $("invariants-results").replaceChildren(...blocks);
+      $("invariants-results").hidden = false;
+    }
+
+    async function calculateInvariants() {
+      const button = $("invariants-calculate");
+      clearInvariantResult();
+      const minimum = Number($("invariants-degree-min").value);
+      const maximum = Number($("invariants-degree-max").value);
+      const spaceGroup = Number(state.backendState?.space_group?.number || state.backendState?.input?.parent?.number);
+      button.disabled = true;
+      button.textContent = "Calculating...";
+      button.setAttribute("aria-busy", "true");
+      try {
+        const result = await postJSON("/api/isodistort/invariants", {
+          space_group: spaceGroup,
+          factors: invariantRequestFactors(),
+          minimum_degree: minimum,
+          maximum_degree: maximum,
+        });
+        renderInvariantResult(result);
+      } catch (error) {
+        $("invariants-error").textContent = error.message || String(error);
+        $("invariants-error").hidden = false;
+      } finally {
+        button.textContent = "Calculate";
+        button.removeAttribute("aria-busy");
+        button.disabled = invariantFactors().length === 0;
+      }
     }
 
     function sameIrrep(left, right) {
@@ -371,6 +614,7 @@
           include_mode_details: includeModeDetails,
         });
         state.backendState = backendState;
+        state.invariantSecondaryKeys.clear();
         state.modeSet = backendState.mode_set || modeSet;
         state.distortionSelection = backendState.distortion_selection || distortionSelection;
         const selected = backendState.selected || {};
@@ -396,6 +640,22 @@
       }
     }
 
+    async function withStepCalculating(buttonId, statusId, operation) {
+      if (state.running) return;
+      const button = $(buttonId);
+      const status = $(statusId);
+      button.disabled = true;
+      button.setAttribute("aria-busy", "true");
+      status.textContent = "Calculating...";
+      try {
+        await operation();
+      } finally {
+        status.textContent = "";
+        button.removeAttribute("aria-busy");
+        button.disabled = false;
+      }
+    }
+
     function hideAfter(step) {
       if (step < 2) $("distortion-section").hidden = true;
       if (step < 3) $("k-section").hidden = true;
@@ -418,7 +678,7 @@
       const sg = backendState.space_group || input.parent || {};
       const lat = input.lattice || {};
       const symbol = sg.symbol || input.parent?.symbol || "";
-      const materialName = String(input.block || "").trim();
+      const materialName = String(input.formula || input.block || "").trim();
       const lines = [
         [
           `${esc(sg.number ?? input.parent?.number ?? "")} ${esc(symbol)}`.trim(),
@@ -606,26 +866,77 @@
       return `(${value.join(",")})`;
     }
 
-    function renderModeDetails(backendState) {
+    function renderModeDetails(backendState, initialView = "text") {
       const output = $("mode-details-output");
-      output.textContent = backendState.selected?.mode_detail_text || "";
+      output.replaceChildren();
+      const embeddedText = backendState.selected?.mode_detail_text;
+      if (typeof embeddedText === "string") state.modeDetailText = embeddedText;
+      else state.modeDetailText = "";
+      state.modeDetailTextLoading = false;
+      state.modeDetailTextRendered = false;
+      if (initialView === "text") ensureModeDetailText();
       const modeDetails = backendState.selected?.mode_details;
       modeViewer.setData(modeDetails ? {
         ...modeDetails,
-        viewer_parent: { lattice: backendState.input?.lattice || null },
+        viewer_parent: {
+          lattice: backendState.input?.lattice || null,
+          sites: backendState.input?.atom_sites || [],
+        },
+        viewer_irrep_properties: selectedIrrepProperties(backendState),
       } : null);
-      setModeDetailsView("text");
+      clearInvariantResult();
+      renderInvariantDomains(backendState);
+      $("invariants-calculate").disabled = invariantFactors(backendState).length === 0;
+      setModeDetailsView(initialView);
+    }
+
+    function selectedIrrepProperties(backendState) {
+      const selected = backendState.selected || {};
+      const primary = Array.isArray(selected.opd_factors) ? selected.opd_factors : [];
+      const secondary = Array.isArray(selected.mode_details?.secondary_opd_factors)
+        ? selected.mode_details.secondary_opd_factors
+        : [];
+      const factors = primary.concat(secondary);
+      const slots = Array.isArray(selected.selection_slots) ? selected.selection_slots : [];
+      return factors.flatMap(factor => {
+        const slot = slots.find(item => Number(item.slot) === Number(factor.slot));
+        const candidates = Array.isArray(slot?.opd_rows) ? slot.opd_rows : [];
+        const row = candidates.find(item => (
+          String(item?.isotropy?.opd_label || "") === String(factor.opd || "")
+        )) || (primary.length === 1 && factor.role !== "secondary"
+          ? selected.orderparam
+          : null);
+        const isotropy = row?.isotropy || {};
+        const properties = Array.isArray(factor.ferroic_properties)
+          ? factor.ferroic_properties.filter(Boolean)
+          : Array.isArray(isotropy.ferroic_properties)
+            ? isotropy.ferroic_properties.filter(Boolean)
+            : [];
+        if (!properties.length) return [];
+        const sourceKparam = slot?.source_kparam || isotropy.source_kparam;
+        return [{
+          gid: Number(factor.gid),
+          magnetic: Boolean(factor.magnetic),
+          source_kparam: Array.isArray(sourceKparam) ? sourceKparam.map(Number) : null,
+          properties,
+        }];
+      });
     }
 
     $("choose-cif").addEventListener("click", () => {
       $("cif-file").value = "";
       $("cif-file").click();
     });
+    $("invariants-calculate").addEventListener("click", calculateInvariants);
     $("cif-file").addEventListener("change", async () => {
       const file = $("cif-file").files && $("cif-file").files[0];
-      state.cif = file ? await file.text() : "";
+      const bytes = file ? await file.arrayBuffer() : null;
+      state.cif = bytes ? new TextDecoder().decode(bytes) : "";
       $("cif-name").textContent = file ? file.name : "";
       state.backendState = null;
+      state.modeDetailText = null;
+      state.modeDetailTextLoading = false;
+      state.invariantSecondaryKeys.clear();
       state.kLabel = "GM";
       state.kSelections = [{ label: "GM", params: { a: "", b: "", g: "" } }];
       state.irrepIndex = 1;
@@ -663,21 +974,25 @@
       hideAfter(4);
     });
     $("irrep-ok").addEventListener("click", async () => {
-      state.irrepIndex = selectedIrrepIndex();
-      state.irrepSelections = Array.from(document.querySelectorAll(".irrep-select")).map(select => Number(select.value || 1));
-      state.orderparamIndex = 1;
-      await analyze({ includeOPD: true });
-      if (!state.backendState) return;
-      $("opd-section").hidden = false;
-      $("mode-details-section").hidden = true;
+      await withStepCalculating("irrep-ok", "irrep-calculating", async () => {
+        state.irrepIndex = selectedIrrepIndex();
+        state.irrepSelections = Array.from(document.querySelectorAll(".irrep-select")).map(select => Number(select.value || 1));
+        state.orderparamIndex = 1;
+        await analyze({ includeOPD: true });
+        if (!state.backendState) return;
+        $("opd-section").hidden = false;
+        $("mode-details-section").hidden = true;
+      });
     });
     $("opd-ok").addEventListener("click", async () => {
       const selected = document.querySelector("input[name='orderparam']:checked");
       if (!selected) return;
       state.orderparamIndex = Number(selected.value || 1);
-      await analyze({ includeOPD: true, includeModeDetails: true });
-      if (!state.backendState) return;
-      $("mode-details-section").hidden = false;
+      await withStepCalculating("opd-ok", "opd-calculating", async () => {
+        await analyze({ includeOPD: true, includeModeDetails: true });
+        if (!state.backendState) return;
+        $("mode-details-section").hidden = false;
+      });
     });
     $("irrep-count-change").addEventListener("click", () => {
       normalizeIrrepCount(true);

@@ -75,6 +75,7 @@ def select_k_points(
             "parameters": slot_params,
             "display_parameters": slot_display_params,
             "dimension": selected["dimension"],
+            "sg_specific": bool(selected.get("sg_specific")),
             "star": selected["star"],
             "little_order": selected["little_order"],
         })
@@ -92,6 +93,7 @@ def select_k_points(
                 "kvector": k["kvector"],
                 "isodistort_kvector": k["isodistort_kvector"],
                 "dimension": k["dimension"],
+                "sg_specific": bool(k.get("sg_specific")),
                 "star_size": k["star_size"],
                 "little_order": k["little_order"],
                 "n_irreps": k["n_irreps"],

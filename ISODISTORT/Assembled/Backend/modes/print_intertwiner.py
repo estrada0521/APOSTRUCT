@@ -1,7 +1,4 @@
-"""Mode presentation intertwiner helpers.
-
-Extracted mechanically from the former monolithic runtime.
-"""
+"""Mode presentation intertwiner helpers."""
 
 from __future__ import annotations
 
@@ -359,7 +356,6 @@ def _rank1_factor_target(
                 return None
             site_vectors = factor_resolved_parent_site_vectors(
                 decoder,
-                parent_sg=int(sg),
                 parent_site_pg=int(parent_row.site_pg),
                 parent_pg_irrep=int(pg_irrep),
                 parent_site_records=decoder.wyc_pg_elements_records(
@@ -600,7 +596,6 @@ def _factor_print_block_target(
                 return None
             site_vectors = factor_resolved_parent_site_vectors(
                 decoder,
-                parent_sg=int(sg),
                 parent_site_pg=int(parent_row.site_pg),
                 parent_pg_irrep=int(pg_irrep),
                 parent_site_records=decoder.wyc_pg_elements_records(

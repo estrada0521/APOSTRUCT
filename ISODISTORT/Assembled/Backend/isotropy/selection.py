@@ -5,12 +5,20 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from ISODISTORT.Assembled.Backend.isotropy.domains import (
+    _fraction_mod1,
+    _mat4_mul,
+    _operation_matrix,
+    _setting_matrix,
+)
+
 from ISODISTORT.Assembled.Backend.isotropy import catalog as isotropy_catalog
+from ISODISTORT.Assembled.Backend.source import magnetic as magnetic_data
 from ISODISTORT.Assembled.Backend.parent import parent_cell_tuple
+from ISODISTORT.Assembled.Backend.reciprocal import catalog as reciprocal_catalog
 from ISODISTORT.Assembled.Backend.reciprocal.k_points import normalize_k_params
 from ISODISTORT.Assembled.Backend.reciprocal.irreps import select_irrep
 from ISODISTORT.Assembled.Backend.isotropy.coupled import coupled_opd_rows
-from ISODISTORT.Assembled.Backend.isotropy.state import build_subgroup_state
 from ISODISTORT.Assembled.Backend.source.tables import source_tables
 
 
@@ -104,6 +112,230 @@ def _select_orderparam(
     return None
 
 
+def _selected_opd_factors(
+    parent_sg: int,
+    slots: list[dict[str, Any]],
+    selected_opd: dict[str, Any] | None,
+) -> list[dict[str, Any]]:
+    """Return the exact primary OPD/domain selection for downstream tools."""
+
+    if not isinstance(selected_opd, dict):
+        return []
+    isotropy = selected_opd.get("isotropy")
+    if not isinstance(isotropy, dict):
+        return []
+    if len(slots) == 1:
+        labels = [str(isotropy.get("opd_label") or "")]
+        domains = [1]
+        parameter_counts = [int(isotropy.get("free") or 0)]
+        display_opds = [
+            str(isotropy.get("display_opd") or isotropy.get("source_opd") or "")
+        ]
+        domain_displays = [
+            _domain_display(
+                isotropy,
+                label=labels[0],
+                domain=1,
+                display_opd=display_opds[0],
+            )
+        ]
+    else:
+        components = (selected_opd.get("direction") or {}).get("components") or []
+        if any(
+            not isinstance(component, dict)
+            or component.get("slot") != index
+            for index, component in enumerate(components, 1)
+        ):
+            raise ValueError("selected OPD components do not match primary slots")
+        labels = [str(component.get("opd") or "") for component in components]
+        domains = [component.get("domain") for component in components]
+        parameter_counts = []
+        for slot, label in zip(slots, labels, strict=True):
+            source_row = next(
+                (
+                    row
+                    for row in slot.get("opd_rows") or []
+                    if str(((row.get("isotropy") or {}).get("opd_label") or ""))
+                    == label
+                ),
+                None,
+            )
+            parameter_counts.append(
+                None
+                if source_row is None
+                else (source_row.get("isotropy") or {}).get("free")
+            )
+        display_opds = [
+            str(component.get("display_opd") or "") for component in components
+        ]
+        domain_displays = [
+            str(component.get("domain_display") or "") for component in components
+        ]
+    if (
+        len(labels) != len(slots)
+        or len(domains) != len(slots)
+        or len(parameter_counts) != len(slots)
+        or len(display_opds) != len(slots)
+        or len(domain_displays) != len(slots)
+        or any(not label for label in labels)
+        or any(not display_opd for display_opd in display_opds)
+        or any(not domain_display for domain_display in domain_displays)
+        or any(type(domain) is not int or domain < 1 for domain in domains)
+        or any(type(count) is not int or count < 1 for count in parameter_counts)
+    ):
+        raise ValueError(
+            "selected OPD does not retain one exact displayed domain per primary slot"
+        )
+
+    def selected_k_parameters(slot: dict[str, Any]) -> list[str]:
+        kpoint = slot.get("kpoint") or {}
+        dimension = int(kpoint.get("dimension") or 0)
+        if dimension <= 0:
+            return []
+        names = reciprocal_catalog.k_coordinate_map_for_slot(
+            int(parent_sg), int(kpoint["kslot"])
+        ).parameter_names
+        if len(names) != dimension:
+            raise ValueError("selected K slot does not retain its parameters")
+        values = slot.get("display_k_params") or slot.get("k_params") or {}
+        return [str(values.get(name) or "0").strip() or "0" for name in names]
+
+    return [
+        {
+            "slot": int(slot["slot"]),
+            "gid": int(slot["irrep"]["gid"]),
+            "label": str(slot["irrep"].get("symbol") or ""),
+            "magnetic": bool(slot["irrep"].get("magnetic")),
+            "k_parameters": selected_k_parameters(slot),
+            "opd": label,
+            "domain": int(domain),
+            "domain_display": domain_display,
+            "parameter_count": int(parameter_count),
+        }
+        for slot, label, domain, domain_display, parameter_count in zip(
+            slots, labels, domains, domain_displays, parameter_counts, strict=True
+        )
+    ]
+
+
+def _domain_display(
+    isotropy: dict[str, Any],
+    *,
+    label: str,
+    domain: int,
+    display_opd: str,
+    basis: str | None = None,
+    origin: str | None = None,
+) -> str:
+    display_opd = display_opd.replace(";", ",")
+    subgroup = isotropy.get("subgroup") or {}
+    subgroup_text = " ".join(
+        part
+        for part in (
+            str(subgroup.get("display_label") or subgroup.get("number") or ""),
+            str(subgroup.get("symbol") or ""),
+        )
+        if part
+    )
+    details = " ".join(
+        part for part in (f"{label}({domain})", display_opd, subgroup_text) if part
+    )
+    basis_text = str(basis if basis is not None else isotropy.get("basis_text") or "")
+    origin_text = str(origin if origin is not None else isotropy.get("origin") or "")
+    if basis_text:
+        details += f", basis={{{basis_text}}}"
+    if origin_text:
+        details += f", origin={origin_text}"
+    return details
+
+
+def _complete_coupled_domain_displays(
+    *,
+    data,
+    parent_sg: int,
+    parent_setting_id: int,
+    slots: list[dict[str, Any]],
+    selected_opd: dict[str, Any] | None,
+) -> None:
+    if not isinstance(selected_opd, dict):
+        return
+    components = (selected_opd.get("direction") or {}).get("components") or []
+    if len(components) != len(slots):
+        raise ValueError("selected OPD components do not match primary slots")
+    source_data = isotropy_catalog._subgroup_core_data()  # noqa: SLF001
+    for slot, component in zip(slots, components, strict=True):
+        label = str(component.get("opd") or "")
+        source_row = next(
+            (
+                row
+                for row in slot.get("opd_rows") or []
+                if str(((row.get("isotropy") or {}).get("opd_label") or "")) == label
+            ),
+            None,
+        )
+        if source_row is None:
+            raise ValueError(f"selected Source OPD row not found: {label}")
+        isotropy = source_row.get("isotropy") or {}
+        domain = int(component["domain"])
+        basis_text = str(isotropy.get("basis_text") or "")
+        origin_text = str(isotropy.get("origin") or "")
+        if domain > 1:
+            raw_record = component.get("_domain_operation_record")
+            if (
+                not isinstance(raw_record, list)
+                or len(raw_record) != 5
+                or any(type(value) is not int for value in raw_record)
+            ):
+                raise ValueError("selected domain operation record is incomplete")
+            record = tuple(raw_record)
+            if component.get("_magnetic_domain_operation"):
+                point_map = magnetic_data.data().table["mag_point_op_mag2nonmag"]
+                record = (*record[:4], int(point_map[int(record[4]) - 1]))
+            source_basis = tuple(int(value) for value in isotropy["source_basis_values"])
+            source_origin = tuple(int(value) for value in isotropy["source_origin_values"])
+            transform = _setting_matrix(source_basis, source_origin)  # type: ignore[arg-type]
+            operation = _operation_matrix(source_data, int(parent_sg), record)
+            basis_transform = _mat4_mul(operation, transform)
+            origin_transform = _mat4_mul(transform, operation)
+            basis_values = tuple(
+                int(basis_transform[row][column])
+                for row in range(3)
+                for column in range(3)
+            )
+            origin = _fraction_mod1(
+                tuple(origin_transform[3][column] for column in range(3))
+            )
+            subgroup = isotropy.get("subgroup") or {}
+            ordinary_subgroup = int(
+                subgroup.get("ordinary_number") or subgroup["number"]
+            )
+            displayed = data.subgroup_change_setting_cinter(
+                int(parent_sg),
+                ordinary_subgroup,
+                basis_values,
+                origin,
+                parent_setting_id=int(parent_setting_id),
+                subgroup_setting_id=isotropy_catalog._opd_subgroup_setting_id(  # noqa: SLF001
+                    int(parent_sg), ordinary_subgroup, int(parent_setting_id)
+                ),
+            )
+            basis_rows = displayed["basis"]
+            basis_text = isotropy_catalog._basis_text(  # noqa: SLF001
+                basis_rows, int(displayed["basis_denominator"])
+            )
+            origin_text = isotropy_catalog._display_origin_text(  # noqa: SLF001
+                int(parent_sg), ordinary_subgroup, basis_rows, displayed["origin"]
+            )
+        component["domain_display"] = _domain_display(
+            isotropy,
+            label=label,
+            domain=domain,
+            display_opd=str(component.get("display_opd") or ""),
+            basis=basis_text,
+            origin=origin_text,
+        )
+
+
 def select_order_parameter_direction(
     reciprocal_state: dict[str, Any],
     *,
@@ -164,38 +396,26 @@ def select_order_parameter_direction(
         orderparam=orderparam,
         orderparam_index=orderparam_index,
     )
-    if selected_irrep.get("magnetic"):
-        subgroup_state = {
-            "status": "unsupported",
-            "reason": "magnetic OPD subgroup_state is not wired yet",
+    selection_slots = [
+        {
+            "slot": 1,
+            "kpoint": reciprocal_state["selected"].get("kpoint"),
+            "irrep": selected_irrep,
+            "k_params": k_params,
+            "display_k_params": display_k_params,
         }
-    else:
-        subgroup_state = build_subgroup_state(
-            data=local_data,
-            parent_sg=sg,
-            selected_irrep=selected_irrep,
-            selected_opd=selected_opd,
-            displacive_row_ids=reciprocal_state["_internal"]["displacive_row_ids"],
-        )
+    ]
     return {
         **reciprocal_state,
         "schema": "isodistort.assembled.opd_direction.v1",
         "selected": {
             **reciprocal_state["selected"],
             "irrep": selected_irrep,
-            "selection_slots": [
-                {
-                    "slot": 1,
-                    "kpoint": reciprocal_state["selected"].get("kpoint"),
-                    "irrep": selected_irrep,
-                    "k_params": k_params,
-                    "display_k_params": display_k_params,
-                }
-            ],
+            "selection_slots": selection_slots,
+            "opd_factors": _selected_opd_factors(sg, selection_slots, selected_opd),
             "image": None if old_id <= 0 else local_data.image_record(old_id),
             "opd_rows": opd_rows,
             "orderparam": selected_opd,
-            "subgroup_state": subgroup_state,
         },
     }
 
@@ -281,24 +501,17 @@ def _select_coupled_order_parameter(
         row_limit=opd_row_limit,
     )
     selected_opd = _select_orderparam(rows, orderparam=orderparam, orderparam_index=orderparam_index)
-    selected_iso = (selected_opd or {}).get("isotropy") or {}
-    subgroup_state = {
-        "status": "ok" if selected_opd else "missing",
-        "coupled": True,
-        "subgroup": selected_iso.get("subgroup"),
-        "basis": selected_iso.get("basis"),
-        "origin": selected_iso.get("origin"),
-        "primaries": [
-            {
-                "slot": slot["slot"],
-                "old_id": int(slot["irrep"].get("old_id") or 0),
-                "label": slot["irrep"].get("symbol"),
-                "k_label": slot["kpoint"].get("label"),
-            }
-            for slot in slots
-        ],
-        "sources": [],
-    }
+    _complete_coupled_domain_displays(
+        data=data,
+        parent_sg=sg,
+        parent_setting_id=int(reciprocal_state["_internal"]["parent_inter_setting_id"]),
+        slots=slots,
+        selected_opd=selected_opd,
+    )
+    for row in rows:
+        for component in (row.get("direction") or {}).get("components") or []:
+            component.pop("_domain_operation_record", None)
+            component.pop("_magnetic_domain_operation", None)
     return {
         **reciprocal_state,
         "schema": "isodistort.assembled.opd_direction.multi.v1",
@@ -307,8 +520,8 @@ def _select_coupled_order_parameter(
             "irrep": slots[0]["irrep"],
             "irreps_selected": [slot["irrep"] for slot in slots],
             "selection_slots": slots,
+            "opd_factors": _selected_opd_factors(sg, slots, selected_opd),
             "opd_rows": rows,
             "orderparam": selected_opd,
-            "subgroup_state": subgroup_state,
         },
     }

@@ -920,11 +920,9 @@ def coupled_opd_rows(
                 )
                 or 0
             )
-            # A mixed fixed/dynamic request traverses every slot through the
-            # freshly assembled coupled domain table.  Fixed-only requests keep
-            # the established stabilizer orbit.  Some locally reconstructed
-            # cinter tables are not closed under the parent action; those are
-            # detected below and fall back to the complete stabilizer orbit.
+            # Mixed fixed/dynamic requests use the coupled domain table.
+            # Fixed-only requests use the complete stabilizer orbit when the
+            # cinter table is not closed under the parent action.
             use_source_domain_path = (
                 magnetic_request or mixed_dynamic_request
             ) and len(source_basis) == 9
@@ -1258,6 +1256,11 @@ def coupled_opd_rows(
                 # point-operation ids; consumers must map them explicitly when
                 # evaluating ordinary irreps.
                 "source_operation_records": [list(record) for record in subgroup_operations],
+                "ferroic_properties": (
+                    isotropy_catalog.magnetic_ferroic_properties(subgroup)
+                    if magnetic_request
+                    else []
+                ),
                 "subduction": {
                     "expected": expected_subduction,
                     "binary_slot_kernel": binary_subduction,
@@ -1276,8 +1279,23 @@ def coupled_opd_rows(
                     "label": direction_label,
                     "opd": display_opd,
                     "components": [
-                        {"slot": index + 1, "label": part, "domain": displayed_domains[index]}
-                        for index, part in enumerate(direction_parts)
+                        {
+                            "slot": index + 1,
+                            "label": part,
+                            "opd": str(
+                                (source_row.get("isotropy") or {}).get("opd_label")
+                                or ""
+                            ),
+                            "domain": displayed_domains[index],
+                            "display_opd": f"({component_opd})",
+                            "_domain_operation_record": list(
+                                individual_operations[index][displayed_domains[index] - 1]
+                            ),
+                            "_magnetic_domain_operation": magnetic_request,
+                        }
+                        for index, (part, source_row, component_opd) in enumerate(
+                            zip(direction_parts, source_rows, opd_parts, strict=True)
+                        )
                     ],
                 },
                 "isotropy": iso_row,

@@ -13,6 +13,7 @@ def project_entry_trace(
     row: WyckoffRow,
     *,
     vector_setting: int = 1,
+    selected_gid: int | None = None,
 ) -> list[dict[str, int]]:
     start = (int(vector_setting) - 1) * 3
     vector_slots = set(int(slot) for slot in decoder.site_vector_reps(row.site_pg)[start:start + 3])
@@ -20,6 +21,8 @@ def project_entry_trace(
     seen_rows: set[int] = set()
     for gid, sg in enumerate(decoder.iso.little["little_irr_space_group"], start=1):
         if int(sg) != case.sg:
+            continue
+        if selected_gid is not None and gid != selected_gid:
             continue
         old_id = int(decoder.iso.little["little_irr_old"][gid - 1])
         seen_key = old_id if old_id > 0 else -gid

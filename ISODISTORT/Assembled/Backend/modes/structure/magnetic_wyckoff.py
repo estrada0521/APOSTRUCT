@@ -20,6 +20,8 @@ from ISODISTORT.Assembled.Backend.source.magnetic_operations import (
     MagneticGroupSetting,
     _pml_record_to_cinter,
     _pml_to_cinter_affine,
+    fraction_record,
+    fraction_values,
     generate_magnetic_space_group_records,
     magnetic_group_setting,
 )
@@ -89,51 +91,8 @@ class MagneticWyckoffIdentification:
     representative: FractionPoint
 
 
-@dataclass(frozen=True)
-class MagneticOrbitGroup:
-    source_ordinal: int
-    ordinary_orbit_indices: tuple[int, ...]
-    multiplicity: int
-    wyckoff_label: str
-    standard_representative: FractionPoint
-
-
-def _fraction_record(values: Sequence[Fraction]) -> FractionRecord:
-    denominator = 1
-    for value in values:
-        denominator = math.lcm(denominator, Fraction(value).denominator)
-    numerators = [int(Fraction(value) * denominator) for value in values]
-    common = math.gcd(
-        math.gcd(abs(numerators[0]), abs(numerators[1])), abs(numerators[2])
-    )
-    common = math.gcd(common, denominator)
-    if common:
-        numerators = [value // common for value in numerators]
-        denominator //= common
-    return numerators[0], numerators[1], numerators[2], denominator
-
-
-def _fraction_values(record: Sequence[int]) -> FractionPoint:
-    denominator = int(record[3])
-    if denominator == 0:
-        return Fraction(0), Fraction(0), Fraction(0)
-    return tuple(Fraction(int(record[axis]), denominator) for axis in range(3))  # type: ignore[return-value]
-
-
 def _fold_point(point: Sequence[Fraction]) -> FractionPoint:
     return tuple(Fraction(value) % 1 for value in point)  # type: ignore[return-value]
-
-
-def _periodic_point_close(
-    left: Sequence[Fraction],
-    right: Sequence[Fraction],
-    tolerance: Fraction,
-) -> bool:
-    for axis in range(3):
-        delta = (Fraction(left[axis]) - Fraction(right[axis])) % 1
-        if min(delta, 1 - delta) > tolerance:
-            return False
-    return True
 
 
 @lru_cache(maxsize=None)
@@ -189,7 +148,7 @@ def _apply_operation(
         sum(values[row] * rotation[row * 3 + axis] for row in range(3))
         for axis in range(3)
     )
-    translation = _fraction_values(record[:4])
+    translation = fraction_values(record[:4])
     return _fold_point(tuple(rotated[axis] + translation[axis] for axis in range(3)))
 
 
@@ -200,7 +159,7 @@ def _transform_reference_formula(
     if setting.magnetic_type != 4:
         return formula
     inverse = _inverse3(setting.reference_basis)
-    origin = _fraction_values(setting.reference_origin)
+    origin = fraction_values(setting.reference_origin)
     base = _row_multiply(
         tuple(formula[0][axis] - origin[axis] for axis in range(3)), inverse
     )
@@ -281,9 +240,9 @@ def _magnetic_wyckoff_rows_cached(
         if output_setting == "cinter":
             formula = _formula_pml_to_cinter(formula, setting.ordinary_space_group)
         formula_records = (
-            _fraction_record(formula[0]),
+            fraction_record(formula[0]),
             *tuple(
-                (0, 0, 0, 0) if not any(vector) else _fraction_record(vector)
+                (0, 0, 0, 0) if not any(vector) else fraction_record(vector)
                 for vector in formula[1:]
             ),
         )
@@ -357,7 +316,7 @@ def _magnetic_wyckoff_formula_branches_cached(
     ]
     for operation_index, record in enumerate(records[1:], start=2):
         ordinary_point_op = int(table["mag_point_op_mag2nonmag"][int(record[4]) - 1])
-        translation = _fraction_values(record[:4])
+        translation = fraction_values(record[:4])
         rotated_base = data.vrot_fraction(
             int(setting.ordinary_space_group), ordinary_point_op, row.formula[0]
         )
@@ -399,7 +358,7 @@ def _magnetic_wyckoff_formula_branches_cached(
                 operation_index=operation_index,
                 operation_record=record,
                 formula=formula,
-                formula_records=tuple(_fraction_record(vector) for vector in formula),  # type: ignore[arg-type]
+                formula_records=tuple(fraction_record(vector) for vector in formula),  # type: ignore[arg-type]
             )
         )
     return tuple(out)
@@ -616,169 +575,6 @@ def magnetic_orbit_points(
     return tuple(out)
 
 
-def _magnetic_unitary_orbit(
-    setting: MagneticGroupSetting,
-    point: FractionPoint,
-    records: Sequence[MagneticOperationRecord],
-    *,
-    record_setting: str,
-) -> tuple[FractionPoint, ...]:
-    """Expand one orbit with the magnetic group's BNS unitary coset."""
-
-    table = magnetic_data().table
-    out: list[FractionPoint] = []
-    centerings = _cinter_centering_translations(setting.ordinary_space_group)
-    for record in records:
-        if bool(table["mag_point_op_r"][int(record[4]) - 1]):
-            continue
-        base_image = _apply_operation(
-            setting, record, point, record_setting=record_setting
-        )
-        for centering in centerings:
-            image = _fold_point(
-                tuple(base_image[axis] + centering[axis] for axis in range(3))
-            )
-            if image not in out:
-                out.append(image)
-    return tuple(out)
-
-
 def _centering_count(sg: int) -> int:
     symbol = str(source_tables().space["space_label_bc"][int(sg) - 1]).strip()
     return {"P": 1, "A": 2, "B": 2, "C": 2, "I": 2, "F": 4, "R": 3}.get(symbol[:1], 1)
-
-
-def group_ordinary_orbits_magnetic(
-    magnetic_group: int,
-    ordinary_orbits: Sequence[
-        Sequence[Fraction | int] | Sequence[Sequence[Fraction | int]]
-    ],
-    *,
-    magnetic_records: Sequence[MagneticOperationRecord] | None = None,
-    record_setting: str = "cinter",
-    presentation_tolerance: float | None = None,
-) -> tuple[MagneticOrbitGroup, ...]:
-    setting = magnetic_group_setting(int(magnetic_group))
-    records = (
-        tuple(tuple(int(value) for value in record) for record in magnetic_records)
-        if magnetic_records is not None
-        else generate_magnetic_space_group_records(
-            int(magnetic_group), setting=record_setting
-        )
-    )
-    normalized: list[tuple[FractionPoint, ...]] = []
-    for item in ordinary_orbits:
-        if len(item) == 3 and all(
-            not isinstance(value, (list, tuple)) for value in item
-        ):
-            point = _fold_point(tuple(_input_fraction(value) for value in item))  # type: ignore[arg-type]
-            normalized.append(
-                _magnetic_unitary_orbit(
-                    setting, point, records, record_setting=record_setting
-                )
-            )
-        else:
-            points = tuple(
-                _fold_point(tuple(_input_fraction(value) for value in point))
-                for point in item  # type: ignore[assignment]
-            )
-            normalized.append(tuple(dict.fromkeys(points)))
-
-    point_to_orbit: dict[FractionPoint, int] = {}
-    for index, orbit in enumerate(normalized):
-        for point in orbit:
-            previous = point_to_orbit.setdefault(point, index)
-            if previous != index:
-                raise ValueError(
-                    f"ordinary input orbits overlap: {previous} and {index}, point={point}"
-                )
-
-    tolerance = (
-        None
-        if presentation_tolerance is None
-        else Fraction(str(presentation_tolerance))
-    )
-    if tolerance is not None and tolerance <= 0:
-        raise ValueError("presentation tolerance must be positive")
-
-    def point_owner(point: FractionPoint) -> int | None:
-        exact = point_to_orbit.get(point)
-        if tolerance is None:
-            return exact
-        owners = {
-            owner
-            for candidate, owner in point_to_orbit.items()
-            if _periodic_point_close(point, candidate, tolerance)
-        }
-        return next(iter(owners)) if len(owners) == 1 else None
-
-    if tolerance is not None:
-        for point, owner in point_to_orbit.items():
-            if point_owner(point) != owner:
-                raise ValueError(
-                    "ordinary input orbits overlap within presentation tolerance: "
-                    f"point={point}, tolerance={tolerance}"
-                )
-
-    adjacency: list[set[int]] = [{index} for index in range(len(normalized))]
-    for index, orbit in enumerate(normalized):
-        representative = orbit[0]
-        for record in records:
-            base_image = _apply_operation(
-                setting, record, representative, record_setting=record_setting
-            )
-            for centering in _cinter_centering_translations(
-                setting.ordinary_space_group
-            ):
-                image = _fold_point(
-                    tuple(base_image[axis] + centering[axis] for axis in range(3))
-                )
-                target = point_owner(image)
-                if target is None:
-                    raise KeyError(
-                        f"magnetic image is absent from ordinary coverage: "
-                        f"group={magnetic_group}, orbit={index}, centering={centering}, image={image}"
-                    )
-                adjacency[index].add(target)
-                adjacency[target].add(index)
-
-    visited: set[int] = set()
-    groups: list[MagneticOrbitGroup] = []
-    for start in range(len(normalized)):
-        if start in visited:
-            continue
-        component: set[int] = set()
-        pending = [start]
-        while pending:
-            current = pending.pop()
-            if current in component:
-                continue
-            component.add(current)
-            pending.extend(adjacency[current] - component)
-        visited.update(component)
-        ordered_indices = tuple(sorted(component))
-        representative = normalized[ordered_indices[0]][0]
-        orbit_points: list[FractionPoint] = []
-        for record in records:
-            base_image = _apply_operation(
-                setting, record, representative, record_setting=record_setting
-            )
-            for centering in _cinter_centering_translations(
-                setting.ordinary_space_group
-            ):
-                image = _fold_point(
-                    tuple(base_image[axis] + centering[axis] for axis in range(3))
-                )
-                if image not in orbit_points:
-                    orbit_points.append(image)
-        row, standard = identify_magnetic_wyckoff(int(magnetic_group), representative)
-        groups.append(
-            MagneticOrbitGroup(
-                source_ordinal=len(groups) + 1,
-                ordinary_orbit_indices=ordered_indices,
-                multiplicity=len(orbit_points),
-                wyckoff_label=str(row.label),
-                standard_representative=standard,
-            )
-        )
-    return tuple(groups)

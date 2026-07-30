@@ -1,7 +1,4 @@
-"""Mode request-context helpers.
-
-Extracted mechanically from the former monolithic runtime.
-"""
+"""Mode request-context helpers."""
 
 from __future__ import annotations
 
@@ -14,9 +11,6 @@ import numpy as np
 from ISODISTORT.Assembled.Backend.fraction_expression import evaluate_fraction_expression
 from ISODISTORT.Assembled.Backend.reciprocal import catalog as reciprocal_catalog
 from ISODISTORT.Assembled.Backend.modes.engine.decoder import ModeDataDecoder
-from ISODISTORT.Assembled.Backend.modes.engine.dynamic_subduction import (
-    kvec_standard_real_carrier_bridge,
-)
 from ISODISTORT.Assembled.Backend.modes.engine.input import Case
 
 from ISODISTORT.Assembled.Backend.modes.common import (
@@ -279,7 +273,6 @@ def _source_record_to_case_k_params(
     dim = int(decoder.iso.little["little_k_dim"][lattice_slot])
     if dim <= 0:
         return ()
-    k_label = str(decoder.iso.little["little_k_label"][lattice_slot]).strip()
     sg_slot = (sg - 1) * 27 + kslot - 1
     pointer = int(decoder.iso.little.get("little_k_star_conv2ml_pointer", [0])[sg_slot])
     if pointer <= 0:
@@ -292,53 +285,25 @@ def _source_record_to_case_k_params(
         [Fraction(raw[4 * visible_axis + converted_axis], denominator) for visible_axis in range(3)]
         for converted_axis in range(3)
     ]
-    kpoint = next(
-        (
-            item
-            for item in reciprocal_catalog.kpoints(sg).get("kpoints") or []
-            if str(item.get("label") or "") == k_label
-        ),
-        None,
-    )
-    if kpoint is None:
+    try:
+        coordinate_map = reciprocal_catalog.k_coordinate_map_for_slot(sg, kslot)
+    except ValueError:
         return None
-    match = re.fullmatch(r"\((.*)\)", str(kpoint.get("isodistort_kvector") or "").strip())
-    if match is None:
+    if len(coordinate_map.parameter_names) != dim:
         return None
-    components = [component.strip() for component in match.group(1).split(",")]
-    display_keys: list[str] = []
-    for key in re.findall(r"(?<![A-Za-z])([abg])(?![A-Za-z])", match.group(1)):
-        if key not in display_keys:
-            display_keys.append(key)
-    if len(display_keys) != dim or len(components) != 3:
-        return None
-
-    def evaluated(values: tuple[Fraction, ...]) -> tuple[Fraction, Fraction, Fraction] | None:
-        params = {key: str(value) for key, value in zip(display_keys, values, strict=True)}
-        out = tuple(reciprocal_catalog.evaluate_k_component(component, params) for component in components)
-        return out if all(value is not None for value in out) else None  # type: ignore[return-value]
-
-    zero_params = tuple(Fraction(0) for _ in range(dim))
-    zero = evaluated(zero_params)
-    if zero is None:
-        return None
-    visible_columns: list[tuple[Fraction, Fraction, Fraction]] = []
-    for param_index in range(dim):
-        params = list(zero_params)
-        params[param_index] = Fraction(1)
-        value = evaluated(tuple(params))
-        if value is None:
-            return None
-        visible_columns.append(tuple(value[axis] - zero[axis] for axis in range(3)))
     converted_zero = [
         Fraction(raw[12 + converted_axis], denominator)
-        + sum(converted_rows[converted_axis][axis] * zero[axis] for axis in range(3))
+        + sum(
+            converted_rows[converted_axis][axis] * coordinate_map.origin[axis]
+            for axis in range(3)
+        )
         for converted_axis in range(3)
     ]
     converted_columns = [
         tuple(
             sum(
-                converted_rows[converted_axis][axis] * visible_columns[param_index][axis]
+                converted_rows[converted_axis][axis]
+                * coordinate_map.columns[param_index][axis]
                 for axis in range(3)
             )
             for converted_axis in range(3)
@@ -436,72 +401,6 @@ def _source_parameter_record_to_case_k_params(
 
 
 
-def _k_standard_primary_presentation(
-    decoder: ModeDataDecoder,
-    *,
-    sg: int,
-    spec: dict[str, Any],
-    mode_kind: str,
-) -> dict[str, Any] | None:
-    """Build the inseparable OPD/carrier part of dynamic k presentation."""
-
-    if (
-        mode_kind != "dsp"
-        or not spec.get("primary")
-        or int(spec.get("old_id") or 0) > 0
-    ):
-        return None
-    try:
-        gid = int(spec.get("gid") or 0)
-        source_kparam = tuple(int(value) for value in spec.get("source_kparam") or ())
-        source_rows = np.asarray(spec.get("source_numeric_rows") or (), dtype=float)
-    except (TypeError, ValueError):
-        return None
-    if gid <= 0 or len(source_kparam) != 4 or source_kparam[3] == 0 or source_rows.ndim != 2:
-        return None
-    try:
-        bridge = kvec_standard_real_carrier_bridge(
-            decoder,
-            int(sg),
-            gid,
-            source_kparam,  # type: ignore[arg-type]
-        )
-    except (KeyError, NotImplementedError, ValueError, np.linalg.LinAlgError):
-        return None
-    provenance = bridge.provenance
-    witness = provenance.selected_operation_record
-    if provenance.standard_kparam == provenance.source_kparam or witness is None:
-        return None
-    carrier = np.asarray(bridge.real_matrix, dtype=float)
-    if (
-        carrier.ndim != 2
-        or carrier.shape[0] != carrier.shape[1]
-        or source_rows.shape[1] != carrier.shape[0]
-    ):
-        return None
-    try:
-        transformed = source_rows @ np.linalg.inv(carrier)
-    except np.linalg.LinAlgError:
-        return None
-    standard_params = _source_parameter_record_to_case_k_params(
-        decoder,
-        gid=gid,
-        source_kparam=provenance.standard_kparam,
-    )
-    if standard_params is None:
-        return None
-    transformed[np.abs(transformed) < 1e-12] = 0.0
-    return {
-        "gid": gid,
-        "orderparam_rows": transformed.tolist(),
-        "direction_matrix": transformed.T.tolist(),
-        "presentation_k_params": tuple(Fraction(value) for value in standard_params),
-        "witness_record": tuple(int(value) for value in witness),
-        "globally_conjugated": bool(bridge.globally_conjugated),
-    }
-
-
-
 def _pml_vector_to_case_k_params(
     decoder: ModeDataDecoder,
     *,
@@ -518,42 +417,16 @@ def _pml_vector_to_case_k_params(
     dim = int(decoder.iso.little["little_k_dim"][lattice_slot])
     if dim <= 0:
         return ()
-    k_label = str(decoder.iso.little["little_k_label"][lattice_slot]).strip()
-    kpoint = next(
-        (item for item in reciprocal_catalog.kpoints(sg).get("kpoints") or [] if str(item.get("label") or "") == k_label),
-        None,
-    )
-    if kpoint is None:
+    try:
+        coordinate_map = reciprocal_catalog.k_coordinate_map_for_slot(sg, kslot)
+    except ValueError:
         return None
-    match = re.fullmatch(r"\((.*)\)", str(kpoint.get("isodistort_kvector") or "").strip())
-    if match is None:
+    if len(coordinate_map.parameter_names) != dim:
         return None
-    components = [component.strip() for component in match.group(1).split(",")]
-    display_keys: list[str] = []
-    for key in re.findall(r"(?<![A-Za-z])([abg])(?![A-Za-z])", match.group(1)):
-        if key not in display_keys:
-            display_keys.append(key)
-    if len(display_keys) != dim or len(components) != 3:
-        return None
-
-    def evaluated(values: tuple[Fraction, ...]) -> tuple[Fraction, Fraction, Fraction] | None:
-        params = {key: str(value) for key, value in zip(display_keys, values, strict=True)}
-        out = tuple(reciprocal_catalog.evaluate_k_component(component, params) for component in components)
-        return out if all(value is not None for value in out) else None  # type: ignore[return-value]
-
-    zero_params = tuple(Fraction(0) for _ in range(dim))
-    zero = evaluated(zero_params)
-    if zero is None:
-        return None
-    columns: list[tuple[Fraction, Fraction, Fraction]] = []
-    for param_index in range(dim):
-        params = list(zero_params)
-        params[param_index] = Fraction(1)
-        value = evaluated(tuple(params))
-        if value is None:
-            return None
-        columns.append(tuple(value[axis] - zero[axis] for axis in range(3)))
-    equations = [[columns[param_index][axis] for param_index in range(dim)] for axis in range(3)]
+    equations = [
+        [coordinate_map.columns[param_index][axis] for param_index in range(dim)]
+        for axis in range(3)
+    ]
     target = decoder.reciprocal_setting_change_vector(
         sg,
         "pml",
@@ -567,7 +440,10 @@ def _pml_vector_to_case_k_params(
                 shifted = (target[0] + sx, target[1] + sy, target[2] + sz)
                 solution = _solve_linear_rational(
                     equations,
-                    [shifted[axis] - zero[axis] for axis in range(3)],
+                    [
+                        shifted[axis] - coordinate_map.origin[axis]
+                        for axis in range(3)
+                    ],
                     dim,
                 )
                 if solution is not None and all(Fraction(0) <= value < Fraction(1) for value in solution):
@@ -588,7 +464,11 @@ def _case_k_params(
     if not spec.get("coupled") and spec.get("case_k_params") is not None:
         return tuple(Fraction(str(value)) for value in spec.get("case_k_params") or ())
     spec_gid = spec.get("gid")
-    spec_source_kparam = spec.get("source_kparam")
+    spec_source_kparam = None
+    if spec.get("magnetic") is False:
+        spec_source_kparam = spec.get("carrier_source_kparam")
+    if spec_source_kparam is None:
+        spec_source_kparam = spec.get("source_kparam")
     if spec_gid is not None and spec_source_kparam is not None:
         try:
             source_record = tuple(int(value) for value in spec_source_kparam)
@@ -717,15 +597,12 @@ def _spec_opd_direction_text(
     *,
     spec: dict[str, Any],
     selected_direction: str,
-    has_k_standard_presentation: bool,
 ) -> str:
-    """Keep Source OPD coordinates in labels while rows use k-standard transport."""
+    """Render secondary and coupled Source OPD coordinates in mode labels."""
 
     direction_matrix = spec.get("direction_matrix")
     if not direction_matrix or not (
-        has_k_standard_presentation
-        or not spec.get("primary")
-        or spec.get("coupled")
+        not spec.get("primary") or spec.get("coupled")
     ):
         return selected_direction
     return _direction_matrix_text(
@@ -738,88 +615,19 @@ def _spec_opd_direction_text(
     )
 
 
-def _spec_selected_primary_display_k_params(
-    decoder: ModeDataDecoder,
-    spec: dict[str, Any],
-) -> tuple[Fraction, ...] | None:
-    """Return a Source-proved selected-primary point for label presentation."""
-
-    identity = _exact_source_k_identity(
-        spec.get("gid"),
-        spec.get("source_kparam"),
-    )
-    reciprocal = spec.get("reciprocal_vector_pml")
-    if (
-        spec.get("coupled") is not True
-        or spec.get("primary") is not True
-        or identity is None
-        or isinstance(reciprocal, (str, bytes, bytearray))
-        or not isinstance(reciprocal, Sequence)
-        or len(reciprocal) != 3
-        or any(not isinstance(value, Fraction) for value in reciprocal)
-    ):
-        return None
-    gid, source_kparam = identity
-    try:
-        source_sg = int(decoder.iso.little["little_irr_space_group"][gid - 1])
-        source_kslot = int(decoder.iso.little["little_irr_k"][gid - 1])
-        source_lattice = int(decoder.iso.space["ispace_lattice"][source_sg - 1])
-        source_k_label = str(
-            decoder.iso.little["little_k_label"]
-            [(source_lattice - 1) * 27 + source_kslot - 1]
-        ).strip()
-    except (IndexError, KeyError, TypeError, ValueError):
-        return None
-    spec_k_label = spec.get("k_label")
-    if (
-        not source_k_label
-        or not isinstance(spec_k_label, str)
-        or spec_k_label != source_k_label
-    ):
-        return None
-    try:
-        displayed = _pml_vector_to_case_k_params(
-            decoder,
-            gid=gid,
-            reciprocal_vector_pml=reciprocal,
-        )
-    except (
-        IndexError,
-        KeyError,
-        TypeError,
-        ValueError,
-        ZeroDivisionError,
-    ):
-        return None
-    if (
-        displayed is None
-        or isinstance(displayed, (str, bytes, bytearray))
-        or not isinstance(displayed, Sequence)
-        or any(not isinstance(value, Fraction) for value in displayed)
-    ):
-        return None
-    displayed = tuple(displayed)
-    selected = spec.get("case_k_params")
-    if (
-        isinstance(selected, (str, bytes, bytearray))
-        or not isinstance(selected, Sequence)
-        or any(not isinstance(value, Fraction) for value in selected)
-    ):
-        return None
-    try:
-        selected_values = tuple(Fraction(value) for value in selected)
-    except (TypeError, ValueError, ZeroDivisionError):
-        return None
-    if displayed != selected_values:
-        return None
-    return displayed
-
-
-
 def _spec_display_kvector(decoder: ModeDataDecoder, case: Case, spec: dict[str, Any], fallback: str) -> str:
     reciprocal_vector = spec.get("reciprocal_vector_pml")
     gid = spec.get("gid")
-    selected_display_params = _spec_selected_primary_display_k_params(decoder, spec)
+    raw_display_params = spec.get("display_case_k_params")
+    selected_display_params = (
+        tuple(raw_display_params)
+        if spec.get("coupled") is True
+        and spec.get("primary") is True
+        and isinstance(raw_display_params, Sequence)
+        and not isinstance(raw_display_params, (str, bytes, bytearray))
+        and all(isinstance(value, Fraction) for value in raw_display_params)
+        else None
+    )
     source_case = (
         None
         if selected_display_params is not None
@@ -845,23 +653,7 @@ def _spec_display_kvector(decoder: ModeDataDecoder, case: Case, spec: dict[str, 
             if source_case is not None:
                 visible = decoder.display_k_vector_from_case(source_case)
                 return ",".join(str(Fraction(value)) for value in visible)
-            kpoint = next(
-                (
-                    item
-                    for item in reciprocal_catalog.kpoints(sg).get("kpoints") or []
-                    if str(item.get("label") or "") == str(spec.get("k_label") or case.k_label)
-                ),
-                None,
-            )
-            match = re.fullmatch(r"\((.*)\)", str((kpoint or {}).get("isodistort_kvector") or "").strip())
-            if match is None:
-                raise ValueError("missing Source k-family display expression")
-            expression = match.group(1)
-            components = [part.strip() for part in expression.split(",")]
-            display_keys: list[str] = []
-            for key in re.findall(r"(?<![A-Za-z])([abg])(?![A-Za-z])", expression):
-                if key not in display_keys:
-                    display_keys.append(key)
+            coordinate_map = reciprocal_catalog.k_coordinate_map_for_slot(sg, kslot)
             requested = selected_display_params
             if requested is None:
                 requested = spec.get("case_k_params")
@@ -871,51 +663,31 @@ def _spec_display_kvector(decoder: ModeDataDecoder, case: Case, spec: dict[str, 
                     gid=gid,
                     source_kparam=spec.get("source_kparam"),
                 )
-            if requested is not None and len(requested) >= len(display_keys):
-                params = {
-                    key: str(value)
-                    for key, value in zip(display_keys, requested, strict=False)
-                }
-                evaluated = tuple(reciprocal_catalog.evaluate_k_component(part, params) for part in components)
-                if all(value is not None for value in evaluated):
-                    visible = evaluated
-                else:
-                    raise ValueError("could not evaluate requested k-family parameters")
+            if (
+                requested is not None
+                and len(requested) >= len(coordinate_map.parameter_names)
+            ):
+                visible = coordinate_map.evaluate(
+                    tuple(
+                        Fraction(value)
+                        for value in requested[: len(coordinate_map.parameter_names)]
+                    )
+                )
             else:
                 raw_visible = decoder.display_k_vector_from_case(case)
-                zero_params = tuple(Fraction(0) for _ in display_keys)
-
-                def evaluated(values: tuple[Fraction, ...]) -> tuple[Fraction, ...] | None:
-                    params = {
-                        key: str(value)
-                        for key, value in zip(display_keys, values, strict=True)
-                    }
-                    out = tuple(
-                        reciprocal_catalog.evaluate_k_component(component, params)
-                        for component in components
-                    )
-                    return out if all(value is not None for value in out) else None
-
-                zero = evaluated(zero_params)
-                if zero is None:
-                    raise ValueError("could not evaluate k-family origin")
-                columns: list[tuple[Fraction, ...]] = []
-                for param_index in range(len(display_keys)):
-                    params = list(zero_params)
-                    params[param_index] = Fraction(1)
-                    value = evaluated(tuple(params))
-                    if value is None:
-                        raise ValueError("could not evaluate k-family basis")
-                    columns.append(
-                        tuple(Fraction(value[axis]) - Fraction(zero[axis]) for axis in range(3))
-                    )
                 solved = _solve_linear_rational(
                     [
-                        [columns[param_index][axis] for param_index in range(len(display_keys))]
+                        [
+                            coordinate_map.columns[param_index][axis]
+                            for param_index in range(len(coordinate_map.columns))
+                        ]
                         for axis in range(3)
                     ],
-                    [Fraction(raw_visible[axis]) - Fraction(zero[axis]) for axis in range(3)],
-                    len(display_keys),
+                    [
+                        Fraction(raw_visible[axis]) - coordinate_map.origin[axis]
+                        for axis in range(3)
+                    ],
+                    len(coordinate_map.columns),
                 )
                 if solved is None:
                     raise ValueError("could not recover displayed k-family parameters")
@@ -923,9 +695,7 @@ def _spec_display_kvector(decoder: ModeDataDecoder, case: Case, spec: dict[str, 
                     value if Fraction(-1, 2) <= value < 1 else value % 1
                     for value in solved
                 )
-                visible = evaluated(reduced)
-                if visible is None:
-                    raise ValueError("could not evaluate displayed k-family parameters")
+                visible = coordinate_map.evaluate(reduced)
             return ",".join(str(Fraction(value)) for value in visible)
         except (IndexError, KeyError, TypeError, ValueError, ZeroDivisionError):
             pass

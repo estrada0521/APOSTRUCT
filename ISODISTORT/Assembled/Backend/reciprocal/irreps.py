@@ -5,7 +5,6 @@ from __future__ import annotations
 import copy
 from typing import Any
 
-from ISODISTORT.Assembled.Backend.reciprocal.catalog import kpoints
 from ISODISTORT.Assembled.Backend.source.magnetic import data as magnetic_data
 from ISODISTORT.Assembled.Backend.source.tables import SourceTables, source_tables
 
@@ -153,11 +152,9 @@ def _append_magnetic_irreps(
 def select_irreps(reciprocal_state: dict[str, Any]) -> dict[str, Any]:
     sg = int(reciprocal_state["input"]["parent"]["number"])
     local_data = source_tables()
-    k_catalog = copy.deepcopy((reciprocal_state.get("_internal") or {}).get("k_catalog"))
-    if not k_catalog:
-        k_catalog = kpoints(sg)
-    mode_set = str((reciprocal_state.get("_internal") or {}).get("mode_set") or reciprocal_state.get("mode_set") or "displacive")
-    internal = reciprocal_state.get("_internal") or {}
+    internal = reciprocal_state["_internal"]
+    k_catalog = copy.deepcopy(internal["k_catalog"])
+    mode_set = str(internal.get("mode_set") or reciprocal_state.get("mode_set") or "displacive")
     selection = internal.get("distortion_selection") or {}
     displacive_row_ids = list(internal.get("displacive_row_ids") or [])
     magnetic_row_ids = list(internal.get("magnetic_row_ids") or [])
@@ -176,24 +173,20 @@ def select_irreps(reciprocal_state: dict[str, Any]) -> dict[str, Any]:
             k_catalog=k_catalog,
             displacive_row_ids=magnetic_row_ids,
         )
-    selected_kpoints = list((reciprocal_state.get("selected") or {}).get("kpoints") or [])
-    if not selected_kpoints:
-        selected_kpoints = [{"slot": 1, **((reciprocal_state.get("selected") or {}).get("kpoint") or {})}]
+    selected_kpoints = list(reciprocal_state["selected"]["kpoints"])
+    k_catalog_by_slot = {int(row["kslot"]): row for row in k_catalog["kpoints"]}
+    selected_rows = [k_catalog_by_slot[int(kpoint["kslot"])] for kpoint in selected_kpoints]
     irrep_slots: list[dict[str, Any]] = []
-    for slot, selected_kpoint in enumerate(selected_kpoints, start=1):
-        selected_k = next(
-            (k for k in k_catalog["kpoints"] if str(k["label"]) == str(selected_kpoint.get("label"))),
-            k_catalog["kpoints"][0],
-        )
+    for slot, (selected_kpoint, selected_k) in enumerate(
+        zip(selected_kpoints, selected_rows, strict=True),
+        start=1,
+    ):
         irrep_slots.append({
             "slot": int(selected_kpoint.get("slot") or slot),
             "kpoint": selected_kpoint,
             "irreps": selected_k["irreps"],
         })
-    selected_k = next(
-        (k for k in k_catalog["kpoints"] if str(k["label"]) == str(selected_kpoints[0].get("label"))),
-        k_catalog["kpoints"][0],
-    )
+    selected_k = selected_rows[0]
     return {
         **reciprocal_state,
         "schema": "isodistort.assembled.irreps.v1",
@@ -206,6 +199,7 @@ def select_irreps(reciprocal_state: dict[str, Any]) -> dict[str, Any]:
                 "kvector": k["kvector"],
                 "isodistort_kvector": k["isodistort_kvector"],
                 "dimension": k["dimension"],
+                "sg_specific": bool(k.get("sg_specific")),
                 "star_size": k["star_size"],
                 "little_order": k["little_order"],
                 "irreps": k["irreps"],

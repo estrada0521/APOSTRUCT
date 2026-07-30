@@ -1,7 +1,4 @@
-"""Mode-definition presentation helpers.
-
-Extracted mechanically from the former monolithic runtime.
-"""
+"""Mode-definition presentation helpers."""
 
 from __future__ import annotations
 
@@ -55,7 +52,7 @@ def _strain_mode_definitions(
 ) -> list[dict[str, Any]]:
     """Build parent-cell strain modes fixed by the selected embedding."""
 
-    decoder = decoder or _mode_decoder("Source")
+    decoder = decoder or _mode_decoder(None)
     selected_specs = [
         spec
         for spec in (mode_specs or [])
@@ -523,9 +520,16 @@ def _apply_dynamic_source_family_presentation(
                 )
         elif single_family_multi_group:
             ordered = sources
+        elif static_rectangular_magnetic:
+            ordered = sorted(
+                sources,
+                key=lambda mode: (
+                    mode["_source_print_identity"]["print_component"],
+                    int(mode.get("_source_family") or 0),
+                ),
+            )
         elif (
             static_rectangular_carrier
-            or static_rectangular_magnetic
             or any(
                 mode.get("_source_family_phase")
                 or (

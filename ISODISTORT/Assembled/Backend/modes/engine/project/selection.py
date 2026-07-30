@@ -203,31 +203,44 @@ class ProjectSelectionMixin:
                     continue
                 exact_support_indices.setdefault(exact_support, index)
             if len(exact_support_indices) >= int(project_count):
-                selected_indices = list(exact_support_indices.values())[: int(project_count)]
-                selected_blocks = [candidates.rows[index] for index in selected_indices]
-                transformed_rows = np.vstack(
-                    [
-                        (
-                            block.T
-                            @ inverse[: block.shape[0], : block.shape[0] // 2]
-                        ).reshape(1, -1)
-                        for block in selected_blocks
-                    ]
-                )
-                reduced_rows = self.zrowop2_like(transformed_rows, tol=tol)
-                if np.all(
-                    np.max(
-                        np.abs(reduced_rows.real) + np.abs(reduced_rows.imag), axis=1
+                selected_indices = []
+                selected_blocks = []
+                reduced_rows: np.ndarray | None = None
+                for index in exact_support_indices.values():
+                    block = candidates.rows[index]
+                    transformed_row = (
+                        block.T
+                        @ inverse[: block.shape[0], : block.shape[0] // 2]
+                    ).reshape(1, -1)
+                    trial = (
+                        transformed_row
+                        if reduced_rows is None
+                        else np.vstack([reduced_rows, transformed_row])
                     )
-                    > tol
-                ):
+                    reduced = self.zrowop2_like(trial, tol=tol)
+                    rank = int(
+                        np.count_nonzero(
+                            np.max(
+                                np.abs(reduced.real) + np.abs(reduced.imag), axis=1
+                            )
+                            > tol
+                        )
+                    )
+                    if rank <= len(selected_indices):
+                        continue
+                    selected_indices.append(index)
+                    selected_blocks.append(block)
+                    reduced_rows = reduced
+                    if len(selected_indices) == int(project_count):
+                        break
+                if len(selected_indices) == int(project_count):
                     return ProjectSelection(
                         parent_ops=candidates.parent_ops,
                         site_ops=candidates.site_ops,
                         pg_irrep=pg_irrep,
                         selected_indices=tuple(selected_indices),
                         real_blocks=np.array(selected_blocks, dtype=complex),
-                        reduced_rows=reduced_rows,
+                        reduced_rows=np.asarray(reduced_rows, dtype=complex),
                     )
             grouped_supports: list[tuple[tuple[int, ...], list[int]]] = []
             for index, support in enumerate(support_keys):
