@@ -72,7 +72,7 @@ CIF pool は Materials Project から作成しました。
 `F` は固定 K、`P` は parametric K を表します。
 すべての列で、上で定義したValidation母集団を使います。
 
-| K構成（順序不問） | Validation母集団 | Physical pass | Strict pass |
+| K | Validation母集団 | Physical pass | Strict pass |
 |---|---:|---:|---:|
 | F | 788 | 788 (100.00%) | 637 (80.84%) |
 | FF | 294 | 294 (100.00%) | 226 (76.87%) |
@@ -130,7 +130,7 @@ primary IRやBNSの欠落、Source labelの非一意性、または同一のinpu
 #### K-signature 別
 
 
-| K構成（順序不問） | 母数 | Physical pass | Strict pass |
+| K | 母数 | Physical pass | Strict pass |
 |---|---:|---:|---:|
 | F | 798 | 798 (100.00%) | 697 (87.34%) |
 | FF | 84 | 84 (100.00%) | 69 (82.14%) |
@@ -167,7 +167,7 @@ Web                                          [│==]--------|
 
 ### K-signature別性能
 
-| K構成（順序不問） | 性能母集団 | Local中央値 | Web中央値 | Local p95 | Web p95 |
+| K | 性能母集団 | Local中央値 | Web中央値 | Local p95 | Web p95 |
 |---|---:|---:|---:|---:|---:|
 | F | 951 | 0.37 s | 7.48 s | 2.57 s | 7.94 s |
 | FF | 163 | 0.79 s | 8.79 s | 4.98 s | 10.67 s |
