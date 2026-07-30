@@ -1,7 +1,4 @@
-"""Assemble mode definitions and their undistorted structures.
-
-Extracted mechanically from the former monolithic runtime.
-"""
+"""Assemble mode definitions and their undistorted structures."""
 
 from __future__ import annotations
 
@@ -20,9 +17,6 @@ from ISODISTORT.Assembled.Backend.modes.engine.trace.pipeline_trace import (
 )
 from ISODISTORT.Assembled.Backend.modes.engine.project.display_distortion import (
     occurrence_sublattice,
-)
-from ISODISTORT.Assembled.Backend.modes.engine.subgroup_structure.presentation_transport import (
-    compose_seitz_records,
 )
 from ISODISTORT.Assembled.Backend.modes.presentation import (
     child_lattice_cartesian,
@@ -50,6 +44,7 @@ from ISODISTORT.Assembled.Backend.modes.common import (
     _mode_decoder,
     _origin_from_opd_row,
     _origin_vector,
+    _site_params,
 )
 from ISODISTORT.Assembled.Backend.modes.structure_runtime import (
     _basis_cinter_to_pml,
@@ -79,7 +74,6 @@ from ISODISTORT.Assembled.Backend.modes.structure.child_atom_layout import (
 from ISODISTORT.Assembled.Backend.modes.request_context import (
     _case_k_params,
     _evaluated_kvector_text,
-    _k_standard_primary_presentation,
     _little_star_arm_width,
     _opd_direction_text,
     _selected_dynamic_gid,
@@ -111,8 +105,75 @@ from ISODISTORT.Assembled.Backend.modes.site_transport import (
     _parent_setting_bridge,
     _presentation_site_relative_operation_record,
     _site_representative_operation_record,
-    _source_default_site_params,
+    _source_default_wyckoff_params,
 )
+
+
+def _secondary_invariant_factors(
+    *,
+    render_specs: list[tuple[dict[str, Any], str, int, str]],
+    emitted_spec_orders: set[int],
+    primary_slot_count: int,
+    coupled: bool,
+    magnetic_primary: bool,
+) -> list[dict[str, Any]]:
+    """Expose rendered static secondary subspaces for Source-domain resolution."""
+
+    factors: list[dict[str, Any]] = []
+    for spec_order, (spec, mode_kind, _setting, _display_label) in enumerate(
+        render_specs
+    ):
+        if (
+            spec_order not in emitted_spec_orders
+            or spec.get("primary") is not False
+            or int(spec.get("old_id") or 0) <= 0
+        ):
+            continue
+        gid = spec.get("gid")
+        if type(gid) is not int or gid <= 0:
+            raise ValueError("rendered static secondary lost its Source irrep identity")
+        factor = {
+            "slot": int(primary_slot_count) + len(factors) + 1,
+            "gid": gid,
+            "label": str(spec.get("display_label") or spec.get("label") or ""),
+            "magnetic": mode_kind == "mag",
+            "k_parameters": [],
+            "role": "secondary",
+        }
+        source_free_count = spec.get("source_free_count")
+        if (
+            not isinstance(source_free_count, bool)
+            and isinstance(source_free_count, int)
+            and source_free_count > 0
+        ):
+            factor["parameter_count"] = source_free_count
+        row_id = spec.get("row_id")
+        domain = spec.get("domain")
+        opd = spec.get("opd")
+        if (
+            type(row_id) is int
+            and row_id > 0
+            and type(domain) is int
+            and domain > 0
+            and isinstance(opd, str)
+            and opd
+        ):
+            factor.update({"opd": opd, "domain": domain})
+        else:
+            direction_matrix = spec.get("direction_matrix")
+            if (
+                not coupled
+                and not magnetic_primary
+                and mode_kind == "dsp"
+            ):
+                raise ValueError(
+                    "rendered static secondary lost its Source OPD/domain identity"
+                )
+            if not isinstance(direction_matrix, list) or not direction_matrix:
+                raise ValueError("rendered static secondary lost its direction subspace")
+            factor["direction_matrix"] = [list(row) for row in direction_matrix]
+        factors.append(factor)
+    return factors
 
 
 def _fixed_source_print_route(
@@ -434,12 +495,6 @@ def _occurrence_alias_spec_orders(
     return candidate_orders, candidate_to_anchor
 
 
-# Compatibility surfaces for focused tests written before the common path.
-_magnetic_occurrence_source_signature = _occurrence_source_signature
-_magnetic_occurrence_modes_are_nonzero = _occurrence_modes_are_nonzero
-_magnetic_occurrence_alias_spec_orders = _occurrence_alias_spec_orders
-
-
 def _build_child_structure(
     *,
     cif_info: dict[str, Any],
@@ -450,6 +505,7 @@ def _build_child_structure(
     dict[str, Any],
     tuple[ChildAtomLayout, ...],
     dict[str, tuple[float, float, float]],
+    tuple[tuple[float, ...] | None, ...],
 ]:
     """Build the one child-site/atom identity shared by every output surface."""
 
@@ -475,11 +531,7 @@ def _build_child_structure(
     if presentation_basis_pml is None:
         raise ValueError("selected subgroup has no exact presentation basis")
     split_basis, split_origin = _split_basis_origin_for_wyckoff(
-        parent_sg=sg,
-        child_sg=child_sg,
         selected_opd=selected_opd,
-        presentation_basis=presentation_basis,
-        presentation_origin=child_origin,
     )
     magnetic_group = _selected_magnetic_group_number(selected_opd, child_sg)
     child_symbol = gemmi.find_spacegroup_by_number(int(child_sg)).hm
@@ -505,10 +557,23 @@ def _build_child_structure(
     undistorted_atoms: list[dict[str, Any]] = []
     layouts: list[ChildAtomLayout] = []
     mode_atom_positions: dict[str, tuple[float, float, float]] = {}
+    site_params_by_site: list[tuple[float, ...] | None] = []
     public_wyckoff_labels: dict[str, str] = {}
+    symmetry_operations = [
+        str(value) for value in (cif_info.get("symmetry_operations") or [])
+    ]
     for site_index, site in enumerate(sites):
         atom_label = str(site.get("type") or site.get("label") or "X")
         label_prefix = str(site.get("label") or atom_label)
+        parent_params = _source_default_wyckoff_params(
+            int(sg),
+            site,
+            parent_inter_setting_id,
+            symmetry_operations,
+        )
+        site_params = (
+            _site_params({"wyckoff_params": parent_params}) if parent_params else None
+        )
         layout = _source_child_atom_layout_for_site(
             sg=int(sg),
             child_sg=int(child_sg),
@@ -516,10 +581,7 @@ def _build_child_structure(
             label_prefix=label_prefix,
             split_basis=split_basis,
             split_origin=split_origin,
-            parent_setting_id=parent_inter_setting_id,
-            symmetry_operations=[
-                str(value) for value in (cif_info.get("symmetry_operations") or [])
-            ],
+            parent_params=parent_params,
         )
         layout = _ordinary_layout_in_public_setting(
             child_sg=int(child_sg),
@@ -529,12 +591,6 @@ def _build_child_structure(
             coordinate_origin=child_coordinate_origin,
             layout=layout,
             label_correspondence=public_wyckoff_labels,
-        )
-        site_params = _source_default_site_params(
-            int(sg),
-            site,
-            parent_inter_setting_id,
-            [str(value) for value in (cif_info.get("symmetry_operations") or [])],
         )
         layout, site_mode_positions = _present_child_atom_layout(
             decoder,
@@ -575,6 +631,7 @@ def _build_child_structure(
             )
         mode_atom_positions.update(site_mode_positions)
         layouts.append(layout)
+        site_params_by_site.append(site_params)
         undistorted_atoms.extend(
             {
                 "label": child_site.child_site_id,
@@ -591,8 +648,7 @@ def _build_child_structure(
         )
     return (
         {
-            "status": "experimental",
-            "source": "Source Formula15 child atom layout",
+            "status": "ok",
             "lattice": _cell_from_basis(parent_cell, presentation_basis),
             "subgroup_details": {
                 **(_isotropy_from_opd_row(selected_opd) or {}),
@@ -603,6 +659,7 @@ def _build_child_structure(
         },
         tuple(layouts),
         mode_atom_positions,
+        tuple(site_params_by_site),
     )
 
 
@@ -616,11 +673,13 @@ def build_undistorted_structure(
     """Return the undistorted structure from the canonical child atom layout."""
 
     del selected_k
-    payload, _layouts, _mode_atom_positions = _build_child_structure(
-        cif_info=cif_info,
-        selected_opd=selected_opd,
-        parent_inter_setting_id=parent_inter_setting_id,
-        decoder=_mode_decoder("Source"),
+    payload, _layouts, _mode_atom_positions, _site_params_by_site = (
+        _build_child_structure(
+            cif_info=cif_info,
+            selected_opd=selected_opd,
+            parent_inter_setting_id=parent_inter_setting_id,
+            decoder=_mode_decoder(None),
+        )
     )
     return payload
 
@@ -633,8 +692,7 @@ def build_mode_details(
     selected_opd: dict[str, Any] | None = None,
     selected_slots: list[dict[str, Any]] | None = None,
     k_params: dict[str, str] | None = None,
-    source_dir: str = "Source",
-    trace_basis_from_selected_opd: bool = False,
+    source_dir: str | None = None,
     include_strain: bool = False,
     include_magnetic: bool = False,
     displacive_row_ids: list[int] | None = None,
@@ -644,14 +702,7 @@ def build_mode_details(
     parent_inter_setting_id: int | None = None,
     include_structure: bool = True,
 ) -> dict[str, Any]:
-    """Return a mode-detail-like payload for one fixed/special-k site.
-
-    The result follows the shape parsed by
-    `ISODISTORT/Validation/parsers/mode_details.py`: lattice,
-    distorted_atoms, and displacive_definitions.  Labels are provisional
-    because ISODISTORT's exact mode-label composition belongs to the native
-    mode-detail layer.
-    """
+    """Return complete mode details for the selected OPD."""
 
     sites = _mapped_sites(cif_info)
     if not sites:
@@ -825,11 +876,7 @@ def build_mode_details(
         ((1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0)),
     )
     split_basis, split_origin = _split_basis_origin_for_wyckoff(
-        parent_sg=sg,
-        child_sg=child_sg,
         selected_opd=selected_opd,
-        presentation_basis=presentation_basis,
-        presentation_origin=_origin_from_opd_row(selected_opd),
     )
     selected_freeparam = _freeparam_from_opd_row(decoder, selected_opd)
     selected_full_parameter_opd = _is_full_parameter_opd(
@@ -870,7 +917,12 @@ def build_mode_details(
         )
     definitions: list[dict[str, Any]] = []
     magnetic_definitions: list[dict[str, Any]] = []
-    structure_payload, child_atom_layouts, mode_atom_positions = _build_child_structure(
+    (
+        structure_payload,
+        child_atom_layouts,
+        mode_atom_positions,
+        parent_site_params,
+    ) = _build_child_structure(
         cif_info=cif_info,
         selected_opd=selected_opd,
         parent_inter_setting_id=parent_inter_setting_id,
@@ -892,12 +944,7 @@ def build_mode_details(
     for site_index, site in enumerate(sites):
         atom_label = str(site.get("type") or site.get("label") or "X")
         child_atom_layout = child_atom_layouts[site_index]
-        site_params = _source_default_site_params(
-            sg,
-            site,
-            parent_inter_setting_id,
-            [str(value) for value in (cif_info.get("symmetry_operations") or [])],
-        )
+        site_params = parent_site_params[site_index]
         site_representative_operation_record = _site_representative_operation_record(
             decoder,
             int(sg),
@@ -909,7 +956,6 @@ def build_mode_details(
         presentation_relative_operation_record_computed = False
         site_definition_count = 0
         site_atom_count = 0
-        missing_specs: list[str] = []
         fixed_site_source_print_admitted = False
         mode_topologies_by_records: dict[
             tuple[tuple[int, int, int, int, int], ...],
@@ -938,12 +984,8 @@ def build_mode_details(
                 continue
             occurrence_alias_candidate = spec_index in occurrence_alias_candidate_orders
             occurrence_observation_only = spec_index in occurrence_observation_orders
-            occurrence_speculative = (
-                occurrence_alias_candidate or occurrence_observation_only
-            )
             if spec_index in occurrence_observed_orders:
                 occurrence_eligible_sites[spec_index].append(site_index)
-            spec_label = str(spec["label"])
             spec_k_label = str(spec["k_label"])
             spec_row_id = spec.get("row_id")
             case = Case(
@@ -965,17 +1007,10 @@ def build_mode_details(
             spec_display_kvector = _spec_display_kvector(
                 decoder, case, spec, display_kvector
             )
-            k_standard_presentation = _k_standard_primary_presentation(
-                decoder,
-                sg=sg,
-                spec=spec,
-                mode_kind=mode_kind,
-            )
             spec_opd_direction = _spec_opd_direction_text(
                 decoder,
                 spec=spec,
                 selected_direction=opd_direction,
-                has_k_standard_presentation=k_standard_presentation is not None,
             )
             trace_uses_raw_basis = bool(
                 source_basis_override is not None
@@ -998,6 +1033,8 @@ def build_mode_details(
                 or []
             )
             trace_gid = int(spec.get("gid") or selected_irrep.get("gid") or 0)
+            if trace_gid <= 0:
+                raise ValueError("mode spec has no Source gid")
             orderparam_rows_override = (
                 {
                     trace_gid: [
@@ -1019,12 +1056,12 @@ def build_mode_details(
                     and mode_kind == "dsp"
                     and case.k_params
                     and orderparam_rows_override is not None
-                    and k_standard_presentation is None
                     and occurrence_basis_proof is not None
                 )
                 else None
             )
             trace_kwargs: dict[str, Any] = {
+                "selected_gid": trace_gid,
                 "selected_isotropy_row_id": (
                     int(spec_row_id) if spec_row_id is not None else None
                 ),
@@ -1032,11 +1069,6 @@ def build_mode_details(
                     source_basis_override
                     if trace_uses_raw_basis
                     else selected_basis_pml_override
-                ),
-                "selected_origin_override": (
-                    _source_split_origin_from_opd_row(selected_opd)
-                    if trace_uses_raw_basis
-                    else None
                 ),
                 "emit_all_opd_rows": selected_full_parameter_opd or emit_full_spec_rows,
                 "emit_freeparam_opd_groups": (
@@ -1053,55 +1085,7 @@ def build_mode_details(
                 ),
             }
             trace = pipeline_trace(decoder, case, **trace_kwargs)
-            if k_standard_presentation is not None:
-                source_block = next(
-                    (
-                        item
-                        for item in trace.get("little_irreps", [])
-                        if isinstance(item, dict)
-                        and str(item.get("label")) == spec_label
-                    ),
-                    None,
-                )
-                source_records = (
-                    source_block.get("atom_operation_records")
-                    if isinstance(source_block, dict)
-                    else None
-                )
-                if source_records and trace_gid == int(k_standard_presentation["gid"]):
-                    try:
-                        presentation_records = [
-                            compose_seitz_records(
-                                decoder,
-                                sg,
-                                first=k_standard_presentation["witness_record"],
-                                then=record,
-                            )
-                            for record in source_records
-                        ]
-                    except (KeyError, TypeError, ValueError):
-                        presentation_records = []
-                    if len(presentation_records) == len(source_records):
-                        presented_kwargs = dict(trace_kwargs)
-                        presented_kwargs["orderparam_rows_by_gid"] = {
-                            trace_gid: k_standard_presentation["orderparam_rows"]
-                        }
-                        presented_kwargs["presentation_operation_records_by_gid"] = {
-                            trace_gid: presentation_records
-                        }
-                        presented_kwargs["presentation_k_params_by_gid"] = {
-                            trace_gid: k_standard_presentation["presentation_k_params"]
-                        }
-                        trace = pipeline_trace(decoder, case, **presented_kwargs)
-            block = None
-            for item in trace.get("little_irreps", []):
-                if isinstance(item, dict) and str(item.get("label")) == spec_label:
-                    block = item
-                    break
-            if block is None:
-                if not occurrence_speculative:
-                    missing_specs.append(spec_label)
-                continue
+            block = trace["little_irreps"][0]
 
             site_isotropy = (
                 block.get("selected_isotropy_row") if isinstance(block, dict) else None
@@ -1287,13 +1271,13 @@ def build_mode_details(
                             solver_trace = pipeline_trace(
                                 decoder,
                                 case,
+                                selected_gid=int(print_spec["gid"]),
                                 selected_isotropy_row_id=(
                                     int(spec_row_id)
                                     if spec_row_id is not None
                                     else None
                                 ),
                                 selected_basis_pml_override=source_basis_override,
-                                selected_origin_override=solver_origin,
                                 emit_all_opd_rows=(
                                     selected_full_parameter_opd or emit_full_spec_rows
                                 ),
@@ -1642,7 +1626,9 @@ def build_mode_details(
                                 **source_print_identity,
                                 "source_kparam": tuple(
                                     int(value)
-                                    for value in spec.get("source_kparam") or ()
+                                    for value in spec.get("carrier_source_kparam")
+                                    or spec.get("source_kparam")
+                                    or ()
                                 ),
                                 "direction_matrix": [
                                     list(row)
@@ -1670,10 +1656,10 @@ def build_mode_details(
         per_site_status.append(
             {
                 "site": site.get("label"),
-                "status": "ok" if not missing_specs else "partial",
+                "status": "ok",
                 "definition_count": site_definition_count,
                 "atom_count": site_atom_count,
-                "missing": missing_specs,
+                "missing": [],
             }
         )
     admitted_occurrence_orders = admitted_occurrence_alias_spec_orders(
@@ -1710,6 +1696,18 @@ def build_mode_details(
             int(item.get("_spec_order", 0)),
             int(item.get("_site_order", 0)),
         )
+    )
+    emitted_spec_orders = {
+        int(item["_spec_order"])
+        for item in (*definitions, *magnetic_definitions)
+        if type(item.get("_spec_order")) is int
+    }
+    secondary_opd_factors = _secondary_invariant_factors(
+        render_specs=render_specs,
+        emitted_spec_orders=emitted_spec_orders,
+        primary_slot_count=max(1, len(selected_slots)),
+        coupled=coupled,
+        magnetic_primary=bool(selected_irrep.get("magnetic")),
     )
     definitions = _orthogonalize_definition_modes(
         definitions, child_cartesian, child_sg
@@ -1766,9 +1764,7 @@ def build_mode_details(
             "sites": per_site_status,
         }
     return {
-        "status": "experimental",
-        "source": "stage_5_mode_kernel",
-        "warning": "labels/normfactors/setting are provisional; use for fixed-k connectivity checks only",
+        "status": "ok",
         "sites": per_site_status,
         "lattice": child_lattice,
         "viewer_parent_basis": viewer_placement["parent_basis"],
@@ -1806,23 +1802,10 @@ def build_mode_details(
             }
         ),
         "undistorted_atoms": undistorted_atoms,
-        # Complete atom list for display consumers. Unlike undistorted_atoms,
-        # this retains every symmetry-equivalent atom even when no mode moves it.
         "viewer_atoms": viewer_atoms,
-        # Temporary compatibility key for earlier local diagnostics.  The
-        # local output renderer intentionally uses `undistorted_atoms`.
-        "distorted_atoms": [
-            {
-                "label": atom["label"],
-                "site": atom["site"],
-                "xyz": atom["xyz"],
-                "occ": 1.0,
-                "displ": 0.0,
-            }
-            for atom in undistorted_atoms
-        ],
         "displacive_definitions": definitions,
         "strain_definitions": strain_definitions,
         "magnetic_definitions": magnetic_definitions,
+        "secondary_opd_factors": secondary_opd_factors,
         "displacive_amplitudes": [],
     }

@@ -769,22 +769,13 @@ def _representative_fraction(
     row: WyckoffRow,
     child_params: tuple[Fraction, Fraction, Fraction],
 ) -> tuple[Fraction, Fraction, Fraction]:
-    try:
-        setting = int(data.default_inter_setting_record(int(child_sg))["id"])
-        formula = data.inter_wyckoff_formula(int(child_sg), row, setting)
-        parts = split_coordinate_expression3(str(formula["formula"]))
-        if parts is None:
-            raise ValueError("bad child Wyckoff formula")
-        params = {"x": child_params[0], "y": child_params[1], "z": child_params[2]}
-        folded = tuple(_eval_formula_expr(part, params) for part in parts)
-    except Exception:
-        vectors = data.wyckoff_fraction_vectors(row)
-        xyz = list(vectors[0])
-        for param_index in range(3):
-            for axis in range(3):
-                xyz[axis] += child_params[param_index] * vectors[param_index + 1][axis]
-        folded = tuple(value % 1 for value in xyz)
-    return folded  # type: ignore[return-value]
+    setting = int(data.default_inter_setting_record(int(child_sg))["id"])
+    formula = data.inter_wyckoff_formula(int(child_sg), row, setting)
+    parts = split_coordinate_expression3(str(formula["formula"]))
+    if parts is None:
+        raise ValueError("bad child Wyckoff formula")
+    params = {"x": child_params[0], "y": child_params[1], "z": child_params[2]}
+    return tuple(_eval_formula_expr(part, params) for part in parts)  # type: ignore[return-value]
 
 
 def undistorted_rows_from_wyckoff_split(

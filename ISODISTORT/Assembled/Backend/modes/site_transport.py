@@ -1,7 +1,4 @@
-"""Mode-site transport helpers.
-
-Extracted mechanically from the former monolithic runtime.
-"""
+"""Mode-site transport helpers."""
 
 from __future__ import annotations
 
@@ -31,7 +28,7 @@ def _site_representative_operation_record(
     sg: int,
     site: dict[str, Any],
 ) -> tuple[int, int, int, int, int] | None:
-    """Return Stage1's exact source-to-canonical operation in parent PML."""
+    """Return the exact source-to-canonical operation in parent PML."""
 
     text = site.get("representative_operation")
     lattice = site.get("representative_lattice_translation")
@@ -259,18 +256,6 @@ def _parent_point_to_default(
     )
 
 
-def _parent_point_from_default(
-    point: Any,
-    bridge: Any,
-) -> tuple[Fraction, Fraction, Fraction]:
-    values = _parent_frame_point(point)
-    if bridge is None:
-        return values
-    transform, shift = bridge
-    transformed = _fraction_row_multiply(values, transform)
-    return tuple(transformed[axis] + shift[axis] for axis in range(3))  # type: ignore[return-value]
-
-
 def _source_default_wyckoff_params(
     sg: int,
     site: dict[str, Any],
@@ -312,20 +297,3 @@ def _source_default_wyckoff_params(
         if solved is not None:
             return {str(key): float(value) for key, value in solved.items()}
     return fallback
-
-
-def _source_default_site_params(
-    sg: int,
-    site: dict[str, Any],
-    selected_setting_id: int | None,
-    symmetry_operations: list[str],
-) -> tuple[float, ...] | None:
-    """Return Source-default Wyckoff parameters in positional kernel order."""
-
-    params = _source_default_wyckoff_params(
-        int(sg),
-        site,
-        selected_setting_id,
-        symmetry_operations,
-    )
-    return _site_params({"wyckoff_params": params}) if params else None

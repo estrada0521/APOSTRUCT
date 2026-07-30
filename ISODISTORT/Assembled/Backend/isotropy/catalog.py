@@ -23,6 +23,7 @@ from ISODISTORT.Assembled.Backend.isotropy.engine.dynamic_isotropy_file import (
 from ISODISTORT.Assembled.Backend.isotropy.engine.source_data import SourceData
 from ISODISTORT.Assembled.Backend.isotropy.engine.id_subgroup_magnetic import (
     id_subgroup_magnetic_identify_with_generator_block,
+    magnetic_nonmag_point_op,
 )
 from ISODISTORT.Assembled.Backend.isotropy.lattice_conventions import (
     present_opd_basis_rows,
@@ -34,16 +35,125 @@ from ISODISTORT.Assembled.Backend.reciprocal.catalog import (
     _isodistort_star_vectors,
     _k_slot_info,
     _parse_k_record,
-    _reciprocal_pml_to_cinter_matrix,
     _strip,
     evaluate_k_component,
     substitute_k_vector,
 )
+from ISODISTORT.Assembled.Backend.source.iso_data import reciprocal_to_cinter_matrix_from_table
 from ISODISTORT.Assembled.Backend.source.magnetic import data as magnetic_data
+from ISODISTORT.Assembled.Backend.source.magnetic_operations import (
+    generate_magnetic_space_group_records,
+)
 from ISODISTORT.Assembled.Backend.source.tables import SOURCE, SourceTables, source_tables
 
 
 ISODISTORT_K_PARAMS = ("a", "b", "g")
+
+
+def source_ferroic_properties(
+    raw: int,
+    ferroelectric: int,
+    ferroelastic: int,
+) -> list[str]:
+    if int(raw) != 1:
+        return []
+    properties: list[str] = []
+    if int(ferroelectric) == 1:
+        properties.append("proper ferroelectric")
+    elif int(ferroelectric) == 2:
+        properties.append("improper ferroelectric")
+    if int(ferroelastic) == 1:
+        properties.append("proper ferroelastic")
+    elif int(ferroelastic) == 2:
+        properties.append("improper ferroelastic")
+    return properties
+
+
+def _rank_three_columns(rows: list[tuple[int, int, int]]) -> int:
+    matrix = [[Fraction(value) for value in row] for row in rows]
+    rank = 0
+    for column in range(3):
+        pivot = next(
+            (row for row in range(rank, len(matrix)) if matrix[row][column]),
+            None,
+        )
+        if pivot is None:
+            continue
+        matrix[rank], matrix[pivot] = matrix[pivot], matrix[rank]
+        scale = matrix[rank][column]
+        matrix[rank] = [value / scale for value in matrix[rank]]
+        for row in range(len(matrix)):
+            if row == rank or not matrix[row][column]:
+                continue
+            scale = matrix[row][column]
+            matrix[row] = [
+                value - scale * pivot_value
+                for value, pivot_value in zip(matrix[row], matrix[rank], strict=True)
+            ]
+        rank += 1
+    return rank
+
+
+@lru_cache(maxsize=122)
+def _magnetic_point_group_representative(point_group: int) -> int:
+    table = magnetic_data().table
+    try:
+        return next(
+            group
+            for group, candidate in enumerate(table["mag_point_group"], start=1)
+            if int(candidate) == int(point_group)
+        )
+    except StopIteration as exc:
+        raise ValueError(f"unknown magnetic point group: {point_group}") from exc
+
+
+@lru_cache(maxsize=122)
+def _magnetic_point_group_allows_ferromagnetism(point_group: int) -> bool:
+    group = _magnetic_point_group_representative(int(point_group))
+    table = magnetic_data().table
+    records = generate_magnetic_space_group_records(group, setting="binary")
+    operations = tuple(int(record[4]) for record in records)
+
+    expected_order = int(table["mag_point_group_order"][int(point_group) - 1])
+    if len(operations) != expected_order:
+        raise ValueError(
+            f"magnetic point-group closure is incomplete: group={group} "
+            f"expected={expected_order} actual={len(operations)}"
+        )
+
+    data = _subgroup_core_data()
+    constraints: list[tuple[int, int, int]] = []
+    for operation in operations:
+        rotation = data.point_operation_matrix(magnetic_nonmag_point_op(operation))
+        determinant = integer_determinant3(rotation)
+        time_sign = -1 if bool(table["mag_point_op_r"][operation - 1]) else 1
+        axial_sign = time_sign * determinant
+        constraints.extend(
+            tuple(
+                axial_sign * int(rotation[3 * row + column])
+                - (1 if row == column else 0)
+                for column in range(3)
+            )
+            for row in range(3)
+        )
+    return _rank_three_columns(constraints) < 3
+
+
+def _magnetic_group_allows_ferromagnetism(magnetic_group: int) -> bool:
+    table = magnetic_data().table
+    group = int(magnetic_group)
+    if group < 1 or group > len(table["mag_point_group"]):
+        raise ValueError(f"unknown magnetic group: {group}")
+    point_group = int(table["mag_point_group"][group - 1])
+    return _magnetic_point_group_allows_ferromagnetism(point_group)
+
+
+def magnetic_ferroic_properties(magnetic_group: int) -> list[str]:
+    return (
+        ["ferromagnetic"]
+        if _magnetic_group_allows_ferromagnetism(int(magnetic_group))
+        else []
+    )
 
 
 def _fmt_complex(value: complex) -> str:
@@ -551,6 +661,7 @@ def _dynamic_isotropy_row(
         "origin": _display_origin_text(parent_sg, subgroup, basis_rows, displayed["origin"]),
         "origin_values": list(row.origin_values),
         "ferroic": None,
+        "ferroic_properties": [],
     }
 
 
@@ -661,7 +772,10 @@ def _display_records_for_star_arm(
 ) -> tuple[tuple[Fraction, Fraction, Fraction], ...]:
     records = _isodistort_k_records(source_records, lattice, symbol, label)
     if int(lattice) in {9, 10, 13, 14}:
-        records = _apply_fraction_k_matrix(source_records, _reciprocal_pml_to_cinter_matrix(dec, int(parent_sg)))
+        records = _apply_fraction_k_matrix(
+            source_records,
+            reciprocal_to_cinter_matrix_from_table(dec.space, int(parent_sg), "pml"),
+        )
     return records
 
 
@@ -940,6 +1054,11 @@ def _isotropy_rows(
             data=_subgroup_core_data(),
             parametric=bool(k_params),
         )
+        ferroic = {
+            "raw": int(iso["isotropy_ferroic"][idx]),
+            "ferroelectric": int(iso["isotropy_ferroelectric"][idx]),
+            "ferroelastic": int(iso["isotropy_ferroelastic"][idx]),
+        }
         out.append({
             "row_id": int(row_id),
             "canonical": False,
@@ -968,11 +1087,12 @@ def _isotropy_rows(
             "source_origin_values": list(origin),
             "det": size,
             "origin": _display_origin_text(parent_sg, subgroup, basis_rows, displayed["origin"]),
-            "ferroic": {
-                "raw": int(iso["isotropy_ferroic"][idx]),
-                "ferroelectric": int(iso["isotropy_ferroelectric"][idx]),
-                "ferroelastic": int(iso["isotropy_ferroelastic"][idx]),
-            },
+            "ferroic": ferroic,
+            "ferroic_properties": source_ferroic_properties(
+                ferroic["raw"],
+                ferroic["ferroelectric"],
+                ferroic["ferroelastic"],
+            ),
         })
     canonical_id = dec.canonical_isotropy_row_id(out)
     for row in out:
@@ -1103,6 +1223,7 @@ def _dynamic_magnetic_isotropy_row(
         "origin": _display_origin_text(parent_sg, ordinary_subgroup, basis_rows, displayed["origin"]),
         "origin_values": list(origin_values),
         "ferroic": None,
+        "ferroic_properties": magnetic_ferroic_properties(subgroup_magnetic_group),
         "magnetic_parent_group": int(parent_magnetic_group),
         "magnetic_subgroup_old": None,
     }
@@ -1231,6 +1352,9 @@ def magnetic_opd_rows(
             "origin": _display_origin_text(ordinary_parent, ordinary_subgroup, basis_rows, displayed["origin"]),
             "magnetic_parent_group": int(row.parent_magnetic_group),
             "magnetic_subgroup_old": int(row.subgroup_old),
+            "ferroic_properties": magnetic_ferroic_properties(
+                int(row.subgroup_magnetic_group)
+            ),
         }
         out.append({
             "direction": {

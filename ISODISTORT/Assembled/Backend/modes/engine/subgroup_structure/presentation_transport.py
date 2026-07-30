@@ -230,7 +230,7 @@ def representative_operation_record_from_cinter(
     rotation: Sequence[Sequence[object]],
     translation_minus_lattice: Sequence[object],
 ) -> OperationRecord:
-    """Convert a Stage1 cinter representative operation to a full PML record.
+    """Convert a cinter representative operation to a full PML record.
 
     ``translation_minus_lattice`` is intentionally not reduced modulo the
     parent lattice: its integer part contributes to non-GM Bloch phases.
@@ -871,7 +871,7 @@ def site_print_basis_intertwiner(
     tolerance: float = 1e-10,
     condition_limit: float = 1e10,
 ) -> SourcePrintIntertwiner | None:
-    """Return the Source site-print gauge induced by a Stage1 canonicalizer.
+    """Return the Source site-print gauge induced by the canonicalizer.
 
     The representative operation maps presentation/CIF coordinates to the
     canonical Source representative.  Its conjugation of the canonical site
@@ -1026,7 +1026,6 @@ def presentation_carrier_coefficients(
 def factor_resolved_parent_site_vectors(
     decoder: Any,
     *,
-    parent_sg: int,
     parent_site_pg: int,
     parent_pg_irrep: int,
     parent_site_records: Iterable[Sequence[int]],
@@ -1656,8 +1655,8 @@ def factor_carrier_coefficients_on_target_rows(
     matrix; no scalar sign, first-factor selection, or averaging is used.
     ``source_factors`` may provide the untransported ``p_f`` records when the
     presentation factors include an additional representative operation.  It
-    must preserve the factor order and orbit identity; omitting it retains the
-    historical single-factor behavior.
+    must preserve the factor order and orbit identity; when omitted, the
+    presentation factors are also used as source factors.
     """
 
     factor_rows = tuple(factors)

@@ -29,10 +29,11 @@ dependencies = [
 isodistort = "ISODISTORT.Assembled.cli:main"
 
 [tool.setuptools.packages.find]
-include = ["ISODISTORT*"]
+include = ["ISODISTORT*", "Source"]
 namespaces = true
 
 [tool.setuptools.package-data]
+"Source" = ["*.dat", "*.txt"]
 "ISODISTORT.Assembled" = [
   "Frontend/*.csv",
   "Frontend/*.css",

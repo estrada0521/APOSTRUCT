@@ -10,12 +10,16 @@ from typing import Iterable, Sequence
 from ISODISTORT.Assembled.Backend.exactmath import (
     fraction_identity3,
     fraction_matrix_inverse3,
-    fraction_matrix_multiply3,
     integer_determinant3,
 )
 from ISODISTORT.Assembled.Backend.lattice_quotient import (
     integer_inverse_denominator,
     integral_row_images_source_order,
+)
+from ISODISTORT.Assembled.Backend.source.iso_data import (
+    pml_to_cml_matrix_from_table,
+    setting_change_matrix_from_table,
+    setting_to_cinter_affine_from_table,
 )
 
 
@@ -82,36 +86,17 @@ class IsotropySettingChangeMixin:
     def cml_to_cinter_matrix(self, sg: int) -> tuple[tuple[Fraction, Fraction, Fraction], ...]:
         """Return the row-vector transform from cml to cinter for an SG."""
 
-        choice = int(self.iso.space["ispace_inter_choice"][sg - 1])
-        raw = tuple(int(x) for x in self.iso.space["ispace_settings_inter"][(choice - 1) * 32:(choice - 1) * 32 + 16])
-        den = int(raw[15])
-        if den == 0:
-            raise ValueError(f"zero ispace_settings_inter denominator for SG{sg} choice {choice}")
-        return tuple(
-            tuple(Fraction(raw[4 * row + col], den) for col in range(3))
-            for row in range(3)
-        )  # type: ignore[return-value]
+        return setting_to_cinter_affine_from_table(self.iso.space, sg, "cml")[0]
 
     def pml_to_cml_matrix(self, sg: int) -> tuple[tuple[Fraction, Fraction, Fraction], ...]:
         """Return the row-vector transform from pml to cml for an SG lattice."""
 
-        lattice = int(self.iso.space["ispace_lattice"][sg - 1])
-        raw = tuple(int(x) for x in self.iso.space["lattice_ml"][(lattice - 1) * 36 + 9:(lattice - 1) * 36 + 18])
-        den = int(self.iso.space["lattice_ml_denom"][(lattice - 1) * 2])
-        if den == 0:
-            raise ValueError(f"zero lattice_ml pml->cml denominator for lattice {lattice}")
-        return tuple(
-            tuple(Fraction(raw[3 * row + col], den) for col in range(3))
-            for row in range(3)
-        )  # type: ignore[return-value]
+        return pml_to_cml_matrix_from_table(self.iso.space, sg)
 
     def pml_to_cinter_matrix(self, sg: int) -> tuple[tuple[Fraction, Fraction, Fraction], ...]:
         """Return the row-vector transform used by `vector_change_setting_(pml,cinter)`."""
 
-        return fraction_matrix_multiply3(
-            self.pml_to_cml_matrix(sg),
-            self.cml_to_cinter_matrix(sg),
-        )
+        return setting_to_cinter_affine_from_table(self.iso.space, sg, "pml")[0]
 
     def cinter_to_pml_matrix(self, sg: int) -> tuple[tuple[Fraction, Fraction, Fraction], ...]:
         """Return the inverse direct-space transform from cinter to PML."""
@@ -156,23 +141,11 @@ class IsotropySettingChangeMixin:
         (``cinter``) coordinates.  All matrices satisfy ``v_to = v_from * M``.
         """
 
-        from_setting = from_setting.strip().lower()
-        to_setting = to_setting.strip().lower()
-        identity = (
-            (Fraction(1), Fraction(0), Fraction(0)),
-            (Fraction(0), Fraction(1), Fraction(0)),
-            (Fraction(0), Fraction(0), Fraction(1)),
-        )
-        to_cinter = {
-            "cinter": identity,
-            "cml": self.cml_to_cinter_matrix(sg),
-            "pml": self.pml_to_cinter_matrix(sg),
-        }
-        if from_setting not in to_cinter or to_setting not in to_cinter:
-            raise KeyError(f"unsupported setting transform {from_setting!r}->{to_setting!r}")
-        return fraction_matrix_multiply3(
-            to_cinter[from_setting],
-            fraction_matrix_inverse3(to_cinter[to_setting]),
+        return setting_change_matrix_from_table(
+            self.iso.space,
+            sg,
+            from_setting,
+            to_setting,
         )
 
     def reciprocal_setting_change_vector(
@@ -205,12 +178,7 @@ class IsotropySettingChangeMixin:
         )  # type: ignore[return-value]
 
     def _cml_to_cinter_origin(self, sg: int) -> tuple[Fraction, Fraction, Fraction]:
-        choice = int(self.iso.space["ispace_inter_choice"][sg - 1])
-        raw = tuple(int(x) for x in self.iso.space["ispace_settings_inter"][(choice - 1) * 32:(choice - 1) * 32 + 16])
-        den = int(raw[15])
-        if den == 0:
-            raise ValueError(f"zero ispace_settings_inter denominator for SG{sg} choice {choice}")
-        return tuple(Fraction(raw[12 + axis], den) for axis in range(3))  # type: ignore[return-value]
+        return setting_to_cinter_affine_from_table(self.iso.space, sg, "cml")[1]
 
     def _point_to_cinter_affine(
         self,

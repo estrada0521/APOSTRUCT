@@ -1,7 +1,4 @@
-"""Shared mode-construction helpers.
-
-Extracted mechanically from the former monolithic runtime.
-"""
+"""Shared mode-construction helpers."""
 
 from __future__ import annotations
 
@@ -99,51 +96,11 @@ def _assembled_data() -> SourceTables:
 def _mode_decoder(source_dir: str | None) -> ModeDataDecoder:
     """Reuse the immutable Source mode tables within one process."""
 
-    data_dir = source_dir or "Source"
+    data_dir = source_dir or str(_SOURCE_ROOT)
     if Path(data_dir).resolve() == Path(_SOURCE_ROOT).resolve():
         assembled = _assembled_data()
         return ModeDataDecoder(data_dir, tables=assembled)
     return ModeDataDecoder(data_dir)
-
-
-
-def _fold_fractional_xyz(xyz: Any) -> tuple[float, float, float] | None:
-    try:
-        values = tuple(float(Fraction(str(value))) % 1.0 for value in xyz)
-    except (TypeError, ValueError, ZeroDivisionError):
-        return None
-    if len(values) != 3:
-        return None
-    return tuple(0.0 if abs(value) < 1e-10 or abs(value - 1.0) < 1e-10 else value for value in values)  # type: ignore[return-value]
-
-
-
-def _mat4_multiply_fraction(left: list[list[Fraction]], right: list[list[Fraction]]) -> list[list[Fraction]]:
-    return [
-        [sum(left[row][idx] * right[idx][col] for idx in range(4)) for col in range(4)]
-        for row in range(4)
-    ]
-
-
-
-def _normalize_setting_matrix(raw: list[list[int]]) -> list[list[Fraction]]:
-    den = Fraction(int(raw[3][3] or 1))
-    out = [[Fraction(int(raw[row][col]), 1) / den for col in range(4)] for row in range(4)]
-    out[0][3] = out[1][3] = out[2][3] = Fraction(0)
-    out[3][3] = Fraction(1)
-    return out
-
-
-
-def _fraction_floor(value: Fraction) -> int:
-    return value.numerator // value.denominator
-
-
-
-def _fraction_mod01(value: Fraction) -> Fraction:
-    return value - _fraction_floor(value)
-
-
 
 def _fraction_matrix_inverse_3(
     matrix: list[list[float]],
@@ -156,48 +113,6 @@ def _fraction_matrix_inverse_3(
         return fraction_matrix_inverse3(rows)
     except (TypeError, ValueError):
         return None
-
-
-
-def _basis_matrix(row: dict[str, Any] | None) -> list[list[float]] | None:
-    if not isinstance(row, dict):
-        return None
-    basis = row.get("basis_pml_to_cinter") or row.get("basis")
-    if isinstance(basis, list) and len(basis) == 9:
-        basis = [basis[0:3], basis[3:6], basis[6:9]]
-    if not (
-        isinstance(basis, list)
-        and len(basis) == 3
-        and all(isinstance(item, list) and len(item) == 3 for item in basis)
-    ):
-        return None
-    try:
-        return [[float(value) for value in item] for item in basis]
-    except (TypeError, ValueError):
-        return None
-
-
-
-def _transform_dxyz(vector: list[Any], matrix: list[list[float]] | None) -> list[float]:
-    values = [float(value) for value in vector]
-    if matrix is None:
-        return values
-    return [sum(matrix[row][col] * values[col] for col in range(3)) for row in range(3)]
-
-
-
-def _origin_record_from_any(origin: Any) -> tuple[int, int, int, int] | None:
-    if isinstance(origin, tuple) and len(origin) == 4:
-        try:
-            return tuple(int(value) for value in origin)  # type: ignore[return-value]
-        except (TypeError, ValueError):
-            return None
-    values = _origin_vector(origin)
-    den = 1
-    fracs = [Fraction(str(value)).limit_denominator(1000000) for value in values]
-    for value in fracs:
-        den = math.lcm(den, value.denominator)
-    return tuple(int(value * den) for value in fracs) + (den,)  # type: ignore[return-value]
 
 
 
@@ -312,11 +227,6 @@ def _origin_vector(origin: Any) -> list[float]:
 
 
 
-def _fold01(value: float) -> float:
-    folded = value % 1.0
-    if abs(folded - 1.0) < 1e-10 or abs(folded) < 1e-10:
-        return 0.0
-    return folded
 def _isotropy_row_id_from_opd_row(selected_opd: dict[str, Any] | None) -> int | None:
     if not isinstance(selected_opd, dict):
         return None

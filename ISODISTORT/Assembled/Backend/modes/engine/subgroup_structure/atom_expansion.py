@@ -90,7 +90,6 @@ class IsotropyAtomExpansionMixin:
         sg: int,
         row: WyckoffRow,
         basis: Iterable[int],
-        site_params: Iterable[object] | None = None,
     ) -> tuple[tuple[int, int, int, int, int], ...]:
         """Return operation records in the same order as atom-table positions."""
 
@@ -180,12 +179,3 @@ class IsotropyAtomExpansionMixin:
 
         records = tuple(operation_records)
         return tuple(range(len(records)))
-
-    @staticmethod
-    def final_atom_position_order_indices(
-        positions: Iterable[tuple[Fraction, Fraction, Fraction]],
-        order: Iterable[int],
-    ) -> tuple[int, ...]:
-        """Apply final display-order corrections that depend on folded positions."""
-
-        return tuple(int(item) for item in order)

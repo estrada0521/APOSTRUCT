@@ -72,6 +72,7 @@ class DynamicSubductionRow:
     reciprocal_vector_pml: tuple[Fraction, Fraction, Fraction]
     direction_matrix: tuple[tuple[float, ...], ...]
     source_occurrences: tuple[DynamicKOccurrence, ...] = ()
+    carrier_source_kparam: tuple[int, int, int, int] | None = None
 
 
 @dataclass(frozen=True)
@@ -94,25 +95,27 @@ def stored_occurrence_alias_candidates(
         Sequence[DynamicSubductionRow],
     ],
     heading_identity_for_row: Callable[[DynamicSubductionRow], Hashable | None],
+    represented_source_kparam_for_row: Callable[
+        [DynamicSubductionRow], tuple[int, int, int, int] | None
+    ],
     represented_heading_identities: Iterable[Hashable] = (),
     allowed_irrep_types: Iterable[int] | None = None,
 ) -> tuple[OccurrenceAliasCandidate, ...]:
     """Return unambiguous aliases named by stored Source occurrence classes.
 
     Dynamic family discovery can merge several exact ``source_kparam``
-    classes into one row. Only those stored classes are authoritative here;
-    aliases discovered by re-solving arbitrary reciprocal vectors are not.
+    classes into one row. The caller supplies the occurrence currently used
+    to represent each raw family; only the other stored classes are eligible.
+    Aliases discovered by re-solving arbitrary reciprocal vectors are not.
     Occupied-site emission remains a separate downstream admission gate.
     """
 
-    seen_headings = set(represented_heading_identities)
-    for row in rows:
+    seen_headings: set[Hashable] = set()
+    for heading in represented_heading_identities:
         try:
-            heading = heading_identity_for_row(row)
-            if heading is not None:
-                hash(heading)
-                seen_headings.add(heading)
-        except (TypeError, ValueError):
+            hash(heading)
+            seen_headings.add(heading)
+        except TypeError:
             continue
 
     allowed_types = (
@@ -131,7 +134,9 @@ def stored_occurrence_alias_candidates(
                 allowed_types is not None and int(little.irrep_type) not in allowed_types
             ):
                 continue
-            represented_values = _strict_integral_values(row.source_kparam)
+            represented_values = _strict_integral_values(
+                represented_source_kparam_for_row(row)
+            )
             if represented_values is None:
                 continue
             represented_source_kparam = represented_values
@@ -179,10 +184,10 @@ def stored_occurrence_alias_candidates(
                 ]
             except (IndexError, KeyError, TypeError, ValueError):
                 continue
-            if len(exact_aliases) > 1:
+            if len(exact_aliases) != 1:
                 continue
             alias = replace(
-                exact_aliases[0] if exact_aliases else row,
+                exact_aliases[0],
                 source_kparam=source_kparam,
                 reciprocal_vector_pml=tuple(occurrences[0].reciprocal_vector_pml),
                 source_occurrences=tuple(occurrences),
@@ -219,34 +224,6 @@ def stored_occurrence_alias_candidates(
         for candidate in candidates
         if heading_counts[candidate.heading_identity] == 1
     )
-
-
-def type1_stored_occurrence_alias_candidates(
-    decoder: Any,
-    rows: Sequence[DynamicSubductionRow],
-    *,
-    aliases_for_class: Callable[
-        [DynamicSubductionRow, tuple[int, int, int, int]],
-        Sequence[DynamicSubductionRow],
-    ],
-    heading_identity_for_row: Callable[[DynamicSubductionRow], Hashable | None],
-    represented_heading_identities: Iterable[Hashable] = (),
-) -> tuple[OccurrenceAliasCandidate, ...]:
-    return stored_occurrence_alias_candidates(
-        decoder,
-        rows,
-        aliases_for_class=aliases_for_class,
-        heading_identity_for_row=heading_identity_for_row,
-        represented_heading_identities=represented_heading_identities,
-        allowed_irrep_types=(1,),
-    )
-
-
-# Compatibility names for the already validated magnetic call sites.
-MagneticOccurrenceAliasCandidate = OccurrenceAliasCandidate
-magnetic_type1_stored_occurrence_alias_candidates = (
-    type1_stored_occurrence_alias_candidates
-)
 
 
 @dataclass(frozen=True)
@@ -293,21 +270,6 @@ class KvecStandardProvenance:
     reciprocal_shifts: tuple[tuple[int, int, int], ...]
     source_embedding: KvecStandardEmbedding | None = None
     standard_embedding: KvecStandardEmbedding | None = None
-
-
-@dataclass(frozen=True)
-class KvecStandardCarrierBridge:
-    """Source-real presentation helper derived from standardization provenance.
-
-    The standardized parameter record and changed flag do not define a global
-    carrier; this matrix is a higher-level local construction for the type-2/3
-    complex ledger.
-    """
-
-    provenance: KvecStandardProvenance
-    globally_conjugated: bool
-    complex_arm_permutation: tuple[int, ...]
-    real_matrix: tuple[tuple[float, ...], ...]
 
 
 @dataclass(frozen=True)
@@ -751,7 +713,7 @@ def _kvec_parameter_periods(decoder: Any, representative_gid: int) -> tuple[int,
     return tuple(periods)
 
 
-@lru_cache(maxsize=None)
+@lru_cache(maxsize=8192)
 def _kvec_parameter_solutions(
     decoder: Any,
     representative_gid: int,
@@ -810,7 +772,7 @@ def _kparam_from_fractions(vector: Sequence[Fraction]) -> tuple[int, int, int, i
     return tuple(int(value * denominator) for value in values) + (denominator,)  # type: ignore[return-value]
 
 
-@lru_cache(maxsize=None)
+@lru_cache(maxsize=4096)
 def _kvec_standard_selection(
     decoder: Any,
     sg: int,
@@ -977,7 +939,7 @@ def _kvec_standard_arm_map(
     )
 
 
-@lru_cache(maxsize=None)
+@lru_cache(maxsize=256)
 def kvec_standard_provenance(
     decoder: Any,
     sg: int,
@@ -1095,7 +1057,6 @@ def _type1_project_case(
     )
 
 
-@lru_cache(maxsize=None)
 def kvec_standard_type1_project_surface(
     decoder: Any,
     template_case: Case,
@@ -1161,126 +1122,6 @@ def kvec_standard_type1_project_surface(
     )
 
 
-@lru_cache(maxsize=None)
-def kvec_standard_real_carrier_bridge(
-    decoder: Any,
-    sg: int,
-    representative_gid: int,
-    kparam: tuple[int, int, int, int],
-) -> KvecStandardCarrierBridge:
-    """Construct the Source-real arm/conjugation presentation bridge.
-
-    The selected Seitz operation and reciprocal shifts remain in the separate
-    presentation quotient.  Callers must apply this matrix to OPD rows in the
-    same presentation step rather than using either transform in isolation.
-    """
-
-    provenance = kvec_standard_provenance(
-        decoder,
-        int(sg),
-        int(representative_gid),
-        tuple(int(value) for value in kparam),
-    )
-    little = decoder.little_record_by_gid(int(representative_gid))
-    full_dim = int(little.full_dim)
-    arm_count = len(provenance.source_star)
-    permutation = tuple(int(value) for value in provenance.arm_permutation)
-    if arm_count <= 0 or len(permutation) != arm_count:
-        raise ValueError(
-            f"invalid k-standard arm map for gid={representative_gid}: "
-            f"arms={arm_count}, permutation={permutation}"
-        )
-    if sorted(permutation) != list(range(arm_count)):
-        raise ValueError(
-            f"non-bijective k-standard arm map for gid={representative_gid}: {permutation}"
-        )
-
-    globally_conjugated = any(bool(value) for value in provenance.arm_conjugated)
-    identity_selection = (
-        provenance.source_kparam == provenance.standard_kparam
-        and permutation == tuple(range(arm_count))
-        and not globally_conjugated
-    )
-    if identity_selection:
-        real = np.eye(full_dim, dtype=float)
-    elif int(little.irrep_type) == 1:
-        safe_identity = (
-            permutation == tuple(range(arm_count))
-            and not globally_conjugated
-            and provenance.selected_operation_record is not None
-        )
-        if safe_identity:
-            source_parameters = _k_parameters_for_record(
-                decoder, int(representative_gid), provenance.source_kparam
-            )
-            standard_parameters = _k_parameters_for_record(
-                decoder, int(representative_gid), provenance.standard_kparam
-            )
-            template = Case(
-                sg=int(sg),
-                wyckoff="",
-                k_label="",
-                params=(0.0, 0.0, 0.0, 90.0, 90.0, 90.0),
-            )
-            source_case = replace(template, k_params=source_parameters)
-            standard_case = replace(template, k_params=standard_parameters)
-            source_selected = decoder.little_phase_matrix_by_gid_record_for_case(
-                int(representative_gid), provenance.selected_operation_record, source_case
-            )
-            standard_selected = decoder.little_phase_matrix_by_gid_record_for_case(
-                int(representative_gid), provenance.selected_operation_record, standard_case
-            )
-            safe_identity = bool(np.allclose(source_selected, standard_selected, atol=1e-12))
-        if not safe_identity:
-            raise NotImplementedError(
-                f"non-identity type-1 k-standard carrier is not returned by the binary "
-                f"for gid={representative_gid}; use kvec_standard_type1_project_surface"
-            )
-        real = np.eye(full_dim, dtype=float)
-    else:
-        if full_dim % 2:
-            raise ValueError(
-                f"odd doubled-complex carrier dimension for gid={representative_gid}: {full_dim}"
-            )
-        sector_dim = full_dim // 2
-        if sector_dim % arm_count:
-            raise ValueError(
-                f"complex sector dim={sector_dim} is not divisible by arm_count={arm_count} "
-                f"for gid={representative_gid}"
-            )
-        arm_dim = sector_dim // arm_count
-        complex_map = np.zeros((full_dim, full_dim), dtype=complex)
-        for sector in range(2):
-            target_sector = 1 - sector if globally_conjugated else sector
-            for source_arm, target_arm in enumerate(permutation):
-                source_start = sector * sector_dim + source_arm * arm_dim
-                target_start = target_sector * sector_dim + target_arm * arm_dim
-                complex_map[
-                    target_start:target_start + arm_dim,
-                    source_start:source_start + arm_dim,
-                ] = np.eye(arm_dim)
-        real_to_complex, complex_to_real = decoder.transform_irrep2complex_matrices(
-            int(representative_gid), leading_dim=full_dim
-        )
-        bridged = complex_to_real @ complex_map @ real_to_complex
-        max_imag = float(np.max(np.abs(bridged.imag)))
-        if max_imag > 1e-9:
-            raise ValueError(
-                f"k-standard carrier bridge is not real for gid={representative_gid}: "
-                f"max_imag={max_imag:.3g}"
-            )
-        real = np.asarray(bridged.real, dtype=float)
-
-    real[np.abs(real) < 1e-12] = 0.0
-    return KvecStandardCarrierBridge(
-        provenance=provenance,
-        globally_conjugated=bool(globally_conjugated),
-        complex_arm_permutation=permutation,
-        real_matrix=tuple(tuple(float(value) for value in row) for row in real),
-    )
-
-
-@lru_cache(maxsize=None)
 def _kvec_standard_kparam(
     decoder: Any,
     sg: int,
@@ -1305,36 +1146,6 @@ def _family_rows(decoder: Any, sg: int) -> tuple[tuple[str, int, int], ...]:
         seen.add(label)
         out.append((label, gid, _k_dimension(decoder, sg, gid)))
     return tuple(out)
-
-
-def _k_family_match_for_standard_vector(
-    decoder: Any,
-    sg: int,
-    vector: Sequence[Fraction],
-    preferred_kparams: dict[str, Sequence[int] | Sequence[Sequence[int]]] | None = None,
-) -> _KFamilyMatch | None:
-    target = tuple(Fraction(value) % 1 for value in vector[:3])
-    matches = _k_family_candidates_for_standard_vector(
-        decoder,
-        int(sg),
-        target,
-    )
-    return (
-        min(
-            matches,
-            key=lambda item: (
-                not _matches_preferred_kparam(
-                    preferred_kparams,
-                    item.label,
-                    item.kparam,
-                ),
-                item.kdim,
-                item.source_order,
-            ),
-        )
-        if matches
-        else None
-    )
 
 
 @lru_cache(maxsize=8192)
@@ -1390,86 +1201,80 @@ def _k_family_candidates_for_standard_vector(
     return tuple(matches)
 
 
-def _k_family_match_for_vector(
+def _k_family_matches_for_vector(
     decoder: Any,
     sg: int,
     vector: Sequence[Fraction],
     preferred_kparams: dict[str, Sequence[int] | Sequence[Sequence[int]]] | None = None,
-) -> _KFamilyMatch | None:
-    matches: list[_KFamilyMatch] = []
+) -> tuple[_KFamilyMatch, ...]:
+    matches: dict[tuple[str, int], _KFamilyMatch] = {}
     seen: set[tuple[tuple[int, int], ...]] = set()
-    for point_matrix in _lattice_point_matrices_for_sg(decoder, int(sg)):
-        rotated = _rotate_kvector_by_point_matrix(
-            decoder,
-            int(sg),
-            vector,
-            point_matrix,
-        )
+    rotated_vectors = [tuple(Fraction(value) for value in vector[:3])]
+    rotated_vectors.extend(
+        _rotate_kvector_by_point_matrix(decoder, int(sg), vector, point_matrix)
+        for point_matrix in _lattice_point_matrices_for_sg(decoder, int(sg))
+    )
+    for rotated in rotated_vectors:
         key = _key(rotated)
         if key in seen:
             continue
         seen.add(key)
-        match = _k_family_match_for_standard_vector(
-            decoder,
-            int(sg),
-            rotated,
-            preferred_kparams,
-        )
-        if match is not None:
-            matches.append(match)
+        for match in _k_family_candidates_for_standard_vector(
+            decoder, int(sg), tuple(Fraction(value) % 1 for value in rotated[:3])
+        ):
+            matches.setdefault((str(match.label), int(match.representative_gid)), match)
     if not matches:
-        return _k_family_match_for_standard_vector(
-            decoder,
-            int(sg),
-            vector,
-            preferred_kparams,
-        )
-    selected = min(
-        matches,
-        key=lambda item: (
+        return ()
+    selected_class = min(
+        (
             not _matches_preferred_kparam(
                 preferred_kparams,
-                item.label,
-                item.kparam,
+                match.label,
+                match.kparam,
             ),
-            item.kdim,
-            item.source_order,
-        ),
-    )
-    if int(selected.kdim) <= 0:
-        return selected
-
-    # ``id_kvector_`` uses the Bravais star to choose the Source family, but
-    # ``find_kvectors_`` passes the parameter record for the actual mesh
-    # occurrence to ``kvec_standard_``.  Reusing the parameter solved for an
-    # auxiliary rotated vector can select the conjugate parameter branch and
-    # make a genuinely invariant row appear empty.
-    occurrence_kparam = _source_kparam_for_vector(
-        decoder,
-        int(sg),
-        int(selected.representative_gid),
-        tuple(Fraction(value) for value in vector[:3]),
-    )
-    if occurrence_kparam is None:
-        return selected
-    standardized = _kvec_standard_kparam(
-        decoder,
-        int(sg),
-        int(selected.representative_gid),
-        tuple(int(value) for value in occurrence_kparam),
+            int(match.kdim),
+        )
+        for match in matches.values()
     )
     target = _key(vector)
-    standard_star = _little_k_vectors_by_gid_kparam(
-        decoder,
-        int(selected.representative_gid),
-        standardized,
-    )
-    if not any(
-        _key(arm) == target or _key(tuple(-value for value in arm)) == target
-        for arm in standard_star
-    ):
-        return selected
-    return replace(selected, kparam=standardized)
+    selected_matches: list[_KFamilyMatch] = []
+    for selected in sorted(matches.values(), key=lambda item: item.source_order):
+        if (
+            not _matches_preferred_kparam(
+                preferred_kparams,
+                selected.label,
+                selected.kparam,
+            ),
+            int(selected.kdim),
+        ) != selected_class:
+            continue
+        if int(selected.kdim) > 0:
+            occurrence_kparam = _source_kparam_for_vector(
+                decoder,
+                int(sg),
+                int(selected.representative_gid),
+                tuple(Fraction(value) for value in vector[:3]),
+            )
+            if occurrence_kparam is not None:
+                standardized = _kvec_standard_kparam(
+                    decoder,
+                    int(sg),
+                    int(selected.representative_gid),
+                    tuple(int(value) for value in occurrence_kparam),
+                )
+                standard_star = _little_k_vectors_by_gid_kparam(
+                    decoder,
+                    int(selected.representative_gid),
+                    standardized,
+                )
+                if any(
+                    _key(arm) == target
+                    or _key(tuple(-value for value in arm)) == target
+                    for arm in standard_star
+                ):
+                    selected = replace(selected, kparam=standardized)
+        selected_matches.append(selected)
+    return tuple(selected_matches)
 
 
 def _lattice_k_orbit_key(
@@ -1497,41 +1302,60 @@ def _selected_family_records(
     basis: Sequence[int],
     preferred_kparams: dict[str, Sequence[int] | Sequence[Sequence[int]]] | None = None,
 ) -> tuple[_SelectedFamily, ...]:
-    selected: dict[tuple[tuple[int, int], ...], tuple[int, _KFamilyMatch]] = {}
-    occurrences: dict[tuple[tuple[int, int], ...], list[DynamicKOccurrence]] = {}
+    family_orbit = tuple[str, int, tuple[tuple[int, int], ...]]
+    selected: dict[family_orbit, tuple[int, _KFamilyMatch]] = {}
+    occurrences: dict[family_orbit, list[DynamicKOccurrence]] = {}
 
     for mesh_order, vector in enumerate(_ordered_reciprocal_mesh(basis)):
-        family = _k_family_match_for_vector(
+        families = _k_family_matches_for_vector(
             decoder,
             int(sg),
             vector,
             preferred_kparams,
         )
-        if family is None:
+        if not families:
             continue
         orbit_key = _lattice_k_orbit_key(decoder, int(sg), vector)
-        occurrences.setdefault(orbit_key, []).append(
-            DynamicKOccurrence(
-                mesh_order=mesh_order,
-                k_label=str(family.label),
-                source_kparam=tuple(int(value) for value in family.kparam),
-                reciprocal_vector_pml=tuple(Fraction(value) for value in vector),
-                inversion_bucket=orbit_key,
+        for family in families:
+            key = (str(family.label), int(family.representative_gid), orbit_key)
+            occurrences.setdefault(key, []).append(
+                DynamicKOccurrence(
+                    mesh_order=mesh_order,
+                    k_label=str(family.label),
+                    source_kparam=tuple(int(value) for value in family.kparam),
+                    reciprocal_vector_pml=tuple(Fraction(value) for value in vector),
+                    inversion_bucket=orbit_key,
+                )
             )
+            selected.setdefault(key, (mesh_order, family))
+    families: list[_SelectedFamily] = []
+    for key, (_mesh_order, family) in sorted(
+        selected.items(),
+        key=lambda item: (item[1][1].source_order, item[1][0]),
+    ):
+        by_kparam: dict[tuple[int, int, int, int], list[DynamicKOccurrence]] = {}
+        for occurrence in occurrences[key]:
+            by_kparam.setdefault(occurrence.source_kparam, []).append(occurrence)
+        selected_kparam = tuple(int(value) for value in family.kparam)
+        ordered_kparams = [selected_kparam] if selected_kparam in by_kparam else []
+        ordered_kparams.extend(
+            kparam for kparam in by_kparam if kparam != selected_kparam
         )
-        selected.setdefault(orbit_key, (mesh_order, family))
-    return tuple(
-        _SelectedFamily(
-            k_label=str(family.label),
-            source_kparam=tuple(int(value) for value in family.kparam),
-            reciprocal_vector_pml=tuple(family.representative_vector),
-            source_occurrences=tuple(occurrences[orbit_key]),
-        )
-        for orbit_key, (_mesh_order, family) in sorted(
-            selected.items(),
-            key=lambda item: (item[1][1].source_order, item[1][0]),
-        )
-    )
+        for source_kparam in ordered_kparams:
+            source_occurrences = tuple(by_kparam[source_kparam])
+            families.append(
+                _SelectedFamily(
+                    k_label=str(family.label),
+                    source_kparam=source_kparam,
+                    reciprocal_vector_pml=(
+                        tuple(family.representative_vector)
+                        if source_kparam == selected_kparam
+                        else tuple(source_occurrences[0].reciprocal_vector_pml)
+                    ),
+                    source_occurrences=source_occurrences,
+                )
+            )
+    return tuple(families)
 
 
 def _matches_preferred_kparam(

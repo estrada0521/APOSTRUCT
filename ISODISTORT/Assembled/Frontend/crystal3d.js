@@ -71,11 +71,11 @@ export function colorCss(value) {
 
 export function atomMaterial(atom) {
   const color = new THREE.Color(softenedMaterialColor(atomColor(atom)));
-  return new THREE.MeshPhongMaterial({
+  return new THREE.MeshStandardMaterial({
     color,
-    specular: color.clone().lerp(new THREE.Color(0xffffff), 0.27),
-    shininess: 28,
-    emissive: color.clone().multiplyScalar(0.02),
+    roughness: 0.34,
+    metalness: 0.01,
+    emissive: color.clone().multiplyScalar(0.012),
   });
 }
 
@@ -87,16 +87,20 @@ export function makeAtomMesh(atom, fallbackRadius) {
   );
 }
 
-// Diffuse ambient light keeps element colors legible; one directional key
-// produces one readable specular highlight on each atom.
+// A restrained three-point rig preserves element colors while giving round
+// atoms, bonds, and polyhedra enough directional contrast to read as volumes.
 export function addLights(scene) {
-  scene.add(new THREE.HemisphereLight(0xffffff, 0xb8c2d0, 1.45));
-  scene.add(new THREE.AmbientLight(0xffffff, 0.42));
-  const keyLight = new THREE.DirectionalLight(0xffffff, 1.65);
+  scene.add(new THREE.HemisphereLight(0xf5f7ff, 0xd6d1c9, 0.8));
+  scene.add(new THREE.AmbientLight(0xffffff, 0.18));
+  const keyLight = new THREE.DirectionalLight(0xfff6e8, 2.2);
+  const fillLight = new THREE.DirectionalLight(0xdce9ff, 0.75);
+  const rimLight = new THREE.DirectionalLight(0xffffff, 1.05);
   const keyTarget = new THREE.Object3D();
   keyLight.target = keyTarget;
-  scene.add(keyLight, keyTarget);
-  return { keyLight, keyTarget };
+  fillLight.target = keyTarget;
+  rimLight.target = keyTarget;
+  scene.add(keyLight, fillLight, rimLight, keyTarget);
+  return { keyLight, fillLight, rimLight, keyTarget };
 }
 
 export function makeLine(points, color, opacity = 1, dashed = false) {

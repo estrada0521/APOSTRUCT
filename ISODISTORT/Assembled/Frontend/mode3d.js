@@ -8,7 +8,7 @@ import {
   loadElementStyles,
   makeCellEdges,
   softenedMaterialColor,
-} from "./crystal3d.js?v=7";
+} from "./crystal3d.js?v=8";
 
 const EPS = 1e-9;
 // Bond and coordination-polyhedron rules from the active VESTA 3.5.0
@@ -941,6 +941,8 @@ const VESTA_MAX_CUTOFF = 4.4631; // largest maxA in the table
 const PARENT_CELL_COLOR = 0xe53935;
 const CHILD_CELL_COLOR = 0x8c8c8c;
 const MAX_BOND_RADIUS = 0.14;
+const MAX_AUTOMATIC_BOND_ATOMS = 600;
+const MODE_CONTROL_BATCH_SIZE = 400;
 // VESTA reference geometry is expressed in scene-space angstroms. Scaling it
 // by a lattice axis makes identical moments grow with supercell dimensions.
 const REFERENCE_MOMENT = Math.sqrt(3 * 0.569 ** 2);
@@ -950,14 +952,18 @@ const REFERENCE_HEAD_RADIUS = 0.33;
 const REFERENCE_HEAD_LENGTH = 0.52;
 const MIN_MAGNETIC_ARROW_LENGTH = 0.03;
 const MIN_MAGNETIC_SHAFT_LENGTH = 0.008;
-const CUBE_PX = 116;
+const CUBE_PX = 148;
 const CUBE_MARGIN = 6;
 const CUBE_VIEW = 1.2;
+const AXIS_LABEL_TEXTURE_PX = 128;
+const AXIS_LABEL_FONT_PX = 64;
 const DEPTH_CUE_NEAR_RADIUS = 3.6;
 const DEPTH_CUE_FAR_RADIUS = 9.0;
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
 const UP_Z = new THREE.Vector3(0, 0, 1);
 const UP_Y = new THREE.Vector3(0, 1, 0);
+// A shallow elevated view keeps +a toward the viewer and slightly to the left.
+const DEFAULT_VIEW_DIRECTION = new THREE.Vector3(2.8, 1.8, 1.6).normalize();
 const SHARED_RESOURCE = "modeViewerShared";
 const atomGeometryCache = new Map();
 const atomMaterialCache = new Map();
@@ -966,10 +972,10 @@ const unitCylinderGeometry = new THREE.CylinderGeometry(1, 1, 1, 20);
 unitCylinderGeometry.userData[SHARED_RESOURCE] = true;
 const unitConeGeometry = new THREE.ConeGeometry(1, 1, 20);
 unitConeGeometry.userData[SHARED_RESOURCE] = true;
-const magneticArrowMaterial = new THREE.MeshPhongMaterial({
+const magneticArrowMaterial = new THREE.MeshStandardMaterial({
   color: 0xf00000,
-  specular: 0xff8080,
-  shininess: 38,
+  roughness: 0.38,
+  metalness: 0.01,
 });
 magneticArrowMaterial.userData[SHARED_RESOURCE] = true;
 const MODE_KINDS = [
@@ -1104,10 +1110,10 @@ function makeCylinderBetween(left, right, radius, color) {
   const materialKey = softenedMaterialColor(color);
   if (!bondMaterialCache.has(materialKey)) {
     const base = new THREE.Color(materialKey);
-    const material = new THREE.MeshPhongMaterial({
+    const material = new THREE.MeshStandardMaterial({
       color: base,
-      specular: base.clone().lerp(new THREE.Color(0xffffff), 0.25),
-      shininess: 28,
+      roughness: 0.54,
+      metalness: 0,
     });
     material.userData[SHARED_RESOURCE] = true;
     bondMaterialCache.set(materialKey, material);
@@ -1130,11 +1136,11 @@ function makeModeAtomMesh(atom, fallbackRadius) {
   const color = softenedMaterialColor(atomColor(atom));
   if (!atomMaterialCache.has(color)) {
     const base = new THREE.Color(color);
-    const material = new THREE.MeshPhongMaterial({
+    const material = new THREE.MeshStandardMaterial({
       color: base,
-      specular: base.clone().lerp(new THREE.Color(0xffffff), 0.27),
-      shininess: 28,
-      emissive: base.clone().multiplyScalar(0.02),
+      roughness: 0.34,
+      metalness: 0.01,
+      emissive: base.clone().multiplyScalar(0.012),
     });
     material.userData[SHARED_RESOURCE] = true;
     atomMaterialCache.set(color, material);
@@ -1157,11 +1163,11 @@ function makePolyhedronEdgeMesh(edgeGeometry, color) {
   const pos = edgeGeometry.attributes.position;
   const group = new THREE.Group();
   const radius = 0.013;
-  const edgeMat = new THREE.MeshPhongMaterial({
+  const edgeMat = new THREE.MeshStandardMaterial({
     color: 0xd7d9dc,
-    emissive: new THREE.Color(0xd7d9dc).multiplyScalar(0.32),
-    specular: 0xe4e6e9,
-    shininess: 60,
+    emissive: new THREE.Color(0xd7d9dc).multiplyScalar(0.18),
+    roughness: 0.45,
+    metalness: 0,
     transparent: true,
     opacity: 0.86,
     depthWrite: false,
@@ -1205,11 +1211,11 @@ function makePolyhedronMesh(centerAtom, points, opacity) {
   const group = new THREE.Group();
   group.add(new THREE.Mesh(
     geometry,
-    new THREE.MeshPhongMaterial({
+    new THREE.MeshStandardMaterial({
       color: base,
       emissive: new THREE.Color(0x000000),   // no self-emission: face angle drives brightness
-      specular: base.clone().lerp(new THREE.Color(0xffffff), 0.22),
-      shininess: 30,
+      roughness: 0.62,
+      metalness: 0,
       flatShading: true,
       transparent: true,
       opacity,
@@ -1420,20 +1426,34 @@ function matrixFromVectors(vectors) {
   );
 }
 
+function orthogonalViewUp(direction, requestedUp) {
+  for (const candidate of [requestedUp, UP_Z, UP_Y, new THREE.Vector3(1, 0, 0)]) {
+    const projected = candidate.clone().addScaledVector(direction, -candidate.dot(direction));
+    if (projected.lengthSq() > EPS) return projected.normalize();
+  }
+  return UP_Y.clone();
+}
+
 function axisLabel(text, color, position) {
   const canvas = document.createElement("canvas");
-  canvas.width = canvas.height = 64;
+  canvas.width = canvas.height = AXIS_LABEL_TEXTURE_PX;
   const context = canvas.getContext("2d");
+  const uiStyle = getComputedStyle(document.body);
+  const uiFontSize = Number.parseFloat(uiStyle.fontSize) || 13;
   context.fillStyle = `#${color.toString(16).padStart(6, "0")}`;
-  context.font = "44px sans-serif";
+  context.font = `${uiStyle.fontWeight} ${AXIS_LABEL_FONT_PX}px ${uiStyle.fontFamily}`;
   context.textAlign = "center";
   context.textBaseline = "middle";
-  context.fillText(text, 32, 34);
+  context.fillText(text, AXIS_LABEL_TEXTURE_PX / 2, AXIS_LABEL_TEXTURE_PX / 2);
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, toneMapped: false, depthTest: false }));
   sprite.position.copy(position);
-  sprite.scale.setScalar(0.4);
+  sprite.scale.setScalar(
+    uiFontSize
+      * (2 * CUBE_VIEW) / CUBE_PX
+      * AXIS_LABEL_TEXTURE_PX / AXIS_LABEL_FONT_PX,
+  );
   return sprite;
 }
 
@@ -1441,11 +1461,13 @@ function cubeFaceTexture(hovered = false) {
   const canvas = document.createElement("canvas");
   canvas.width = canvas.height = 128;
   const context = canvas.getContext("2d");
-  context.fillStyle = hovered ? "#c9d4e8" : "#e4e4e1";
+  context.fillStyle = hovered
+    ? "rgba(168, 168, 164, 0.55)"
+    : "rgba(228, 228, 225, 0.38)";
   context.fillRect(0, 0, 128, 128);
-  context.strokeStyle = "#c2c2bc";
-  context.lineWidth = 2;
-  context.strokeRect(1, 1, 126, 126);
+  context.strokeStyle = "rgba(28, 28, 27, 0.98)";
+  context.lineWidth = 1;
+  context.strokeRect(0.5, 0.5, 127, 127);
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   return texture;
@@ -1459,7 +1481,12 @@ function cubeFace(corners, up) {
   ]), 3));
   geometry.setAttribute("uv", new THREE.BufferAttribute(new Float32Array([0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1]), 2));
   const normalTexture = cubeFaceTexture(false);
-  const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ map: normalTexture, side: THREE.DoubleSide, toneMapped: false }));
+  const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
+    map: normalTexture,
+    transparent: true,
+    side: THREE.DoubleSide,
+    toneMapped: false,
+  }));
   const edge1 = corners[1].clone().sub(corners[0]);
   const edge2 = corners[2].clone().sub(corners[0]);
   const normal = edge1.cross(edge2).normalize();
@@ -1493,6 +1520,7 @@ export class ModeStructureViewer {
     canvas,
     empty,
     controls,
+    homeButton,
     status,
     playButton,
     resetButton,
@@ -1509,6 +1537,7 @@ export class ModeStructureViewer {
     this.canvas = canvas;
     this.empty = empty;
     this.controlsNode = controls;
+    this.homeButton = homeButton;
     this.statusNode = status;
     this.playButton = playButton;
     this.resetButton = resetButton;
@@ -1534,17 +1563,26 @@ export class ModeStructureViewer {
     this.needsRender = true;
     this.fitted = false;
     this.bondTopology = null;
+    this.bondOptionsSuppressed = false;
+    this.suppressedBondPreference = null;
+    this.modeControlLimit = MODE_CONTROL_BATCH_SIZE;
     this.liveLayoutResize = false;
+    this.layoutResizePending = false;
+    this.layoutFitPending = false;
     this.keyLightRight = new THREE.Vector3();
     this.keyLightUp = new THREE.Vector3();
+    this.keyLightView = new THREE.Vector3();
 
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    this.renderer.setClearColor(0xffffff, 1);
+    this.rendererSize = new THREE.Vector2();
+    this.renderer.setClearColor(0xf7f7f5, 1);
     this.renderer.autoClear = false;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.05;
     this.scene = new THREE.Scene();
-    this.scene.fog = new THREE.Fog(0xffffff, 1e6, 1e6 + 1);
+    this.scene.fog = new THREE.Fog(0xf7f7f5, 1e6, 1e6 + 1);
     this.lighting = addLights(this.scene);
     this.camera = new THREE.OrthographicCamera(-5, 5, 5, -5, -1000, 1000);
     this.camera.position.set(9, 8, 6);
@@ -1554,6 +1592,7 @@ export class ModeStructureViewer {
     this.trackball.rotateSpeed = 3.6;
     this.trackball.zoomSpeed = 2.4;
     this.trackball.panSpeed = 0.65;
+    this.trackball.addEventListener("start", () => { this.viewTween = null; });
     this.trackball.addEventListener("change", () => { this.needsRender = true; });
     this.cubeScene = new THREE.Scene();
     this.cubeCamera = new THREE.OrthographicCamera(-CUBE_VIEW, CUBE_VIEW, CUBE_VIEW, -CUBE_VIEW, -10, 10);
@@ -1564,16 +1603,19 @@ export class ModeStructureViewer {
     this.cubeDownFace = null;
     this.viewTween = null;
     this.viewCube = null;
+    this.viewCubeVectors = null;
 
     loadElementStyles("./vesta_elements.csv").then(() => this.updateScene());
     this.bindControls();
     this.bindViewCube();
     this.resizeObserver = new ResizeObserver(() => {
-      this.resize();
+      if (this.liveLayoutResize) return;
       const rect = this.canvas.getBoundingClientRect();
-      if (this.structure && !this.liveLayoutResize && rect.width > 10 && rect.height > 10) {
-        this.fitView(true);
+      if (this.structure && rect.width > 10 && rect.height > 10) {
+        this.layoutFitPending = true;
       }
+      this.layoutResizePending = true;
+      this.needsRender = true;
     });
     this.resizeObserver.observe(canvas.parentElement || canvas);
     this.animate = this.animate.bind(this);
@@ -1616,10 +1658,11 @@ export class ModeStructureViewer {
 
   syncDisplayControls() {
     const arrowsOnly = Boolean(this.arrowOnlyInput?.checked);
-    if (this.bondsInput) this.bondsInput.disabled = arrowsOnly;
-    if (this.polyhedraInput) this.polyhedraInput.disabled = arrowsOnly;
+    const disableTopology = arrowsOnly || this.bondOptionsSuppressed;
+    if (this.bondsInput) this.bondsInput.disabled = disableTopology;
+    if (this.polyhedraInput) this.polyhedraInput.disabled = disableTopology;
     if (this.polyhedronOpacityInput) {
-      this.polyhedronOpacityInput.disabled = arrowsOnly || !this.polyhedraInput?.checked;
+      this.polyhedronOpacityInput.disabled = disableTopology || !this.polyhedraInput?.checked;
     }
   }
 
@@ -1636,6 +1679,7 @@ export class ModeStructureViewer {
   }
 
   bindViewCube() {
+    this.homeButton?.addEventListener("click", () => this.restoreDefaultView());
     this.canvas.addEventListener("pointermove", event => {
       if (event.buttons === 0) this.setCubeHover(this.pickCubeFace(event.clientX, event.clientY));
     });
@@ -1683,6 +1727,25 @@ export class ModeStructureViewer {
     this.masterAmplitude = 1;
     this.fitted = false;
     this.bondTopology = null;
+    this.modeControlLimit = MODE_CONTROL_BATCH_SIZE;
+    const viewerAtomCount = Array.isArray(this.payload?.viewer_atoms)
+      ? this.payload.viewer_atoms.length
+      : 0;
+    const suppressTopology = viewerAtomCount > MAX_AUTOMATIC_BOND_ATOMS;
+    if (suppressTopology && !this.bondOptionsSuppressed) {
+      this.suppressedBondPreference = {
+        bonds: Boolean(this.bondsInput?.checked),
+        polyhedra: Boolean(this.polyhedraInput?.checked),
+      };
+      if (this.bondsInput) this.bondsInput.checked = false;
+      if (this.polyhedraInput) this.polyhedraInput.checked = false;
+    } else if (!suppressTopology && this.bondOptionsSuppressed && this.suppressedBondPreference) {
+      if (this.bondsInput) this.bondsInput.checked = this.suppressedBondPreference.bonds;
+      if (this.polyhedraInput) this.polyhedraInput.checked = this.suppressedBondPreference.polyhedra;
+      this.suppressedBondPreference = null;
+    }
+    this.bondOptionsSuppressed = suppressTopology;
+    this.syncDisplayControls();
     if (this.scaleInput) this.scaleInput.value = "1";
     if (this.scaleOutput) this.scaleOutput.textContent = "1.00";
     if (this.playButton) {
@@ -1700,23 +1763,43 @@ export class ModeStructureViewer {
       if (this.statusNode) this.statusNode.textContent = this.payload?.reason || "Mode data is not available.";
       return;
     }
-    const groupedModes = new Map();
-    for (const mode of this.modes) {
+    const renderModes = modes => modes.map(mode => {
+      const value = this.amplitudes.get(mode.id) || 0;
+      const limit = this.modeAmplitudeLimit(mode);
+      const step = Math.max(limit / 500, 0.001);
+      return `<label class="mode-slider" title="${this.escape(mode.label)}">
+        <input type="range" min="${-limit}" max="${limit}" step="${step}" value="${value}" data-mode-id="${mode.id}">
+        <output>${value.toFixed(3)}</output>
+        <span class="mode-slider-label">${this.escape(this.modeControlLabel(mode))}</span>
+      </label>`;
+    }).join("");
+    const visibleModes = this.modes.slice(0, this.modeControlLimit);
+    const siteGroups = new Map();
+    for (const mode of visibleModes) {
       const siteLabel = mode.kind === "strain" ? "Strain" : this.modeSiteLabel(mode);
-      if (!groupedModes.has(siteLabel)) groupedModes.set(siteLabel, []);
-      groupedModes.get(siteLabel).push(mode);
+      if (!siteGroups.has(siteLabel)) siteGroups.set(siteLabel, []);
+      siteGroups.get(siteLabel).push(mode);
     }
-    const groups = [...groupedModes.entries()].map(([siteLabel, modes]) => {
-      return `<details class="mode-group" open><summary>${this.escape(siteLabel)} Modes</summary>${modes.map(mode => {
-        const value = this.amplitudes.get(mode.id) || 0;
-        const limit = this.modeAmplitudeLimit(mode);
-        const step = Math.max(limit / 500, 0.001);
-        return `<label class="mode-slider" title="${this.escape(mode.label)}">
-          <input type="range" min="${-limit}" max="${limit}" step="${step}" value="${value}" data-mode-id="${mode.id}">
-          <output>${value.toFixed(3)}</output>
-          <span>${this.escape(this.modeDisplayLabel(mode))}</span>
-        </label>`;
-      }).join("")}</details>`;
+    const groups = [...siteGroups.entries()].map(([siteLabel, modes]) => {
+      const irrepGroups = new Map();
+      for (const mode of modes) {
+        const groupLabel = this.modeControlGroupLabel(mode);
+        if (!irrepGroups.has(groupLabel)) irrepGroups.set(groupLabel, []);
+        irrepGroups.get(groupLabel).push(mode);
+      }
+      const contents = [...irrepGroups.entries()].map(([groupLabel, groupModes]) => {
+        const properties = [
+          ...new Set(groupModes.flatMap(mode => this.modeIrrepProperties(mode))),
+        ];
+        const propertyLabel = properties.length
+          ? `<span class="mode-group-properties">${this.escape(properties.join(", "))}</span>`
+          : "";
+        return `<div class="mode-irrep-group">
+          <div class="mode-irrep-heading">${this.escape(groupLabel)}${propertyLabel}</div>
+          ${renderModes(groupModes)}
+        </div>`;
+      }).join("");
+      return `<details class="mode-group" open><summary>${this.escape(siteLabel)} Modes</summary>${contents}</details>`;
     }).join("");
     const master = `<section class="mode-group mode-master-group">
       <h4><span>Master Amp</span><span class="mode-master-actions"><button class="primary-action" type="button" data-mode-animate aria-pressed="false">Animate</button><button class="primary-action" type="button" data-mode-reset>Reset</button></span></h4>
@@ -1728,23 +1811,45 @@ export class ModeStructureViewer {
       </div>
     </section>`;
     const childSites = this.undistortedChildSites();
-    const childSitesByElement = new Map();
+    const parentSitesByElement = new Map();
     for (const site of childSites) {
-      if (!childSitesByElement.has(site.element)) childSitesByElement.set(site.element, []);
-      childSitesByElement.get(site.element).push(site);
+      if (!parentSitesByElement.has(site.element)) parentSitesByElement.set(site.element, new Map());
+      const parentSites = parentSitesByElement.get(site.element);
+      if (!parentSites.has(site.parentOrder)) parentSites.set(site.parentOrder, {
+        id: site.parentId,
+        wyckoff: site.parentWyckoff,
+        sites: [],
+      });
+      parentSites.get(site.parentOrder).sites.push(site);
     }
     const atomVisibility = childSites.length ? `<fieldset class="mode-atom-visibility">
       <legend>Undistorted structure</legend>
-      <div class="mode-element-list">${[...childSitesByElement.entries()].map(([element, sites]) => `<label class="mode-atom-toggle mode-element-toggle">
-        <input type="checkbox" data-mode-element="${this.escape(element)}" checked>
-        <span>${this.escape(`${element} (${sites.length})`)}</span>
-      </label>`).join("")}</div>
-      <div class="mode-atom-list">${childSites.map(site => `<label class="mode-atom-toggle">
-        <input type="checkbox" data-mode-child-site="${this.escape(site.id)}" data-mode-site-element="${this.escape(site.element)}" checked>
-        <span>${this.escape(`${site.id} (${site.wyckoff})`)}</span>
-      </label>`).join("")}</div>
+      <div class="mode-atom-tree">${[...parentSitesByElement.entries()].map(([element, parentSites]) => `<details class="mode-atom-branch mode-element-branch">
+        <summary><label class="mode-atom-toggle mode-element-toggle">
+          <input type="checkbox" data-mode-element="${this.escape(element)}" checked>
+          <span>${this.escape(element)}</span>
+        </label></summary>
+        <div class="mode-parent-list">${[...parentSites.entries()].map(([parentOrder, parent]) => `<details class="mode-atom-branch mode-parent-branch">
+          <summary><label class="mode-atom-toggle mode-parent-toggle">
+            <input type="checkbox" data-mode-parent-site="${parentOrder}" data-mode-parent-element="${this.escape(element)}" checked>
+            <span>${this.escape(`${parent.id} (${parent.wyckoff})`)}</span>
+          </label></summary>
+          <div class="mode-child-list">${parent.sites.map(site => `<label class="mode-atom-toggle mode-child-toggle">
+            <input type="checkbox" data-mode-child-site="${this.escape(site.id)}" data-mode-site-parent="${site.parentOrder}" data-mode-site-element="${this.escape(site.element)}"${this.hiddenChildSites.has(site.id) ? "" : " checked"}>
+            <span>${this.escape(`${site.id} (${site.wyckoff})`)}</span>
+          </label>`).join("")}</div>
+        </details>`).join("")}</div>
+      </details>`).join("")}</div>
     </fieldset>` : "";
-    this.controlsNode.innerHTML = `${master}${atomVisibility}${groups || '<p class="mode-viewer-note">No visualizable mode definitions.</p>'}`;
+    const hiddenModeCount = Math.max(0, this.modes.length - visibleModes.length);
+    const modeProgress = hiddenModeCount ? `<p class="mode-viewer-note mode-viewer-progress">
+      Showing ${visibleModes.length} of ${this.modes.length} modes.
+      <button class="secondary-action" type="button" data-mode-load-more>Show next ${Math.min(MODE_CONTROL_BATCH_SIZE, hiddenModeCount)}</button>
+    </p>` : "";
+    const topologyNote = this.bondOptionsSuppressed
+      ? `<p class="mode-viewer-note">Bonds and polyhedra are disabled for structures above ${MAX_AUTOMATIC_BOND_ATOMS} atoms.</p>`
+      : "";
+    this.controlsNode.innerHTML = `${master}${atomVisibility}${topologyNote}${groups || '<p class="mode-viewer-note">No visualizable mode definitions.</p>'}${modeProgress}`;
     const masterInput = this.controlsNode.querySelector("input[data-master-amplitude]");
     masterInput?.addEventListener("input", () => {
       this.playing = false;
@@ -1768,23 +1873,55 @@ export class ModeStructureViewer {
       this.playButton.setAttribute("aria-pressed", String(this.playing));
     });
     this.resetButton?.addEventListener("click", () => this.resetModeAmplitudes());
+    this.controlsNode.querySelector("button[data-mode-load-more]")?.addEventListener("click", () => {
+      this.modeControlLimit = Math.min(
+        this.modes.length,
+        this.modeControlLimit + MODE_CONTROL_BATCH_SIZE,
+      );
+      this.renderModeControls();
+    });
     const siteVisibilityInputs = [...this.controlsNode.querySelectorAll("input[data-mode-child-site]")];
+    const parentVisibilityInputs = [...this.controlsNode.querySelectorAll("input[data-mode-parent-site]")];
     const elementVisibilityInputs = [...this.controlsNode.querySelectorAll("input[data-mode-element]")];
+    const syncVisibility = (input, descendants) => {
+      if (!input || !descendants.length) return;
+      const checkedCount = descendants.filter(descendant => descendant.checked).length;
+      input.checked = checkedCount === descendants.length;
+      input.indeterminate = checkedCount > 0 && checkedCount < descendants.length;
+    };
+    const syncParentVisibility = parentOrder => {
+      const parentInput = parentVisibilityInputs.find(input => input.dataset.modeParentSite === parentOrder);
+      syncVisibility(parentInput, siteVisibilityInputs.filter(input => input.dataset.modeSiteParent === parentOrder));
+    };
     const syncElementVisibility = element => {
       const elementInput = elementVisibilityInputs.find(input => input.dataset.modeElement === element);
-      const siteInputs = siteVisibilityInputs.filter(input => input.dataset.modeSiteElement === element);
-      if (!elementInput || !siteInputs.length) return;
-      const checkedCount = siteInputs.filter(input => input.checked).length;
-      elementInput.checked = checkedCount === siteInputs.length;
-      elementInput.indeterminate = checkedCount > 0 && checkedCount < siteInputs.length;
+      syncVisibility(elementInput, siteVisibilityInputs.filter(input => input.dataset.modeSiteElement === element));
     };
+    const setChildVisibility = (input, checked) => {
+      input.checked = checked;
+      const childSite = input.dataset.modeChildSite;
+      if (checked) this.hiddenChildSites.delete(childSite);
+      else this.hiddenChildSites.add(childSite);
+    };
+    [...siteVisibilityInputs, ...parentVisibilityInputs, ...elementVisibilityInputs].forEach(input => {
+      input.addEventListener("click", event => event.stopPropagation());
+    });
     siteVisibilityInputs.forEach(input => {
       input.addEventListener("change", () => {
-        const childSite = input.dataset.modeChildSite;
-        if (!childSite) return;
-        if (input.checked) this.hiddenChildSites.delete(childSite);
-        else this.hiddenChildSites.add(childSite);
+        setChildVisibility(input, input.checked);
+        syncParentVisibility(input.dataset.modeSiteParent);
         syncElementVisibility(input.dataset.modeSiteElement);
+        this.updateScene();
+      });
+    });
+    parentVisibilityInputs.forEach(input => {
+      input.addEventListener("change", () => {
+        const parentOrder = input.dataset.modeParentSite;
+        const element = input.dataset.modeParentElement;
+        input.indeterminate = false;
+        siteVisibilityInputs.filter(siteInput => siteInput.dataset.modeSiteParent === parentOrder)
+          .forEach(siteInput => setChildVisibility(siteInput, input.checked));
+        syncElementVisibility(element);
         this.updateScene();
       });
     });
@@ -1794,14 +1931,15 @@ export class ModeStructureViewer {
         if (!element) return;
         input.indeterminate = false;
         siteVisibilityInputs.filter(siteInput => siteInput.dataset.modeSiteElement === element).forEach(siteInput => {
-          siteInput.checked = input.checked;
-          const childSite = siteInput.dataset.modeChildSite;
-          if (input.checked) this.hiddenChildSites.delete(childSite);
-          else this.hiddenChildSites.add(childSite);
+          setChildVisibility(siteInput, input.checked);
         });
+        parentVisibilityInputs.filter(parentInput => parentInput.dataset.modeParentElement === element)
+          .forEach(parentInput => syncParentVisibility(parentInput.dataset.modeParentSite));
         this.updateScene();
       });
     });
+    parentVisibilityInputs.forEach(input => syncParentVisibility(input.dataset.modeParentSite));
+    elementVisibilityInputs.forEach(input => syncElementVisibility(input.dataset.modeElement));
     this.controlsNode.querySelectorAll("input[data-mode-id]").forEach(input => {
       input.addEventListener("input", () => {
         const effective = number(input.value);
@@ -1812,6 +1950,11 @@ export class ModeStructureViewer {
         this.updateScene();
       });
     });
+    this.updateControlValues();
+    if (this.playButton) {
+      this.playButton.textContent = this.playing ? "Pause" : "Animate";
+      this.playButton.setAttribute("aria-pressed", String(this.playing));
+    }
     const counts = MODE_KINDS.map(([kind, label]) => {
       const count = this.modes.filter(mode => mode.kind === kind).length;
       return count ? `${count} ${label.toLowerCase()}` : "";
@@ -1867,6 +2010,53 @@ export class ModeStructureViewer {
     return `${irrep}${localLabel.slice(siteStart)}`;
   }
 
+  strainControlLabels(mode) {
+    const label = this.modeDisplayLabel(mode);
+    const strainStart = label.lastIndexOf("strain");
+    if (strainStart <= 0) return { group: "Strain", mode: label };
+    return {
+      group: label.slice(0, strainStart),
+      mode: label.slice(strainStart),
+    };
+  }
+
+  modeControlGroupLabel(mode) {
+    if (mode.kind === "strain") return this.strainControlLabels(mode).group;
+    const label = this.modeDisplayLabel(mode);
+    const siteEnd = label.lastIndexOf("]");
+    return siteEnd >= 0 ? label.slice(0, siteEnd + 1) : this.modeSiteLabel(mode);
+  }
+
+  modeControlLabel(mode) {
+    if (mode.kind === "strain") return this.strainControlLabels(mode).mode;
+    const label = this.modeDisplayLabel(mode);
+    const siteEnd = label.lastIndexOf("]");
+    return siteEnd >= 0 && siteEnd + 1 < label.length
+      ? label.slice(siteEnd + 1)
+      : label;
+  }
+
+  modeIrrepProperties(mode) {
+    const identity = mode.definition?._source_print_identity;
+    const gid = Number(identity?.gid || 0);
+    if (!gid) return [];
+    const sourceKparam = Array.isArray(identity.source_kparam)
+      ? identity.source_kparam.map(Number)
+      : null;
+    const matches = (Array.isArray(this.payload?.viewer_irrep_properties)
+      ? this.payload.viewer_irrep_properties
+      : []).filter(item => {
+        if (Number(item?.gid || 0) !== gid) return false;
+        if (Boolean(item?.magnetic) !== (mode.kind === "magnetic")) return false;
+        if (!Array.isArray(item.source_kparam) || !sourceKparam) return true;
+        return item.source_kparam.length === sourceKparam.length
+          && item.source_kparam.every((value, index) => Number(value) === sourceKparam[index]);
+      });
+    return [...new Set(matches.flatMap(item => (
+      Array.isArray(item.properties) ? item.properties.filter(Boolean) : []
+    )))];
+  }
+
   modeSiteLabel(mode) {
     const match = String(mode.label || "").match(/\[([^:\]]+):[^\]]+\]/);
     if (match) return match[1];
@@ -1876,6 +2066,20 @@ export class ModeStructureViewer {
 
   undistortedChildSites() {
     const atoms = Array.isArray(this.payload?.undistorted_atoms) ? this.payload.undistorted_atoms : [];
+    const viewerAtoms = Array.isArray(this.payload?.viewer_atoms) ? this.payload.viewer_atoms : [];
+    const parentSites = Array.isArray(this.payload?.viewer_parent?.sites) ? this.payload.viewer_parent.sites : [];
+    const viewerAtomById = new Map();
+    for (const atom of viewerAtoms) {
+      if (
+        typeof atom?.atom_id !== "string"
+        || !atom.atom_id
+        || !Number.isInteger(atom.site_order)
+        || typeof atom.element !== "string"
+        || !atom.element
+        || viewerAtomById.has(atom.atom_id)
+      ) return [];
+      viewerAtomById.set(atom.atom_id, atom);
+    }
     const sites = [];
     const seenSites = new Set();
     const seenAtomIds = new Set();
@@ -1884,6 +2088,15 @@ export class ModeStructureViewer {
       const wyckoff = atom?.site;
       const atomIds = atom?.atom_ids;
       const multiplicity = atom?.multiplicity;
+      const contexts = Array.isArray(atomIds)
+        ? atomIds.map(atomId => viewerAtomById.get(atomId))
+        : [];
+      const siteOrders = new Set(contexts.map(context => context?.site_order));
+      const elements = new Set(contexts.map(context => elementFromLabel(context?.element || "")));
+      const parentOrder = siteOrders.size === 1 ? [...siteOrders][0] : null;
+      const parent = Number.isInteger(parentOrder) ? parentSites[parentOrder] : null;
+      const parentId = parent?.label;
+      const parentWyckoff = `${parent?.multiplicity || ""}${parent?.wyckoff || ""}`;
       if (
         typeof id !== "string"
         || !id
@@ -1894,10 +2107,24 @@ export class ModeStructureViewer {
         || atomIds.some(atomId => (
           typeof atomId !== "string" || !atomId || seenAtomIds.has(atomId)
         ))
+        || contexts.some(context => !context)
+        || !Number.isInteger(parentOrder)
+        || typeof parentId !== "string"
+        || !parentId
+        || !parentWyckoff
+        || elements.size !== 1
       ) return [];
       seenSites.add(id);
       atomIds.forEach(atomId => seenAtomIds.add(atomId));
-      sites.push({ id, wyckoff, element: elementFromLabel(id), atomIds: [...atomIds] });
+      sites.push({
+        id,
+        wyckoff,
+        element: [...elements][0],
+        parentOrder,
+        parentId,
+        parentWyckoff,
+        atomIds: [...atomIds],
+      });
     }
     return sites;
   }
@@ -2008,6 +2235,10 @@ export class ModeStructureViewer {
   }
 
   buildViewCube(vectors) {
+    const unchanged = this.viewCube
+      && this.viewCubeVectors?.length === vectors.length
+      && this.viewCubeVectors.every((vector, index) => vector.equals(vectors[index]));
+    if (unchanged) return;
     if (this.viewCube) {
       this.setCubeHover(null);
       this.cubeScene.remove(this.viewCube);
@@ -2023,14 +2254,16 @@ export class ModeStructureViewer {
     }
     const scale = 0.66 / maximum;
     const c = (i, j, k) => corner(i, j, k).multiplyScalar(scale);
+    const sideUp = new THREE.Vector3(0, 0, 1).applyMatrix3(matrix).normalize();
+    const topUp = new THREE.Vector3(0, 1, 0).applyMatrix3(matrix).normalize();
     const group = new THREE.Group();
     [
-      { corners: [c(1, 0, 0), c(1, 1, 0), c(1, 1, 1), c(1, 0, 1)], up: UP_Z },
-      { corners: [c(0, 0, 0), c(0, 0, 1), c(0, 1, 1), c(0, 1, 0)], up: UP_Z },
-      { corners: [c(0, 1, 0), c(0, 1, 1), c(1, 1, 1), c(1, 1, 0)], up: UP_Z },
-      { corners: [c(0, 0, 0), c(1, 0, 0), c(1, 0, 1), c(0, 0, 1)], up: UP_Z },
-      { corners: [c(0, 0, 1), c(1, 0, 1), c(1, 1, 1), c(0, 1, 1)], up: UP_Y },
-      { corners: [c(0, 0, 0), c(0, 1, 0), c(1, 1, 0), c(1, 0, 0)], up: UP_Y },
+      { corners: [c(1, 0, 0), c(1, 1, 0), c(1, 1, 1), c(1, 0, 1)], up: sideUp },
+      { corners: [c(0, 0, 0), c(0, 0, 1), c(0, 1, 1), c(0, 1, 0)], up: sideUp },
+      { corners: [c(0, 1, 0), c(0, 1, 1), c(1, 1, 1), c(1, 1, 0)], up: sideUp },
+      { corners: [c(0, 0, 0), c(1, 0, 0), c(1, 0, 1), c(0, 0, 1)], up: sideUp },
+      { corners: [c(0, 0, 1), c(1, 0, 1), c(1, 1, 1), c(0, 1, 1)], up: topUp },
+      { corners: [c(0, 0, 0), c(0, 1, 0), c(1, 1, 0), c(1, 0, 0)], up: topUp },
     ].forEach(({ corners, up }) => {
       const face = cubeFace(corners, up);
       this.cubeFaceMeshes.push(face);
@@ -2051,6 +2284,7 @@ export class ModeStructureViewer {
       group.add(axisLabel(label, color, origin.clone().add(unit.multiplyScalar(length + 0.22))));
     });
     this.viewCube = group;
+    this.viewCubeVectors = vectors.map(vector => vector.clone());
     this.cubeScene.add(group);
   }
 
@@ -2089,15 +2323,32 @@ export class ModeStructureViewer {
   }
 
   goToCubeView(viewDirection, up) {
-    const distance = this.camera.position.distanceTo(this.trackball.target);
+    const target = this.trackball.target.clone();
+    const distance = this.camera.position.distanceTo(target);
+    const direction = viewDirection.clone().normalize();
+    const targetUp = orthogonalViewUp(direction, up);
+    const targetPosition = target.clone().addScaledVector(direction, distance);
+    const fromMatrix = new THREE.Matrix4().lookAt(this.camera.position, target, this.camera.up);
+    const toMatrix = new THREE.Matrix4().lookAt(targetPosition, target, targetUp);
+    const fromQuaternion = new THREE.Quaternion().setFromRotationMatrix(fromMatrix).normalize();
+    const toQuaternion = new THREE.Quaternion().setFromRotationMatrix(toMatrix).normalize();
+    const angle = fromQuaternion.angleTo(toQuaternion);
     this.viewTween = {
-      fromPosition: this.camera.position.clone(),
-      toPosition: this.trackball.target.clone().add(viewDirection.clone().normalize().multiplyScalar(distance)),
-      fromUp: this.camera.up.clone(),
-      toUp: up.clone().normalize(),
+      target,
+      distance,
+      fromQuaternion,
+      toQuaternion,
       start: performance.now(),
-      duration: 320,
+      duration: 260 + 180 * angle / Math.PI,
     };
+    this.needsRender = true;
+  }
+
+  restoreDefaultView() {
+    if (!this.structure) return;
+    this.viewTween = null;
+    this.fitView();
+    this.fitted = true;
     this.needsRender = true;
   }
 
@@ -2105,9 +2356,15 @@ export class ModeStructureViewer {
     if (!this.viewTween) return;
     const elapsed = Math.min(1, (performance.now() - this.viewTween.start) / this.viewTween.duration);
     const eased = elapsed * elapsed * (3 - 2 * elapsed);
-    this.camera.position.lerpVectors(this.viewTween.fromPosition, this.viewTween.toPosition, eased);
-    this.camera.up.lerpVectors(this.viewTween.fromUp, this.viewTween.toUp, eased).normalize();
-    this.camera.lookAt(this.trackball.target);
+    const orientation = new THREE.Quaternion().slerpQuaternions(
+      this.viewTween.fromQuaternion,
+      this.viewTween.toQuaternion,
+      eased,
+    ).normalize();
+    const offset = UP_Z.clone().applyQuaternion(orientation).multiplyScalar(this.viewTween.distance);
+    this.camera.position.copy(this.viewTween.target).add(offset);
+    this.camera.up.copy(UP_Y).applyQuaternion(orientation).normalize();
+    this.camera.quaternion.copy(orientation);
     this.needsRender = true;
     if (elapsed >= 1) this.viewTween = null;
   }
@@ -2144,6 +2401,8 @@ export class ModeStructureViewer {
     );
     const { displacements, moments } = this.modeVectors(atoms, scale);
     const arrowsOnly = Boolean(this.arrowOnlyInput?.checked);
+    const showBonds = !this.bondOptionsSuppressed && Boolean(this.bondsInput?.checked);
+    const showPolyhedra = !this.bondOptionsSuppressed && Boolean(this.polyhedraInput?.checked);
     const polyhedronOpacity = Math.min(
       1,
       Math.max(0, number(this.polyhedronOpacityInput?.value, 70) / 100),
@@ -2154,9 +2413,6 @@ export class ModeStructureViewer {
     const group = new THREE.Group();
     this.buildViewCube(vectors);
     if (parentCell) {
-      // Official ISOVIZ receives !parentorigin explicitly in child-cell units.
-      // The local payload does not expose it yet; do not substitute OPD origin,
-      // which is a different coordinate quantity.
       const viewerOrigin = this.payload?.viewer_parent_origin;
       const parentOffset = Array.isArray(viewerOrigin)
         ? combine(vectors, vector3(viewerOrigin))
@@ -2167,7 +2423,7 @@ export class ModeStructureViewer {
       group.add(makeCellEdges(distortedParentVectors, PARENT_CELL_COLOR, parentOffset, 1, false, 2));
     }
     group.add(makeCellEdges(vectors, CHILD_CELL_COLOR, new THREE.Vector3(), 0.62));
-    if (!arrowsOnly) {
+    if (!arrowsOnly && (showBonds || showPolyhedra)) {
       const sourceAtoms = new Map();
       for (const atom of atoms) {
         if (sourceAtoms.has(atom.sourceKey)) continue;
@@ -2197,8 +2453,8 @@ export class ModeStructureViewer {
         vectors,
         this.bondTopology,
         {
-          showBonds: Boolean(this.bondsInput?.checked),
-          showPolyhedra: Boolean(this.polyhedraInput?.checked),
+          showBonds,
+          showPolyhedra,
           polyhedronOpacity,
           visualScale,
         },
@@ -2270,7 +2526,7 @@ export class ModeStructureViewer {
     const cameraOffset = this.camera.position.clone().sub(this.trackball.target);
     const direction = preserveOrientation && cameraOffset.lengthSq() > EPS
       ? cameraOffset.normalize()
-      : new THREE.Vector3(2.4, 2.1, 1.45).normalize();
+      : DEFAULT_VIEW_DIRECTION.clone();
     this.camera.position.copy(center).add(direction.multiplyScalar(radius * 3.5));
     this.scene.fog.near = radius * DEPTH_CUE_NEAR_RADIUS;
     this.scene.fog.far = radius * DEPTH_CUE_FAR_RADIUS;
@@ -2282,20 +2538,38 @@ export class ModeStructureViewer {
 
   resize() {
     const rect = this.canvas.getBoundingClientRect();
-    this.renderer.setSize(Math.max(rect.width, 1), Math.max(rect.height, 1), false);
+    const width = Math.max(rect.width, 1);
+    const height = Math.max(rect.height, 1);
+    this.renderer.getSize(this.rendererSize);
+    if (this.rendererSize.x === width && this.rendererSize.y === height) return;
+    this.renderer.setSize(width, height, false);
     if (this.structure) {
-      const aspect = Math.max(rect.width, 1) / Math.max(rect.height, 1);
-      const height = Math.max(this.camera.top - this.camera.bottom, 1);
-      this.camera.left = -height * aspect / 2;
-      this.camera.right = height * aspect / 2;
+      const aspect = width / height;
+      const viewHeight = Math.max(this.camera.top - this.camera.bottom, 1);
+      this.camera.left = -viewHeight * aspect / 2;
+      this.camera.right = viewHeight * aspect / 2;
       this.camera.updateProjectionMatrix();
     }
     this.trackball.handleResize();
     this.needsRender = true;
   }
 
+  applyPendingLayout() {
+    if (!this.layoutResizePending) return;
+    this.layoutResizePending = false;
+    const refit = this.layoutFitPending;
+    this.layoutFitPending = false;
+    this.resize();
+    if (refit && this.structure) {
+      this.fitView(true);
+      this.fitted = true;
+    }
+  }
+
   animate(time) {
     requestAnimationFrame(this.animate);
+    this.applyPendingLayout();
+    if (this.liveLayoutResize) this.resize();
     this.applyViewTween();
     if (this.playing && time - this.lastAnimationUpdate >= 50) {
       this.lastAnimationUpdate = time;
@@ -2319,9 +2593,19 @@ export class ModeStructureViewer {
     const lightDistance = this.camera.position.distanceTo(this.trackball.target);
     this.keyLightRight.set(1, 0, 0).applyQuaternion(this.camera.quaternion);
     this.keyLightUp.set(0, 1, 0).applyQuaternion(this.camera.quaternion);
-    this.lighting.keyLight.position.copy(this.camera.position)
-      .addScaledVector(this.keyLightRight, -lightDistance * 0.14)
+    this.keyLightView.copy(this.camera.position).sub(this.trackball.target).normalize();
+    this.lighting.keyLight.position.copy(this.trackball.target)
+      .addScaledVector(this.keyLightView, lightDistance)
+      .addScaledVector(this.keyLightRight, -lightDistance * 0.72)
+      .addScaledVector(this.keyLightUp, lightDistance * 0.78);
+    this.lighting.fillLight.position.copy(this.trackball.target)
+      .addScaledVector(this.keyLightView, lightDistance * 0.45)
+      .addScaledVector(this.keyLightRight, lightDistance * 0.95)
       .addScaledVector(this.keyLightUp, lightDistance * 0.1);
+    this.lighting.rimLight.position.copy(this.trackball.target)
+      .addScaledVector(this.keyLightView, -lightDistance * 0.75)
+      .addScaledVector(this.keyLightRight, -lightDistance * 0.25)
+      .addScaledVector(this.keyLightUp, lightDistance * 0.85);
     this.lighting.keyTarget.position.copy(this.trackball.target);
     this.lighting.keyTarget.updateMatrixWorld();
     this.renderer.render(this.scene, this.camera);

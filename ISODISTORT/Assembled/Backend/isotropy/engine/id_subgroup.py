@@ -378,9 +378,8 @@ def id_subgroup_identify_with_generator_block(
 ) -> IdSubgroupResult | None:
     """Identify a subgroup in the candidate order used by ``id_subgroup_``.
 
-    ``generators_conv`` optionally supplies an initialized generator block for
-    compatibility fixtures. Normal callers read canonical generators from
-    ``Source/data_space`` through ``SourceData.get_generators_records``.
+    ``generators_conv`` optionally supplies a complete generator block.
+    Otherwise canonical generators come from ``Source/data_space``.
     """
 
     parent = int(parent_sg)

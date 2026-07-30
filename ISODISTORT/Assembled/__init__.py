@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from fractions import Fraction
+from functools import lru_cache
 import math
 from typing import Any
 
@@ -50,6 +51,22 @@ _SELECTION_FIELDS = {
     "irrep_index",
 }
 _DISTORTION_FIELDS = {"strain", "displacive_sites", "magnetic_sites"}
+_INVARIANT_FIELDS = {
+    "space_group",
+    "factors",
+    "minimum_degree",
+    "maximum_degree",
+}
+_INVARIANT_FACTOR_FIELDS = {
+    "slot",
+    "gid",
+    "label",
+    "magnetic",
+    "k_parameters",
+    "opd",
+    "domain",
+    "parameter_offset",
+}
 
 
 def _reject_unknown_fields(
@@ -109,6 +126,30 @@ def _rational_params(value: Any, *, field: str) -> dict[str, str]:
         except (ValueError, ZeroDivisionError) as exc:
             raise ValueError(f"{field}.{key} must be a finite rational value") from exc
         out[key] = text
+    return out
+
+
+def _rational_sequence(value: Any, *, field: str) -> list[str]:
+    if not isinstance(value, list):
+        raise ValueError(f"{field} must be an array")
+    out: list[str] = []
+    for index, raw_value in enumerate(value):
+        item_field = f"{field}[{index}]"
+        if isinstance(raw_value, str):
+            text = raw_value.strip()
+            if not text:
+                raise ValueError(f"{item_field} must be a finite rational value")
+        elif type(raw_value) is int:
+            text = str(raw_value)
+        elif type(raw_value) is float and math.isfinite(raw_value):
+            text = str(raw_value)
+        else:
+            raise ValueError(f"{item_field} must be a finite rational value")
+        try:
+            Fraction(text)
+        except (ValueError, ZeroDivisionError) as exc:
+            raise ValueError(f"{item_field} must be a finite rational value") from exc
+        out.append(text)
     return out
 
 
@@ -221,6 +262,165 @@ def _state_request(payload: Any) -> dict[str, Any]:
     }
 
 
+def _invariant_service():
+    from ISODISTORT.Assembled.Backend.invariants.service import invariant_service
+
+    return invariant_service()
+
+
+@lru_cache(maxsize=4096)
+def _invariant_domain_option(
+    sg: int,
+    gid: int,
+    magnetic: bool,
+    k_parameters: tuple[str, ...],
+    opd: str,
+    domain: int,
+) -> tuple[str, str, str, str, str, int, list[str]]:
+    options = _invariant_service().domains(
+        {
+            "space_group": int(sg),
+            "gid": int(gid),
+            "magnetic": bool(magnetic),
+            "k_parameters": list(k_parameters),
+            "direction": str(opd),
+            "parameter_offset": 0,
+        }
+    )["domains"]
+    item = next(item for item in options if item["number"] == domain)
+    return (
+        str(item["display_opd"]),
+        str(item["subgroup"]),
+        str(item["basis"]),
+        str(item["origin"]),
+        str(item["display"]),
+        int(item["parameter_count"]),
+        [str(value) for value in item.get("ferroic_properties") or []],
+    )
+
+
+def _complete_invariant_factors(state: dict[str, Any]) -> None:
+    """Finish offsets and classify only unnamed induced subspaces."""
+    selected = state.get("selected") or {}
+    mode_details = selected.get("mode_details") or {}
+    factors = mode_details.get("secondary_opd_factors") or []
+    sg = int((state.get("space_group") or state.get("input", {}).get("parent"))["number"])
+    parameter_offset = 0
+    for factor in selected.get("opd_factors") or []:
+        parameter_count = factor.get("parameter_count")
+        if type(parameter_count) is not int or parameter_count < 1:
+            raise ValueError("selected primary OPD lost its Source parameter count")
+        factor["parameter_offset"] = parameter_offset
+        parameter_offset += parameter_count
+    completed_factors: list[dict[str, Any]] = []
+    for raw_factor in factors:
+        factor = dict(raw_factor)
+        direction_matrix = factor.pop("direction_matrix", None)
+        if direction_matrix is not None:
+            resolved = _invariant_service().match_subspace(
+                {
+                    "space_group": sg,
+                    "gid": int(factor["gid"]),
+                    "magnetic": bool(factor.get("magnetic")),
+                    "k_parameters": list(factor.get("k_parameters") or []),
+                    "direction_matrix": direction_matrix,
+                    "include_domain_details": True,
+                }
+            )
+            if resolved is None:
+                continue
+            factor.update(resolved)
+        if not factor.get("domain_display"):
+            option = _invariant_domain_option(
+                sg,
+                int(factor["gid"]),
+                bool(factor.get("magnetic")),
+                tuple(str(value) for value in factor.get("k_parameters") or []),
+                str(factor["opd"]),
+                int(factor["domain"]),
+            )
+            factor["domain_display"] = option[4]
+            factor["parameter_count"] = option[5]
+            factor["domain_presentation"] = {
+                "display_opd": option[0],
+                "subgroup": option[1],
+                "basis": option[2],
+                "origin": option[3],
+            }
+            factor["ferroic_properties"] = option[6]
+        parameter_count = factor.get("parameter_count")
+        if type(parameter_count) is not int or parameter_count < 1:
+            raise ValueError("secondary OPD lost its Source parameter count")
+        factor["parameter_offset"] = parameter_offset
+        parameter_offset += parameter_count
+        completed_factors.append(factor)
+    mode_details["secondary_opd_factors"] = completed_factors
+
+
+def _invariant_request(payload: Any) -> dict[str, Any]:
+    if not isinstance(payload, Mapping):
+        raise ValueError("request body must be a JSON object")
+    _reject_unknown_fields(payload, allowed=_INVARIANT_FIELDS, field="invariants")
+    factors = payload.get("factors")
+    if not isinstance(factors, list) or not factors:
+        raise ValueError("invariants.factors must be a non-empty array")
+    space_group = _positive_index(
+        payload.get("space_group"), field="invariants.space_group"
+    )
+    minimum_degree = _positive_index(
+        payload.get("minimum_degree"), field="invariants.minimum_degree"
+    )
+    maximum_degree = _positive_index(
+        payload.get("maximum_degree"), field="invariants.maximum_degree"
+    )
+    service = _invariant_service()
+    resolved: list[dict[str, Any]] = []
+    for ordinal, factor in enumerate(factors, 1):
+        field = f"invariants.factors[{ordinal}]"
+        if not isinstance(factor, Mapping):
+            raise ValueError(f"{field} must be an object")
+        _reject_unknown_fields(
+            factor,
+            allowed=_INVARIANT_FACTOR_FIELDS,
+            field=field,
+        )
+        gid = _positive_index(factor.get("gid"), field=f"{field}.gid")
+        parameter_count = service.projection.k_parameter_dimension_by_gid(gid)
+        parameters = _rational_sequence(
+            factor.get("k_parameters"), field=f"{field}.k_parameters"
+        )
+        if len(parameters) != parameter_count:
+            raise ValueError(
+                f"{field}.k_parameters must contain exactly {parameter_count} values"
+            )
+        resolved_factor = {
+            "gid": gid,
+            "k_parameters": parameters,
+            "magnetic": _boolean(
+                factor.get("magnetic", False), field=f"{field}.magnetic"
+            ),
+            "direction": _exact_text(factor.get("opd"), field=f"{field}.opd"),
+            "domain": _positive_index(
+                factor.get("domain"), field=f"{field}.domain"
+            ),
+        }
+        if "parameter_offset" in factor:
+            parameter_offset = factor["parameter_offset"]
+            if type(parameter_offset) is not int or parameter_offset < 0:
+                raise ValueError(
+                    f"{field}.parameter_offset must be a nonnegative integer"
+                )
+            resolved_factor["parameter_offset"] = parameter_offset
+        resolved.append(resolved_factor)
+    return {
+        "space_group": space_group,
+        "mode": "opd",
+        "factors": resolved,
+        "minimum_degree": minimum_degree,
+        "maximum_degree": maximum_degree,
+    }
+
+
 def handle_api(endpoint: str, query: dict[str, list[str]]):
     raise ValueError(f"unknown endpoint: {endpoint}")
 
@@ -237,5 +437,10 @@ def handle_api_post(endpoint: str, query: dict[str, list[str]], payload: dict[st
                 **(state.get("selected") or {}),
                 "mode_detail_text": render_mode_detail_text(state),
             }
+            _complete_invariant_factors(state)
         return state
+    if endpoint == "invariants":
+        if query:
+            raise ValueError("invariants does not accept query parameters")
+        return _invariant_service().compute(_invariant_request(payload))
     raise ValueError(f"unknown endpoint: {endpoint}")

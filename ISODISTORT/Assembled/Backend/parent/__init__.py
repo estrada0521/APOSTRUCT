@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import copy
+from fractions import Fraction
+import math
 import re
 from pathlib import Path
 from typing import Any
@@ -98,6 +100,64 @@ def _parse_explicit_parent_preference(block: gemmi.cif.Block) -> str | None:
     return None
 
 
+def _chemical_formula(block: gemmi.cif.Block) -> str | None:
+    formula = _cif_value(
+        block,
+        [
+            "_chemical_formula_structural",
+            "_chemical_formula_sum",
+            "_chemical_formula_moiety",
+            "_chemical_formula.structural",
+            "_chemical_formula.sum",
+            "_chemical_formula.moiety",
+        ],
+    )
+    return None if formula in {None, ".", "?"} else formula
+
+
+def _element_symbol(value: Any) -> str | None:
+    match = re.match(r"\s*([A-Z][a-z]?)", str(value or ""))
+    return None if match is None else match.group(1)
+
+
+def _formula_number(value: Any, *, default: Fraction | None = None) -> Fraction | None:
+    text = str(value or "").strip()
+    if not text or text in {".", "?"}:
+        return default
+    text = re.sub(r"\([^)]*\)$", "", text)
+    try:
+        return Fraction(text)
+    except (ValueError, ZeroDivisionError):
+        return None
+
+
+def _formula_from_sites(sites: list[dict[str, Any]]) -> str | None:
+    totals: dict[str, Fraction] = {}
+    order: list[str] = []
+    for site in sites:
+        element = _element_symbol(site.get("type") or site.get("label"))
+        multiplicity = _formula_number(
+            site.get("wyckoff_multiplicity") or site.get("multiplicity")
+        )
+        occupancy = _formula_number(site.get("occupancy"), default=Fraction(1))
+        if element is None or multiplicity is None or occupancy is None:
+            return None
+        if element not in totals:
+            totals[element] = Fraction(0)
+            order.append(element)
+        totals[element] += multiplicity * occupancy
+    if not totals or any(value <= 0 for value in totals.values()):
+        return None
+    denominator = math.lcm(*(value.denominator for value in totals.values()))
+    counts = [int(totals[element] * denominator) for element in order]
+    divisor = math.gcd(*counts)
+    counts = [count // divisor for count in counts]
+    return " ".join(
+        element if count == 1 else f"{element}{count}"
+        for element, count in zip(order, counts, strict=True)
+    )
+
+
 def _atom_sites(block: gemmi.cif.Block) -> list[dict[str, Any]]:
     label_col = block.find_loop("_atom_site_label")
     if not label_col:
@@ -185,6 +245,7 @@ def read_cif_summary_from_block(block: gemmi.cif.Block, path: str | None = None)
     return {
         "path": path,
         "block": block.name,
+        "formula": _chemical_formula(block),
         "parent": parent,
         "explicit_parent_preference": _parse_explicit_parent_preference(block),
         "lattice": _lattice_parameters(block),
@@ -452,6 +513,9 @@ def build_parent_state_from_cif_info(cif_info: dict[str, Any]) -> dict[str, Any]
                 if key in match:
                     site[key] = match[key]
 
+    if not str(cif_info.get("formula") or "").strip():
+        cif_info["formula"] = _formula_from_sites(cif_info.get("atom_sites", []))
+
     default_setting = local_data.default_inter_setting_record(sg)
     parent_inter_setting = local_data.inter_setting_record(parent_inter_setting_id)
     parent_preference = str(cif_info.get("explicit_parent_preference") or "").strip()
@@ -468,12 +532,15 @@ def build_parent_state_from_cif_info(cif_info: dict[str, Any]) -> dict[str, Any]
         int(site["wyckoff_row_id"])
         for site in matched_sites
     }) if len(matched_sites) == len(cif_info.get("atom_sites", [])) else []
+    lattice = int(local_data.space["ispace_lattice"][sg - 1])
     return {
         "schema": "isodistort.assembled.parent.v1",
         "input": cif_info,
         "space_group": {
             "number": sg,
             "symbol": cif_info.get("parent", {}).get("symbol", ""),
+            "lattice": lattice,
+            "lattice_type": str(local_data.space["lattice_label"][lattice - 1]).strip(),
         },
         "setting": setting,
         "_internal": {

@@ -63,7 +63,7 @@ def mode_total_for_row(decoder, sg: int, row: WyckoffRow, little: LittleIrrepRec
 
 
 def mode_totals(decoder, case: Case) -> dict[str, int]:
-    """Return current smode_dev mode totals for one atom-displacement input."""
+    """Return mode totals for one atom-displacement input."""
     rows = [row for row in decoder.wyckoff_rows(case.sg) if row.label == case.wyckoff]
     if len(rows) != 1:
         raise KeyError(f"expected one Wyckoff row for SG{case.sg} {case.wyckoff}, got {len(rows)}")

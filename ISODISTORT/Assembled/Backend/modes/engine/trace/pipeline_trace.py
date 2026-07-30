@@ -53,9 +53,9 @@ def pipeline_trace(
     decoder: ModeDataDecoder,
     case: Case,
     *,
+    selected_gid: int | None = None,
     selected_isotropy_row_id: int | None = None,
     selected_basis_pml_override: tuple[int, ...] | None = None,
-    selected_origin_override: tuple[int, int, int, int] | None = None,
     emit_all_opd_rows: bool = False,
     emit_freeparam_opd_groups: bool = False,
     emit_all_project_families: bool = False,
@@ -63,12 +63,10 @@ def pipeline_trace(
     orderparam_rows_by_gid: dict[int, list[list[float]]] | None = None,
     occurrence_basis_pml_override: tuple[int, ...] | None = None,
     occurrence_translations_cinter: Sequence[Sequence[float]] | None = None,
-    presentation_operation_records_by_gid: dict[int, Sequence[Sequence[int]]] | None = None,
-    presentation_k_params_by_gid: dict[int, Sequence[Fraction | int]] | None = None,
     presentation_setting_matrix: Sequence[Sequence[Fraction | float | int]] | None = None,
     presentation_setting_origin: Sequence[Fraction | float | int] | None = None,
 ) -> dict[str, object]:
-    """Current exposed smode_dev intermediate state for a parsed input case."""
+    """Return the mode-projection intermediate state for a parsed input case."""
 
     if occurrence_basis_pml_override is not None and (
         len(occurrence_basis_pml_override) != 9
@@ -83,11 +81,27 @@ def pipeline_trace(
     if len(rows) != 1:
         raise KeyError(f"expected one Wyckoff row for SG{case.sg} {case.wyckoff}, got {len(rows)}")
     row = rows[0]
-    littles = little_records_for_k(decoder, case.sg, case.k_label)
+    all_littles = little_records_for_k(decoder, case.sg, case.k_label)
+    if selected_gid is None:
+        littles = all_littles
+    else:
+        if isinstance(selected_gid, bool) or not isinstance(selected_gid, int) or selected_gid <= 0:
+            raise ValueError("selected gid must be a positive exact integer")
+        littles = [little for little in all_littles if little.gid == selected_gid]
+        if len(littles) != 1:
+            raise ValueError(
+                f"gid {selected_gid} does not identify one SG{case.sg} {case.k_label} irrep"
+            )
     totals = mode_totals(decoder, case)
     if int(vector_setting) not in (1, 2):
         raise ValueError(f"unsupported vector setting: {vector_setting}")
-    project_entries = project_entry_trace(decoder, case, row, vector_setting=int(vector_setting))
+    project_entries = project_entry_trace(
+        decoder,
+        case,
+        row,
+        vector_setting=int(vector_setting),
+        selected_gid=selected_gid,
+    )
     project_local408 = project_local408_trace(decoder, case, row, project_entries)
     site_ssgn = site_ssgn_matrix_trace(decoder, row, project_entries, project_local408)
     parent_get_irrep4 = parent_get_irrep4_trace(decoder, case, row, project_entries)
@@ -115,8 +129,10 @@ def pipeline_trace(
         if isinstance(item, dict) and "gid" in item
     }
     canonical_atom_basis = None
-    for little in littles:
-        rows_for_little = isotropy_rows_by_gid[little.gid]
+    for little in all_littles:
+        rows_for_little = isotropy_rows_by_gid.get(little.gid)
+        if rows_for_little is None:
+            rows_for_little = decoder.isotropy_rows_for_little_gid(little.gid)
         if rows_for_little:
             canonical_atom_basis = tuple(rows_for_little[0].basis)
             break
@@ -223,42 +239,19 @@ def pipeline_trace(
     def project_weight_buffer(
         gid: int,
         record: tuple[int, int, int, int, int],
-        presentation_record: tuple[int, int, int, int, int] | None = None,
     ) -> Sequence[float]:
         key = (
             int(gid),
             tuple(int(value) for value in record),
-            None if presentation_record is None else tuple(int(value) for value in presentation_record),
-            tuple(Fraction(value) for value in (presentation_k_params_by_gid or {}).get(int(gid), ())),
         )
         if key not in project_weight_buffers:
-            if presentation_record is None:
-                project_weight_buffers[key] = decoder.project_vector_bridge_weight_view_for_record(
+            project_weight_buffers[key] = (
+                decoder.project_vector_bridge_weight_view_for_record(
                     int(gid),
                     key[1],
                     case,
                 )
-            else:
-                presentation_case = None
-                if key[3]:
-                    presentation_case = Case(
-                        sg=case.sg,
-                        wyckoff=case.wyckoff,
-                        k_label=case.k_label,
-                        params=case.params,
-                        title=case.title,
-                        atom_label=case.atom_label,
-                        k_direction=case.k_direction,
-                        site_params=case.site_params,
-                        k_params=key[3],
-                    )
-                project_weight_buffers[key] = decoder.project_vector_bridge_weight_view_for_presentation(
-                    int(gid),
-                    key[1],
-                    key[2],
-                    case,
-                    presentation_case=presentation_case,
-                )
+            )
         return project_weight_buffers[key]
 
     final_vector_transform = decoder.cml_to_cinter_matrix(case.sg)
@@ -322,7 +315,6 @@ def pipeline_trace(
             case.sg,
             row,
             atom_basis,
-            case.site_params,
         )
         if occurrence_translations_cinter and gid not in (orderparam_rows_by_gid or {}):
             expanded_fractionals = []
@@ -358,10 +350,6 @@ def pipeline_trace(
             transform_setting_point(position) for position in raw_atom_fractionals
         )
         atom_order = decoder.final_atom_order_indices(raw_atom_records)
-        atom_order = decoder.final_atom_position_order_indices(
-            displayed_atom_fractionals,
-            atom_order,
-        )
         return (
             raw_atom_fractionals,
             raw_atom_records,
@@ -406,7 +394,6 @@ def pipeline_trace(
                     and bool(case.k_params)
                     and int(vector_setting) == 1
                     and direct_direction_rows
-                    and presentation_operation_records_by_gid is None
                 ):
                     return None
                 _fractionals, candidate_records, _displayed, candidate_order = layout
@@ -543,12 +530,6 @@ def pipeline_trace(
                     if source_row_count <= 0:
                         return []
                     displayed_records = [raw_atom_records[index] for index in atom_order]
-                    presentation_records = (presentation_operation_records_by_gid or {}).get(int(little.gid))
-                    if presentation_records is not None and len(presentation_records) != len(displayed_records):
-                        raise ValueError(
-                            f"presentation operation record count mismatch for gid {little.gid}: "
-                            f"{len(presentation_records)} != {len(displayed_records)}"
-                        )
                     type1_dim4_identity_pair = (
                         little.irrep_type == 1
                         and bool(case.k_params)
@@ -672,15 +653,9 @@ def pipeline_trace(
                                 )
                             source_modes: list[list[list[float]]] = []
                             for atom_index, record in enumerate(displayed_records):
-                                presentation_record = (
-                                    None
-                                    if presentation_records is None
-                                    else tuple(int(value) for value in presentation_records[atom_index])
-                                )
                                 weight_buffer = project_weight_buffer(
                                     little.gid,
                                     record,
-                                    presentation_record,
                                 )
                                 direct_coefficients = direct_bridge_coefficients(
                                     project_basis_by_branch,

@@ -1,7 +1,4 @@
-"""Mode-subduction specification helpers.
-
-Extracted mechanically from the former monolithic runtime.
-"""
+"""Mode-subduction specification helpers."""
 
 from __future__ import annotations
 
@@ -86,6 +83,52 @@ def _strict_source_kparam(values: object) -> tuple[int, int, int, int] | None:
     return normalized[0], normalized[1], normalized[2], normalized[3]
 
 
+def _conjugate_source_kparam(
+    values: tuple[int, int, int, int],
+) -> tuple[int, int, int, int]:
+    sign = 1 if values[3] > 0 else -1
+    denominator = abs(values[3])
+    return (
+        (-sign * values[0]) % denominator,
+        (-sign * values[1]) % denominator,
+        (-sign * values[2]) % denominator,
+        denominator,
+    )
+
+
+def _represented_primary_headings(
+    decoder: ModeDataDecoder,
+    cases: Sequence[tuple[int, str, tuple[int, int, int, int]]],
+) -> tuple[tuple[int, str, tuple[int, int, int, int]], ...]:
+    """Name the exact headings already carried by selected primaries."""
+
+    headings: list[tuple[int, str, tuple[int, int, int, int]]] = []
+    for gid, k_label, source_kparam in cases:
+        heading = int(gid), str(k_label), tuple(source_kparam)
+        headings.append(heading)
+        if int(decoder.little_record_by_gid(int(gid)).irrep_type) != 1:
+            continue
+        conjugate = _conjugate_source_kparam(source_kparam)
+        if conjugate != source_kparam:
+            headings.append((int(gid), str(k_label), conjugate))
+    return tuple(headings)
+
+
+def _represented_slot_headings(
+    decoder: ModeDataDecoder,
+    primary_slots: Sequence[dict[str, Any]],
+    mode_kind: str,
+) -> tuple[tuple[int, str, tuple[int, int, int, int]], ...]:
+    return _represented_primary_headings(
+        decoder,
+        tuple(
+            (int(slot["gid"]), str(slot["k_label"]), tuple(slot["source_kparam"]))
+            for slot in primary_slots
+            if slot["mode_kind"] == mode_kind
+        ),
+    )
+
+
 def _strict_positive_gid(value: object) -> int | None:
     if isinstance(value, bool) or not isinstance(value, Integral) or value <= 0:
         return None
@@ -131,17 +174,8 @@ def _strict_reciprocal_vector_pml(
 
 
 def _occurrence_alias_observation_markers_valid(spec: dict[str, Any]) -> bool:
-    generic_name = "_occurrence_alias_observation_only"
-    magnetic_name = "_magnetic_occurrence_alias_observation_only"
-    generic_present = generic_name in spec
-    magnetic_present = magnetic_name in spec
-    if not generic_present and not magnetic_present:
-        return True
-    return bool(
-        generic_present
-        and spec.get(generic_name) is True
-        and (not magnetic_present or spec.get(magnetic_name) is True)
-    )
+    name = "_occurrence_alias_observation_only"
+    return name not in spec or spec.get(name) is True
 
 
 def _strict_source_kparam_identity(
@@ -259,10 +293,12 @@ def _stored_occurrence_alias_specs(
     *,
     aliases_for_class: Any,
     spec_for_row: Any,
+    represented_source_kparam_for_row: Any,
     represented_heading_identities: Sequence[object] = (),
 ) -> list[dict[str, Any]]:
-    """Build fail-closed stored-occurrence observations and candidates."""
+    """Build stored-occurrence observations and candidates."""
 
+    raw = tuple(raw_rows)
     represented = tuple(represented_rows)
     additional_headings = tuple(
         heading
@@ -271,9 +307,10 @@ def _stored_occurrence_alias_specs(
     )
     candidates = stored_occurrence_alias_candidates(
         decoder,
-        tuple(raw_rows),
+        raw,
         aliases_for_class=aliases_for_class,
         heading_identity_for_row=_occurrence_heading_identity,
+        represented_source_kparam_for_row=represented_source_kparam_for_row,
         represented_heading_identities=(
             *additional_headings,
             *(
@@ -298,7 +335,7 @@ def _stored_occurrence_alias_specs(
         for candidate in candidates
     }
     specs: list[dict[str, Any]] = []
-    for row in raw_rows:
+    for row in raw:
         values = _strict_integral_values(row.source_kparam)
         if values is None:
             continue
@@ -327,6 +364,46 @@ def _stored_occurrence_alias_specs(
     return specs
 
 
+def _merge_occurrence_alias_specs(
+    represented_specs: Sequence[dict[str, Any]],
+    alias_specs: Sequence[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Place exact aliases beside their anchor in presentation-PML order."""
+
+    anchors: dict[
+        tuple[int, tuple[int, int, int, int]], list[int]
+    ] = {}
+    for index, spec in enumerate(represented_specs):
+        gid = _strict_positive_gid(spec.get("gid"))
+        source = _strict_source_kparam(spec.get("source_kparam"))
+        if gid is not None and source is not None:
+            anchors.setdefault((gid, source), []).append(index)
+    grouped: dict[int, list[dict[str, Any]]] = {}
+    unplaced: list[dict[str, Any]] = []
+    for spec in alias_specs:
+        anchor = _strict_occurrence_alias_anchor(
+            spec.get("_occurrence_alias_anchor")
+        )
+        matches = () if anchor is None else anchors.get(anchor, ())
+        if len(matches) != 1:
+            unplaced.append(spec)
+            continue
+        grouped.setdefault(matches[0], []).append(spec)
+
+    merged: list[dict[str, Any]] = []
+
+    def pml_key(item: dict[str, Any]) -> tuple[bool, tuple[Fraction, ...]]:
+        pml = _strict_reciprocal_vector_pml(item.get("reciprocal_vector_pml"))
+        return pml is None, pml or ()
+
+    for index, spec in enumerate(represented_specs):
+        cluster = [spec, *grouped.get(index, ())]
+        cluster.sort(key=pml_key)
+        merged.extend(cluster)
+    merged.extend(unplaced)
+    return merged
+
+
 def _canonicalize_exact_pml_alias_specs(
     specs: Sequence[dict[str, Any]],
 ) -> list[dict[str, Any]]:
@@ -351,9 +428,7 @@ def _canonicalize_exact_pml_alias_specs(
             index
             for index in indices
             if index not in candidates
-            and "_magnetic_occurrence_alias_candidate" not in specs[index]
             and "_occurrence_alias_observation_only" not in specs[index]
-            and "_magnetic_occurrence_alias_observation_only" not in specs[index]
         ]
         if len(candidates) != 1 or len(ordinary) != 1:
             continue
@@ -381,24 +456,6 @@ def _canonicalize_exact_pml_alias_specs(
             )
             == expected_heading
         )
-        magnetic_marker_names = (
-            "_magnetic_occurrence_alias_anchor",
-            "_magnetic_occurrence_alias_candidate",
-            "_magnetic_occurrence_alias_heading_identity",
-        )
-        has_magnetic_markers = any(
-            name in candidate for name in magnetic_marker_names
-        )
-        magnetic_markers_match = not has_magnetic_markers or (
-            _strict_occurrence_alias_anchor(candidate.get(magnetic_marker_names[0]))
-            == anchor_identity
-            and _strict_source_kparam(candidate.get(magnetic_marker_names[1]))
-            == source_kparam
-            and _strict_occurrence_alias_heading(
-                candidate.get(magnetic_marker_names[2])
-            )
-            == expected_heading
-        )
         if (
             source_kparam is None
             or row_source_kparam is None
@@ -406,9 +463,7 @@ def _canonicalize_exact_pml_alias_specs(
             or not isinstance(label, str)
             or not isinstance(k_label, str)
             or not generic_markers_match
-            or not magnetic_markers_match
             or "_occurrence_alias_observation_only" in candidate
-            or "_magnetic_occurrence_alias_observation_only" in candidate
             or candidate.get("primary") is not False
             or row.get("primary") is not False
             or label != row.get("label")
@@ -432,7 +487,6 @@ def _canonicalize_exact_pml_alias_specs(
             spec
             for spec in specs
             if "_occurrence_alias_candidate" not in spec
-            and "_magnetic_occurrence_alias_candidate" not in spec
             and (
                 _strict_positive_gid(spec.get("gid")),
                 _strict_source_kparam(spec.get("source_kparam")),
@@ -461,7 +515,6 @@ def _canonicalize_exact_pml_alias_specs(
             key: value
             for key, value in candidate.items()
             if not key.startswith("_occurrence_alias_")
-            and not key.startswith("_magnetic_occurrence_alias_")
         }
         canonical["source_occurrences"] = row["source_occurrences"]
         replacements[ordinary_index] = (candidate_index, canonical)
@@ -575,7 +628,9 @@ def _promote_selected_dynamic_occurrences(
                 continue
             promoted_rows[row_index] = replace(
                 selected_alias,
+                direction_matrix=row.direction_matrix,
                 source_occurrences=row.source_occurrences,
+                carrier_source_kparam=row.source_kparam,
             )
             claimed_indices.add(row_index)
             break
@@ -684,7 +739,9 @@ def _promote_selected_magnetic_occurrences(
                 continue
             promoted_rows[row_index] = replace(
                 selected_alias,
+                direction_matrix=row.direction_matrix,
                 source_occurrences=row.source_occurrences,
+                carrier_source_kparam=row.source_kparam,
             )
             claimed_indices.add(row_index)
             break
@@ -752,61 +809,6 @@ def _replay_unrepresented_type3_occurrence_aliases(
     return replayed_rows
 
 
-def _replay_distinct_type3_occurrence_aliases(
-    decoder: ModeDataDecoder,
-    rows: Any,
-    *,
-    allowed_k_labels: set[str],
-    aliases_for_row: Any,
-) -> list[Any]:
-    """Append invariant type-3 aliases from distinct reciprocal classes.
-
-    Coupled complete-mode rows can consume more than the selected occurrence
-    from one k family.  The Source alias builders are the authority for whether
-    another raw occurrence remains invariant under the selected subgroup.  We
-    only restore physical classes that the deduped family rows do not already
-    represent; type-1 carriers and fixed table irreps retain their existing
-    combined-row behavior.
-    """
-
-    replayed_rows = list(rows)
-    seen_by_gid: dict[int, set[tuple[Fraction, Fraction, Fraction]]] = {}
-    for row in replayed_rows:
-        gid = int(row.gid)
-        seen_by_gid.setdefault(gid, set()).add(
-            tuple(value % 1 for value in _source_kparam_identity(row.source_kparam))
-        )
-    for row in tuple(replayed_rows):
-        gid = int(row.gid)
-        if str(row.k_label) not in allowed_k_labels:
-            continue
-        occurrence_classes = {
-            tuple(
-                value % 1
-                for value in _source_kparam_identity(occurrence.source_kparam)
-            )
-            for occurrence in tuple(getattr(row, "source_occurrences", ()))
-        }
-        if len(occurrence_classes) <= 1:
-            continue
-        try:
-            little_record = decoder.little_record_by_gid(gid)
-            if int(little_record.old_id) != 0 or int(little_record.irrep_type) != 3:
-                continue
-        except (IndexError, KeyError, TypeError, ValueError):
-            continue
-        seen = seen_by_gid[gid]
-        for alias in aliases_for_row(row):
-            physical = tuple(
-                value % 1 for value in _source_kparam_identity(alias.source_kparam)
-            )
-            if physical in seen:
-                continue
-            seen.add(physical)
-            replayed_rows.append(alias)
-    return replayed_rows
-
-
 def _order_promoted_dynamic_families_for_presentation(
     decoder: ModeDataDecoder,
     rows: list[Any],
@@ -868,6 +870,46 @@ def _order_promoted_dynamic_families_for_presentation(
         for index, (_params, _source_order, row) in zip(indices, candidates, strict=True):
             ordered[index] = row
     return ordered
+
+
+def _ordinary_dynamic_subduction_spec(
+    decoder: ModeDataDecoder,
+    row: DynamicSubductionRow,
+    *,
+    old_id: int,
+    primary: bool,
+) -> dict[str, Any]:
+    """Expose one computed ordinary subduction through the common mode schema."""
+
+    reciprocal_vector_pml = tuple(row.reciprocal_vector_pml)
+    direction_matrix = [list(values) for values in row.direction_matrix]
+    return {
+        "old_id": int(old_id),
+        "gid": int(row.gid),
+        "label": str(row.irrep_label),
+        "magnetic": False,
+        "k_label": str(row.k_label),
+        "row_id": None,
+        "source_kparam": tuple(int(value) for value in row.source_kparam),
+        "carrier_source_kparam": row.carrier_source_kparam,
+        "reciprocal_vector_pml": reciprocal_vector_pml,
+        "request_k_params": _pml_vector_to_case_k_params(
+            decoder,
+            gid=int(row.gid),
+            reciprocal_vector_pml=reciprocal_vector_pml,
+        ),
+        "source_occurrences": tuple(row.source_occurrences),
+        "direction_matrix": direction_matrix,
+        "source_numeric_rows": [
+            [
+                float(direction_matrix[coordinate][free])
+                for coordinate in range(len(direction_matrix))
+            ]
+            for free in range(len(direction_matrix[0]) if direction_matrix else 0)
+        ],
+        "frequency": 1,
+        "primary": bool(primary),
+    }
 
 
 
@@ -973,34 +1015,29 @@ def _subduced_mode_specs(
                 selected_cases=[(int(selected_gid), selected_source_kparam)],
                 irrep_source=irrep_source,
             )
+
         def spec_for_row(row: Any) -> dict[str, Any]:
-            reciprocal_vector_pml = tuple(row.reciprocal_vector_pml)
-            return {
-                "old_id": 0,
-                "gid": int(row.gid),
-                "label": str(row.irrep_label),
-                "k_label": str(row.k_label),
-                "row_id": None,
-                "source_kparam": tuple(int(value) for value in row.source_kparam),
-                "reciprocal_vector_pml": reciprocal_vector_pml,
-                "request_k_params": _pml_vector_to_case_k_params(
-                    decoder,
-                    gid=int(row.gid),
-                    reciprocal_vector_pml=reciprocal_vector_pml,
-                ),
-                "source_occurrences": tuple(row.source_occurrences),
-                "direction_matrix": [list(values) for values in row.direction_matrix],
-                "source_numeric_rows": [
-                    [float(row.direction_matrix[coordinate][free]) for coordinate in range(len(row.direction_matrix))]
-                    for free in range(len(row.direction_matrix[0]) if row.direction_matrix else 0)
-                ],
-                "frequency": 1,
-                "primary": int(row.gid) == int(selected_gid or 0)
+            return _ordinary_dynamic_subduction_spec(
+                decoder,
+                row,
+                old_id=0,
+                primary=int(row.gid) == int(selected_gid or 0)
                 and (
                     selected_source_kparam is None
                     or _same_source_kparam(row.source_kparam, selected_source_kparam)
                 ),
-            }
+            )
+
+        represented_primary_headings = (
+            _represented_primary_headings(
+                decoder,
+                ((int(selected_gid), selected_heading_k_label, selected_source_kparam),),
+            )
+            if selected_gid is not None
+            and selected_source_kparam is not None
+            and selected_heading_k_label is not None
+            else ()
+        )
 
         specs = [spec_for_row(row) for row in rows]
         specs.extend(
@@ -1023,13 +1060,10 @@ def _subduced_mode_specs(
                     == tuple(int(value) for value in _requested)
                 ),
                 spec_for_row=spec_for_row,
-                represented_heading_identities=(
-                    ((int(selected_gid), selected_heading_k_label, selected_source_kparam),)
-                    if selected_gid is not None
-                    and selected_source_kparam is not None
-                    and selected_heading_k_label is not None
-                    else ()
+                represented_source_kparam_for_row=lambda row: _strict_integral_values(
+                    row.source_kparam
                 ),
+                represented_heading_identities=represented_primary_headings,
             )
         )
         specs = _canonicalize_exact_pml_alias_specs(specs)
@@ -1078,6 +1112,13 @@ def _subduced_mode_specs(
                 "label": entry_label if canonical_little is None else str(canonical_little.label),
                 "k_label": _k_label_from_irrep_label(entry_label),
                 "row_id": int(entry.subgroup_row_id),
+                "opd": str(
+                    decoder.iso.isotropy["isotropy_orderparam_label"][
+                        int(entry.subgroup_row_id) - 1
+                    ]
+                ).strip(),
+                "domain": int(entry.domain),
+                "domain_old": int(entry.domain_old),
                 "frequency": int(entry.frequency),
                 "primary": (
                     int(entry.irrep_old_id) == selected_old_id
@@ -1089,6 +1130,10 @@ def _subduced_mode_specs(
         raise ValueError("static Source isotropy row has no subduction records")
     if not any(item["primary"] for item in specs):
         raise ValueError("static Source subduction records omit the selected primary")
+    for spec in specs:
+        spec["source_free_count"] = int(
+            decoder.isotropy_orderparam_freeparam(int(spec["row_id"]))
+        )
     child_sg = _selected_subgroup_number(selected_opd)
     basis = _integer_basis_tuple(_source_split_basis_from_opd_row(selected_opd))
     origin = _source_split_origin_from_opd_row(selected_opd)
@@ -1135,6 +1180,11 @@ def _subduced_mode_specs(
                     ],
                 }
             )
+        specs.extend(
+            _ordinary_dynamic_subduction_spec(decoder, row, old_id=0, primary=False)
+            for row in selected_rows
+            if int(decoder.little_record_by_gid(int(row.gid)).old_id) == 0
+        )
     specs.sort(key=lambda item: 0 if item["primary"] else 1)
     return specs
 
@@ -1188,19 +1238,21 @@ def _ordinary_subduced_mode_specs_from_magnetic_embedding(
         operations=ordinary_operations,
         irrep_source=source,
     )
-    return [
-        {
+
+    def row_spec(row: DynamicSubductionRow) -> dict[str, Any]:
+        reciprocal_vector_pml = tuple(row.reciprocal_vector_pml)
+        return {
             "old_id": int(decoder.little_record_by_gid(row.gid).old_id),
             "gid": int(row.gid),
             "label": str(row.irrep_label),
             "k_label": str(row.k_label),
             "row_id": None,
             "source_kparam": tuple(int(value) for value in row.source_kparam),
-            "reciprocal_vector_pml": tuple(row.reciprocal_vector_pml),
+            "reciprocal_vector_pml": reciprocal_vector_pml,
             "request_k_params": _pml_vector_to_case_k_params(
                 decoder,
                 gid=int(row.gid),
-                reciprocal_vector_pml=tuple(row.reciprocal_vector_pml),
+                reciprocal_vector_pml=reciprocal_vector_pml,
             ),
             "source_occurrences": tuple(row.source_occurrences),
             "direction_matrix": [list(values) for values in row.direction_matrix],
@@ -1211,8 +1263,33 @@ def _ordinary_subduced_mode_specs_from_magnetic_embedding(
             "frequency": 1,
             "primary": False,
         }
-        for row in rows
-    ]
+
+    specs = [row_spec(row) for row in rows]
+    alias_specs = _stored_occurrence_alias_specs(
+        decoder,
+        rows,
+        rows,
+        aliases_for_class=lambda row, requested: (
+            alias
+            for alias in dynamic_subduction_occurrence_alias_rows(
+                decoder,
+                sg=int(sg),
+                basis=basis,
+                operations=ordinary_operations,
+                row=row,
+                irrep_source=source,
+                requested_source_kparam=requested,
+            )
+            if tuple(int(value) for value in alias.source_kparam)
+            == tuple(int(value) for value in requested)
+        ),
+        spec_for_row=row_spec,
+        represented_source_kparam_for_row=lambda row: _strict_integral_values(
+            row.source_kparam
+        ),
+    )
+    specs = _merge_occurrence_alias_specs(specs, alias_specs)
+    return _canonicalize_exact_pml_alias_specs(specs)
 
 
 
@@ -1232,6 +1309,10 @@ def _magnetic_subduced_mode_specs(
         source_kparam = (0, 0, 0, 1)
     if selected_gid is None or source_kparam is None or not source_rows:
         return []
+    selected_k_label = str(
+        selected_irrep.get("k_label")
+        or _k_label_from_irrep_label(str(selected_irrep.get("ordinary_symbol") or ""))
+    )
     full_dim = int(decoder.little_record_by_gid(selected_gid).full_dim)
     orderparam: list[float] = []
     for row in source_rows:
@@ -1250,7 +1331,7 @@ def _magnetic_subduced_mode_specs(
         sg=int(sg),
         basis=basis,
         operations=operations,
-        preferred_kparams={str(selected_irrep.get("k_label") or _k_label_from_irrep_label(str(selected_irrep.get("ordinary_symbol") or ""))): source_kparam},
+        preferred_kparams={selected_k_label: source_kparam},
     )
     rows = _promote_selected_magnetic_occurrences(
         decoder,
@@ -1261,32 +1342,35 @@ def _magnetic_subduced_mode_specs(
         rows=raw_rows,
         selected_cases=[(selected_gid, source_kparam, None)],
     )
-    alias_candidates = stored_occurrence_alias_candidates(
-        decoder,
-        raw_rows,
-        aliases_for_class=lambda row, requested: dynamic_magnetic_subduction_occurrence_alias_rows(
-            decoder,
-            magnetic_source,
-            sg=int(sg),
-            basis=basis,
-            operations=operations,
-            row=row,
-            requested_source_kparam=requested,
-        ),
-        heading_identity_for_row=_occurrence_heading_identity,
-        represented_heading_identities=tuple(
-            identity
-            for row in rows
-            if (identity := _occurrence_heading_identity(row)) is not None
-        ),
-    )
+    represented_sources_by_family: dict[
+        tuple[int, str, str, tuple[Any, ...]],
+        set[tuple[int, int, int, int]],
+    ] = {}
+    for row in rows:
+        values = _strict_integral_values(row.source_kparam)
+        occurrences = tuple(row.source_occurrences)
+        if values is not None and occurrences:
+            family = (int(row.gid), str(row.irrep_label), str(row.k_label), occurrences)
+            represented_sources_by_family.setdefault(family, set()).add(values)
 
-    def row_spec(
-        row: Any,
-        *,
-        alias: Any | None = None,
-        observation_only: bool = False,
-    ) -> dict[str, Any]:
+    def represented_source_kparam(
+        row: DynamicSubductionRow,
+    ) -> tuple[int, int, int, int] | None:
+        raw_source = _strict_integral_values(row.source_kparam)
+        family = (
+            int(row.gid),
+            str(row.irrep_label),
+            str(row.k_label),
+            tuple(row.source_occurrences),
+        )
+        represented_sources = represented_sources_by_family.get(family, set())
+        if raw_source in represented_sources:
+            return raw_source
+        if len(represented_sources) == 1:
+            return next(iter(represented_sources))
+        return None
+
+    def row_spec(row: Any) -> dict[str, Any]:
         reciprocal_vector_pml = tuple(row.reciprocal_vector_pml)
         direction_matrix = [list(values) for values in row.direction_matrix]
         source_free_count = (
@@ -1298,14 +1382,16 @@ def _magnetic_subduced_mode_specs(
             )
             else 0
         )
-        spec = {
+        return {
             "old_id": int(decoder.little_record_by_gid(row.gid).old_id),
             "gid": int(row.gid),
             "label": str(row.irrep_label),
             "display_label": "m" + str(row.irrep_label),
+            "magnetic": True,
             "k_label": str(row.k_label),
             "row_id": None,
             "source_kparam": tuple(int(value) for value in row.source_kparam),
+            "carrier_source_kparam": row.carrier_source_kparam,
             "reciprocal_vector_pml": reciprocal_vector_pml,
             "request_k_params": _pml_vector_to_case_k_params(
                 decoder,
@@ -1330,54 +1416,31 @@ def _magnetic_subduced_mode_specs(
                 selected_source_kparam=source_kparam,
             ),
         }
-        if alias is not None:
-            spec["primary"] = False
-            spec["_occurrence_alias_anchor"] = (
-                int(alias.representative_gid),
-                tuple(int(value) for value in alias.representative_source_kparam),
-            )
-            spec["_magnetic_occurrence_alias_anchor"] = spec[
-                "_occurrence_alias_anchor"
-            ]
-            spec["_occurrence_alias_candidate"] = tuple(
-                int(value) for value in alias.candidate_source_kparam
-            )
-            spec["_occurrence_alias_heading_identity"] = alias.heading_identity
-            spec["_magnetic_occurrence_alias_candidate"] = spec[
-                "_occurrence_alias_candidate"
-            ]
-            spec["_magnetic_occurrence_alias_heading_identity"] = alias.heading_identity
-        if observation_only:
-            spec["primary"] = False
-            spec["_occurrence_alias_observation_only"] = True
-            spec["_magnetic_occurrence_alias_observation_only"] = True
-        return spec
 
     specs = [row_spec(row) for row in rows]
-    represented_exact = {
-        (int(row.gid), tuple(int(value) for value in row.source_kparam))
-        for row in rows
-    }
-    required_anchor_keys = {
-        (
-            int(candidate.representative_gid),
-            tuple(int(value) for value in candidate.representative_source_kparam),
-        )
-        for candidate in alias_candidates
-    }
-    specs.extend(
-        row_spec(row, observation_only=True)
-        for row in raw_rows
-        if (
-            int(row.gid),
-            tuple(int(value) for value in row.source_kparam),
-        )
-        in required_anchor_keys - represented_exact
+    alias_specs = _stored_occurrence_alias_specs(
+        decoder,
+        raw_rows,
+        rows,
+        aliases_for_class=lambda row, requested: (
+            dynamic_magnetic_subduction_occurrence_alias_rows(
+                decoder,
+                magnetic_source,
+                sg=int(sg),
+                basis=basis,
+                operations=operations,
+                row=row,
+                requested_source_kparam=requested,
+            )
+        ),
+        spec_for_row=row_spec,
+        represented_source_kparam_for_row=represented_source_kparam,
+        represented_heading_identities=_represented_primary_headings(
+            decoder,
+            ((int(selected_gid), selected_k_label, source_kparam),),
+        ),
     )
-    specs.extend(
-        row_spec(candidate.candidate_row, alias=candidate)
-        for candidate in alias_candidates
-    )
+    specs = _merge_occurrence_alias_specs(specs, alias_specs)
     specs = _canonicalize_exact_pml_alias_specs(specs)
     specs.sort(key=lambda item: 0 if item["primary"] else 1)
     return specs
@@ -1468,24 +1531,42 @@ def _coupled_render_specs(
                 "k_label": str((slot.get("kpoint") or {}).get("label") or ""),
                 "source_kparam": source_kparam,
                 "case_k_params": _k_params(slot.get("k_params") or {}),
+                "display_case_k_params": _k_params(
+                    slot.get("display_k_params")
+                    or slot.get("k_params")
+                    or {}
+                ),
                 "source_numeric_rows": selected_source_rows,
             }
         )
     specs: list[tuple[int, dict[str, Any], str, int, str]] = []
     source_order = 0
 
+    def primary_slot_for_row(
+        row: DynamicSubductionRow, mode_kind: str
+    ) -> dict[str, Any] | None:
+        candidates = tuple(
+            slot
+            for slot in primary_slots
+            if slot["mode_kind"] == mode_kind and int(slot["gid"]) == int(row.gid)
+        )
+        if mode_kind == "mag":
+            for slot in candidates:
+                if _row_projects_selected_case_k_params(
+                    decoder,
+                    row,
+                    selected_gid=int(slot["gid"]),
+                    selected_case_k_params=tuple(slot["case_k_params"]),
+                ):
+                    return slot
+        for slot in candidates:
+            if _same_source_kparam(slot["source_kparam"], row.source_kparam):
+                return slot
+        return None
+
     def spec_for_row(row: Any, mode_kind: str) -> dict[str, Any]:
             gid = int(row.gid)
-            primary_slot = next(
-                (
-                    slot
-                    for slot in primary_slots
-                    if slot["mode_kind"] == mode_kind
-                    and int(slot["gid"]) == gid
-                    and _same_source_kparam(slot["source_kparam"], row.source_kparam)
-                ),
-                None,
-            )
+            primary_slot = primary_slot_for_row(row, mode_kind)
             little_record = decoder.little_record_by_gid(gid)
             old_id = int(little_record.old_id)
             little_type = int(little_record.irrep_type)
@@ -1496,7 +1577,11 @@ def _coupled_render_specs(
                 and all(len(values) == len(direction_matrix[0]) for values in direction_matrix)
                 else 0
             )
-            if primary_slot is not None and primary_slot["source_numeric_rows"] is not None:
+            if (
+                primary_slot is not None
+                and primary_slot["source_numeric_rows"] is not None
+                and row.carrier_source_kparam is None
+            ):
                 selected_rows = primary_slot["source_numeric_rows"]
                 source_free_count = len(selected_rows)
                 direction_matrix = [
@@ -1509,9 +1594,11 @@ def _coupled_render_specs(
                 "gid": gid,
                 "label": str(row.irrep_label),
                 "display_label": ("m" if mode_kind == "mag" else "") + str(row.irrep_label),
+                "magnetic": mode_kind == "mag",
                 "k_label": str(row.k_label),
                 "row_id": None,
                 "source_kparam": tuple(int(value) for value in row.source_kparam),
+                "carrier_source_kparam": row.carrier_source_kparam,
                 "reciprocal_vector_pml": tuple(row.reciprocal_vector_pml),
                 "direction_matrix": direction_matrix,
                 "source_numeric_rows": [
@@ -1523,23 +1610,35 @@ def _coupled_render_specs(
                 "primary": primary_slot is not None,
                 "coupled": True,
                 "case_k_params": None if primary_slot is None else primary_slot["case_k_params"],
+                "display_case_k_params": (
+                    None
+                    if primary_slot is None
+                    else primary_slot["display_case_k_params"]
+                ),
+                "_primary_slot_order": (
+                    None if primary_slot is None else primary_slot["order"]
+                ),
                 "source_occurrences": tuple(row.source_occurrences),
             }
 
     def append_specs(row_specs: Any, mode_kind: str) -> None:
         nonlocal source_order
         for spec in row_specs:
-            primary_slot = next(
-                (
-                    slot
-                    for slot in primary_slots
-                    if slot["mode_kind"] == mode_kind
-                    and int(slot["gid"]) == int(spec["gid"])
-                    and _same_source_kparam(
-                        slot["source_kparam"], spec["source_kparam"]
-                    )
-                ),
-                None,
+            spec.pop("_primary_slot_order", None)
+            primary_slot = (
+                next(
+                    (
+                        slot
+                        for slot in primary_slots
+                        if slot["mode_kind"] == mode_kind
+                        and int(slot["gid"]) == int(spec["gid"])
+                        and tuple(slot["case_k_params"])
+                        == tuple(spec.get("case_k_params") or ())
+                    ),
+                    None,
+                )
+                if spec.get("primary") is True
+                else None
             )
             spec["primary"] = bool(spec.get("primary") and primary_slot is not None)
             rank = int(primary_slot["order"]) if primary_slot is not None else len(primary_slots) + source_order
@@ -1599,20 +1698,22 @@ def _coupled_render_specs(
             ordinary_rows,
             promoted_gids=promoted_gids,
         )
-        ordinary_rows = _replay_distinct_type3_occurrence_aliases(
-            decoder,
-            ordinary_rows,
-            allowed_k_labels={str(slot["k_label"]) for slot in primary_slots},
-            aliases_for_row=lambda row: dynamic_subduction_occurrence_alias_rows(
-                decoder,
-                sg=int(sg),
-                basis=basis,
-                operations=ordinary_operations,
-                row=row,
-                irrep_source=ordinary_source,
-            ),
-        )
         ordinary_specs = [spec_for_row(row, "dsp") for row in ordinary_rows]
+        primary_families: dict[tuple[Any, ...], list[dict[str, Any]]] = {}
+        for spec in ordinary_specs:
+            if spec.get("primary") is not True:
+                continue
+            occurrences = tuple(spec.get("source_occurrences") or ())
+            if occurrences:
+                primary_families.setdefault(occurrences, []).append(spec)
+        for family_specs in primary_families.values():
+            first = min(
+                family_specs,
+                key=lambda spec: int(spec["_primary_slot_order"]),
+            )
+            displayed = first["display_case_k_params"]
+            for spec in family_specs:
+                spec["display_case_k_params"] = displayed
         ordinary_specs.extend(
             _stored_occurrence_alias_specs(
                 decoder,
@@ -1633,6 +1734,12 @@ def _coupled_render_specs(
                     == tuple(int(value) for value in requested)
                 ),
                 spec_for_row=lambda row: spec_for_row(row, "dsp"),
+                represented_source_kparam_for_row=lambda row: _strict_integral_values(
+                    row.source_kparam
+                ),
+                represented_heading_identities=_represented_slot_headings(
+                    decoder, primary_slots, "dsp"
+                ),
             )
         )
         append_specs(
@@ -1665,19 +1772,6 @@ def _coupled_render_specs(
             rows=magnetic_raw_rows,
             selected_cases=selected_magnetic_cases,
         )
-        magnetic_rows = _replay_distinct_type3_occurrence_aliases(
-            decoder,
-            magnetic_rows,
-            allowed_k_labels={str(slot["k_label"]) for slot in primary_slots},
-            aliases_for_row=lambda row: dynamic_magnetic_subduction_occurrence_alias_rows(
-                decoder,
-                magnetic_source,
-                sg=int(sg),
-                basis=basis,
-                operations=operations,
-                row=row,
-            ),
-        )
         magnetic_specs = [spec_for_row(row, "mag") for row in magnetic_rows]
         magnetic_specs.extend(
             _stored_occurrence_alias_specs(
@@ -1696,6 +1790,12 @@ def _coupled_render_specs(
                     )
                 ),
                 spec_for_row=lambda row: spec_for_row(row, "mag"),
+                represented_source_kparam_for_row=lambda row: _strict_integral_values(
+                    row.source_kparam
+                ),
+                represented_heading_identities=_represented_slot_headings(
+                    decoder, primary_slots, "mag"
+                ),
             )
         )
         append_specs(
