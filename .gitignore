@@ -1,5 +1,6 @@
-# Upstream group-theory tables — user-provided, not redistributed here (see README.md)
+# Redistributed upstream group-theory tables; keep the tracked allowlist explicit.
 /Source/*
+!/Source/README.md
 !/Source/const.dat
 !/Source/data_images.txt
 !/Source/data_irreps.txt

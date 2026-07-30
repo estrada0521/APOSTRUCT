@@ -16,7 +16,7 @@ run locally and offline.
 
 ## Setup
 
-Clone the repository, then install its dependencies and the `isodistort`
+Clone the repository, then install its dependencies and the `distortropy`
 command in editable mode:
 
 ```bash
@@ -33,24 +33,24 @@ accepted anywhere a CIF is.
 
 ```bash
 # 0. Show the parsed structure: space group, sites, Wyckoff positions
-isodistort info structure.cif
-isodistort info --sg 205 --wyckoff a c
+distortropy info structure.cif
+distortropy info --sg 205 --wyckoff a c
 
 # 1. Enumerate k points for the parent space group
-isodistort kpoints structure.cif
-isodistort kpoints --sg 205
+distortropy kpoints structure.cif
+distortropy kpoints --sg 205
 
 # 2. Enumerate irreducible representations at selected k points
-isodistort irreps structure.cif \
+distortropy irreps structure.cif \
   --k L \
   --k GP 1/3 1/4 2/5 \
   --k B 1/3 2/5 \
   --k W 1/4
 # without a CIF:
-# isodistort irreps --sg 205 --wyckoff a c --k GM
+# distortropy irreps --sg 205 --wyckoff a c --k GM
 
 # 3. Enumerate order-parameter directions (OPDs) for selected irreps
-isodistort opds structure.cif \
+distortropy opds structure.cif \
   --k L --irrep L1 \
   --k GP 1/3 1/4 2/5 --irrep GP1GQ1 \
   --k B 1/3 2/5 --irrep mB2BA2 \
@@ -58,7 +58,7 @@ isodistort opds structure.cif \
   --displacive Sn Fe --magnetic O Fe --strain
 
 # 4. Compute complete mode details for a selection
-isodistort modes structure.cif \
+distortropy modes structure.cif \
   --k L --irrep L1 \
   --k GP 1/3 1/4 2/5 --irrep GP1GQ1 \
   --k B 1/3 2/5 --irrep mB2BA2 \
@@ -90,7 +90,7 @@ isodistort modes structure.cif \
 ```
 
 ```bash
-isodistort modes --case case.json
+distortropy modes --case case.json
 ```
 
 ### `.in` case input
@@ -114,7 +114,7 @@ OPD P1(1)P3(1)C2(1)P2(1)
 ```
 
 ```bash
-isodistort modes --case case.in
+distortropy modes --case case.in
 ```
 
 ## Output
@@ -130,7 +130,7 @@ is created unless `-o` is provided.
 Start the standalone local server to use the graphical interface:
 
 ```bash
-isodistort serve --host 127.0.0.1 --port 8300
+distortropy serve --host 127.0.0.1 --port 8300
 ```
 
 Invariant calculations are currently available through this graphical interface.

@@ -133,7 +133,7 @@ def serve(*, host: str = "127.0.0.1", port: int = 8300, open_browser: bool = Fal
     server = create_server(host, port)
     actual_host, actual_port = server.server_address[:2]
     url = f"http://{actual_host}:{actual_port}/"
-    print(f"ISODISTORT Assembled: {url}")
+    print(f"Distortropy: {url}")
     print("Stop: Ctrl+C or POST /shutdown")
     if open_browser:
         webbrowser.open(url)
