@@ -23,7 +23,7 @@ from ISODISTORT.Assembled.Backend.modes.mode_detail_text import render_mode_deta
 TOOL = {
     "id": "isodistort",
     "category": "Representation Analysis",
-    "title": "ISODISTORT Assembled",
+    "title": "Distortropy",
     "frontend_dir": "Frontend",
 }
 

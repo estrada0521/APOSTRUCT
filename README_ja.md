@@ -14,7 +14,7 @@ BYU ISOTROPYの群論tableから、k vector・既約表現・秩序変数方向�
 
 ## Setup
 
-リポジトリをcloneし、依存packageと`isodistort` commandをeditable installします。
+リポジトリをcloneし、依存packageと`distortropy` commandをeditable installします。
 
 ```bash
 python -m pip install -e .
@@ -26,17 +26,17 @@ python -m pip install -e .
 
 ```bash
 # 1. 親空間群の k 点を列挙
-isodistort kpoints structure.cif
+distortropy kpoints structure.cif
 
 # 2. 選択した k 点の既約表現を列挙
-isodistort irreps structure.cif \
+distortropy irreps structure.cif \
   --k L \
   --k GP 1/3 1/4 2/5 \
   --k B 1/3 2/5 \
   --k W 1/4
 
 # 3. 選択した既約表現の OPD(秩序変数方向)を列挙
-isodistort opds structure.cif \
+distortropy opds structure.cif \
   --k L --irrep L1 \
   --k GP 1/3 1/4 2/5 --irrep GP1GQ1 \
   --k B 1/3 2/5 --irrep mB2BA2 \
@@ -44,7 +44,7 @@ isodistort opds structure.cif \
   --displacive Sn Fe --magnetic O Fe --strain
 
 # 4. 選択に対するモード詳細を計算
-isodistort modes structure.cif \
+distortropy modes structure.cif \
   --k L --irrep L1 \
   --k GP 1/3 1/4 2/5 --irrep GP1GQ1 \
   --k B 1/3 2/5 --irrep mB2BA2 \
@@ -76,7 +76,7 @@ isodistort modes structure.cif \
 ```
 
 ```bash
-isodistort modes --case case.json
+distortropy modes --case case.json
 ```
 
 ケースを .in に焼いて入力
@@ -100,7 +100,7 @@ OPD P1(1)P3(1)C2(1)P2(1)
 ```
 
 ```bash
-isodistort modes --case case.in
+distortropy modes --case case.in
 ```
 
 ## Output
@@ -115,7 +115,7 @@ JSON、`.in`または直接指定ではcomplete mode-details textを標準出力
 ローカルサーバーを起動して、本家と同じ使用感で利用可能です。
 
 ```bash
-isodistort serve --host 127.0.0.1 --port 8300
+distortropy serve --host 127.0.0.1 --port 8300
 ```
 
 Invariants計算は現時点ではこのGUIから利用できます。

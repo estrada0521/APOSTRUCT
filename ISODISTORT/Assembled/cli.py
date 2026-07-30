@@ -73,7 +73,7 @@ def _add_structure_arguments(parser: argparse.ArgumentParser) -> None:
 
 
 def parser() -> argparse.ArgumentParser:
-    root = argparse.ArgumentParser(prog="isodistort", description=__doc__)
+    root = argparse.ArgumentParser(prog="distortropy", description=__doc__)
     commands = root.add_subparsers(dest="command", required=True)
 
     info = commands.add_parser("info", help="show the normalized parent structure")
