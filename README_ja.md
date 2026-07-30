@@ -9,8 +9,7 @@ BYU ISOTROPYの群論tableから、k vector・既約表現・秩序変数方向�
 全ての計算はlocalかつofflineで実行されます。
 
 <p align="center">
-  <img src="media/distortropy-1.png" alt="Distortropy structure selection" width="49%">
-  <img src="media/distortropy-2.png" alt="Distortropy mode viewer" width="49%">
+  <img src="media/distortropy.png" alt="Distortropy graphical interface" width="70%">
 </p>
 
 ## Setup

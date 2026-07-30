@@ -11,8 +11,7 @@ strain mode definitions from CIF data and BYU ISOTROPY tables. All computations
 run locally and offline.
 
 <p align="center">
-  <img src="media/distortropy-1.png" alt="Distortropy structure selection" width="49%">
-  <img src="media/distortropy-2.png" alt="Distortropy mode viewer" width="49%">
+  <img src="media/distortropy.png" alt="Distortropy graphical interface" width="70%">
 </p>
 
 ## Setup
