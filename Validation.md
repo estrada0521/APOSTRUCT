@@ -72,7 +72,7 @@ The pass rates below are therefore **the achievement rates of a stratified stres
 `F` denotes a fixed K and `P` denotes a parametric K.
 Every column uses the Validation population defined above.
 
-| K configuration (order-independent) | Validation population | Physical pass | Strict pass |
+| K | Validation population | Physical pass | Strict pass |
 |---|---:|---:|---:|
 | F | 788 | 788 (100.00%) | 637 (80.84%) |
 | FF | 294 | 294 (100.00%) | 226 (76.87%) |
@@ -128,7 +128,7 @@ It consists of 458 zero-K, 28 nonzero Type I/III, 412 nonzero Type IV, 19 two-K,
 
 #### By K-signature
 
-| K configuration (order-independent) | Population | Physical pass | Strict pass |
+| K | Population | Physical pass | Strict pass |
 |---|---:|---:|---:|
 | F | 798 | 798 (100.00%) | 697 (87.34%) |
 | FF | 84 | 84 (100.00%) | 69 (82.14%) |
@@ -164,7 +164,7 @@ Web                                          [│==]--------|
 
 ### Performance by K-signature
 
-| K configuration (order-independent) | Performance population | Local median | Web median | Local p95 | Web p95 |
+| K | Performance population | Local median | Web median | Local p95 | Web p95 |
 |---|---:|---:|---:|---:|---:|
 | F | 951 | 0.37 s | 7.48 s | 2.57 s | 7.94 s |
 | FF | 163 | 0.79 s | 8.79 s | 4.98 s | 10.67 s |
