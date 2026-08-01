@@ -1,139 +1,100 @@
 # Distortropy
 
-[日本語](README_ja.md)
+[日本語](README_ja.md) | [CLI guide](CLI.md)
 
-**Distortropy** is an open-source, pure-Python implementation of the
-**ISODISTORT calculation engine**, not a wrapper around the BYU web service.
-It performs the symmetry and group-theory calculations itself: deriving k
-vectors and irreducible representations, enumerating order-parameter
-directions and isotropy subgroups, and constructing displacive, magnetic, and
-strain mode definitions from CIF data and BYU ISOTROPY tables. All computations
-run locally and offline.
+**Distortropy** is a local Python package for symmetry analysis of crystalline
+distortions. It computes k vectors, irreducible representations,
+order-parameter directions, isotropy subgroups, invariant bases, and
+symmetry-adapted modes from the bundled BYU ISOTROPY tables. Normal calculations
+do not call the BYU web service or an external executable.
 
 <p align="center">
   <img src="media/distortropy.png" alt="Distortropy graphical interface" width="70%">
 </p>
 
-## Setup
+## Interfaces And Scope
 
-Clone the repository, then install its dependencies and the `distortropy`
-command in editable mode:
+- Parent input: a CIF, or a space group with ordered Wyckoff sites.
+- Distortion input: displacive sites, magnetic sites, homogeneous strain, and
+  one to four ordered k/irrep factors.
+- Forward pipeline: parent information, k points, active irreps, OPDs,
+  subgroups, invariant bases, and atomic or strain mode definitions.
+- Embedding query: ordinary or time-odd OP directions compatible with a given
+  parent/subgroup basis and origin.
+- Output: compact JSON, optional full pipeline state, text mode tables, and
+  reusable saved JSON cases.
+- Interfaces: the `distortropy` command and a local browser interface.
+
+The CLI and graphical interface are entry points to the same backend services.
+They differ in workflow and presentation, not in the scientific calculation
+path.
+
+## Install
+
+Clone the repository and install the package:
 
 ```bash
-python -m pip install -e .
+python -m pip install .
 ```
 
-The required BYU ISOTROPY group-theory tables are included in `Source/`.
+For development, use `python -m pip install -e .` instead. Both forms install
+the `distortropy` command. The required group-theory tables are included in the
+package.
 
-## How to Use
+## Quick Start
 
-A structure is provided either as a CIF file, or, for quick queries without a
-file, directly by space group and Wyckoff positions via `--sg` / `--wyckoff`,
-accepted anywhere a CIF is.
+Use identifiers returned by one stage as input to the next:
 
 ```bash
-# 0. Show the parsed structure: space group, sites, Wyckoff positions
+# Inspect the parent and its selectable crystallographic sites.
 distortropy info structure.cif
-distortropy info --sg 205 --wyckoff a c
 
-# 1. Enumerate k points for the parent space group
+# Discover reciprocal-space and representation choices.
 distortropy kpoints structure.cif
-distortropy kpoints --sg 205
+distortropy irreps structure.cif --k R --displacive O
 
-# 2. Enumerate irreducible representations at selected k points
-distortropy irreps structure.cif \
-  --k L \
-  --k GP 1/3 1/4 2/5 \
-  --k B 1/3 2/5 \
-  --k W 1/4
-# without a CIF:
-# distortropy irreps --sg 205 --wyckoff a c --k GM
-
-# 3. Enumerate order-parameter directions (OPDs) for selected irreps
-distortropy opds structure.cif \
-  --k L --irrep L1 \
-  --k GP 1/3 1/4 2/5 --irrep GP1GQ1 \
-  --k B 1/3 2/5 --irrep mB2BA2 \
-  --k W 1/4 --irrep W1WA1 \
-  --displacive Sn Fe --magnetic O Fe --strain
-
-# 4. Compute complete mode details for a selection
+# Enumerate OPDs, then compute one exact returned label.
+distortropy opds structure.cif --k R --irrep R4- --displacive O
 distortropy modes structure.cif \
-  --k L --irrep L1 \
-  --k GP 1/3 1/4 2/5 --irrep GP1GQ1 \
-  --k B 1/3 2/5 --irrep mB2BA2 \
-  --k W 1/4 --irrep W1WA1 \
-  --displacive Sn Fe --magnetic O Fe --strain \
-  --opd 'P1(1)P3(1)C2(1)P2(1)'
+  --k R --irrep R4- --displacive O --opd P1
+
+# Compute the selected-domain Landau invariant basis.
+distortropy invariants structure.cif \
+  --k R --irrep R4- --displacive O --opd P1 \
+  --minimum-degree 2 --maximum-degree 6
 ```
 
-### JSON case input
-
-```json
-{ "structure": "structure.cif",
-  "k": [
-    { "label": "L", "ir": "L1" },
-    { "label": "GP", "params": { "a": "1/3", "b": "1/4", "g": "2/5" },
-      "ir": "GP1GQ1" },
-    { "label": "B", "params": { "a": "1/3", "g": "2/5" }, "ir": "mB2BA2" },
-    { "label": "W", "params": { "g": "1/4" }, "ir": "W1WA1" }
-  ],
-  "sites": {
-    "Sn": { "displacive": true,  "magnetic": false },
-    "O":  { "displacive": false, "magnetic": true },
-    "Fe": { "displacive": true,  "magnetic": true },
-    "Ba": { "displacive": false, "magnetic": false }
-  },
-  "strain": true,
-  "opd": "P1(1)P3(1)C2(1)P2(1)"
-}
-```
+When no concrete structure is needed, use the space-group/Wyckoff route:
 
 ```bash
-distortropy modes --case case.json
+distortropy opds \
+  --sg 221 --wyckoff 1a 1b 3c \
+  --k R --irrep R4- --displacive c
 ```
 
-### `.in` case input
+Free Wyckoff coordinates may remain unspecified through OPD and invariant
+calculations. They are required only when atomic mode geometry must be
+realized.
 
-```text
-CIF structure.cif
+The [CLI guide](CLI.md) defines the complete command workflow, input
+conventions, coupled selections, parametric k points, saved cases, exact
+embedding reuse, secondary invariant factors, and machine-readable output.
 
-K L
-IR L1
-K GP 1/3 1/4 2/5
-IR GP1GQ1
-K B 1/3 2/5
-IR mB2BA2
-K W 1/4
-IR W1WA1
-
-STRAIN
-DISPLACIVE Sn Fe
-MAGNETIC O Fe
-OPD P1(1)P3(1)C2(1)P2(1)
-```
+## Graphical Interface
 
 ```bash
-distortropy modes --case case.in
+distortropy serve --host 127.0.0.1 --port 8300 --open-browser
 ```
+
+The interface supports the ordinary CIF workflow and a direct
+space-group/Wyckoff workflow for symbolic calculations.
 
 ## Output
 
-`kpoints`, `irreps`, and `opds` write JSON to standard output. For `modes`, a
-JSON case produces JSON, while a `.in` case or direct command-line selection
-produces complete mode-details text. Use `modes --format json|text` to override
-the format and `-o PATH` to save the result to a specific file. No output file
-is created unless `-o` is provided.
-
-## Server
-
-Start the standalone local server to use the graphical interface:
-
-```bash
-distortropy serve --host 127.0.0.1 --port 8300
-```
-
-Invariant calculations are currently available through this graphical interface.
+Pipeline commands emit compact JSON to standard output by default. `modes`
+also supports `--format text`; `--full-state` exposes the complete internal
+pipeline state where available. Use `-o PATH` to write a file. No result file
+is created unless one is requested.
 
 ## Validation
 
