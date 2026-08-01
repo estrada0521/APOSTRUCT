@@ -92,8 +92,8 @@ space-group/Wyckoff workflow for symbolic calculations.
 ## Output
 
 Pipeline commands emit compact JSON to standard output by default. `modes`
-also supports `--format text`; `--full-state` exposes the complete internal
-pipeline state where available. Use `-o PATH` to write a file. No result file
+also supports `--format text`; `--full-state` exposes the complete calculation
+state where available. Use `-o PATH` to write a file. No result file
 is created unless one is requested.
 
 ## Validation
