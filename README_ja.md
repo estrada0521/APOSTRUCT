@@ -87,7 +87,7 @@ workflowを備えています。
 ## Output
 
 pipeline commandは既定でcompact JSONを標準出力します。`modes`は
-`--format text`にも対応し、利用可能なcommandでは`--full-state`で完全な内部stateを
+`--format text`にも対応し、利用可能なcommandでは`--full-state`で完全な計算stateを
 取得できます。`-o PATH`を指定した場合だけfileを作成します。
 
 ## Validation

@@ -76,20 +76,14 @@ inequivalent orientations, cells, origins, and domains inside a parent. No CIF,
 Wyckoff site, or distortion-mode selection is used.
 
 Each result gives the k point, irrep, OPD label, structured direction matrix,
-stabilizer subgroup, group index, and cell index. Direction-matrix rows follow the full
-irrep coordinates and columns follow `parameters`. Parametric rows retain both
-public and Miller-Love parameter values. `opd` is null when Source has no
-catalog OPD-family label for the returned direction. `primary` means that the
+stabilizer subgroup, group index, and cell index. Direction-matrix rows follow
+the full irrep coordinates and columns follow `parameters`. Parametric rows
+retain both public and Miller-Love parameter values. `opd` is null when no OPD
+label is available for the returned direction. `primary` means that the
 direction alone has exactly the requested subgroup embedding; more than one
-returned direction may meet that condition. Its non-null `domain` is the Source
-domain number saved for direct reuse by `modes --from-directions`, without
-enumerating the OPD catalog again. `secondary` means its stabilizer is a
-supergroup but the direction is allowed by the requested subgroup. The
-ordinary rows match ISOTROPY `DISPLAY DIRECTION`. Magnetic rows use the same
-local irrep matrices with exact BNS operations and are self-validated against
-the bundled static magnetic OPD catalog; ISO 9.6.1 does not provide an
-equivalent magnetic `DISPLAY DIRECTION` oracle. Superspace inversions remain
-outside this command.
+returned direction may meet that condition. Its non-null `domain` can be reused
+directly by `modes --from-directions`. `secondary` means its stabilizer is a
+supergroup but the direction is allowed by the requested subgroup.
 
 ## Parent Inputs
 
@@ -168,9 +162,9 @@ distortropy irreps structure.cif --k DT 1/3 --displacive O
 distortropy irreps structure.cif --k DT b=1/3 --displacive O
 ```
 
-`miller_love_kvector` and resolved `miller_love_parameters` expose the Source
-coordinate convention as provenance. Do not substitute those symbols directly
-into CLI input. Parametric values that collapse onto a special k point are
+`miller_love_kvector` and resolved `miller_love_parameters` show the
+corresponding Miller-Love form. CLI input always follows `kvector` and
+`parameter_names`. Parametric values that collapse onto a special k point are
 rejected; select the corresponding fixed-point label instead.
 
 One to four k/irrep factors can be coupled. Repeated `--k` and `--irrep` options
@@ -222,8 +216,8 @@ distortropy modes structure.cif \
 ```
 
 When a reported subgroup embedding selects a symmetry-equivalent domain that
-differs from the catalog OPD representative, reuse the exact `directions`
-result instead of reducing it back to the OPD label:
+differs from the direct OPD result, reuse the exact `directions` result instead
+of reducing it back to the OPD label:
 
 ```bash
 distortropy directions \
@@ -237,9 +231,9 @@ distortropy modes structure.cif \
 ```
 
 `direction-row` is the 1-based `directions[].row` value and must select a
-primary row. The saved exact basis, origin, setting, direction subspace, and
-Source domain are carried into the existing mode kernel. Direct `--k`,
-`--irrep`, and `--opd` arguments are then unnecessary and unavailable.
+primary row. The calculation preserves the saved basis, origin, setting,
+direction subspace, and domain. Direct `--k`, `--irrep`, and `--opd` arguments
+are then unnecessary and unavailable.
 
 Atomic definitions carry payload-local `definition_id` values and structured
 mode identity: kind, k point, k vector, irrep, gid, direction, site, Wyckoff
@@ -394,7 +388,7 @@ Common controls:
 ```bash
 --indent N       JSON indentation
 -o, --output     write to a path instead of stdout
---full-state     complete internal pipeline state, where supported
+--full-state     complete calculation state, where supported
 ```
 
 `invariants` and `combine-modes` are compact-only. `run --upto invariants`
@@ -408,6 +402,6 @@ a different result.
 distortropy serve --host 127.0.0.1 --port 8300 --open-browser
 ```
 
-The GUI provides CIF and symbolic-parent workflows over the same backend. Its
-debug display adds provenance; it does not select a different scientific
-calculation path.
+The GUI provides CIF and symbolic-parent workflows over the same calculations.
+Debug display changes the amount of information shown, not the selected
+calculation.

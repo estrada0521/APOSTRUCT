@@ -75,14 +75,10 @@ CIF、Wyckoff site、distortion modeの選択は使いません。
 各rowはk point、irrep、OPD label、structured direction matrix、stabilizer subgroup、group index、
 cell indexを返します。direction matrixのrowはfull irrep coordinate、columnは
 `parameters`に対応し、parametric rowはpublic/Miller-Love両方のparameter値を保持します。
-Sourceに対応するOPD-family labelがないdirectionでは`opd`はnullです。
-`primary`はそのdirection単独が指定embeddingと完全に同じsubgroupを持つことを示し、
-該当rowが複数の場合もあります。その非nullな`domain`は`modes --from-directions`が
-OPD catalogを再列挙せず再利用するSource domain番号です。`secondary`はstabilizerがそのsupergroupだが指定subgroupで
-許容されることを示します。ordinary rowはISOTROPY `DISPLAY DIRECTION`に対応します。
-magnetic rowは同じlocal irrep matrixとexact BNS operationを用い、bundled static magnetic
-OPD catalog全体に対して自己検証します。ISO 9.6.1には対応するmagnetic
-`DISPLAY DIRECTION` oracleがありません。superspaceの逆引きは対象外です。
+対応するOPD labelがないdirectionでは`opd`はnullです。`primary`はそのdirection単独が
+指定embeddingと完全に同じsubgroupを持つことを示し、該当rowが複数の場合もあります。
+非nullな`domain`は`modes --from-directions`で直接再利用できます。`secondary`は
+stabilizerがそのsupergroupだが指定subgroupで許容されることを示します。
 
 ## Parent入力
 
@@ -161,9 +157,9 @@ distortropy irreps structure.cif --k DT 1/3 --displacive O
 distortropy irreps structure.cif --k DT b=1/3 --displacive O
 ```
 
-`miller_love_kvector`と解決後の`miller_love_parameters`はSource内部座標のprovenance
-です。そのsymbolをCLI入力へ直接代入しないでください。parametric kがspecial
-k pointへ一致する値は拒否されます。その場合は対応するfixed-point labelを選びます。
+`miller_love_kvector`と解決後の`miller_love_parameters`は対応するMiller-Love形式を
+示します。CLI入力には常に`kvector`と`parameter_names`の規約を使います。parametric kが
+special k pointへ一致する値は拒否されます。その場合は対応するfixed-point labelを選びます。
 
 1から4個のk/irrep factorをcoupleできます。繰り返した`--k`と`--irrep`は指定順で
 対応します。
@@ -212,7 +208,7 @@ distortropy modes structure.cif \
   -o modes.json
 ```
 
-報告されたsubgroup embeddingがcatalog OPD代表とは異なるsymmetry-equivalent domainを
+報告されたsubgroup embeddingがdirect OPD resultとは異なるsymmetry-equivalent domainを
 選ぶ場合、OPD labelへ戻さず、exactな`directions`結果を再利用できます。
 
 ```bash
@@ -227,8 +223,8 @@ distortropy modes structure.cif \
 ```
 
 `direction-row`は1-basedの`directions[].row`値で、primary rowを選ぶ必要があります。
-保存されたexact basis、origin、setting、direction subspace、Source domainを既存mode核へ
-そのまま渡します。この経路ではdirectな`--k`、`--irrep`、`--opd`は不要で、併用できません。
+計算は保存されたexact basis、origin、setting、direction subspace、domainを保持します。
+この経路ではdirectな`--k`、`--irrep`、`--opd`は不要で、併用できません。
 
 atomic definitionはpayload-localな`definition_id`と構造化されたmode identityを
 持ちます。identityにはkind、k point、k vector、irrep、gid、direction、site、
@@ -380,7 +376,7 @@ distortropy.cli.mode_combination
 ```bash
 --indent N       JSON indentation
 -o, --output     stdoutの代わりにpathへ保存
---full-state     対応commandで完全な内部pipeline stateを出力
+--full-state     対応commandで完全な計算stateを出力
 ```
 
 `invariants`と`combine-modes`はcompact-onlyです。そのため
@@ -393,5 +389,5 @@ status 2で終了します。未知のk、irrep、OPDから別結果へsilent fa
 distortropy serve --host 127.0.0.1 --port 8300 --open-browser
 ```
 
-GUIはCIFとsymbolic parentの両workflowを同じbackend上で提供します。debug表示は
-provenanceを追加するだけで、別の科学計算経路を選ぶものではありません。
+GUIはCIFとsymbolic parentの両workflowを同じ計算経路で提供します。debug表示は
+表示情報量だけを変え、計算の選択は変えません。
