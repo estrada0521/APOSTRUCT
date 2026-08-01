@@ -1,0 +1,47 @@
+/* Standalone Distortropy design tokens and base styles. */
+:root {
+  /* 色 */
+  --color-page: rgb(253, 253, 252);
+  --color-bg: rgb(249, 249, 247);
+  --color-panel: rgb(245, 245, 243);
+  --color-hover: rgb(239, 239, 238);
+  --color-result-bg: rgb(249, 249, 247);
+  /* 設定の段階を示す行の網掛け（標準=地色 / Hall=灰 / ITA固有=濃い灰） */
+  --color-row-hall: rgb(235, 235, 232);
+  --color-row-ita: rgb(221, 221, 217);
+  --color-text: #000000;
+  --color-muted: rgb(111, 111, 110);
+  --color-border: #b5b5b5;
+  --color-accent: rgb(0, 102, 214);
+  --color-accent-text: #ffffff;
+
+  /* フォント */
+  --font-base: "Hiragino Sans", sans-serif;
+  --font-mono: "SFMono-Regular", Menlo, Consolas, monospace;
+  --font-size-base: 13px;
+  --font-size-title: 14px;
+  --font-size-small: 11px;
+
+  /* 余白・寸法 */
+  --space-row: 5px;
+  --space-md: 8px;
+  --space-lg: 14px;
+  --radius: 5px;
+  --key-width: 82px;
+  --content-width: 420px;
+  --sidebar-width: 260px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--color-page);
+}
+
+body {
+  color: var(--color-text);
+  font-family: var(--font-base);
+  font-size: var(--font-size-base);
+}

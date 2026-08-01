@@ -5,20 +5,9 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "distortropy"
 version = "0.1.0"
-description = "Pure-Python implementation of the ISODISTORT calculation engine"
-keywords = [
-  "ISODISTORT",
-  "ISOTROPY",
-  "crystallography",
-  "group theory",
-  "magnetic structures",
-  "symmetry modes",
-]
+description = "Local symmetry-analysis engine for crystalline distortions"
 readme = "README.md"
 requires-python = ">=3.11"
-classifiers = [
-  "License :: Public Domain",
-]
 dependencies = [
   "gemmi",
   "numpy",
@@ -26,16 +15,16 @@ dependencies = [
 ]
 
 [project.scripts]
-distortropy = "ISODISTORT.Assembled.cli:main"
-isodistort = "ISODISTORT.Assembled.cli:main"
+distortropy = "distortropy.cli:main"
 
 [tool.setuptools.packages.find]
-include = ["ISODISTORT*", "Source"]
+include = ["distortropy*", "Source"]
+exclude = ["distortropy.debug*"]
 namespaces = true
 
 [tool.setuptools.package-data]
 "Source" = ["*.dat", "*.txt", "README.md"]
-"ISODISTORT.Assembled" = [
+"distortropy" = [
   "Frontend/*.csv",
   "Frontend/*.css",
   "Frontend/*.html",
@@ -46,3 +35,6 @@ namespaces = true
   "Frontend/vendor/addons/geometries/*.js",
   "Frontend/vendor/addons/math/*.js",
 ]
+
+[tool.setuptools.exclude-package-data]
+"distortropy" = ["Frontend/debug-fetch-worker.js"]
