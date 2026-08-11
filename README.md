@@ -2,15 +2,16 @@
 
 [日本語](README_ja.md) | [CLI guide](CLI.md)
 
-**APOSTRUCT** is a local Python package for symmetry analysis of crystalline
-distortions. It computes k vectors, irreducible representations,
-order-parameter directions, isotropy subgroups, invariant bases,
-symmetry-adapted modes, and Landau invariants from the bundled BYU ISOTROPY
-tables.
+**APOSTRUCT** is a local Python package for symmetry analysis of crystalline structures.
+It computes k vectors, irreducible representations, order-parameter directions, isotropy subgroups, invariant bases, symmetry-adapted modes, and Landau invariants from the bundled BYU ISOTROPY tables.
 
 <p align="center">
   <img src="media/APOSTRUCT.png" alt="APOSTRUCT graphical interface" width="100%">
 </p>
+
+On the name — apo- is the Greek prefix for "away from," used here as in apomorphy: a state derived away from its ancestor.
+Where the iso- of ISODISTORT names the subgroup that leaves the order parameter invariant — the symmetry that remains — apo- names the departure from the parent.
+struct is what departs: the structure itself, displacive, magnetic, and strain alike.
 
 ## Interfaces And Scope
 

@@ -2,13 +2,16 @@
 
 [English](README.md) | [CLIガイド](CLI_ja.md) | [検証](Validation.ja.md)
 
-**APOSTRUCT**は、結晶歪みの対称性解析をlocalで行うPython packageです。同封された
-BYU ISOTROPY tableから、k vector、既約表現、秩序変数方向、isotropy subgroup、
-invariant basis、symmetry-adapted mode、landau不変量を計算します。
+**APOSTRUCT** は、結晶の対称性解析をローカルで行う Python パッケージです。
+同梱の BYU ISOTROPY テーブルから、k ベクトル、既約表現、秩序変数方向、isotropy 部分群、不変基底、対称性適合モード、Landau不変量を計算します。
 
 <p align="center">
   <img src="media/APOSTRUCT.png" alt="APOSTRUCT graphical interface" width="100%">
 </p>
+
+名前について — apo- は「離れて」を意味するギリシャ語の接頭辞で、apomorphy（祖先形質から派生した形質）と同じ語法にあたります。
+ISODISTORT の iso- が秩序変数を不変に保つ部分群、すなわち対称性の残る側を名指すのに対し、apo- は親構造から離れる側を名指します。
+struct はその対象であり、変位・磁気・歪みを含む構造そのものを指します。
 
 ## 入出力と対象範囲
 
