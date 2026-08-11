@@ -1,10 +1,14 @@
-# Source Tables
+# Source
 
-This directory contains the BYU ISOTROPY data tables distributed with
-Distortropy. They provide space-group settings, Wyckoff positions, k points,
-irreducible representations, isotropy subgroups, and magnetic-group data used
-by local calculations.
+Bundled upstream ISOTROPY-suite material.
 
-The tables originate from the ISOTROPY software suite by Harold T. Stokes,
-Dorian M. Hatch, and Branton J. Campbell. See the repository `NOTICE` for
-attribution.
+- `data_*.txt` — the authoritative runtime **source of truth (SoT)**.  The local
+  reconstruction may read these at runtime; nothing else counts as SoT.
+- `iso`, `findsym` — the reference **binaries**.  They are oracle *producers*
+  (they generate comparison oracle by reading `data_*`), **not** SoT and **not**
+  a local-runtime input.
+- `Decompiled/`, decompilation / call-graph material — reverse-engineering
+  reference only.
+
+Web ISODISTORT output is never SoT and never a local-runtime input (see the
+root `README.md` "Web 非注入" policy).

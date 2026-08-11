@@ -1,7 +1,7 @@
 # Validation Status
 
 Validation is carried out by comparison with the output of the public Web version of ISODISTORT, together with mathematical checks that are independent of the Web implementation.
-The figures in this document are a snapshot **as of July 30, 2026**.
+The figures in this document are a snapshot **as of August 12, 2026**.
 For each Web branch, they refer to the most recent Validation output produced by a local runtime that has been landed on main.
 
 ## Verdicts
@@ -34,7 +34,7 @@ The CIF pool was created from the Materials Project.
 Structures in the same space group whose combinations of occupied Wyckoff site multiplicities and letters coincide are regarded as the same topology, and only one entry was acquired per `(space group, occupied Wyckoff pattern)`.
 Structures that differ only by elemental substitution, and structures that differ only in the free coordinates of the same Wyckoff pattern, were removed as duplicates at this stage.
 The pool obtained in this way contains **19,086 CIFs**.
-Of these, **2,665 CIFs** have actually been used in the Web populations described below at this point.
+Of these, **2,557 CIFs** have actually been used in the Web populations described below at this point.
 
 #### Sampling of inputs
 
@@ -59,13 +59,13 @@ The pass rates below are therefore **the achievement rates of a stratified stres
 
 | Item | Count |
 |---|---:|
-| Valid Validation population | 3,096 |
-| Strict pass | 1,421 |
-| Physical pass | 3,082 |
-| Physical fail | 14 |
+| Valid Validation population | 3,040 |
+| Strict pass | 1,897 |
+| Physical pass | 3,034 |
+| Physical fail | 6 |
 
-- **Physical pass: 3,082 / 3,096 = 99.55%**
-- **Strict pass: 1,421 / 3,096 = 45.90%**
+- **Physical pass: 3,034 / 3,040 = 99.80%**
+- **Strict pass: 1,897 / 3,040 = 62.40%**
 
 #### By K-signature
 
@@ -74,16 +74,16 @@ Every column uses the Validation population defined above.
 
 | K | Validation population | Physical pass | Strict pass |
 |---|---:|---:|---:|
-| F | 788 | 788 (100.00%) | 637 (80.84%) |
-| FF | 294 | 294 (100.00%) | 226 (76.87%) |
-| FFF | 185 | 185 (100.00%) | 97 (52.43%) |
-| FFFF | 200 | 200 (100.00%) | 124 (62.00%) |
-| P | 724 | 722 (99.72%) | 214 (29.56%) |
+| F | 788 | 788 (100.00%) | 678 (86.04%) |
+| FF | 297 | 297 (100.00%) | 217 (73.06%) |
+| FFF | 189 | 189 (100.00%) | 121 (64.02%) |
+| FFFF | 202 | 202 (100.00%) | 138 (68.32%) |
+| P | 687 | 686 (99.85%) | 439 (63.90%) |
 | PP | 20 | 18 (90.00%) | 1 (5.00%) |
-| FP | 130 | 130 (100.00%) | 39 (30.00%) |
-| FFP | 459 | 457 (99.56%) | 59 (12.85%) |
-| FFFP | 261 | 261 (100.00%) | 22 (8.43%) |
-| FPP | 34 | 26 (76.47%) | 2 (5.88%) |
+| FP | 126 | 126 (100.00%) | 62 (49.21%) |
+| FFP | 453 | 452 (99.78%) | 154 (34.00%) |
+| FFFP | 246 | 246 (100.00%) | 81 (32.93%) |
+| FPP | 31 | 29 (93.55%) | 6 (19.35%) |
 | FFPP | 1 | 1 (100.00%) | 0 (0.00%) |
 
 ### MAGNDATA: practical population
@@ -119,20 +119,20 @@ It consists of 458 zero-K, 28 nonzero Type I/III, 412 nonzero Type IV, 19 two-K,
 |---|---:|
 | Population / inputs / CIFs | 927 / 927 / 927 |
 | Validated and judged | 927 |
-| Strict pass | 801 |
+| Strict pass | 882 |
 | Physical pass | 927 |
 | Physical fail | 0 |
 
 - **Physical pass: 927 / 927 = 100.00%**
-- **Strict pass: 801 / 927 = 86.41%**
+- **Strict pass: 882 / 927 = 95.15%**
 
 #### By K-signature
 
 | K | Population | Physical pass | Strict pass |
 |---|---:|---:|---:|
-| F | 798 | 798 (100.00%) | 697 (87.34%) |
-| FF | 84 | 84 (100.00%) | 69 (82.14%) |
-| P | 40 | 40 (100.00%) | 30 (75.00%) |
+| F | 798 | 798 (100.00%) | 760 (95.24%) |
+| FF | 84 | 84 (100.00%) | 81 (96.43%) |
+| P | 40 | 40 (100.00%) | 36 (90.00%) |
 | PP | 3 | 3 (100.00%) | 3 (100.00%) |
 | FP | 1 | 1 (100.00%) | 1 (100.00%) |
 | FPP | 1 | 1 (100.00%) | 1 (100.00%) |
@@ -152,30 +152,30 @@ Because the execution environments differ, the figures below are reference value
 
 | Performance population | Local median | Web median | Local p95 | Web p95 |
 |---:|---:|---:|---:|---:|
-| 2,114 / 4,023 | 1.23 s | 8.37 s | 52.07 s | 31.84 s |
+| 2,075 / 3,967 | 0.69 s | 8.25 s | 42.04 s | 32.29 s |
 
 ```text
           0.1                 1                  10                100 s
-Local     |--------[==========│=============]-----------------|
-        p5=0.13  Q1=0.35  median=1.23  Q3=6.40  p95=52.07
-Web                                          [│==]--------|
-        p5=7.32  Q1=7.49  median=8.37  Q3=10.69  p95=31.84
+Local        |----[=======│=============]-------------------|
+        p5=0.14  Q1=0.28  median=0.69  Q3=3.78  p95=42.04
+Web                                          |│=]---------|
+        p5=7.31  Q1=7.48  median=8.25  Q3=10.52  p95=32.29
 ```
 
 ### Performance by K-signature
 
 | K | Performance population | Local median | Web median | Local p95 | Web p95 |
 |---|---:|---:|---:|---:|---:|
-| F | 951 | 0.37 s | 7.48 s | 2.57 s | 7.94 s |
-| FF | 163 | 0.79 s | 8.79 s | 4.98 s | 10.67 s |
-| FFF | 52 | 1.87 s | 9.24 s | 13.03 s | 29.05 s |
-| FFFF | 47 | 2.22 s | 9.30 s | 12.50 s | 20.05 s |
-| P | 250 | 3.43 s | 8.49 s | 60.47 s | 29.16 s |
-| PP | 23 | 14.73 s | 13.47 s | 98.42 s | 61.71 s |
-| FP | 131 | 5.23 s | 10.58 s | 85.47 s | 41.10 s |
-| FFP | 243 | 8.80 s | 11.84 s | 73.62 s | 47.34 s |
-| FFFP | 218 | 13.71 s | 15.00 s | 90.13 s | 62.02 s |
-| FPP | 35 | 14.11 s | 14.02 s | 97.78 s | 53.72 s |
-| FFPP | 1 | 96.40 s | 66.64 s | 96.40 s | 66.64 s |
+| F | 951 | 0.29 s | 7.48 s | 1.00 s | 7.94 s |
+| FF | 164 | 0.45 s | 8.81 s | 2.51 s | 10.68 s |
+| FFF | 53 | 1.29 s | 9.24 s | 15.33 s | 37.38 s |
+| FFFF | 47 | 1.76 s | 9.30 s | 11.24 s | 20.05 s |
+| P | 234 | 2.07 s | 8.48 s | 51.45 s | 30.86 s |
+| PP | 21 | 12.17 s | 13.47 s | 88.07 s | 37.34 s |
+| FP | 127 | 3.77 s | 10.58 s | 77.02 s | 41.10 s |
+| FFP | 239 | 5.84 s | 11.84 s | 61.47 s | 53.99 s |
+| FFFP | 208 | 10.09 s | 14.24 s | 84.17 s | 62.02 s |
+| FPP | 30 | 10.55 s | 13.83 s | 78.43 s | 53.72 s |
+| FFPP | 1 | 86.27 s | 66.64 s | 86.27 s | 66.64 s |
 
 A clear long tail remains on the Local side for the stress cases that include parametric K and multi-K.

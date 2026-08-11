@@ -1,1 +1,0 @@
-"""Scientific backend for Distortropy."""

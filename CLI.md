@@ -1,4 +1,4 @@
-# Distortropy CLI Guide
+# APOSTRUCT CLI Guide
 
 [日本語](CLI_ja.md) | [README](README.md)
 
@@ -12,14 +12,15 @@ parent -> k points -> irreps -> OPDs -> modes
                                   `----> invariants
 ```
 
-Run `distortropy COMMAND --help` for the complete option list. This guide
+Run `apo --version` to report the installed version and, in a Git
+checkout, its commit. Run `apo COMMAND --help` for the complete option list. This guide
 describes the scientific and machine-facing contracts shared by the commands.
 
 ## Commands
 
 | Command | Result |
 |---|---|
-| `settings` | COPL-compatible International settings for one space group |
+| `settings` | Source International settings for one space group |
 | `directions` | ordinary or time-odd OP directions compatible with an exact G:H embedding |
 | `info` | normalized parent cell and selectable crystallographic sites |
 | `kpoints` | k-point labels, expressions, stars, and parameter names |
@@ -30,6 +31,7 @@ describes the scientific and machine-facing contracts shared by the commands.
 | `combine-modes` | per-atom vectors from weighted compact mode definitions |
 | `run` | execute a saved JSON case to a requested stage |
 | `serve` | start the local graphical interface |
+| `show` | load a saved JSON case into a running graphical interface |
 
 ## Subgroup-Compatible Directions
 
@@ -41,22 +43,22 @@ List the accepted International setting IDs first when either group is not in
 its default setting:
 
 ```bash
-distortropy settings --sg 14
+apo settings --sg 14
 ```
 
 ```bash
-distortropy directions \
+apo directions \
   --parent-sg 14 --parent-setting 64 \
   --subgroup-sg 2 --subgroup-setting 2 \
-  --basis=0,0,3 --basis=0,1,0 --basis=-1,0,0
+  --basis="0,0,3;0,1,0;-1,0,0"
 ```
 
 Omit the setting options to use the defaults:
 
 ```bash
-distortropy directions \
+apo directions \
   --parent-sg 221 --subgroup-sg 140 \
-  --basis=-1,1,0 --basis=-1,-1,0 --basis=0,0,2 \
+  --basis="-1,1,0;-1,-1,0;0,0,2" \
   --origin=0,0,0
 ```
 
@@ -64,13 +66,14 @@ For a magnetic child, give its BNS number instead of an ordinary subgroup
 number. The parent is the paramagnetic gray extension of `--parent-sg`:
 
 ```bash
-distortropy directions \
+apo directions \
   --parent-sg 62 --subgroup-msg 62.448 \
-  --basis=1,0,0 --basis=0,1,0 --basis=0,0,1
+  --basis="1,0,0;0,1,0;0,0,1"
 ```
 
 The basis vectors and origin use the selected International settings of the
-parent and subgroup. These are the same setting IDs used by COPL. Space-group
+parent and subgroup. COPL uses the same IDs for the subset in its setting menu;
+APOSTRUCT also exposes non-legacy axis relabelings stored by Source. Space-group
 numbers alone are insufficient because the same subgroup type can have
 inequivalent orientations, cells, origins, and domains inside a parent. No CIF,
 Wyckoff site, or distortion-mode selection is used.
@@ -92,19 +95,24 @@ supergroup but the direction is allowed by the requested subgroup.
 Pass a CIF path as the positional argument:
 
 ```bash
-distortropy info structure.cif
-distortropy kpoints structure.cif
+apo info structure.cif
+apo kpoints structure.cif
 ```
 
 The parent setting, sites, occupancies, and coordinates come from that file.
+Ordinary decimal, estimated-standard-deviation, and rational values such as
+`1/2` are accepted for numeric coordinates. If a site cannot be assigned to a
+Wyckoff position, `info.sites[].wyckoff_mapping_error` retains the reason.
+Selecting that site for a displacive or magnetic calculation is an error that
+names its label, coordinates, and reason.
 
 ### Space group and Wyckoff sites
 
 Use `--sg` when a concrete structure is unnecessary:
 
 ```bash
-distortropy kpoints --sg 221
-distortropy info --sg 221 --wyckoff 1a 1b 3c
+apo kpoints --sg 221
+apo info --sg 221 --wyckoff 1a 1b 3c
 ```
 
 The symbolic route uses the default International Tables setting. Wyckoff
@@ -112,7 +120,7 @@ letters and multiplicity-letter forms are both accepted. Input free coordinates
 may remain absent through `invariants`:
 
 ```bash
-distortropy opds \
+apo opds \
   --sg 137 --wyckoff 2a 4d \
   --k M --irrep M1 --displacive a d
 ```
@@ -123,7 +131,7 @@ are not used as geometry by the k-point, irrep, OPD, or invariant calculation.
 `modes` realizes atomic geometry and therefore requires every free coordinate:
 
 ```bash
-distortropy modes \
+apo modes \
   --sg 137 --wyckoff 2a 4d:z=1/7 \
   --k M --irrep M1 --displacive a d --opd P1
 ```
@@ -136,21 +144,22 @@ Read the available selectors from `info.sites`. A unique `label` selects one
 crystallographic site. A `type` selects every site carrying that type:
 
 ```bash
-distortropy info structure.cif | jq '.sites[] | {label, type, wyckoff}'
-distortropy irreps structure.cif --k GM --displacive O --magnetic Fe
+apo info structure.cif | jq '.sites[] | {label, type, wyckoff}'
+apo irreps structure.cif --k GM --displacive O --magnetic Fe
 ```
 
 For repeated symbolic Wyckoff orbits, labels such as `i1` and `i2` select them
 independently, while type `i` selects both. `--strain` adds homogeneous strain.
-Site-free, strain-only `irreps --sg SG --strain` infers `GM`; other atomic mode
-selections require explicit sites and k points.
+Site-free, strain-only `irreps --sg SG --strain` infers `GM`. Site-free
+strain-only `modes` also requires no Wyckoff sites; other atomic mode selections
+require explicit sites and k points.
 
 ## K Points and Parameters
 
 `kpoints` is the authority for selectable labels and parameter names:
 
 ```bash
-distortropy kpoints --sg 225 | \
+apo kpoints --sg 225 | \
   jq '.kpoints[] | {label, kvector, parameter_names, miller_love_kvector}'
 ```
 
@@ -158,8 +167,8 @@ CLI input follows `kvector` and `parameter_names`, matching the graphical
 interface. Values can be positional in that order or named:
 
 ```bash
-distortropy irreps structure.cif --k DT 1/3 --displacive O
-distortropy irreps structure.cif --k DT b=1/3 --displacive O
+apo irreps structure.cif --k DT 1/3 --displacive O
+apo irreps structure.cif --k DT b=1/3 --displacive O
 ```
 
 `miller_love_kvector` and resolved `miller_love_parameters` show the
@@ -171,7 +180,7 @@ One to four k/irrep factors can be coupled. Repeated `--k` and `--irrep` options
 are paired by order:
 
 ```bash
-distortropy opds structure.cif \
+apo opds structure.cif \
   --k R --irrep R4- \
   --k M --irrep M3+ \
   --displacive O
@@ -183,7 +192,7 @@ distortropy opds structure.cif \
 label from the displayed direction:
 
 ```bash
-distortropy opds structure.cif \
+apo opds structure.cif \
   --k R --irrep R4- --displacive O \
   -o opds.json
 
@@ -195,7 +204,7 @@ For coupled selections, labels include one domain number per factor, for
 example `P1(1)P1(2)`. Shell-quote labels containing parentheses:
 
 ```bash
-distortropy modes structure.cif \
+apo modes structure.cif \
   --k R --irrep R4- \
   --k M --irrep M3+ \
   --displacive O --opd 'P1(1)P1(2)'
@@ -210,7 +219,7 @@ unclassified result by `ferroic_classified`.
 `modes` emits compact JSON by default:
 
 ```bash
-distortropy modes structure.cif \
+apo modes structure.cif \
   --k R --irrep R4- --displacive O --opd P1 \
   -o modes.json
 ```
@@ -220,12 +229,12 @@ differs from the direct OPD result, reuse the exact `directions` result instead
 of reducing it back to the OPD label:
 
 ```bash
-distortropy directions \
+apo directions \
   --parent-sg 225 --subgroup-sg 87 \
-  --basis=1/2,-1/2,0 --basis=1/2,1/2,0 --basis=0,0,1 \
+  --basis="1/2,-1/2,0;1/2,1/2,0;0,0,1" \
   -o directions.json
 
-distortropy modes structure.cif \
+apo modes structure.cif \
   --from-directions directions.json --direction-row 3 \
   --displacive Br -o modes.json
 ```
@@ -244,7 +253,7 @@ global parameter names.
 Use human-readable mode tables when needed:
 
 ```bash
-distortropy modes structure.cif \
+apo modes structure.cif \
   --k R --irrep R4- --displacive O --opd P1 \
   --format text
 ```
@@ -262,14 +271,14 @@ jq '.mode_details.displacive_definitions[],
 `--weight` multiplies the published rows directly:
 
 ```bash
-distortropy combine-modes modes.json \
+apo combine-modes modes.json \
   --weight magnetic-1=1 --weight magnetic-2=3/4
 ```
 
 `--amplitude` first applies each definition's published mode normfactor:
 
 ```bash
-distortropy combine-modes modes.json \
+apo combine-modes modes.json \
   --amplitude magnetic-1=1 --amplitude magnetic-2=1
 ```
 
@@ -284,7 +293,7 @@ Direct `invariants` calculations use the selected primary factors and exact
 OPD domains:
 
 ```bash
-distortropy invariants structure.cif \
+apo invariants structure.cif \
   --k GM --irrep GM4- \
   --k GM --irrep GM3+ \
   --displacive O --strain \
@@ -319,7 +328,7 @@ rerunning the parent, OPD, or mode calculation:
 jq '.invariant_factors[] |
     {slot, role, label, opd, domain, parameter_offset}' modes.json
 
-distortropy invariants \
+apo invariants \
   --from-modes modes.json \
   --secondary 4 \
   --minimum-degree 2 --maximum-degree 4
@@ -354,13 +363,18 @@ in a development checkout; standalone users normally use `structure`.
 Run it to one stage:
 
 ```bash
-distortropy run --case case.json --upto kpoints
-distortropy run --case case.json --upto irreps
-distortropy run --case case.json --upto opds
-distortropy run --case case.json --upto modes
-distortropy run --case case.json --upto invariants \
+apo run --case case.json --upto kpoints
+apo run --case case.json --upto irreps
+apo run --case case.json --upto opds
+apo run --case case.json --upto modes
+apo run --case case.json --upto invariants \
   --minimum-degree 2 --maximum-degree 6
 ```
+
+For saved or automated work, prefer `run` so that one process advances the
+pipeline without reloading the bundled tables for separate stage commands.
+Use the individual commands when discovering or inspecting the identifiers to
+put in a case.
 
 Use `--case -` for standard input. Relative structure paths resolve from the
 case file's directory. A k item uses `label`, optional exact `params`, and `ir`
@@ -372,15 +386,15 @@ Compact results identify their shape with an unversioned schema name. Consumers
 should branch on this field rather than infer the stage from optional keys:
 
 ```text
-distortropy.cli.settings
-distortropy.cli.directions
-distortropy.cli.info
-distortropy.cli.kpoints
-distortropy.cli.irreps
-distortropy.cli.opds
-distortropy.cli.modes
-distortropy.cli.invariants
-distortropy.cli.mode_combination
+APOSTRUCT.cli.settings
+APOSTRUCT.cli.directions
+APOSTRUCT.cli.info
+APOSTRUCT.cli.kpoints
+APOSTRUCT.cli.irreps
+APOSTRUCT.cli.opds
+APOSTRUCT.cli.modes
+APOSTRUCT.cli.invariants
+APOSTRUCT.cli.mode_combination
 ```
 
 Common controls:
@@ -399,9 +413,29 @@ a different result.
 ## Local Interface
 
 ```bash
-distortropy serve --host 127.0.0.1 --port 8300 --open-browser
+apo serve --host 127.0.0.1 --port 8300 --open-browser
 ```
 
 The GUI provides CIF and symbolic-parent workflows over the same calculations.
 Debug display changes the amount of information shown, not the selected
 calculation.
+
+Send a case to an interface that is already open:
+
+```bash
+apo show --case case.json --server http://127.0.0.1:8300
+```
+
+The deepest selection in the case determines the displayed stage. A case with
+K but no irrep opens the irrep step; selected irreps without `opd` open the OPD
+step; `opd` opens mode details and the structure viewer. Initial mode-slider
+amplitudes use the payload-local definition order:
+
+```bash
+apo show --case case.json \
+  --amplitude magnetic-1=1 --amplitude magnetic-2=19/20
+```
+
+Relative structure paths are resolved by the sending command, which transfers
+the CIF contents to the server. The case and calculated state are held only in
+the running server's memory.
