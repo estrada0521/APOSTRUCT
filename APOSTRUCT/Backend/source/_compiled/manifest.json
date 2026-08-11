@@ -1,0 +1,1935 @@
+{
+  "schema": "APOSTRUCT.source-compiled.v1",
+  "source": {
+    "data_space.txt": {
+      "sha256": "47d8de79c643ad2f6c8e57424e179cd5702ddad669f02032296c0e3f8c2e594a",
+      "size": 584128
+    },
+    "data_irreps.txt": {
+      "sha256": "80395779402c579e206f84b1dfb59a2216c2eba5f925d30ecec923bd41679263",
+      "size": 1104194
+    },
+    "data_little.txt": {
+      "sha256": "37ca30ed47beb6530be92c63bee7287f60b29083515777da251879f7bd387bae",
+      "size": 10612956
+    },
+    "data_isotropy.txt": {
+      "sha256": "65512dabbbf0934690aaaa25448d59b4d8b4f5bdda5c5c5ec1834f50f6ed016a",
+      "size": 6112902
+    },
+    "data_wyckoff.txt": {
+      "sha256": "ae8b2604d5bcc9a9b90587fbf99795e74ae18c0bd8b8fa48639a30dfabb0f95a",
+      "size": 728638
+    },
+    "data_images.txt": {
+      "sha256": "3a0f7a647ed13032ca52fabab49a5b01ad4b21c1827b3a4415c9685ab542adca",
+      "size": 146986
+    },
+    "const.dat": {
+      "sha256": "5b5cd037a04af62dad280cde6d9dda48ec4752b17a0dd46f9d92b7b88c7d0d8b",
+      "size": 3220
+    }
+  },
+  "tables": {
+    "space": {
+      "point_op_label": {
+        "file": "space-000.npy",
+        "dtype": "<U6",
+        "shape": [
+          72
+        ],
+        "sha256": "f335ac9915e6147cb3965f22a547cbb61dc963a458357d9fec45f9358521c342"
+      },
+      "point_op_label_stokes": {
+        "file": "space-001.npy",
+        "dtype": "<U10",
+        "shape": [
+          72
+        ],
+        "sha256": "1d6af63ef1db6b1bdf5bc2702b59971326c91b4fe8488c5f3bf37bc852d93b80"
+      },
+      "point_op_label_kov": {
+        "file": "space-002.npy",
+        "dtype": "<U3",
+        "shape": [
+          72
+        ],
+        "sha256": "872135ef298c4af5943d087735981134362d1842373cb1aa4c1e540b8f2a5c32"
+      },
+      "point_op_label_zak": {
+        "file": "space-003.npy",
+        "dtype": "<U8",
+        "shape": [
+          72
+        ],
+        "sha256": "5f28c1bcb0d57e610d0e2ccf8ca4b91739c3f06ab1ae944bedccef65aeed3a1b"
+      },
+      "point_op_label_zak_alt": {
+        "file": "space-004.npy",
+        "dtype": "<U8",
+        "shape": [
+          72
+        ],
+        "sha256": "7c8f6539af1551682bef6cb843158eb8343a140b9e66d5a3264ee02dc451d721"
+      },
+      "ipoint_op_order": {
+        "file": "space-005.npy",
+        "dtype": "|i1",
+        "shape": [
+          72
+        ],
+        "sha256": "a8780e2decf664cc4b3779af10cb821fb802681dd91beb180db28cf65526e736"
+      },
+      "ipoint_op": {
+        "file": "space-006.npy",
+        "dtype": "|i1",
+        "shape": [
+          648
+        ],
+        "sha256": "285f000619cc6660e2f6aa04d564bea063525e0f16dc80b05bd4506ca45fcd42"
+      },
+      "ipoint_op_mlt": {
+        "file": "space-007.npy",
+        "dtype": "|i1",
+        "shape": [
+          5184
+        ],
+        "sha256": "0dc26c8d5e90bea18dae06a302003e86babc011acd2987666b1b46e1ec248ec5"
+      },
+      "ipoint_op_inverse": {
+        "file": "space-008.npy",
+        "dtype": "|i1",
+        "shape": [
+          72
+        ],
+        "sha256": "cffea63c42ffa8852232dd127557c6b2c33860a48d8fcb3836b4e7bfa8062f92"
+      },
+      "point_op_proper": {
+        "file": "space-009.npy",
+        "dtype": "|b1",
+        "shape": [
+          72
+        ],
+        "sha256": "22650259c3e53c11eff703be13d041eb371c1889aaf5c6c5e19dfeff8bc4e368"
+      },
+      "ipoint_op_code": {
+        "file": "space-010.npy",
+        "dtype": "<i4",
+        "shape": [
+          72
+        ],
+        "sha256": "633cc7d03545ab642c7bfafc18d5ef114adc5a31c93771d7ff7d778ed6945656"
+      },
+      "ipoint_op_conv": {
+        "file": "space-011.npy",
+        "dtype": "<i2",
+        "shape": [
+          72
+        ],
+        "sha256": "c0d946fee7fa8b80d3531b063f2dc306a77ee8b0a05272f4648272f74ac04749"
+      },
+      "ipoint_op_psettings": {
+        "file": "space-012.npy",
+        "dtype": "<i2",
+        "shape": [
+          4032
+        ],
+        "sha256": "075bd814a2305be4de31217e5fa0bb8c96e161d71c71d5db9f05f5f6c35b725b"
+      },
+      "point_op_psettings_label": {
+        "file": "space-013.npy",
+        "dtype": "<U6",
+        "shape": [
+          4
+        ],
+        "sha256": "fefd4e75f9dcc44adef487daace1eafbdeee890678502795a3202c9bd34945d4"
+      },
+      "ipoint_op_conv_rh": {
+        "file": "space-014.npy",
+        "dtype": "<i2",
+        "shape": [
+          72
+        ],
+        "sha256": "e28da99b0c72726249aa194be510beb1eeab03e78d6644063bec31b652ea41de"
+      },
+      "point_group_label": {
+        "file": "space-015.npy",
+        "dtype": "<U4",
+        "shape": [
+          32
+        ],
+        "sha256": "8d503a9eeaf07b9713a35ebb8c4ca801096b7918f98fe16cec8e1b2c4114b6c8"
+      },
+      "point_group_label_inter": {
+        "file": "space-016.npy",
+        "dtype": "<U5",
+        "shape": [
+          32
+        ],
+        "sha256": "4af56924a921b259386e19b33aeff9d30acdb78d777026d0859faa709143a462"
+      },
+      "ipoint_group_order": {
+        "file": "space-017.npy",
+        "dtype": "|i1",
+        "shape": [
+          32
+        ],
+        "sha256": "0f7d1c2c34f8fa05c25d6a51a902215cde368ca9f57b6d0dae945747351d6a9f"
+      },
+      "ipoint_group_gen_count": {
+        "file": "space-018.npy",
+        "dtype": "|i1",
+        "shape": [
+          32
+        ],
+        "sha256": "5f2fc07b599d28075a49c9ac6a7347a8fd617919ba13cb62650457425943fc3c"
+      },
+      "ipoint_group_gen": {
+        "file": "space-019.npy",
+        "dtype": "|i1",
+        "shape": [
+          160
+        ],
+        "sha256": "28ffdc66c2fe8a1497636435e8b0147fb61a08540eeb934c5cdec749ec355ea3"
+      },
+      "ipoint_group_code": {
+        "file": "space-020.npy",
+        "dtype": "<i4",
+        "shape": [
+          32
+        ],
+        "sha256": "fa654bbd0bfae2ebf63a7c345679a11fe2d1c23c6ab9b32fead513debe9c170e"
+      },
+      "lattice_label": {
+        "file": "space-021.npy",
+        "dtype": "<U2",
+        "shape": [
+          14
+        ],
+        "sha256": "1bbe38ce6a03affd68dabb654a457cbcf642fced65a9162d5dcc4ad9c65ec015"
+      },
+      "lattice_label_sch": {
+        "file": "space-022.npy",
+        "dtype": "<U3",
+        "shape": [
+          14
+        ],
+        "sha256": "bf0abdd7cd88746ffb7b5268595ccd6c44c35f1c32bbbbb5d5fc3f784584a2f6"
+      },
+      "lattice_point_group": {
+        "file": "space-023.npy",
+        "dtype": "|i1",
+        "shape": [
+          14
+        ],
+        "sha256": "086100656ef76b63a725163d7369b9b23bc9f448cfa27bd8f3129793c3e5d8fb"
+      },
+      "k_points_label": {
+        "file": "space-024.npy",
+        "dtype": "<U1",
+        "shape": [
+          112
+        ],
+        "sha256": "d1ef28a625ad32dd86e95bd8ea3df063f81ac7b0af7a1c14172d8c979cfd08e0"
+      },
+      "k_points_count": {
+        "file": "space-025.npy",
+        "dtype": "|i1",
+        "shape": [
+          14
+        ],
+        "sha256": "bd4dca5f9f2d800b61387bd04d3e85b34c5ad8f41baad312861e8c7ccf8686c4"
+      },
+      "k_points": {
+        "file": "space-026.npy",
+        "dtype": "|i1",
+        "shape": [
+          448
+        ],
+        "sha256": "9e73d4d22879558b48bbe056998973134393723bf642ae53221484f6482ccdd4"
+      },
+      "lattice_ml": {
+        "file": "space-027.npy",
+        "dtype": "|i1",
+        "shape": [
+          504
+        ],
+        "sha256": "702308259aabe8ab4784c636794b5547c25ad6f4b3d7ac968953b17a70f371e5"
+      },
+      "lattice_kov": {
+        "file": "space-028.npy",
+        "dtype": "|i1",
+        "shape": [
+          540
+        ],
+        "sha256": "f897e92cf93e6c8b2036ad9ee1120624419a103a2f83fa6a9fb9f9aabe7321eb"
+      },
+      "lattice_bc": {
+        "file": "space-029.npy",
+        "dtype": "|i1",
+        "shape": [
+          504
+        ],
+        "sha256": "cff2299fe2f52fb0314f6e8201c5d5e71a49cef977f7ff2f6d8d0e1551623698"
+      },
+      "lattice_zak": {
+        "file": "space-030.npy",
+        "dtype": "|i1",
+        "shape": [
+          504
+        ],
+        "sha256": "4043c500382a925a62ffaf4422b571f8edc71f1255dd69fb8a6670172ecd2eea"
+      },
+      "lattice_ml_denom": {
+        "file": "space-031.npy",
+        "dtype": "|i1",
+        "shape": [
+          28
+        ],
+        "sha256": "b3384ea6d28ffd64670d6158317446f3d4206e682b5f656b85cde79de2acc12a"
+      },
+      "lattice_kov_denom": {
+        "file": "space-032.npy",
+        "dtype": "|i1",
+        "shape": [
+          30
+        ],
+        "sha256": "66d5fe003b6021dfe87bfeb152b14e71214c8d0503d82004101f5fdf2eec7d2c"
+      },
+      "lattice_bc_denom": {
+        "file": "space-033.npy",
+        "dtype": "|i1",
+        "shape": [
+          28
+        ],
+        "sha256": "261afb4bb8c758543de2b95b027acc15cb924952be6314f438c761bef05bb104"
+      },
+      "lattice_zak_denom": {
+        "file": "space-034.npy",
+        "dtype": "|i1",
+        "shape": [
+          28
+        ],
+        "sha256": "b3384ea6d28ffd64670d6158317446f3d4206e682b5f656b85cde79de2acc12a"
+      },
+      "lattice_inter": {
+        "file": "space-035.npy",
+        "dtype": "|i1",
+        "shape": [
+          4140
+        ],
+        "sha256": "9810be3179998ff00e9d4b01db98db4fd61b0c28c9e06b57737bcc695d8dc16a"
+      },
+      "lattice_inter_denom": {
+        "file": "space-036.npy",
+        "dtype": "|i1",
+        "shape": [
+          230
+        ],
+        "sha256": "4545046e9d33ba5dafa73c5f5404bcaf83cfb0e67bfc3b8103a10f0e8fcdaac4"
+      },
+      "space_label": {
+        "file": "space-037.npy",
+        "dtype": "<U8",
+        "shape": [
+          230
+        ],
+        "sha256": "8a3ae9e0717546211205ab526ee55c5f952d1a24dcfcfa5860c1f84e233106d1"
+      },
+      "space_label_bc": {
+        "file": "space-038.npy",
+        "dtype": "<U10",
+        "shape": [
+          230
+        ],
+        "sha256": "9fed49dd70caa1608224808ffed058a4100c10ee2488a2b1be4798d538a3e2bd"
+      },
+      "space_label_ml": {
+        "file": "space-039.npy",
+        "dtype": "<U10",
+        "shape": [
+          230
+        ],
+        "sha256": "dd28d087667263b3088736a95e11b6f90b6bde6b1bde1eb25cdc5efc2e56df9c"
+      },
+      "ispace_point_group": {
+        "file": "space-040.npy",
+        "dtype": "|i1",
+        "shape": [
+          230
+        ],
+        "sha256": "c4a9491d4856c0c5e2f78663f46fdb8ac29a77829d3ae32c8136d195451bf900"
+      },
+      "ispace_lattice": {
+        "file": "space-041.npy",
+        "dtype": "|i1",
+        "shape": [
+          230
+        ],
+        "sha256": "5806d56cf05d5376c6cf6df8ee437e14b30dc1ab23d1efe223d6320e05764cdb"
+      },
+      "ispace_enantiomorphic": {
+        "file": "space-042.npy",
+        "dtype": "<i2",
+        "shape": [
+          230
+        ],
+        "sha256": "61bfc07f2f4cf552083499493cf5dcb76d5d55f1105703975537af1e423ad925"
+      },
+      "ispace_elements": {
+        "file": "space-043.npy",
+        "dtype": "|i1",
+        "shape": [
+          35000
+        ],
+        "sha256": "8ab53f745c84c7b31f6d62f9e1186cfb1f0cd6720d2b8ecaddc83cfbb47aaf91"
+      },
+      "ispace_elements_pointer": {
+        "file": "space-044.npy",
+        "dtype": "<i2",
+        "shape": [
+          230
+        ],
+        "sha256": "9b02f5150ffa99e91facc54ee6338bf29f86b954a2a44f2f7660b4f2e23c34ac"
+      },
+      "ispace_gen_pointer": {
+        "file": "space-045.npy",
+        "dtype": "<i2",
+        "shape": [
+          1150
+        ],
+        "sha256": "df97e9fc9d064a70489ca5d5a8ba9163eb9cd6107858df2dde27dd244f9a7e5a"
+      },
+      "space_gen_setting_label": {
+        "file": "space-046.npy",
+        "dtype": "<U6",
+        "shape": [
+          5
+        ],
+        "sha256": "4a8b3923a97a7310c82fed16162153de57ed3959caccda9b9ec7a25089cae1f7"
+      },
+      "ispace_gen_inter_pointer": {
+        "file": "space-047.npy",
+        "dtype": "<i2",
+        "shape": [
+          800
+        ],
+        "sha256": "5a068dbfaa55906bd3d7d9d8036d24f448a017605db043b48ad140434b267cd2"
+      },
+      "ispace_inter_count": {
+        "file": "space-048.npy",
+        "dtype": "<i2",
+        "shape": [
+          1
+        ],
+        "sha256": "e92e86f3c60a4e5519759e1c8716c29d90385b615ad04d074f621edd1cd55c12"
+      },
+      "ispace_inter_number": {
+        "file": "space-049.npy",
+        "dtype": "<i2",
+        "shape": [
+          800
+        ],
+        "sha256": "7aaa5722be52ba846779f881eb914142f5063350844a215f8d7e9543153f2c8a"
+      },
+      "ispace_inter_version": {
+        "file": "space-050.npy",
+        "dtype": "|i1",
+        "shape": [
+          800
+        ],
+        "sha256": "7e4fecf8f3c600768bcfb3d4ac5b0c7348cae6d5702348b916bc19cdc5ddb7b8"
+      },
+      "space_inter_label_short": {
+        "file": "space-051.npy",
+        "dtype": "<U10",
+        "shape": [
+          800
+        ],
+        "sha256": "0df9dd39650991fd2044bd34da6d5a3602c6cc2de6291c9a5e01effb50a3f681"
+      },
+      "space_inter_label_full": {
+        "file": "space-052.npy",
+        "dtype": "<U19",
+        "shape": [
+          800
+        ],
+        "sha256": "85b5a090ae4eec450174ade71c186e8260461756de10e3d0ad908f4b26fab5a1"
+      },
+      "space_inter_label_cif": {
+        "file": "space-053.npy",
+        "dtype": "<i2",
+        "shape": [
+          673
+        ],
+        "sha256": "1b4acee5d7a8ff6d703f03c1a67500e8d55d84f25752d4a4725adb7b781946b3"
+      },
+      "ispace_inter_origin": {
+        "file": "space-054.npy",
+        "dtype": "|i1",
+        "shape": [
+          800
+        ],
+        "sha256": "f6c19b08828412b32a5d0efb61a98fdd88245cd412148685387d8fa2981bdb34"
+      },
+      "space_inter_axis": {
+        "file": "space-055.npy",
+        "dtype": "<U1",
+        "shape": [
+          800
+        ],
+        "sha256": "0f2696c6bd5f787ace5605c85f207e9ac013009a40fd83ad1977c3faea4d190b"
+      },
+      "space_inter_abc": {
+        "file": "space-056.npy",
+        "dtype": "<U6",
+        "shape": [
+          800
+        ],
+        "sha256": "0da3e4a03e02b4b55e71cfdf78a423d33cc71a3d12939a4bf8e7f30d23e7a4fa"
+      },
+      "ispace_inter_cell": {
+        "file": "space-057.npy",
+        "dtype": "|i1",
+        "shape": [
+          800
+        ],
+        "sha256": "ee2845ae0456f0b65c46bd013f7e134d8ab35562d866c6f43c6835e953ec1de6"
+      },
+      "ispace_generators_conv_count": {
+        "file": "space-058.npy",
+        "dtype": "|i1",
+        "shape": [
+          800
+        ],
+        "sha256": "fa23d23836f96eb16a043fd6bba34964b523c670573afcf8a34bd05d7dd504bc"
+      },
+      "ispace_generators_conv": {
+        "file": "space-059.npy",
+        "dtype": "|i1",
+        "shape": [
+          16000
+        ],
+        "sha256": "41bbb0b30743a839ade32115635b8c2876a3079adfe7d7d09c52a92368cd3a91"
+      },
+      "ispace_inter_choice": {
+        "file": "space-060.npy",
+        "dtype": "<i2",
+        "shape": [
+          230
+        ],
+        "sha256": "e73c075a9156030703556e60ec815f5b4313b87fea1c4524ee92309ad2c70138"
+      },
+      "ispace_inter_default_origin": {
+        "file": "space-061.npy",
+        "dtype": "|i1",
+        "shape": [
+          920
+        ],
+        "sha256": "09179fd96db89f2345c00d2aaa89ff49dcea83f002004256f32e63de68ddb39b"
+      },
+      "ispace_settings": {
+        "file": "space-062.npy",
+        "dtype": "|i1",
+        "shape": [
+          58880
+        ],
+        "sha256": "63568e123af00f8c916ef77302733b2b99cd9161fdf63019807475fc4b06f299"
+      },
+      "space_settings_label": {
+        "file": "space-063.npy",
+        "dtype": "<U6",
+        "shape": [
+          16
+        ],
+        "sha256": "40a2e425fc82e0cbc72e5906c3ca8ffd1ebfc2d1f4e2755299f048bc9b298533"
+      },
+      "ispace_settings_inter": {
+        "file": "space-064.npy",
+        "dtype": "|i1",
+        "shape": [
+          25600
+        ],
+        "sha256": "387f6cf679d9dce1750281c8439fb075fd3e332d7328a11c63d6be559344095d"
+      },
+      "ispace_inter_wyckoff_pointer": {
+        "file": "space-065.npy",
+        "dtype": "<i2",
+        "shape": [
+          800
+        ],
+        "sha256": "603eff6d8c64542cf8fe8c93b6d3a988ecb668e3f76302b102174a2fce9416e0"
+      },
+      "ispace_inter_wyckoff_fract": {
+        "file": "space-066.npy",
+        "dtype": "|i1",
+        "shape": [
+          86400
+        ],
+        "sha256": "bc07be73401e005ec324f70e7848c6d4bff74d14a428c9fddcf86bc23f5c47db"
+      },
+      "end": {
+        "file": "space-067.npy",
+        "dtype": "|i1",
+        "shape": [
+          0
+        ],
+        "sha256": "b44d0c5ada073af57097da3a9e0bdd1d559a17f047384dbb19a7201496f81b16"
+      }
+    },
+    "irreps": {
+      "irrep_label": {
+        "file": "irreps-000.npy",
+        "dtype": "<U8",
+        "shape": [
+          4777
+        ],
+        "sha256": "0139ea5d590ec65f1509c65585e33c160b3c0d59fb43fab142af12446aca1b0b"
+      },
+      "irrep_label_bc": {
+        "file": "irreps-001.npy",
+        "dtype": "<U8",
+        "shape": [
+          4777
+        ],
+        "sha256": "b1d4091857b2f9e042bb0cbdce8d74a3534c1a5b43e0853e949a514ba5db156a"
+      },
+      "irrep_label_kov": {
+        "file": "irreps-002.npy",
+        "dtype": "<U8",
+        "shape": [
+          4903
+        ],
+        "sha256": "999b9158d6c50408b5fb1ca76d262bb6a12c8aa59ee0f9a0c72399e68a2ea326"
+      },
+      "irrep_label_kov_id": {
+        "file": "irreps-003.npy",
+        "dtype": "<i2",
+        "shape": [
+          126
+        ],
+        "sha256": "9d3d3f8001384bd3c7e0b32245a41c1e5db195ec4a50ae5e64adc5180ac12c82"
+      },
+      "irrep_label_zak": {
+        "file": "irreps-004.npy",
+        "dtype": "<f8",
+        "shape": [
+          5318
+        ],
+        "sha256": "25c807a01edbbf2ec096f4edde9d100e35ca7606c8657817e5b49d779516c158"
+      },
+      "irrep_label_zak_id": {
+        "file": "irreps-005.npy",
+        "dtype": "<i2",
+        "shape": [
+          60
+        ],
+        "sha256": "e5b02a68e6857bd3b78387548b445aa1f55a342ef27652276e8a2739090b9100"
+      },
+      "irrep_label_pg": {
+        "file": "irreps-006.npy",
+        "dtype": "<U4",
+        "shape": [
+          4777
+        ],
+        "sha256": "874db2e34fafe93b82c85608b9feb5ee21b0e80a799f21c3fe7ea33d79336c28"
+      },
+      "irrep_space_group": {
+        "file": "irreps-007.npy",
+        "dtype": "<i2",
+        "shape": [
+          4777
+        ],
+        "sha256": "2e90839205172dc324dd8108d165c6ffb1fbbe3aff4121fc454b9c49189a88f6"
+      },
+      "irrep_space_group_pointer": {
+        "file": "irreps-008.npy",
+        "dtype": "<i2",
+        "shape": [
+          231
+        ],
+        "sha256": "bfaa67c2d29cb781abaa26f1cdcf187533cdb4dfea2106d861d2d910b5f6f747"
+      },
+      "irrep_image": {
+        "file": "irreps-009.npy",
+        "dtype": "<i2",
+        "shape": [
+          4777
+        ],
+        "sha256": "d4da50b0b8893fe9671f2c6914975d1b8b45b7d6f7f4b647bd74be460ce507c7"
+      },
+      "irrep_lifshitz": {
+        "file": "irreps-010.npy",
+        "dtype": "|i1",
+        "shape": [
+          4777
+        ],
+        "sha256": "d4e874428e2a75a63af9b3930ecb17cb5ee96108c561e6603f857bd267bba5dd"
+      },
+      "irrep_felix": {
+        "file": "irreps-011.npy",
+        "dtype": "|i1",
+        "shape": [
+          4777
+        ],
+        "sha256": "517f21589fbcb3959bca571c02c99ed175d60aa38c6ae4c3f7e74bd109c1330b"
+      },
+      "irrep_image_generator": {
+        "file": "irreps-012.npy",
+        "dtype": "|i1",
+        "shape": [
+          40850
+        ],
+        "sha256": "f98e071760ca83f8e09c4dea0d311ec539d2e7e150d3959ec40a665bffe886fa"
+      },
+      "irrep_image_generator_pointer": {
+        "file": "irreps-013.npy",
+        "dtype": "<i2",
+        "shape": [
+          4778
+        ],
+        "sha256": "aeaba8be9e05f0ef23f5342eeed34e6d3c2c11b53d684fd591d1724c60b61081"
+      },
+      "irrep_matrices": {
+        "file": "irreps-014.npy",
+        "dtype": "|i1",
+        "shape": [
+          170000
+        ],
+        "sha256": "9fe6755bcf77e3b7193ffa9364f8392ae756ed2b2f20a80f255fb566b7c7cd0c"
+      },
+      "irrep_matrices_pointer": {
+        "file": "irreps-015.npy",
+        "dtype": "<i4",
+        "shape": [
+          80000
+        ],
+        "sha256": "1156c14c94cc0dccfaf3f48474bfa0b45a20099de01dd41b5030fe00a3930c7d"
+      },
+      "irrep_elements_pointer": {
+        "file": "irreps-016.npy",
+        "dtype": "<i4",
+        "shape": [
+          4777
+        ],
+        "sha256": "eb29b8573561c0e6085004384f4a19d6a79a8f71455b2fb70243d116def524ee"
+      },
+      "irrep_faintness_pointer": {
+        "file": "irreps-017.npy",
+        "dtype": "<i2",
+        "shape": [
+          4777
+        ],
+        "sha256": "3a553db4f9181a8931f9f68f2f957a6729aa486cfb6f5d03b936fcefc112c784"
+      },
+      "irrep_faintness": {
+        "file": "irreps-018.npy",
+        "dtype": "|i1",
+        "shape": [
+          22136
+        ],
+        "sha256": "a494138b63f0b7d5d55006d4eaa2eb34c33a831039589d03d070c8855977bb90"
+      },
+      "irrep_w_label": {
+        "file": "irreps-019.npy",
+        "dtype": "<U8",
+        "shape": [
+          73
+        ],
+        "sha256": "fee290673aebfb371f5d27c1204da2c6ff2c99107d28960a9b585009e53a7753"
+      },
+      "irrep_w_space_group": {
+        "file": "irreps-020.npy",
+        "dtype": "<i2",
+        "shape": [
+          73
+        ],
+        "sha256": "7a54ea7fdb4bb3774ce7f07da2c2ac40f2fdc1e77704d9efac28555c8a53d534"
+      },
+      "irrep_w_dimension": {
+        "file": "irreps-021.npy",
+        "dtype": "|i1",
+        "shape": [
+          73
+        ],
+        "sha256": "328488e1e9e269085de7c6da16daaab436363425d5a7fd99483bee417ba8c6ab"
+      },
+      "irrep_w_type": {
+        "file": "irreps-022.npy",
+        "dtype": "|i1",
+        "shape": [
+          73
+        ],
+        "sha256": "7517989f24000631d45eb32191e4620291a5b399272e6fecd43dc3f97481cce1"
+      },
+      "end": {
+        "file": "irreps-023.npy",
+        "dtype": "|i1",
+        "shape": [
+          0
+        ],
+        "sha256": "b44d0c5ada073af57097da3a9e0bdd1d559a17f047384dbb19a7201496f81b16"
+      }
+    },
+    "little": {
+      "little_k_count": {
+        "file": "little-000.npy",
+        "dtype": "|i1",
+        "shape": [
+          14
+        ],
+        "sha256": "006f0680222d7893e46ded54bff57424a0b5d77b1d3926fe4e01f1e17d1a6d5d"
+      },
+      "little_k_label": {
+        "file": "little-001.npy",
+        "dtype": "<U2",
+        "shape": [
+          378
+        ],
+        "sha256": "9e436fff75190494a50e03e282a89c493ab21394e0904d6a910246a2da66a606"
+      },
+      "little_k_kov": {
+        "file": "little-002.npy",
+        "dtype": "|i1",
+        "shape": [
+          6210
+        ],
+        "sha256": "1f2d221882274b1c85c81f7cb734e467a7dd549193e815367c960f5453375f97"
+      },
+      "little_k": {
+        "file": "little-003.npy",
+        "dtype": "|i1",
+        "shape": [
+          6048
+        ],
+        "sha256": "976e8ac5b8277433eb5b9ebf9af8c9b0c6766efa4570c529574de18cbea5b147"
+      },
+      "little_k_dim": {
+        "file": "little-004.npy",
+        "dtype": "|i1",
+        "shape": [
+          378
+        ],
+        "sha256": "51bb124edf6effdc66f14d72097565dd0766ac928a254224fb3ca4f53831607a"
+      },
+      "little_k_dim_pg": {
+        "file": "little-005.npy",
+        "dtype": "|i1",
+        "shape": [
+          32
+        ],
+        "sha256": "606851ba28d637707fa4a727e1057d0178728c479294f12758ada45d2282d1c8"
+      },
+      "little_ops_count": {
+        "file": "little-006.npy",
+        "dtype": "|i1",
+        "shape": [
+          6210
+        ],
+        "sha256": "c16233665fa59e3d980925e15b22db180e3759f175f2e265f8bf564a31ee0665"
+      },
+      "little_ops": {
+        "file": "little-007.npy",
+        "dtype": "|i1",
+        "shape": [
+          298080
+        ],
+        "sha256": "034a2d69634a94933d86714d147fb28c7e9f177ceb35c8d0dc3ad1992e060a9d"
+      },
+      "little_irr_count": {
+        "file": "little-008.npy",
+        "dtype": "|i1",
+        "shape": [
+          6210
+        ],
+        "sha256": "2e1471f8e5a219dd85e9fbba779fd4d7f33e1e5c329bbd0216bdd4d6eb4cd33b"
+      },
+      "little_irr_label": {
+        "file": "little-009.npy",
+        "dtype": "<U2",
+        "shape": [
+          74520
+        ],
+        "sha256": "c15550f74874b9ff17d7e9ee68646033630d633111398fc490f1442bc298a490"
+      },
+      "little_irr_kov": {
+        "file": "little-010.npy",
+        "dtype": "|i1",
+        "shape": [
+          74520
+        ],
+        "sha256": "9dd425a67b43275bc0d949495c36464555cca9b3f96712a512a83e7072116e96"
+      },
+      "little_irr_kov_cc": {
+        "file": "little-011.npy",
+        "dtype": "|b1",
+        "shape": [
+          74520
+        ],
+        "sha256": "6e858d75581e71ab7676e770bdb4b5fd509f94554abe31cc72376d7f25783bff"
+      },
+      "little_irr_dim": {
+        "file": "little-012.npy",
+        "dtype": "|i1",
+        "shape": [
+          74520
+        ],
+        "sha256": "2bbbe23052ac3f283f8fd1d71b8bff2bbc54cabf911a7152f8fb08e00cd76573"
+      },
+      "little_table_pointer": {
+        "file": "little-013.npy",
+        "dtype": "<i2",
+        "shape": [
+          6210
+        ],
+        "sha256": "b6859edbb55a3e4a1639dc6530b3d372815049dcf9a203e5b503871488f4573e"
+      },
+      "little_table": {
+        "file": "little-014.npy",
+        "dtype": "|i1",
+        "shape": [
+          22400
+        ],
+        "sha256": "86cde937978bb4e4cd0e9709edadfdc703bcf6436dc8d253bc6b6a4bc4c47d81"
+      },
+      "little_irr_table_pointer": {
+        "file": "little-015.npy",
+        "dtype": "<i4",
+        "shape": [
+          10300
+        ],
+        "sha256": "19fece7ab4f0b3d05998f0473fc5767b7d3673e58138faea61928476c5b51044"
+      },
+      "little_irr_table": {
+        "file": "little-016.npy",
+        "dtype": "|i1",
+        "shape": [
+          214000
+        ],
+        "sha256": "f547babdab03b667cf9d0d52116bfe48b8559eadb3a1ef52e718a000aac50f45"
+      },
+      "little_irr_full_count": {
+        "file": "little-017.npy",
+        "dtype": "<i2",
+        "shape": [
+          1
+        ],
+        "sha256": "7e59ba6ec523f911091896fc706dbfc66e60e78c439f097444cd7226ec7131ec"
+      },
+      "little_irr_order": {
+        "file": "little-018.npy",
+        "dtype": "<i2",
+        "shape": [
+          10300
+        ],
+        "sha256": "f407e657e4827bf27d27830f4da5a942de0c39c497d9a0c4ceee3b3fc888fe30"
+      },
+      "little_irr_order_pointer": {
+        "file": "little-019.npy",
+        "dtype": "<i2",
+        "shape": [
+          10300
+        ],
+        "sha256": "f6b2d34228ad874a83bec8add7e2d171278b5a0178cd80d60d11e90b5fc0dfa8"
+      },
+      "little_irr_pointer": {
+        "file": "little-020.npy",
+        "dtype": "<i2",
+        "shape": [
+          74844
+        ],
+        "sha256": "5c51ed4a8f2ef64ae6543ad2e0dc4f9aa7ca5df2040af1862a5f1da60e996727"
+      },
+      "little_irr_old": {
+        "file": "little-021.npy",
+        "dtype": "<i2",
+        "shape": [
+          10300
+        ],
+        "sha256": "b981f108a2fce4dbc021f71a60ae256098b84f238be3845c281885baa30f7373"
+      },
+      "little_irr_old_map": {
+        "file": "little-022.npy",
+        "dtype": "<i2",
+        "shape": [
+          4777
+        ],
+        "sha256": "1967348b46ecb1f734d05b6211bdb06a346c97f60044a8dd23600aa762edef9f"
+      },
+      "little_irr_space_group": {
+        "file": "little-023.npy",
+        "dtype": "<i2",
+        "shape": [
+          10300
+        ],
+        "sha256": "6836d2553ccf2b2b9c5893b50df03df6ae3f5227a4688ccbefede4d534cf95d0"
+      },
+      "little_irr_k": {
+        "file": "little-024.npy",
+        "dtype": "|i1",
+        "shape": [
+          10300
+        ],
+        "sha256": "334d943a5baa7d7b1f83b4c441465adb09852dda5923fe50628db146a442f44d"
+      },
+      "little_irr_irrnum": {
+        "file": "little-025.npy",
+        "dtype": "|i1",
+        "shape": [
+          10300
+        ],
+        "sha256": "be757698233b680d69469a62761083e2966df87c0049a839047e48ab5e5928dd"
+      },
+      "little_irr_type": {
+        "file": "little-026.npy",
+        "dtype": "|i1",
+        "shape": [
+          10300
+        ],
+        "sha256": "d82eb3b369b833c95c59320da7960d76958dbcde65494485bc7d8796e1ff1c86"
+      },
+      "little_irr_cc": {
+        "file": "little-027.npy",
+        "dtype": "|i1",
+        "shape": [
+          10300
+        ],
+        "sha256": "0ce3da82d1da70f14a6f4d01d6678d3c40619a7e8deb34881d39b2398f7c2483"
+      },
+      "little_irr_full_label": {
+        "file": "little-028.npy",
+        "dtype": "<U8",
+        "shape": [
+          10300
+        ],
+        "sha256": "49867e08a52f1969a23bf5def3d86ffec123ab5720c52b002433901f40065b8c"
+      },
+      "little_irr_full_kov_label": {
+        "file": "little-029.npy",
+        "dtype": "<U8",
+        "shape": [
+          10300
+        ],
+        "sha256": "ada8034fef8e91ed16a066d02de7f9ced21c816084e56fa4ad059a27658c0b38"
+      },
+      "little_irr_full_dim": {
+        "file": "little-030.npy",
+        "dtype": "|i1",
+        "shape": [
+          10300
+        ],
+        "sha256": "9018683b1f4f80bf052d173e27b277c37cc5ead1b6d4929ecf4f71f9f41708bd"
+      },
+      "little_irr_lif": {
+        "file": "little-031.npy",
+        "dtype": "|i1",
+        "shape": [
+          10300
+        ],
+        "sha256": "abeeb34d3c3837338fcbf6d7a3a62f820eaca5b6586c7cb7b38f69dd8de59156"
+      },
+      "little_irr_invar3": {
+        "file": "little-032.npy",
+        "dtype": "|i1",
+        "shape": [
+          10300
+        ],
+        "sha256": "cb1fcef0ec4ec99b04cfd8dbfdc24fa9148b62cfae54ddd34bbe01acb3527436"
+      },
+      "little_k_star_count": {
+        "file": "little-033.npy",
+        "dtype": "|i1",
+        "shape": [
+          6210
+        ],
+        "sha256": "d33f0cdce7e15398beb156df2a6caaad990ea5a361c46ec83da4e66d1f4dbc67"
+      },
+      "little_k_star_minusk": {
+        "file": "little-034.npy",
+        "dtype": "|b1",
+        "shape": [
+          6210
+        ],
+        "sha256": "5f049ea079129f8b3033c338c9982c3a0036a6fe330134d0c11d22594f2672fb"
+      },
+      "little_k_star_ml_pointer": {
+        "file": "little-035.npy",
+        "dtype": "<i2",
+        "shape": [
+          6210
+        ],
+        "sha256": "142542c26c32a3d5cfa585d214a819ecb4fe4d29a96035cb0389507ac62f0a8e"
+      },
+      "little_k_star_conv_pointer": {
+        "file": "little-036.npy",
+        "dtype": "<i2",
+        "shape": [
+          6210
+        ],
+        "sha256": "748a69146423bbbe9480f081fc9b7ac9f7ec69207eb2065287e620797674c5f5"
+      },
+      "little_k_star_ml2conv_pointer": {
+        "file": "little-037.npy",
+        "dtype": "<i2",
+        "shape": [
+          6210
+        ],
+        "sha256": "f98018708b51eb01ab6eef04c80d63662fca4502c79cd2fa41ad82e616b52440"
+      },
+      "little_k_star_conv2ml_pointer": {
+        "file": "little-038.npy",
+        "dtype": "<i2",
+        "shape": [
+          6210
+        ],
+        "sha256": "eaca6f826ba9ee68e7cee7621b4e3f1a420b21d8011543a694c54826bffc56e3"
+      },
+      "little_k_star": {
+        "file": "little-039.npy",
+        "dtype": "|i1",
+        "shape": [
+          384000
+        ],
+        "sha256": "5a5fe197608dfa67cf7744e8fdde5e5248ed78bb0c84e8ddd6bf3ed748b16863"
+      },
+      "little_k_star_special": {
+        "file": "little-040.npy",
+        "dtype": "|i1",
+        "shape": [
+          8400
+        ],
+        "sha256": "a401bb9eac33ef28ec877a88c950088da78ac3b385c5a2551db633e789a61f84"
+      },
+      "little_kvec_pointer": {
+        "file": "little-041.npy",
+        "dtype": "<i2",
+        "shape": [
+          6210
+        ],
+        "sha256": "bc1e5a52fed2605b23430121d8593c3f9f66f061580a28c66e8b9a3f3707ca5f"
+      },
+      "little_kvec": {
+        "file": "little-042.npy",
+        "dtype": "|i1",
+        "shape": [
+          160000
+        ],
+        "sha256": "8597c445797e70580fa1fc96dd85e2b73f35565f577e2cd1714fa7eb672b5127"
+      },
+      "little_irr_full_matrices_irr_pointer": {
+        "file": "little-043.npy",
+        "dtype": "<i4",
+        "shape": [
+          10300
+        ],
+        "sha256": "a3967ec853763da59457a73d67adfb7f31b354641a742d55f39b8c165db1a910"
+      },
+      "little_irr_full_matrices_pointer": {
+        "file": "little-044.npy",
+        "dtype": "<i4",
+        "shape": [
+          124000
+        ],
+        "sha256": "2bdd8fd37aaf6d532ea287cdf148f4d92278ff319d12d03b7ebb07205fd5a811"
+      },
+      "little_irr_full_matrices": {
+        "file": "little-045.npy",
+        "dtype": "|i1",
+        "shape": [
+          2220000
+        ],
+        "sha256": "9f1f4304c80b4e7364eb6fb820bb92e358cdedd051c64910feca8ff2c79a83f2"
+      },
+      "little_irr_real_pointer": {
+        "file": "little-046.npy",
+        "dtype": "<i2",
+        "shape": [
+          10300
+        ],
+        "sha256": "bac2e4ab06c28650e7d5dc203dd6adc6bdd23ae40f6b8b5ee11f79bc1998279b"
+      },
+      "little_irr_real": {
+        "file": "little-047.npy",
+        "dtype": "|i1",
+        "shape": [
+          24400
+        ],
+        "sha256": "dfe1c87fa66c90b63029bc481520f5c126c49454459732977e9c8436955ac2ba"
+      },
+      "little_irr_real2_pointer": {
+        "file": "little-048.npy",
+        "dtype": "<i2",
+        "shape": [
+          10300
+        ],
+        "sha256": "841cdd1d1ef3f60bc3d6515f4ccd3f5380386644b44d420d29f18ff3166cc1ef"
+      },
+      "little_irr_real2": {
+        "file": "little-049.npy",
+        "dtype": "|i1",
+        "shape": [
+          2100
+        ],
+        "sha256": "878afd9307863f16ded267522ba09b63cf459c3805cb7908e01c7152f21db3a8"
+      },
+      "little_subduce_irr_pointer": {
+        "file": "little-050.npy",
+        "dtype": "<i4",
+        "shape": [
+          10300
+        ],
+        "sha256": "cfcb16b2eea0ff9e5e8c4db1543fa2c1b6c55ea9399b5cbac5691f58b0e6dd1f"
+      },
+      "little_subduce_pointer": {
+        "file": "little-051.npy",
+        "dtype": "<i4",
+        "shape": [
+          47000
+        ],
+        "sha256": "1bb90327bbd05ad0fd8a9b3d2f8eec52ad6d968f5cd411b77e8acdff10055dab"
+      },
+      "little_subduce_count": {
+        "file": "little-052.npy",
+        "dtype": "|i1",
+        "shape": [
+          47000
+        ],
+        "sha256": "05bd0bc780055e98a39047cd8571dbbab60aa7fdfe165a2d821df1a58528781a"
+      },
+      "little_subduce_frequency": {
+        "file": "little-053.npy",
+        "dtype": "|i1",
+        "shape": [
+          105000
+        ],
+        "sha256": "2d9f1bfded8358500ae587e67cfe4c775a9bdd3f9d645f69e2a1134109578cef"
+      },
+      "little_subduce_pg_irrep": {
+        "file": "little-054.npy",
+        "dtype": "|i1",
+        "shape": [
+          105000
+        ],
+        "sha256": "e8e93008cf02ad48311ec279539f549eaef6e1e8abb21705e500c0765b087453"
+      },
+      "end": {
+        "file": "little-055.npy",
+        "dtype": "|i1",
+        "shape": [
+          0
+        ],
+        "sha256": "b44d0c5ada073af57097da3a9e0bdd1d559a17f047384dbb19a7201496f81b16"
+      }
+    },
+    "isotropy": {
+      "isotropy_subgroup": {
+        "file": "isotropy-000.npy",
+        "dtype": "<i2",
+        "shape": [
+          15239
+        ],
+        "sha256": "9f7ae4f3fcfc45ae5a827634bf3d10ca6fdcadfa09935a8f3779bce89362fb24"
+      },
+      "isotropy_subgroup_old": {
+        "file": "isotropy-001.npy",
+        "dtype": "<i2",
+        "shape": [
+          15239
+        ],
+        "sha256": "59e0af00e2db80a296c62a513144493740a7369d61ed32e5202c65d304878f3a"
+      },
+      "isotropy_parent": {
+        "file": "isotropy-002.npy",
+        "dtype": "<i2",
+        "shape": [
+          15239
+        ],
+        "sha256": "725f602344c0b94b390b535b9939b3860ec03e7a96f029bcd1d07f4ee95ffeb8"
+      },
+      "isotropy_irrep": {
+        "file": "isotropy-003.npy",
+        "dtype": "<i2",
+        "shape": [
+          15239
+        ],
+        "sha256": "894b08a740b71e9e447ebd2ee3c90b960d7ddb633b7bee4578d769cdced67888"
+      },
+      "isotropy_irrep_pointer": {
+        "file": "isotropy-004.npy",
+        "dtype": "<i2",
+        "shape": [
+          4778
+        ],
+        "sha256": "84aab9f06966ae4f3ccfcd2d9eed4486909cf67e617317a1fbcfa9184762890e"
+      },
+      "isotropy_orderparam_dim": {
+        "file": "isotropy-005.npy",
+        "dtype": "|i1",
+        "shape": [
+          15239
+        ],
+        "sha256": "5ba0bca2cd005f53bc730a537468d5b4eb1361d567541804a1142cbd7086a12a"
+      },
+      "isotropy_orderparam_freeparam": {
+        "file": "isotropy-006.npy",
+        "dtype": "|i1",
+        "shape": [
+          15239
+        ],
+        "sha256": "29e16bf8ccef484678c719a59f3fc631143b4a8181e65656d66687a6da017289"
+      },
+      "isotropy_orderparam_label": {
+        "file": "isotropy-007.npy",
+        "dtype": "<U4",
+        "shape": [
+          15239
+        ],
+        "sha256": "5b77bac13f2dc1050434165c33faeed96d4a38e181307dd1a06c521c68f95f7a"
+      },
+      "isotropy_orderparam_pointer": {
+        "file": "isotropy-008.npy",
+        "dtype": "<i4",
+        "shape": [
+          15239
+        ],
+        "sha256": "faa310c6f93375528b75d5282d238ae51eb3fbd193a48d2ba800a29eb59ff60a"
+      },
+      "isotropy_orderparam": {
+        "file": "isotropy-009.npy",
+        "dtype": "<i2",
+        "shape": [
+          144000
+        ],
+        "sha256": "7df3ea82356210908d6f7cf13dc3fd33f8d7328de5021a5abd3748058d29bffd"
+      },
+      "isotropy_orderparam_old": {
+        "file": "isotropy-010.npy",
+        "dtype": "<i2",
+        "shape": [
+          144000
+        ],
+        "sha256": "e05f3f772ca98c87c0ecb7118acb488fd68c86941744f53322feba37f64a92e9"
+      },
+      "isotropy_direction": {
+        "file": "isotropy-011.npy",
+        "dtype": "<i2",
+        "shape": [
+          15239
+        ],
+        "sha256": "466387b037b4ecd9dc918b6e1417970843f74a265ec3a9de055605180562b18d"
+      },
+      "isotropy_order": {
+        "file": "isotropy-012.npy",
+        "dtype": "<i2",
+        "shape": [
+          15239
+        ],
+        "sha256": "fa4c4af1c04f3c720b443c6aff907af570f65052c00ffc2b5d36f0b51752425e"
+      },
+      "isotropy_basis": {
+        "file": "isotropy-013.npy",
+        "dtype": "|i1",
+        "shape": [
+          137151
+        ],
+        "sha256": "d4b4f3055f847d1dd302ee37ed45b61bf625924ef4349a018f19ec403ebf32f5"
+      },
+      "isotropy_basis_old": {
+        "file": "isotropy-014.npy",
+        "dtype": "|i1",
+        "shape": [
+          137151
+        ],
+        "sha256": "9b2319608016b0b683568d93302870583c3d42e61d82a45a1bbdd8a629fd7cc1"
+      },
+      "isotropy_origin": {
+        "file": "isotropy-015.npy",
+        "dtype": "|i1",
+        "shape": [
+          60956
+        ],
+        "sha256": "18deac3e799e57af22822f26fdaeb6dcacb2af668cf05b5f357c0d269c1d98ae"
+      },
+      "isotropy_origin_old": {
+        "file": "isotropy-016.npy",
+        "dtype": "|i1",
+        "shape": [
+          60956
+        ],
+        "sha256": "419b24e9772aac22fdfd53604e16af10b627f16ddc7baf88e9b40c143873f522"
+      },
+      "isotropy_arms": {
+        "file": "isotropy-017.npy",
+        "dtype": "|i1",
+        "shape": [
+          15239
+        ],
+        "sha256": "365ddbbf3b598d258c76b1cd3417458c08232860f989e384cefc9166a51c1480"
+      },
+      "isotropy_ferroic": {
+        "file": "isotropy-018.npy",
+        "dtype": "|i1",
+        "shape": [
+          15239
+        ],
+        "sha256": "869f3e357105af670e8315afb69444c09d121b4b821c1874dbfa015e28ce706a"
+      },
+      "isotropy_ferroelectric": {
+        "file": "isotropy-019.npy",
+        "dtype": "|i1",
+        "shape": [
+          15239
+        ],
+        "sha256": "8b0041604f9e08240079cc85ac5073cbe8c9b6de82d795a31717acb939797e7e"
+      },
+      "isotropy_ferroelastic": {
+        "file": "isotropy-020.npy",
+        "dtype": "|i1",
+        "shape": [
+          15239
+        ],
+        "sha256": "8f3cf566e28192e42673b9c4d967ab798a3aeebd69aa76ed2269bc1281baec62"
+      },
+      "isotropy_domain_count": {
+        "file": "isotropy-021.npy",
+        "dtype": "<i2",
+        "shape": [
+          15239
+        ],
+        "sha256": "ad6fde4ac752d5c3b17da5a2744b05be4e12c63b41d1806d4f67852a0515b1d7"
+      },
+      "isotropy_domain_type_count": {
+        "file": "isotropy-022.npy",
+        "dtype": "<i2",
+        "shape": [
+          15239
+        ],
+        "sha256": "f72b5e13695c24649de2c3b249b985146eee9920038dc4719b37df2b88aac625"
+      },
+      "isotropy_domain_pointer": {
+        "file": "isotropy-023.npy",
+        "dtype": "<i4",
+        "shape": [
+          15239
+        ],
+        "sha256": "1640b95b918f1b219572d59dae21c0a81cf6e7a15e0abbefd173c664b1a7ebcb"
+      },
+      "isotropy_domain": {
+        "file": "isotropy-024.npy",
+        "dtype": "|i1",
+        "shape": [
+          460300
+        ],
+        "sha256": "ab84d58bfa84d9207a777d61edf7c4d756f996924b79692bd371d73f138621d4"
+      },
+      "isotropy_domain_old": {
+        "file": "isotropy-025.npy",
+        "dtype": "|i1",
+        "shape": [
+          460300
+        ],
+        "sha256": "cff38f6b8b4da2468d004fbfe51b232f02ac2f2bd2acceb190f18c401d8b594a"
+      },
+      "isotropy_subduce_pointer": {
+        "file": "isotropy-026.npy",
+        "dtype": "<i4",
+        "shape": [
+          15240
+        ],
+        "sha256": "9e213154f556247a775c4434aa40ab25beeb69e605f7a3f45c9c0bd16d3ee856"
+      },
+      "isotropy_subduce_irrep": {
+        "file": "isotropy-027.npy",
+        "dtype": "<i2",
+        "shape": [
+          94271
+        ],
+        "sha256": "cbee30c04af41b0c9112c9055802e2e587540dc907176cdbc6daa8d54ed277b6"
+      },
+      "isotropy_subduce_frequency": {
+        "file": "isotropy-028.npy",
+        "dtype": "|i1",
+        "shape": [
+          94271
+        ],
+        "sha256": "bc1daf4874b1994772a2074042e38b7cd671a182cf3b5ecb255a370ed8f2a780"
+      },
+      "isotropy_subduce_subgroup": {
+        "file": "isotropy-029.npy",
+        "dtype": "<i2",
+        "shape": [
+          94271
+        ],
+        "sha256": "1102ca377b674c5d716f0143dc7af13150c83af66301e0ac7282e5fff860785d"
+      },
+      "isotropy_subduce_domain": {
+        "file": "isotropy-030.npy",
+        "dtype": "<i2",
+        "shape": [
+          94271
+        ],
+        "sha256": "de909ed7257f1290def8201e01d947a04f38be62d776b6aaa442899d7bf999d1"
+      },
+      "isotropy_subduce_domain_old": {
+        "file": "isotropy-031.npy",
+        "dtype": "<i2",
+        "shape": [
+          94271
+        ],
+        "sha256": "74378dac8d9e0165d559e021501d1a8303b562b8c3b4c5b3c0caf63f9cc3aa01"
+      },
+      "isotropy_w_subduce_pointer": {
+        "file": "isotropy-032.npy",
+        "dtype": "<i2",
+        "shape": [
+          4732
+        ],
+        "sha256": "91512282d7cdfad043aeafc47d7eec08f23a919f97d306b2b3670fb56b8915d8"
+      },
+      "isotropy_w_subduce_count": {
+        "file": "isotropy-033.npy",
+        "dtype": "|i1",
+        "shape": [
+          15239
+        ],
+        "sha256": "eebd4de6600d9f4fbe325731abca1852fe0bfe97167973e0e194e2ee549f982e"
+      },
+      "isotropy_w_subduce_irrep": {
+        "file": "isotropy-034.npy",
+        "dtype": "|i1",
+        "shape": [
+          5756
+        ],
+        "sha256": "0d515ab1f05f69edbd851a1c0e75e02bd722dc9950c7313971d4d5d7e9d6a379"
+      },
+      "isotropy_w_subduce_frequency": {
+        "file": "isotropy-035.npy",
+        "dtype": "|i1",
+        "shape": [
+          5756
+        ],
+        "sha256": "f3d6b52015f29048fed8fb24b769731411b29be698e57ca978529161d054ecde"
+      },
+      "end": {
+        "file": "isotropy-036.npy",
+        "dtype": "|i1",
+        "shape": [
+          0
+        ],
+        "sha256": "b44d0c5ada073af57097da3a9e0bdd1d559a17f047384dbb19a7201496f81b16"
+      }
+    },
+    "wyckoff": {
+      "iwyckoff_count": {
+        "file": "wyckoff-000.npy",
+        "dtype": "|i1",
+        "shape": [
+          230
+        ],
+        "sha256": "a750c13fa3e6cd13defad6db6e50e3e035d43d406c14d99925013ae09f0a02a4"
+      },
+      "iwyckoff_pointer": {
+        "file": "wyckoff-001.npy",
+        "dtype": "<i2",
+        "shape": [
+          230
+        ],
+        "sha256": "c712897507edb19073fa57aa9a525a3d8959d9045b4e164c1d8e5ccbfcb1de33"
+      },
+      "wyckoff_label": {
+        "file": "wyckoff-002.npy",
+        "dtype": "<U5",
+        "shape": [
+          1731
+        ],
+        "sha256": "4c6728bcd17f039766ea7c5a6006c9984f7a43afb5880328d1638d442799b699"
+      },
+      "iwyckoff_fract": {
+        "file": "wyckoff-003.npy",
+        "dtype": "|i1",
+        "shape": [
+          27696
+        ],
+        "sha256": "efce1e42a9377e2cccb4a5ababaf47e48a14a32b91dfa3f67628c8c22f5d94b8"
+      },
+      "iwyckoff_pg": {
+        "file": "wyckoff-004.npy",
+        "dtype": "|i1",
+        "shape": [
+          1731
+        ],
+        "sha256": "39f25c5e055af4a7e056b3b60ccf272dbdfc0c4df0dac63d3cc06144123fec0a"
+      },
+      "iwyckoff_pg_settings_count": {
+        "file": "wyckoff-005.npy",
+        "dtype": "|i1",
+        "shape": [
+          32
+        ],
+        "sha256": "c0d2f84c985fa31e1b464e3ec11131a108ac6a63abef6e61e877585f281b2c4c"
+      },
+      "iwyckoff_pg_elements_pointer": {
+        "file": "wyckoff-006.npy",
+        "dtype": "<i2",
+        "shape": [
+          32
+        ],
+        "sha256": "7d2e96f303077ac4625d1902b32259a29cbd728147db10a684a69c97d6496e6a"
+      },
+      "iwyckoff_pg_elements": {
+        "file": "wyckoff-007.npy",
+        "dtype": "|i1",
+        "shape": [
+          7296
+        ],
+        "sha256": "cd3f13e38df129bb3ebf7eb2cee261c7a3cfa696bf482f9fa697b65981dc1926"
+      },
+      "iwyckoff_pg_irrep_count": {
+        "file": "wyckoff-008.npy",
+        "dtype": "|i1",
+        "shape": [
+          32
+        ],
+        "sha256": "52f673470fb1b1623b2dc6997decfb12b453a1cec6ab9d3f2d005df2ea4e94c5"
+      },
+      "wyckoff_pg_irrep_label": {
+        "file": "wyckoff-009.npy",
+        "dtype": "<U4",
+        "shape": [
+          384
+        ],
+        "sha256": "7da8b0334929fd7732b9f8bf71b0af0e5853d07816d3e73713226ee34647ef3c"
+      },
+      "iwyckoff_pg_irrep": {
+        "file": "wyckoff-010.npy",
+        "dtype": "<i2",
+        "shape": [
+          384
+        ],
+        "sha256": "930d46b541f891d982582cde3e08507721ea24e0411d91f8bfa51171c126385f"
+      },
+      "iwyckoff_pg_char": {
+        "file": "wyckoff-011.npy",
+        "dtype": "|i1",
+        "shape": [
+          2163
+        ],
+        "sha256": "b241360405f82aa7097890f14ec993b89c0b7153e30fbc018ffe5242963a7dba"
+      },
+      "iwyckoff_pg_irrep_pointer": {
+        "file": "wyckoff-012.npy",
+        "dtype": "<i2",
+        "shape": [
+          32
+        ],
+        "sha256": "45a87d6ea02b2812c097bcc3306d6f9607b1288196cd4998ddf1020968dd99c0"
+      },
+      "iwyckoff_pg_vector_reps": {
+        "file": "wyckoff-013.npy",
+        "dtype": "|i1",
+        "shape": [
+          192
+        ],
+        "sha256": "c1a816d1fee4f0e930db9e4a56a1b4392d64c5e83cc4cf32a8b6c285f948160a"
+      },
+      "iwyckoff_pg_vector_basis": {
+        "file": "wyckoff-014.npy",
+        "dtype": "|i1",
+        "shape": [
+          2736
+        ],
+        "sha256": "ef26c02f893b65f21708dd7286da2656ec773114d3ac17030a1fec87e300235d"
+      },
+      "iwyckoff_pg_ellipsoid_reps": {
+        "file": "wyckoff-015.npy",
+        "dtype": "|i1",
+        "shape": [
+          192
+        ],
+        "sha256": "e05e2a48715cfa4bdd02e532359a7e4f89206da3d07ec9e1d8aadb75947930bb"
+      },
+      "iwyckoff_pg_ellipsoid_basis": {
+        "file": "wyckoff-016.npy",
+        "dtype": "|i1",
+        "shape": [
+          5472
+        ],
+        "sha256": "eb82c8c07b1048a9441927cee70d89ca421d0c4b3d444cda170bd565d70cc98a"
+      },
+      "iwyckoff_irrep_pointer": {
+        "file": "wyckoff-017.npy",
+        "dtype": "<i4",
+        "shape": [
+          4777
+        ],
+        "sha256": "043845d9a344c4c36ffb74d969778ec9ae6f9b7c3004f757efe4bc0913d6b19b"
+      },
+      "iwyckoff_subduce_pointer": {
+        "file": "wyckoff-018.npy",
+        "dtype": "<i4",
+        "shape": [
+          44000
+        ],
+        "sha256": "7d2a24405727d7d43a29ca29e42a547b87da5a208b84d0e88aba648340e20705"
+      },
+      "iwyckoff_subduce_pg_irrep": {
+        "file": "wyckoff-019.npy",
+        "dtype": "|i1",
+        "shape": [
+          61000
+        ],
+        "sha256": "997b00af21687f1cabbe791ae6b232553d3391611b849a22f128134c10f05f7f"
+      },
+      "iwyckoff_subduce_count": {
+        "file": "wyckoff-020.npy",
+        "dtype": "|i1",
+        "shape": [
+          44000
+        ],
+        "sha256": "47e620efd8b71eb6693b52f75b5ef443fd8eb28fc0086121e5e537e3f5b989c7"
+      },
+      "iwyckoff_subduce_frequency": {
+        "file": "wyckoff-021.npy",
+        "dtype": "|i1",
+        "shape": [
+          61000
+        ],
+        "sha256": "6ea340c0dfd8ed035393fb118723d34edc8ed7231dfca0650a36ee8261616ae5"
+      },
+      "end": {
+        "file": "wyckoff-022.npy",
+        "dtype": "|i1",
+        "shape": [
+          0
+        ],
+        "sha256": "b44d0c5ada073af57097da3a9e0bdd1d559a17f047384dbb19a7201496f81b16"
+      }
+    },
+    "images": {
+      "image_label": {
+        "file": "images-000.npy",
+        "dtype": "<U6",
+        "shape": [
+          141
+        ],
+        "sha256": "f4b2b88dfbaea6e287a25c5ff6241382c72caa9a8c875303b8acb2ee276cd6f7"
+      },
+      "image_label2": {
+        "file": "images-001.npy",
+        "dtype": "<U6",
+        "shape": [
+          132
+        ],
+        "sha256": "98a5a1e2923e92d4e5094f0ee364a05e4f0588d85698d1630957f165d346fd51"
+      },
+      "image_sequence": {
+        "file": "images-002.npy",
+        "dtype": "<i2",
+        "shape": [
+          132
+        ],
+        "sha256": "77f8cc3f71812da2b0d5182743ca11c9e2c1a2bca34f52b6c1fe123a56dd453f"
+      },
+      "image_dimension": {
+        "file": "images-003.npy",
+        "dtype": "|i1",
+        "shape": [
+          141
+        ],
+        "sha256": "047be384838bf68dec7aab934994a2ddd1597bdc37a2f63b37fd3e83d266ad5c"
+      },
+      "image_order": {
+        "file": "images-004.npy",
+        "dtype": "<i2",
+        "shape": [
+          141
+        ],
+        "sha256": "579ebcfb77452d969a6a4f8f1356ae5e6925ba662f8343bfa860a255134c0938"
+      },
+      "image_irrep": {
+        "file": "images-005.npy",
+        "dtype": "<i2",
+        "shape": [
+          132
+        ],
+        "sha256": "aa17d4f60a6e34b4b56857dbafbdb93bb79b1e18ec328cb05be99758b9c91f00"
+      },
+      "image_type": {
+        "file": "images-006.npy",
+        "dtype": "|i1",
+        "shape": [
+          132
+        ],
+        "sha256": "fc0567fadc1efdbfbe4ec7e26020eda5f4cbe64a3a984ca500497613bf729d14"
+      },
+      "image_landau": {
+        "file": "images-007.npy",
+        "dtype": "|i1",
+        "shape": [
+          141
+        ],
+        "sha256": "c0d3238483071d2719a9d22d8ba28c35a656ecbbe35c138f2176817425c0da80"
+      },
+      "image_active": {
+        "file": "images-008.npy",
+        "dtype": "|b1",
+        "shape": [
+          132
+        ],
+        "sha256": "09b1a8a5860723939dd6c9f183fe0de1b01ba7d838aa50f8c2422e403eaf3d45"
+      },
+      "image_generator_count": {
+        "file": "images-009.npy",
+        "dtype": "|i1",
+        "shape": [
+          132
+        ],
+        "sha256": "6bdf632e7c06c6c7eff32cff3d13c5e5208c4d2cd6bd00a0a2c2ff8082e1afc0"
+      },
+      "image_diagonalize_pointer": {
+        "file": "images-010.npy",
+        "dtype": "<i2",
+        "shape": [
+          132
+        ],
+        "sha256": "2954d2d303a507a775817163efe7dca7051e443f2945f108b8cc87ec79f57bb2"
+      },
+      "image_diagonalize": {
+        "file": "images-011.npy",
+        "dtype": "|i1",
+        "shape": [
+          4840
+        ],
+        "sha256": "f1ebbeba8535ee79f204aad6fd764679ab311bf054b88f0b480afbe490d45c9a"
+      },
+      "image_subgroup_count": {
+        "file": "images-012.npy",
+        "dtype": "<i2",
+        "shape": [
+          141
+        ],
+        "sha256": "64913c818ee23c9bdd626bb06addcb5be0e13084b2b482051f0f2dc09a12f6e1"
+      },
+      "image_subgroup_pointer": {
+        "file": "images-013.npy",
+        "dtype": "<i2",
+        "shape": [
+          141
+        ],
+        "sha256": "b0e3cebe3ed05506e79cafef738a91042310bde85acf178b32c1281e317c5aa2"
+      },
+      "image_subgroup_maximal": {
+        "file": "images-014.npy",
+        "dtype": "|b1",
+        "shape": [
+          2300
+        ],
+        "sha256": "deb4234c85daad7b5be3d43e018b62dd20576a40744985c9dc475e35eb7825e7"
+      },
+      "image_subgroup_min": {
+        "file": "images-015.npy",
+        "dtype": "|b1",
+        "shape": [
+          2300
+        ],
+        "sha256": "57c885d85a8250561e5d9ef9ec3914e9ed06306ee613881cc1bf06ad083e14e6"
+      },
+      "image_subgroup_rg": {
+        "file": "images-016.npy",
+        "dtype": "|b1",
+        "shape": [
+          2300
+        ],
+        "sha256": "51db2fd6632d956c5c8cf0b053b5c4c676a35b0b5d72819fc19d977edf1ae8c1"
+      },
+      "image_subgroup": {
+        "file": "images-017.npy",
+        "dtype": "<i2",
+        "shape": [
+          2300
+        ],
+        "sha256": "6a4156b34c3e06c967c21c623b2adfc32a62d64d586ee6af0a4fa1c48f1d8a8b"
+      },
+      "image_dir_count": {
+        "file": "images-018.npy",
+        "dtype": "<i2",
+        "shape": [
+          1
+        ],
+        "sha256": "e69f0adbea8bfdac3b9f824edf76fcb6fca58855375d23b897bd961c77498fdd"
+      },
+      "image_dir_label": {
+        "file": "images-019.npy",
+        "dtype": "<U4",
+        "shape": [
+          700
+        ],
+        "sha256": "7b39badf3fdc4778b24536e97a81ece8dbdb842e0e6fbf1ffa099f40faf2539a"
+      },
+      "image_dir_dimension": {
+        "file": "images-020.npy",
+        "dtype": "|i1",
+        "shape": [
+          700
+        ],
+        "sha256": "605c6c2b50c472e2c790d30f5c9865eac0ff77784d9df0f30df107219618a0ab"
+      },
+      "image_dir_subduction": {
+        "file": "images-021.npy",
+        "dtype": "|i1",
+        "shape": [
+          700
+        ],
+        "sha256": "dce4c333892a4d36e0086a3558aea80044cda3068d3718248ebbb9c7ac21c230"
+      },
+      "image_dir": {
+        "file": "images-022.npy",
+        "dtype": "|i1",
+        "shape": [
+          27300
+        ],
+        "sha256": "42e01b00bc7a1560c2b6f735326a605a8c0b4f95a4d1ec1b6feb4846249bd523"
+      },
+      "image_dir_pointer": {
+        "file": "images-023.npy",
+        "dtype": "<i2",
+        "shape": [
+          700
+        ],
+        "sha256": "6e6651dccc255393543c08a771d5380e25e25797c5690421330d170af4fbe6f6"
+      },
+      "image_subgroup_subgroup_count": {
+        "file": "images-024.npy",
+        "dtype": "|i1",
+        "shape": [
+          2300
+        ],
+        "sha256": "81a3d013ebbbaa6332c413fc61fe59d56eb42a734a4ae911259e37e7d8c3336c"
+      },
+      "image_subgroup_subgroup_pointer": {
+        "file": "images-025.npy",
+        "dtype": "<i4",
+        "shape": [
+          2300
+        ],
+        "sha256": "27347c932aec33bf79db321603322776967c23e330ad024a55ee6ca8bc9f6838"
+      },
+      "image_subgroup_subgroup": {
+        "file": "images-026.npy",
+        "dtype": "<i2",
+        "shape": [
+          6500
+        ],
+        "sha256": "6da3ca4a8133c91c0d8dfbebf83677d2200011e0c2781a36b67ecc4ffefb637f"
+      },
+      "end": {
+        "file": "images-027.npy",
+        "dtype": "|i1",
+        "shape": [
+          0
+        ],
+        "sha256": "b44d0c5ada073af57097da3a9e0bdd1d559a17f047384dbb19a7201496f81b16"
+      }
+    }
+  }
+}
