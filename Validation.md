@@ -22,6 +22,11 @@ Two necessary-condition checks are applied to each output.
 
 The Validation population consists of the branches for which both Web and Local have been computed and for which the Web output was not refuted by either check.
 
+## Reproducibility
+
+The counts and percentages in this document are produced from raw per-branch comparison records by a fixed judgment procedure, neither of which is published yet.
+Publishing both, so a third party can recompute every figure here from the raw records instead of taking this document on trust, is planned.
+
 ## Two Validation Populations
 
 ### MP pool: broad stress population
