@@ -1,5 +1,9 @@
 NOTICE
 
+LICENSE (0BSD) applies to the source code of this repository. It does not
+apply to the bundled Source/ tables described below, which remain the
+distributed BYU ISOTROPY data and are governed by this NOTICE.
+
 APOSTRUCT is an independent, pure-Python reimplementation of the
 ISODISTORT algorithm from the ISOTROPY Software Suite. It is not the original
 ISOTROPY Software Suite and is not affiliated with or endorsed by its authors.
