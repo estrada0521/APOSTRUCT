@@ -4,9 +4,10 @@ LICENSE (0BSD) applies to the source code of this repository. It does not
 apply to the bundled Source/ tables described below, which remain the
 distributed BYU ISOTROPY data and are governed by this NOTICE.
 
-APOSTRUCT is an independent, pure-Python reimplementation of the
-ISODISTORT algorithm from the ISOTROPY Software Suite. It is not the original
-ISOTROPY Software Suite and is not affiliated with or endorsed by its authors.
+APOSTRUCT is an independent, pure-Python package built on the group-theoretical
+method and data tables originally distributed with ISODISTORT, part of the
+ISOTROPY Software Suite. It is not the original ISOTROPY Software Suite and is
+not affiliated with or endorsed by its authors.
 
 The original ISODISTORT software and the group-theoretical data tables it uses
 are the work of:
@@ -20,7 +21,7 @@ are the work of:
 The ISOTROPY documentation states that the software may be redistributed
 without restriction, but that research use resulting in publication should
 acknowledge H. T. Stokes, D. M. Hatch, and B. J. Campbell. Users of this
-reimplementation are asked to provide the same acknowledgement.
+package are asked to provide the same acknowledgement.
 
 Suggested citations:
 
