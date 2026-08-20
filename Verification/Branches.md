@@ -24,12 +24,15 @@ comparator version and tolerance, Local runtime and landed commit, and the
 available mathematics status and verifier version for each output. The output
 IDs are provenance; their payloads are deliberately not distributed.
 
-The generator accepts only a completed Validation set whose exact Local output
-matches a dirty=false compute from a runtime observed on main. Candidate and
-experimental sets are excluded. Each branch retains the comparator and
-mathematics-verifier versions that actually produced its recorded result; a
-refactor of the shipped tools does not relabel historical observations or
-force a corpus-wide rejudgement.
+The generator starts from the canonical successful Web observations and
+accepts only a completed Validation set whose exact Web and Local output IDs
+match a dirty=false compute from a runtime observed on main. Candidate and
+experimental sets are excluded. For each `(input_id, opd)` it selects the
+newest such landed runtime; append order resolves repeated judgements within
+that runtime. Each branch retains the comparator and mathematics-verifier
+versions that actually produced its recorded result. A refactor of the shipped
+tools does not relabel historical observations or force a corpus-wide
+rejudgement.
 
 To inspect a branch, extract its canonical input, use the referenced CIF under
 `Assets/`, run APOSTRUCT locally, and submit the same request and OPD to the
