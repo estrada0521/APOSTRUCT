@@ -1,7 +1,7 @@
 # Validation Status
 
 Validation is carried out by comparison with the output of the public Web version of ISODISTORT, together with mathematical checks that are independent of the Web implementation.
-The figures in this document are a snapshot **as of August 12, 2026**.
+The figures in this document are a snapshot **as of August 20, 2026**.
 For each Web branch, they refer to the most recent Validation output produced by a local runtime that has been landed on main.
 
 ## Verdicts
@@ -144,25 +144,31 @@ It consists of 458 zero-K, 28 nonzero Type I/III, 412 nonzero Type IV, 19 two-K,
 
 ## Limits of Validation
 
-**65** cases have been confirmed so far that fall outside the valid population because of a mathematical violation on the Web side.
-Among the corresponding Local outputs, 64 satisfied the two current checks and 1 was refuted.
-Since this does not constitute a proof of Local, these cases are treated as subjects requiring verification by the stronger mathematical checks to come.
+Among the 4,141 successful Web branches, **173** are refuted by the current
+mathematical checks and **1** is indeterminate, so all 174 are excluded from
+the valid population. Landed Local comparisons are available for 172 of these
+branches. Of those Local outputs, 130 satisfy both checks, 38 satisfy the basis
+check but are refuted by group invariance, 3 show the inverse combination, and
+1 has satisfied basis with indeterminate invariance. These comparisons are
+useful diagnostics, but agreement with an excluded Web result is not counted
+as correctness evidence.
 
 ## Computational Performance
 
 The performance population consists of the branches within the valid Validation population for which `wall_s` is recorded for both Web and Local.
-The Web time measures the interval from the CIF upload to the conversion of the Complete Mode Details into text.
+The Web time is the sum of the successful OPD-list request and the selected
+Complete Mode Details request.
 The Local time measures the local mode-details computation itself.
 Because the execution environments differ, the figures below are reference values and not a direct comparison of speed.
 
 | Performance population | Local median | Web median | Local p95 | Web p95 |
 |---:|---:|---:|---:|---:|
-| 2,075 / 3,967 | 0.69 s | 8.25 s | 42.04 s | 32.29 s |
+| 2,075 / 3,967 | 0.68 s | 8.25 s | 41.64 s | 32.29 s |
 
 ```text
           0.1                 1                  10                100 s
 Local        |----[=======│=============]-------------------|
-        p5=0.14  Q1=0.28  median=0.69  Q3=3.78  p95=42.04
+        p5=0.14  Q1=0.28  median=0.68  Q3=3.78  p95=41.64
 Web                                          |│=]---------|
         p5=7.31  Q1=7.48  median=8.25  Q3=10.52  p95=32.29
 ```
@@ -175,12 +181,12 @@ Web                                          |│=]---------|
 | FF | 164 | 0.45 s | 8.81 s | 2.51 s | 10.68 s |
 | FFF | 53 | 1.29 s | 9.24 s | 15.33 s | 37.38 s |
 | FFFF | 47 | 1.76 s | 9.30 s | 11.24 s | 20.05 s |
-| P | 234 | 2.07 s | 8.48 s | 51.45 s | 30.86 s |
+| P | 234 | 2.01 s | 8.48 s | 53.66 s | 30.86 s |
 | PP | 21 | 12.17 s | 13.47 s | 88.07 s | 37.34 s |
 | FP | 127 | 3.77 s | 10.58 s | 77.02 s | 41.10 s |
 | FFP | 239 | 5.84 s | 11.84 s | 61.47 s | 53.99 s |
 | FFFP | 208 | 10.09 s | 14.24 s | 84.17 s | 62.02 s |
 | FPP | 30 | 10.55 s | 13.83 s | 78.43 s | 53.72 s |
-| FFPP | 1 | 86.27 s | 66.64 s | 86.27 s | 66.64 s |
+| FFPP | 1 | 79.90 s | 66.64 s | 79.90 s | 66.64 s |
 
 A clear long tail remains on the Local side for the stress cases that include parametric K and multi-K.

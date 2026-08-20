@@ -1,12 +1,11 @@
 {
-  "branch_count": 4181,
+  "branch_count": 4139,
   "files": {
     "inputs.jsonl.gz": "b5f52c45fa056f2768c241fbbfdceebedc3d0a81d5193f0162539cd966c7aeee",
-    "results.jsonl.gz": "675671bf30a7342c9f59d5471007837fe245fcc872dbd6f51a9969f479e44153"
+    "results.jsonl.gz": "a51bf72118390a2899ba6155f446f2986f68f1da51897755d166697cdbc96ca8"
   },
   "input_count": 4024,
   "recorded_comparator_versions": [
-    "validation.v3",
     "validation.v9+24c2c01fffb1",
     "validation.v9+a6b3d2fdf61d",
     "validation.v9+df6b161b14ee",

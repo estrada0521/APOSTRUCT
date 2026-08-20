@@ -1,7 +1,7 @@
 # 検証状況
 
 公開 Web 版 ISODISTORT の出力との比較と、Web から独立した数学的検査を用いて検証しています。
-本書の数値は **2026 年 8 月 12 日時点**のスナップショットです。
+本書の数値は **2026 年 8 月 20 日時点**のスナップショットです。
 各 Web branch について main へ land 済みの local runtime が生成した最新の Validation 出力を参照しています。
 
 ## 判定
@@ -142,26 +142,24 @@ primary IRやBNSの欠落、Source labelの非一意性、または同一のinpu
 
 ## 検証限界
 
-Webの数学違反により有効母集団から外れたケースは現時点で**65件**を確認済みです。
-対応するLocal出力は、内64件が現行の二検査をsatisfied、1件がrefutedでした。
-これはLocalを証明するものではないため、今度のより強い数学検査による要検証対象として扱います。
+successful Web branch 4,141件のうち、現行数学検査で**173件**がrefuted、**1件**がindeterminateです。この174件はすべて有効母集団から除外します。このうち172件にはlanded Local比較があります。対応するLocal出力は、130件が両検査をsatisfied、38件がbasis satisfied・group invariance refuted、3件がその逆、1件がbasis satisfied・invariance indeterminateです。これらは診断には有用ですが、除外されたWeb出力との一致はcorrectness evidenceには数えません。
 
 
 ## 計算性能
 
 有効Validation母集団のうち、WebとLocalの両方に`wall_s`が記録されているbranchを性能母集団とします。
-Web時間はCIF uploadからComplete Mode Detailsのtext変換までを測ります。
+Web時間は、successful OPD一覧requestと、選択branchのComplete Mode Details requestの和です。
 Local時間はローカルのmode-details計算本体を測ります。
 実行環境が異なるため、以下は速度の直接比較ではなく参考値です。
 
 | 性能母集団 | Local中央値 | Web中央値 | Local p95 | Web p95 |
 |---:|---:|---:|---:|---:|
-| 2,075 / 3,967 | 0.69 s | 8.25 s | 42.04 s | 32.29 s |
+| 2,075 / 3,967 | 0.68 s | 8.25 s | 41.64 s | 32.29 s |
 
 ```text
           0.1                 1                  10                100 s
 Local        |----[=======│=============]-------------------|
-        p5=0.14  Q1=0.28  median=0.69  Q3=3.78  p95=42.04
+        p5=0.14  Q1=0.28  median=0.68  Q3=3.78  p95=41.64
 Web                                          |│=]---------|
         p5=7.31  Q1=7.48  median=8.25  Q3=10.52  p95=32.29
 ```
@@ -174,12 +172,12 @@ Web                                          |│=]---------|
 | FF | 164 | 0.45 s | 8.81 s | 2.51 s | 10.68 s |
 | FFF | 53 | 1.29 s | 9.24 s | 15.33 s | 37.38 s |
 | FFFF | 47 | 1.76 s | 9.30 s | 11.24 s | 20.05 s |
-| P | 234 | 2.07 s | 8.48 s | 51.45 s | 30.86 s |
+| P | 234 | 2.01 s | 8.48 s | 53.66 s | 30.86 s |
 | PP | 21 | 12.17 s | 13.47 s | 88.07 s | 37.34 s |
 | FP | 127 | 3.77 s | 10.58 s | 77.02 s | 41.10 s |
 | FFP | 239 | 5.84 s | 11.84 s | 61.47 s | 53.99 s |
 | FFFP | 208 | 10.09 s | 14.24 s | 84.17 s | 62.02 s |
 | FPP | 30 | 10.55 s | 13.83 s | 78.43 s | 53.72 s |
-| FFPP | 1 | 86.27 s | 66.64 s | 86.27 s | 66.64 s |
+| FFPP | 1 | 79.90 s | 66.64 s | 79.90 s | 66.64 s |
 
 parametric Kとmulti-Kを含むstress caseには、Local に明確な long tail が残っています。
