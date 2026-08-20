@@ -17,6 +17,8 @@ An input row has this shape:
 
 A result row records the input and CIF identity, OPD, pool, K signature, content IDs of the observed Web and Local outputs, Strict/Physical verdict, comparator version and tolerance, Local runtime and landed commit, and the available mathematics status and verifier version for each output.
 The output IDs are provenance; their payloads are deliberately not distributed.
+MAGNDATA rows also record the public `magndata_id` and the database from which the ordinary parent CIF was obtained.
+For Crystallography Open Database parents, `parent_cif_source_id` is the public COD identifier; Materials Project parent IDs are omitted because the available mapping contains internal synthetic identifiers rather than public Materials Project IDs.
 
 The generator starts from the canonical successful Web observations and accepts only a completed Validation set whose exact Web and Local output IDs match a dirty=false compute from a runtime observed on main.
 Candidate and experimental sets are excluded.
