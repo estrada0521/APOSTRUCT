@@ -1,0 +1,51 @@
+# generated using pymatgen
+data_K4La6OsI14
+_symmetry_space_group_name_H-M   P4/ncc
+_cell_length_a   13.37422300
+_cell_length_b   13.37422300
+_cell_length_c   25.34424600
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   130
+_chemical_formula_structural   K4La6OsI14
+_chemical_formula_sum   'K16 La24 Os4 I56'
+_cell_volume   4533.32124858
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y+1/2, x+1/2, z'
+  3  '-x, -y, z'
+  4  'y+1/2, -x+1/2, z'
+  5  'x+1/2, -y+1/2, -z+1/2'
+  6  '-y, -x, -z+1/2'
+  7  '-x+1/2, y+1/2, -z+1/2'
+  8  'y, x, -z+1/2'
+  9  '-x+1/2, -y+1/2, -z'
+  10  'y, -x, -z'
+  11  'x+1/2, y+1/2, -z'
+  12  '-y, x, -z'
+  13  '-x, y, z+1/2'
+  14  'y+1/2, x+1/2, z+1/2'
+  15  'x, -y, z+1/2'
+  16  '-y+1/2, -x+1/2, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  K  K0  16  0.06134000  0.20656000  0.57456600  1.0
+  La  La1  16  0.12604700  0.32838900  0.31720600  1.0
+  La  La2  4  0.00000000  0.50000000  0.20266700  1.0
+  La  La3  4  0.00000000  0.50000000  0.43095300  1.0
+  Os  Os4  4  0.00000000  0.50000000  0.31621100  1.0
+  I  I5  16  0.05061000  0.16338900  0.82245800  1.0
+  I  I6  16  0.12168800  0.28835300  0.18587300  1.0
+  I  I7  16  0.15008900  0.30795300  0.44522300  1.0
+  I  I8  4  0.00000000  0.00000000  0.00000000  1.0
+  I  I9  4  0.00000000  0.50000000  0.06732100  1.0

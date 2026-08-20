@@ -1,0 +1,40 @@
+# generated using pymatgen
+data_Mg6NiSn
+_symmetry_space_group_name_H-M   P4_2cm
+_cell_length_a   9.95414006
+_cell_length_b   9.95414006
+_cell_length_c   6.90493624
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   101
+_chemical_formula_structural   Mg6NiSn
+_chemical_formula_sum   'Mg24 Ni4 Sn4'
+_cell_volume   684.17494677
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y, x, z+1/2'
+  3  '-x, -y, z'
+  4  'y, -x, z+1/2'
+  5  '-x, y, z+1/2'
+  6  'y, x, z'
+  7  'x, -y, z+1/2'
+  8  '-y, -x, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Mg  Mg0  8  0.03607906  0.34645053  0.02896040  1.0
+  Mg  Mg1  8  0.23917021  0.47679611  0.72595952  1.0
+  Mg  Mg2  4  0.22572895  0.22572895  0.33675232  1.0
+  Mg  Mg3  2  0.00000000  0.00000000  0.49912995  1.0
+  Mg  Mg4  2  0.50000000  0.50000000  0.46948133  1.0
+  Ni  Ni5  4  0.30947046  0.30947046  0.00878215  1.0
+  Sn  Sn6  4  0.17146115  0.17146115  0.74117003  1.0

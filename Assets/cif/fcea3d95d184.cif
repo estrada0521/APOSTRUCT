@@ -1,0 +1,51 @@
+# generated using pymatgen
+data_Li24(I2N)5
+_symmetry_space_group_name_H-M   I-42m
+_cell_length_a   9.40781200
+_cell_length_b   9.40781200
+_cell_length_c   18.95045400
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   121
+_chemical_formula_structural   Li24(I2N)5
+_chemical_formula_sum   'Li48 I20 N10'
+_cell_volume   1677.24644173
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  'y, -x, -z'
+  3  '-x, -y, z'
+  4  '-y, x, -z'
+  5  'x, -y, -z'
+  6  'y, x, z'
+  7  '-x, y, -z'
+  8  '-y, -x, z'
+  9  'x+1/2, y+1/2, z+1/2'
+  10  'y+1/2, -x+1/2, -z+1/2'
+  11  '-x+1/2, -y+1/2, z+1/2'
+  12  '-y+1/2, x+1/2, -z+1/2'
+  13  'x+1/2, -y+1/2, -z+1/2'
+  14  'y+1/2, x+1/2, z+1/2'
+  15  '-x+1/2, y+1/2, -z+1/2'
+  16  '-y+1/2, -x+1/2, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Li  Li0  16  0.01264250  0.78451650  0.86834550  1.0
+  Li  Li1  16  0.08204300  0.29913100  0.60371900  1.0
+  Li  Li2  8  0.15428600  0.15428600  0.01944500  1.0
+  Li  Li3  8  0.23097600  0.76902400  0.77876700  1.0
+  I  I4  8  0.21874600  0.21874600  0.38394300  1.0
+  I  I5  4  0.00000000  0.00000000  0.23954500  1.0
+  I  I6  4  0.00000000  0.50000000  0.00000000  1.0
+  I  I7  4  0.00000000  0.50000000  0.25000000  1.0
+  N  N8  8  0.21671050  0.21671050  0.11778950  1.0
+  N  N9  2  0.00000000  0.00000000  0.00000000  1.0

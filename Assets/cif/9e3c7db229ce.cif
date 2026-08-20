@@ -1,0 +1,53 @@
+# generated using pymatgen
+data_NaCr12Si8BrO28
+_symmetry_space_group_name_H-M   I4mm
+_cell_length_a   10.44921200
+_cell_length_b   10.44921200
+_cell_length_c   13.21741200
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   107
+_chemical_formula_structural   NaCr12Si8BrO28
+_chemical_formula_sum   'Na2 Cr24 Si16 Br2 O56'
+_cell_volume   1443.15676194
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y, x, z'
+  3  '-x, -y, z'
+  4  'y, -x, z'
+  5  '-x, y, z'
+  6  'y, x, z'
+  7  'x, -y, z'
+  8  '-y, -x, z'
+  9  'x+1/2, y+1/2, z+1/2'
+  10  '-y+1/2, x+1/2, z+1/2'
+  11  '-x+1/2, -y+1/2, z+1/2'
+  12  'y+1/2, -x+1/2, z+1/2'
+  13  '-x+1/2, y+1/2, z+1/2'
+  14  'y+1/2, x+1/2, z+1/2'
+  15  'x+1/2, -y+1/2, z+1/2'
+  16  '-y+1/2, -x+1/2, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Na  Na0  2  0.00000000  0.00000000  0.03845700  1.0
+  Cr  Cr1  8  0.00000000  0.22982500  0.28506500  1.0
+  Cr  Cr2  8  0.00000000  0.23041100  0.71598800  1.0
+  Cr  Cr3  8  0.00000000  0.32519300  0.49980900  1.0
+  Si  Si4  8  0.21674950  0.21674950  0.88868150  1.0
+  Si  Si5  8  0.21777500  0.21777500  0.11136100  1.0
+  Br  Br6  2  0.00000000  0.00000000  0.47575000  1.0
+  O  O7  16  0.12810850  0.68604550  0.61725650  1.0
+  O  O8  16  0.12879900  0.68544700  0.38283000  1.0
+  O  O9  8  0.14184050  0.14184050  0.20204850  1.0
+  O  O10  8  0.14260750  0.14260750  0.79662150  1.0
+  O  O11  8  0.16306900  0.16306900  0.00032500  1.0

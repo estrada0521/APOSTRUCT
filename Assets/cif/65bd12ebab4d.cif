@@ -1,0 +1,53 @@
+# generated using pymatgen
+data_Na8Ti3Fe(Si4O11)4
+_symmetry_space_group_name_H-M   P4
+_cell_length_a   10.85330200
+_cell_length_b   10.85330200
+_cell_length_c   8.05491500
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   75
+_chemical_formula_structural   Na8Ti3Fe(Si4O11)4
+_chemical_formula_sum   'Na8 Ti3 Fe1 Si16 O44'
+_cell_volume   948.82198096
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y, x, z'
+  3  '-x, -y, z'
+  4  'y, -x, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Na  Na0  4  0.12795700  0.81763900  0.00055000  1.0
+  Na  Na1  4  0.31529000  0.36920900  0.50216600  1.0
+  Ti  Ti2  1  0.00000000  0.00000000  0.70737700  1.0
+  Ti  Ti3  1  0.50000000  0.50000000  0.26785200  1.0
+  Ti  Ti4  1  0.50000000  0.50000000  0.78200900  1.0
+  Fe  Fe5  1  0.00000000  0.00000000  0.24550500  1.0
+  Si  Si6  4  0.01206000  0.30697500  0.69097600  1.0
+  Si  Si7  4  0.01398400  0.30740500  0.30849100  1.0
+  Si  Si8  4  0.19122300  0.51386900  0.19120300  1.0
+  Si  Si9  4  0.19190600  0.51223900  0.80845200  1.0
+  O  O10  4  0.03788400  0.69819100  0.49971700  1.0
+  O  O11  4  0.04664600  0.17375700  0.76628700  1.0
+  O  O12  4  0.05733600  0.17797500  0.23329300  1.0
+  O  O13  4  0.09770600  0.63409300  0.19335200  1.0
+  O  O14  4  0.09910400  0.63327200  0.80530800  1.0
+  O  O15  4  0.13297600  0.39953300  0.69496100  1.0
+  O  O16  4  0.13298200  0.40284500  0.30731400  1.0
+  O  O17  4  0.19562800  0.46274900  0.99993300  1.0
+  O  O18  4  0.32223300  0.55109700  0.26709400  1.0
+  O  O19  4  0.32338100  0.54750700  0.73051900  1.0
+  O  O20  1  0.00000000  0.00000000  0.02443700  1.0
+  O  O21  1  0.00000000  0.00000000  0.49413000  1.0
+  O  O22  1  0.50000000  0.50000000  0.48594900  1.0
+  O  O23  1  0.50000000  0.50000000  0.99427900  1.0

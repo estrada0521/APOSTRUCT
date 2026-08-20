@@ -1,0 +1,36 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'C2/c'
+_symmetry_Int_Tables_number   15
+_chemical_formula_structural   Cr2F5
+_cell_length_a   7.7469008400
+_cell_length_b   7.4302171794
+_cell_length_c   7.1141654859
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   120.4448721850
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-x,-y,-z'
+ 3  '-x,y,-z+1/2'
+ 4  'x,-y,z+1/2'
+ 5  'x+1/2,y+1/2,z'
+ 6  '-x+1/2,-y+1/2,-z'
+ 7  '-x+1/2,y+1/2,-z+1/2'
+ 8  'x+1/2,-y+1/2,z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Cr Cr0 4 4c 0.2500000000 0.7500000000 0.5000000000 1.0000000000
+ Cr Cr1 4 4d 0.2500000000 0.2500000000 0.5000000000 1.0000000000
+ F F2 8 8f 0.3244982250 0.4964200250 0.5423157000 1.0000000000
+ F F3 4 4e 0.5000000000 0.1804844100 0.7500000000 1.0000000000
+ F F4 8 8f 0.8696417850 0.2786273250 0.8212998100 1.0000000000

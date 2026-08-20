@@ -1,0 +1,36 @@
+# generated using pymatgen
+data_CdGe2O5
+_symmetry_space_group_name_H-M   P-1
+_cell_length_a   5.36507996
+_cell_length_b   5.54514964
+_cell_length_c   6.93597780
+_cell_angle_alpha   105.27257354
+_cell_angle_beta   102.13810854
+_cell_angle_gamma   106.92724965
+_symmetry_Int_Tables_number   2
+_chemical_formula_structural   CdGe2O5
+_chemical_formula_sum   'Cd2 Ge4 O10'
+_cell_volume   180.99498387
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Cd  Cd0  2  0.33793779  0.68827355  0.23415687  1.0
+  Ge  Ge1  2  0.31413945  0.68102142  0.74994933  1.0
+  Ge  Ge2  1  0.00000000  0.00000000  0.00000000  1.0
+  Ge  Ge3  1  0.00000000  0.00000000  0.50000000  1.0
+  O  O4  2  0.06596038  0.67739551  0.88128022  1.0
+  O  O5  2  0.08541293  0.94563615  0.25196816  1.0
+  O  O6  2  0.27516164  0.35550346  0.60026298  1.0
+  O  O7  2  0.29127421  0.87490202  0.58870614  1.0
+  O  O8  2  0.37578858  0.22072495  0.05017393  1.0

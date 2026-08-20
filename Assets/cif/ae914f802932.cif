@@ -1,0 +1,60 @@
+# generated using pymatgen
+data_Ce2Ni22C3
+_symmetry_space_group_name_H-M   Cmce
+_cell_length_a   11.33521231
+_cell_length_b   14.91797359
+_cell_length_c   14.59051427
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   64
+_chemical_formula_structural   Ce2Ni22C3
+_chemical_formula_sum   'Ce16 Ni176 C24'
+_cell_volume   2467.23258614
+_cell_formula_units_Z   8
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x+1/2, -y, z+1/2'
+  4  'x+1/2, y, -z+1/2'
+  5  'x, -y, -z'
+  6  '-x, y, z'
+  7  '-x+1/2, y, -z+1/2'
+  8  'x+1/2, -y, z+1/2'
+  9  'x+1/2, y+1/2, z'
+  10  '-x+1/2, -y+1/2, -z'
+  11  '-x, -y+1/2, z+1/2'
+  12  'x, y+1/2, -z+1/2'
+  13  'x+1/2, -y+1/2, -z'
+  14  '-x+1/2, y+1/2, z'
+  15  '-x, y+1/2, -z+1/2'
+  16  'x, -y+1/2, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ce  Ce0  8  0.00000000  0.20860401  0.97310663  1.0
+  Ce  Ce1  8  0.25000000  0.06302204  0.25000000  1.0
+  Ni  Ni2  16  0.10809943  0.21177399  0.15614654  1.0
+  Ni  Ni3  16  0.11132480  0.11958475  0.42154540  1.0
+  Ni  Ni4  16  0.12680473  0.07781043  0.87113712  1.0
+  Ni  Ni5  16  0.16909970  0.12347103  0.70195191  1.0
+  Ni  Ni6  16  0.17463283  0.07673417  0.05003741  1.0
+  Ni  Ni7  16  0.17611999  0.03574959  0.57283025  1.0
+  Ni  Ni8  16  0.18016677  0.24867405  0.31729289  1.0
+  Ni  Ni9  16  0.22144813  0.18868556  0.54852444  1.0
+  Ni  Ni10  8  0.00000000  0.00312982  0.67474928  1.0
+  Ni  Ni11  8  0.00000000  0.05945366  0.15783061  1.0
+  Ni  Ni12  8  0.00000000  0.14638187  0.58461825  1.0
+  Ni  Ni13  8  0.00000000  0.15780361  0.28815417  1.0
+  Ni  Ni14  8  0.00000000  0.18113758  0.76780456  1.0
+  Ni  Ni15  4  0.00000000  0.00000000  0.00000000  1.0
+  Ni  Ni16  4  0.00000000  0.00000000  0.50000000  1.0
+  C  C17  16  0.24505334  0.18768685  0.08315165  1.0
+  C  C18  8  0.00000000  0.05557477  0.78898514  1.0

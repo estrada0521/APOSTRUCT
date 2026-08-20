@@ -1,0 +1,39 @@
+# generated using pymatgen
+data_LiCdBO3
+_symmetry_space_group_name_H-M   P-6
+_cell_length_a   8.43390613
+_cell_length_b   8.43390613
+_cell_length_c   3.31594700
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   174
+_chemical_formula_structural   LiCdBO3
+_chemical_formula_sum   'Li3 Cd3 B3 O9'
+_cell_volume   204.26583711
+_cell_formula_units_Z   3
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x+y, -x, -z'
+  3  '-y, x-y, z'
+  4  'x, y, -z'
+  5  '-x+y, -x, z'
+  6  '-y, x-y, -z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Li  Li0  3  0.29097500  0.00806900  0.50000000  1.0
+  Cd  Cd1  3  0.00490800  0.63550700  0.00000000  1.0
+  B  B2  1  0.00000000  0.00000000  0.00000000  1.0
+  B  B3  1  0.33333333  0.66666667  0.50000000  1.0
+  B  B4  1  0.66666667  0.33333333  0.50000000  1.0
+  O  O5  3  0.18774300  0.06319100  0.00000000  1.0
+  O  O6  3  0.22677200  0.75040500  0.50000000  1.0
+  O  O7  3  0.56133900  0.14335300  0.50000000  1.0

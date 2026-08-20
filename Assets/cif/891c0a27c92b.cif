@@ -1,0 +1,45 @@
+# generated using pymatgen
+data_Cu6GeWS8
+_symmetry_space_group_name_H-M   P6_3mc
+_cell_length_a   7.57030375
+_cell_length_b   7.57030375
+_cell_length_c   12.44946100
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   186
+_chemical_formula_structural   Cu6GeWS8
+_chemical_formula_sum   'Cu12 Ge2 W2 S16'
+_cell_volume   617.88519818
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  'x-y, x, z+1/2'
+  3  '-y, x-y, z'
+  4  '-x, -y, z+1/2'
+  5  '-x+y, -x, z'
+  6  'y, -x+y, z+1/2'
+  7  'y, x, z+1/2'
+  8  'x, x-y, z'
+  9  'x-y, -y, z+1/2'
+  10  '-y, -x, z'
+  11  '-x, -x+y, z+1/2'
+  12  '-x+y, y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Cu  Cu0  6  0.00702400  0.50351200  0.85381100  1.0
+  Cu  Cu1  6  0.16112350  0.32224700  0.60490300  1.0
+  Ge  Ge2  2  0.00000000  0.00000000  0.35178600  1.0
+  W  W3  2  0.33333333  0.66666667  0.48147600  1.0
+  S  S4  6  0.00659900  0.50329950  0.54128800  1.0
+  S  S5  6  0.16477550  0.32955100  0.78968100  1.0
+  S  S6  2  0.00000000  0.00000000  0.03427700  1.0
+  S  S7  2  0.33333333  0.66666667  0.29941300  1.0

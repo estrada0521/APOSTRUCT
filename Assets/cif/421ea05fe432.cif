@@ -1,0 +1,73 @@
+# generated using pymatgen
+data_Na8Y3(SiO3)12
+_symmetry_space_group_name_H-M   R-3c
+_cell_length_a   22.56670226
+_cell_length_b   22.56670226
+_cell_length_c   13.04480911
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   167
+_chemical_formula_structural   Na8Y3(SiO3)12
+_chemical_formula_sum   'Na48 Y18 Si72 O216'
+_cell_volume   5753.13490475
+_cell_formula_units_Z   6
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-y, x-y, z'
+  4  'y, -x+y, -z'
+  5  '-x+y, -x, z'
+  6  'x-y, x, -z'
+  7  'y, x, -z+1/2'
+  8  '-y, -x, z+1/2'
+  9  'x-y, -y, -z+1/2'
+  10  '-x+y, y, z+1/2'
+  11  '-x, -x+y, -z+1/2'
+  12  'x, x-y, z+1/2'
+  13  'x+2/3, y+1/3, z+1/3'
+  14  '-x+2/3, -y+1/3, -z+1/3'
+  15  '-y+2/3, x-y+1/3, z+1/3'
+  16  'y+2/3, -x+y+1/3, -z+1/3'
+  17  '-x+y+2/3, -x+1/3, z+1/3'
+  18  'x-y+2/3, x+1/3, -z+1/3'
+  19  'y+2/3, x+1/3, -z+5/6'
+  20  '-y+2/3, -x+1/3, z+5/6'
+  21  'x-y+2/3, -y+1/3, -z+5/6'
+  22  '-x+y+2/3, y+1/3, z+5/6'
+  23  '-x+2/3, -x+y+1/3, -z+5/6'
+  24  'x+2/3, x-y+1/3, z+5/6'
+  25  'x+1/3, y+2/3, z+2/3'
+  26  '-x+1/3, -y+2/3, -z+2/3'
+  27  '-y+1/3, x-y+2/3, z+2/3'
+  28  'y+1/3, -x+y+2/3, -z+2/3'
+  29  '-x+y+1/3, -x+2/3, z+2/3'
+  30  'x-y+1/3, x+2/3, -z+2/3'
+  31  'y+1/3, x+2/3, -z+1/6'
+  32  '-y+1/3, -x+2/3, z+1/6'
+  33  'x-y+1/3, -y+2/3, -z+1/6'
+  34  '-x+y+1/3, y+2/3, z+1/6'
+  35  '-x+1/3, -x+y+2/3, -z+1/6'
+  36  'x+1/3, x-y+2/3, z+1/6'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Na  Na0  36  0.07029749  0.14239194  0.85502411  1.0
+  Na  Na1  6  0.00000000  0.00000000  0.00000000  1.0
+  Na  Na2  6  0.00000000  0.00000000  0.25000000  1.0
+  Y  Y3  18  0.00000000  0.25213728  0.75000000  1.0
+  Si  Si4  36  0.01802150  0.22934562  0.47646474  1.0
+  Si  Si5  36  0.08695274  0.17746418  0.11755058  1.0
+  O  O6  36  0.02098601  0.25390395  0.92125056  1.0
+  O  O7  36  0.02710882  0.41765174  0.09804217  1.0
+  O  O8  36  0.03061548  0.20377547  0.11076948  1.0
+  O  O9  36  0.04720729  0.09448894  0.62852153  1.0
+  O  O10  36  0.07132386  0.20092394  0.50681148  1.0
+  O  O11  36  0.07240130  0.20957262  0.71621428  1.0

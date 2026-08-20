@@ -1,0 +1,42 @@
+# generated using pymatgen
+data_Be(GaO2)2
+_symmetry_space_group_name_H-M   P3_2
+_cell_length_a   7.76896356
+_cell_length_b   7.76896356
+_cell_length_c   8.94880993
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   145
+_chemical_formula_structural   Be(GaO2)2
+_chemical_formula_sum   'Be6 Ga12 O24'
+_cell_volume   467.75892715
+_cell_formula_units_Z   6
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y, x-y, z+2/3'
+  3  '-x+y, -x, z+1/3'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Be  Be0  3  0.16907327  0.39288311  0.24487713  1.0
+  Be  Be1  3  0.39458141  0.22684858  0.08694488  1.0
+  Ga  Ga2  3  0.16284608  0.41977603  0.58061627  1.0
+  Ga  Ga3  3  0.17687536  0.40361895  0.92666522  1.0
+  Ga  Ga4  3  0.40833063  0.25002560  0.40645900  1.0
+  Ga  Ga5  3  0.41225769  0.23167445  0.75274601  1.0
+  O  O6  3  0.01908347  0.32638426  0.75540543  1.0
+  O  O7  3  0.02285437  0.32931015  0.09675995  1.0
+  O  O8  3  0.04089790  0.32103046  0.40073320  1.0
+  O  O9  3  0.30886715  0.63777213  0.24856348  1.0
+  O  O10  3  0.32472229  0.27988676  0.92966583  1.0
+  O  O11  3  0.32538791  0.30709875  0.23185960  1.0
+  O  O12  3  0.34410034  0.32776991  0.58617916  1.0
+  O  O13  3  0.63819299  0.32097376  0.08469189  1.0

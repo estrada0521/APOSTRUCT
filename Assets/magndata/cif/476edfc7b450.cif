@@ -1,0 +1,37 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'Pbam'
+_symmetry_Int_Tables_number   55
+_chemical_formula_structural   Tm5(In2Pt)2
+_cell_length_a   7.9905320700
+_cell_length_b   17.9805745000
+_cell_length_c   3.5666859300
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   90.0000000000
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-x,-y,-z'
+ 3  '-x,-y,z'
+ 4  'x,y,-z'
+ 5  'x+1/2,-y+1/2,-z'
+ 6  '-x+1/2,y+1/2,z'
+ 7  '-x+1/2,y+1/2,-z'
+ 8  'x+1/2,-y+1/2,z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Tm Tm0 4 4g 0.1158693500 0.4156667600 0.0000000000 1.0000000000
+ Tm Tm1 4 4g 0.2440447300 0.2204760400 0.0000000000 1.0000000000
+ Tm Tm2 2 2a 0.0000000000 0.0000000000 0.0000000000 1.0000000000
+ In In3 4 4h 0.4238697300 0.3517536600 0.5000000000 1.0000000000
+ In In4 4 4h 0.2904168900 0.0671795900 0.5000000000 1.0000000000
+ Pt Pt5 4 4h 0.0278811300 0.3038148700 0.5000000000 1.0000000000

@@ -1,0 +1,36 @@
+# generated using pymatgen
+data_SrCu2SnS4
+_symmetry_space_group_name_H-M   P3_221
+_cell_length_a   6.34706566
+_cell_length_b   6.34706566
+_cell_length_c   15.58948200
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   154
+_chemical_formula_structural   SrCu2SnS4
+_chemical_formula_sum   'Sr3 Cu6 Sn3 S12'
+_cell_volume   543.88652411
+_cell_formula_units_Z   3
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y, x-y, z+2/3'
+  3  '-x+y, -x, z+1/3'
+  4  'y, x, -z'
+  5  'x-y, -y, -z+1/3'
+  6  '-x, -x+y, -z+2/3'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Sr  Sr0  3  0.00000000  0.56298900  0.83333333  1.0
+  Cu  Cu1  6  0.07264300  0.63557100  0.58776967  1.0
+  Sn  Sn2  3  0.00000000  0.70498100  0.33333333  1.0
+  S  S3  6  0.04487800  0.48565600  0.21264767  1.0
+  S  S4  6  0.11724100  0.35310800  0.67133633  1.0

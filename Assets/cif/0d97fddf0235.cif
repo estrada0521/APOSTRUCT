@@ -1,0 +1,36 @@
+# generated using pymatgen
+data_VFeP2(HO5)2
+_symmetry_space_group_name_H-M   P-1
+_cell_length_a   5.16710559
+_cell_length_b   5.30146285
+_cell_length_c   7.46930628
+_cell_angle_alpha   105.28008244
+_cell_angle_beta   109.08388786
+_cell_angle_gamma   98.87985955
+_symmetry_Int_Tables_number   2
+_chemical_formula_structural   VFeP2(HO5)2
+_chemical_formula_sum   'V1 Fe1 P2 H2 O10'
+_cell_volume   179.91822475
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  V  V0  1  0.50000000  0.50000000  0.50000000  1.0
+  Fe  Fe1  1  0.00000000  0.00000000  0.00000000  1.0
+  P  P2  2  0.12340000  0.45697500  0.77955300  1.0
+  H  H3  2  0.30822000  0.00080300  0.34394100  1.0
+  O  O4  2  0.16844050  0.28952000  0.91787500  1.0
+  O  O5  2  0.20005750  0.64575650  0.37112450  1.0
+  O  O6  2  0.20645250  0.76102300  0.88573300  1.0
+  O  O7  2  0.30248900  0.39079500  0.64685500  1.0
+  O  O8  2  0.32306050  0.15321950  0.29169950  1.0

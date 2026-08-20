@@ -1,0 +1,59 @@
+# generated using pymatgen
+data_CaEu2B2O7
+_symmetry_space_group_name_H-M   R3c
+_cell_length_a   8.89228842
+_cell_length_b   8.89228842
+_cell_length_c   38.20733580
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   161
+_chemical_formula_structural   CaEu2B2O7
+_chemical_formula_sum   'Ca18 Eu36 B36 O126'
+_cell_volume   2616.40197588
+_cell_formula_units_Z   18
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y, x-y, z'
+  3  '-x+y, -x, z'
+  4  '-y, -x, z+1/2'
+  5  '-x+y, y, z+1/2'
+  6  'x, x-y, z+1/2'
+  7  'x+2/3, y+1/3, z+1/3'
+  8  '-y+2/3, x-y+1/3, z+1/3'
+  9  '-x+y+2/3, -x+1/3, z+1/3'
+  10  '-y+2/3, -x+1/3, z+5/6'
+  11  '-x+y+2/3, y+1/3, z+5/6'
+  12  'x+2/3, x-y+1/3, z+5/6'
+  13  'x+1/3, y+2/3, z+2/3'
+  14  '-y+1/3, x-y+2/3, z+2/3'
+  15  '-x+y+1/3, -x+2/3, z+2/3'
+  16  '-y+1/3, -x+2/3, z+1/6'
+  17  '-x+y+1/3, y+2/3, z+1/6'
+  18  'x+1/3, x-y+2/3, z+1/6'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ca  Ca0  18  0.00299708  0.35479359  0.80544690  1.0
+  Eu  Eu1  18  0.01451026  0.33577640  0.02674908  1.0
+  Eu  Eu2  18  0.05415784  0.38611753  0.91835254  1.0
+  B  B3  6  0.00000000  0.00000000  0.03702771  1.0
+  B  B4  6  0.00000000  0.00000000  0.11778419  1.0
+  B  B5  6  0.00000000  0.00000000  0.18947842  1.0
+  B  B6  6  0.00000000  0.00000000  0.31055228  1.0
+  B  B7  6  0.00000000  0.00000000  0.38223191  1.0
+  B  B8  6  0.00000000  0.00000000  0.46374232  1.0
+  O  O9  18  0.01107688  0.16076068  0.31025344  1.0
+  O  O10  18  0.01168037  0.84989098  0.46447498  1.0
+  O  O11  18  0.01302442  0.16072488  0.61907512  1.0
+  O  O12  18  0.08424284  0.41720114  0.41535677  1.0
+  O  O13  18  0.15999948  0.15163896  0.68963035  1.0
+  O  O14  18  0.16019342  0.00915581  0.53629811  1.0
+  O  O15  18  0.16079436  0.01279495  0.88075710  1.0

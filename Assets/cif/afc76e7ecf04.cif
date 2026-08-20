@@ -1,0 +1,63 @@
+# generated using pymatgen
+data_K49Tl108
+_symmetry_space_group_name_H-M   Pm-3
+_cell_length_a   17.77957643
+_cell_length_b   17.77957643
+_cell_length_c   17.77957643
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   200
+_chemical_formula_structural   K49Tl108
+_chemical_formula_sum   'K49 Tl108'
+_cell_volume   5620.36125405
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x, -y, z'
+  4  'x, y, -z'
+  5  'x, -y, -z'
+  6  '-x, y, z'
+  7  '-x, y, -z'
+  8  'x, -y, z'
+  9  'z, x, y'
+  10  '-z, -x, -y'
+  11  'z, -x, -y'
+  12  '-z, x, y'
+  13  '-z, x, -y'
+  14  'z, -x, y'
+  15  '-z, -x, y'
+  16  'z, x, -y'
+  17  'y, z, x'
+  18  '-y, -z, -x'
+  19  '-y, z, -x'
+  20  'y, -z, x'
+  21  '-y, -z, x'
+  22  'y, z, -x'
+  23  'y, -z, -x'
+  24  '-y, z, x'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  K  K0  12  0.00000000  0.12275045  0.30498519  1.0
+  K  K1  12  0.20512706  0.36535195  0.50000000  1.0
+  K  K2  8  0.18729586  0.18729586  0.18729586  1.0
+  K  K3  8  0.31044382  0.31044382  0.31044382  1.0
+  K  K4  6  0.00000000  0.22913368  0.50000000  1.0
+  K  K5  3  0.00000000  0.50000000  0.50000000  1.0
+  Tl  Tl6  24  0.09157380  0.33081279  0.33424430  1.0
+  Tl  Tl7  24  0.16284201  0.40803736  0.17861555  1.0
+  Tl  Tl8  12  0.00000000  0.15101685  0.09218376  1.0
+  Tl  Tl9  12  0.00000000  0.31848228  0.17390604  1.0
+  Tl  Tl10  12  0.17715871  0.50000000  0.34065172  1.0
+  Tl  Tl11  12  0.34869023  0.50000000  0.40921842  1.0
+  Tl  Tl12  6  0.00000000  0.50000000  0.09165971  1.0
+  Tl  Tl13  6  0.00000000  0.50000000  0.27631081  1.0

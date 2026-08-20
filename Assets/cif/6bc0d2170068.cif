@@ -1,0 +1,53 @@
+# generated using pymatgen
+data_Ti12Se16O3
+_symmetry_space_group_name_H-M   Cm
+_cell_length_a   20.28041200
+_cell_length_b   7.64469000
+_cell_length_c   9.99580907
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   119.41942269
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   8
+_chemical_formula_structural   Ti12Se16O3
+_chemical_formula_sum   'Ti24 Se32 O6'
+_cell_volume   1349.88374708
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  'x, -y, z'
+  3  'x+1/2, y+1/2, z'
+  4  'x+1/2, -y+1/2, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ti  Ti0  4  0.05331400  0.23040100  0.50486400  1.0
+  Ti  Ti1  4  0.37360700  0.26805300  0.35966000  1.0
+  Ti  Ti2  4  0.44199400  0.25490600  0.13407200  1.0
+  Ti  Ti3  2  0.17940200  0.00000000  0.36440700  1.0
+  Ti  Ti4  2  0.19063500  0.50000000  0.48417500  1.0
+  Ti  Ti5  2  0.26352500  0.50000000  0.89803100  1.0
+  Ti  Ti6  2  0.29725200  0.00000000  0.86216300  1.0
+  Ti  Ti7  2  0.36661600  0.50000000  0.63733000  1.0
+  Ti  Ti8  2  0.45865800  0.00000000  0.73344600  1.0
+  Se  Se9  4  0.09235050  0.27181350  0.29793400  1.0
+  Se  Se10  4  0.28302250  0.25723250  0.66151200  1.0
+  Se  Se11  4  0.30349550  0.21290950  0.06058200  1.0
+  Se  Se12  4  0.47271050  0.30000550  0.64515100  1.0
+  Se  Se13  2  0.13046600  0.50000000  0.65580400  1.0
+  Se  Se14  2  0.14760300  0.00000000  0.66973600  1.0
+  Se  Se15  2  0.27662600  0.50000000  0.34637900  1.0
+  Se  Se16  2  0.32041800  0.00000000  0.42852700  1.0
+  Se  Se17  2  0.42832300  0.50000000  0.94907300  1.0
+  Se  Se18  2  0.43787600  0.00000000  0.96130800  1.0
+  Se  Se19  2  0.45706000  0.50000000  0.32796900  1.0
+  Se  Se20  2  0.45799200  0.00000000  0.34158700  1.0
+  O  O21  2  0.05072600  0.50000000  0.84448700  1.0
+  O  O22  2  0.15958600  0.00000000  0.18441100  1.0
+  O  O23  2  0.21124600  0.50000000  0.98362000  1.0

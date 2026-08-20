@@ -1,0 +1,27 @@
+data_structure
+_cell_length_a 3.91596
+_cell_length_b 5.44654201296
+_cell_length_c 6.0677
+_cell_angle_alpha 78.4837117058
+_cell_angle_beta 85.07189
+_cell_angle_gamma 72.2493218902
+_space_group_IT_number 2
+_space_group_name_H-M_alt 'P-1'
+loop_
+_space_group_symop_id
+_space_group_symop_operation_xyz
+1 'x,y,z'
+2 '-x,-y,-z'
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_symmetry_multiplicity
+_atom_site_Wyckoff_label
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_occupancy
+Cu1 Cu 1 a 0 0 0 1
+C1 C 2 i 0.22451 0.51547 0.78756 1
+N1 N 2 i 0.84415 0.28463 0.15861 1
+S1 S 2 i 0.32667 0.22294 0.71543 1

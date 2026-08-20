@@ -1,0 +1,39 @@
+# generated using pymatgen
+data_BaH(NO2)2
+_symmetry_space_group_name_H-M   P6_1
+_cell_length_a   7.07261638
+_cell_length_b   7.07261638
+_cell_length_c   17.72254900
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   169
+_chemical_formula_structural   BaH(NO2)2
+_chemical_formula_sum   'Ba6 H6 N12 O24'
+_cell_volume   767.74504507
+_cell_formula_units_Z   6
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  'x-y, x, z+1/6'
+  3  '-y, x-y, z+1/3'
+  4  '-x, -y, z+1/2'
+  5  '-x+y, -x, z+2/3'
+  6  'y, -x+y, z+5/6'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ba  Ba0  6  0.15311200  0.59044400  0.83212833  1.0
+  H  H1  6  0.07426600  0.85383200  0.41505200  1.0
+  N  N2  6  0.03179400  0.24440200  0.47938267  1.0
+  N  N3  6  0.11366000  0.56236200  0.65798067  1.0
+  O  O4  6  0.01785900  0.62555900  0.61292467  1.0
+  O  O5  6  0.10679800  0.24365600  0.27736267  1.0
+  O  O6  6  0.10766600  0.44174400  0.45679067  1.0
+  O  O7  6  0.29032100  0.70718100  0.30013833  1.0

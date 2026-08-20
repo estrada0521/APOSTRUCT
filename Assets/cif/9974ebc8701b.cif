@@ -1,0 +1,50 @@
+# generated using pymatgen
+data_Na4Ge9O20
+_symmetry_space_group_name_H-M   I4_1/a
+_cell_length_a   15.24871000
+_cell_length_b   15.24871000
+_cell_length_c   7.51088200
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   88
+_chemical_formula_structural   Na4Ge9O20
+_chemical_formula_sum   'Na16 Ge36 O80'
+_cell_volume   1746.45399197
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y, x+1/2, z+1/4'
+  3  '-x+1/2, -y+1/2, z+1/2'
+  4  'y+1/2, -x, z+3/4'
+  5  '-x, -y+1/2, -z+1/4'
+  6  'y, -x, -z'
+  7  'x+1/2, y, -z+3/4'
+  8  '-y+1/2, x+1/2, -z+1/2'
+  9  'x+1/2, y+1/2, z+1/2'
+  10  '-y+1/2, x, z+3/4'
+  11  '-x, -y, z'
+  12  'y, -x+1/2, z+1/4'
+  13  '-x+1/2, -y, -z+3/4'
+  14  'y+1/2, -x+1/2, -z+1/2'
+  15  'x, y+1/2, -z+1/4'
+  16  '-y, x, -z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Na  Na0  16  0.08658100  0.30555200  0.29476300  1.0
+  Ge  Ge1  16  0.03161800  0.09536600  0.36572100  1.0
+  Ge  Ge2  16  0.13720750  0.29698450  0.82525750  1.0
+  Ge  Ge3  4  0.00000000  0.00000000  0.00000000  1.0
+  O  O4  16  0.02571550  0.29536250  0.88440850  1.0
+  O  O5  16  0.02757500  0.08040600  0.62199500  1.0
+  O  O6  16  0.03869000  0.09263000  0.11876400  1.0
+  O  O7  16  0.14112650  0.15509650  0.37911950  1.0
+  O  O8  16  0.17760150  0.18926650  0.78375150  1.0

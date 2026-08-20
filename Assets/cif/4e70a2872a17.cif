@@ -1,0 +1,42 @@
+# generated using pymatgen
+data_SrLiY2(BO3)3
+_symmetry_space_group_name_H-M   P321
+_cell_length_a   10.43279645
+_cell_length_b   10.43279645
+_cell_length_c   6.44158600
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   150
+_chemical_formula_structural   SrLiY2(BO3)3
+_chemical_formula_sum   'Sr3 Li3 Y6 B9 O27'
+_cell_volume   607.19041769
+_cell_formula_units_Z   3
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y, x-y, z'
+  3  '-x+y, -x, z'
+  4  'y, x, -z'
+  5  'x-y, -y, -z'
+  6  '-x, -x+y, -z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Sr  Sr0  3  0.00000000  0.49663700  0.00000000  1.0
+  Li  Li1  3  0.00000000  0.49712250  0.50000000  1.0
+  Y  Y2  6  0.17218400  0.81684700  0.36271150  1.0
+  B  B3  6  0.18751800  0.80864700  0.80474750  1.0
+  B  B4  2  0.33333333  0.66666667  0.33526350  1.0
+  B  B5  1  0.00000000  0.00000000  0.50000000  1.0
+  O  O6  6  0.07119300  0.36186900  0.68653750  1.0
+  O  O7  6  0.07719100  0.68709000  0.69627850  1.0
+  O  O8  6  0.18083200  0.59125800  0.33711950  1.0
+  O  O9  6  0.19490000  0.39367700  0.01562550  1.0
+  O  O10  3  0.00000000  0.86819500  0.50000000  1.0

@@ -1,0 +1,36 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'P2_1/m'
+_symmetry_Int_Tables_number   11
+_chemical_formula_structural   Ba2Ni2ClF7
+_cell_length_a   7.7477410000
+_cell_length_b   5.8485270000
+_cell_length_c   8.9404287112
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   106.7761417151
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-x,-y,-z'
+ 3  '-x,y+1/2,-z'
+ 4  'x,-y+1/2,z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Ba Ba0 2 2e 0.6698930000 0.2500000000 0.4124010000 1.0000000000
+ Ba Ba1 2 2e 0.7044510000 0.2500000000 0.9279640000 1.0000000000
+ Ni Ni2 2 2e 0.1753500000 0.2500000000 0.2663400000 1.0000000000
+ Ni Ni3 2 2e 0.8184090000 0.7500000000 0.1746800000 1.0000000000
+ Cl Cl4 2 2e 0.8829430000 0.7500000000 0.4703070000 1.0000000000
+ F F5 4 4f 0.6319540000 0.9902970000 0.1601710000 1.0000000000
+ F F6 2 2e 0.7511340000 0.7500000000 0.9354660000 1.0000000000
+ F F7 4 4f 0.9971870000 0.0007870000 0.1738040000 1.0000000000
+ F F8 4 4f 0.3613560000 0.4948990000 0.3448970000 1.0000000000

@@ -1,0 +1,45 @@
+# generated using pymatgen
+data_KBaV2CuClO7
+_symmetry_space_group_name_H-M   Cmm2
+_cell_length_a   12.61017800
+_cell_length_b   12.83001400
+_cell_length_c   5.62039700
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   35
+_chemical_formula_structural   KBaV2CuClO7
+_chemical_formula_sum   'K4 Ba4 V8 Cu4 Cl4 O28'
+_cell_volume   909.31706293
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, z'
+  3  '-x, y, z'
+  4  'x, -y, z'
+  5  'x+1/2, y+1/2, z'
+  6  '-x+1/2, -y+1/2, z'
+  7  '-x+1/2, y+1/2, z'
+  8  'x+1/2, -y+1/2, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  K  K0  4  0.17278400  0.50000000  0.16743100  1.0
+  Ba  Ba1  4  0.00000000  0.17866800  0.16168600  1.0
+  V  V2  4  0.00000000  0.36879300  0.70029400  1.0
+  V  V3  4  0.13266400  0.00000000  0.69995300  1.0
+  Cu  Cu4  4  0.25000000  0.25000000  0.77551200  1.0
+  Cl  Cl5  4  0.25000000  0.25000000  0.30753100  1.0
+  O  O6  8  0.10665150  0.30192450  0.81823600  1.0
+  O  O7  8  0.19376950  0.10886950  0.81374400  1.0
+  O  O8  4  0.00000000  0.36997300  0.39912700  1.0
+  O  O9  4  0.11899300  0.00000000  0.39822700  1.0
+  O  O10  2  0.00000000  0.00000000  0.84235200  1.0
+  O  O11  2  0.00000000  0.50000000  0.82820500  1.0

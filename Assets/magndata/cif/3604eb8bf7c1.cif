@@ -1,0 +1,36 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'Pna2_1'
+_symmetry_Int_Tables_number   33
+_chemical_formula_structural   Ho2Cu2O5
+_cell_length_a   10.8810740000
+_cell_length_b   3.5096290000
+_cell_length_c   12.5172640000
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   90.0000000000
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-x,-y,z+1/2'
+ 3  '-x+1/2,y+1/2,z+1/2'
+ 4  'x+1/2,-y+1/2,z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Ho Ho0 4 4a 0.5426720000 0.2775110000 0.1694640000 1.0000000000
+ Ho Ho1 4 4a 0.7075340000 0.2788280000 0.4970980000 1.0000000000
+ Cu Cu2 4 4a 0.7619140000 0.8437020000 0.2805650000 1.0000000000
+ Cu Cu3 4 4a 0.4884770000 0.8397330000 0.3865220000 1.0000000000
+ O O4 4 4a 0.9230630000 0.2726050000 0.0258840000 1.0000000000
+ O O5 4 4a 0.9284820000 0.7245920000 0.2353560000 1.0000000000
+ O O6 4 4a 0.6247190000 0.1552510000 0.3333420000 1.0000000000
+ O O7 4 4a 0.8220620000 0.7809920000 0.4321620000 1.0000000000
+ O O8 4 4a 0.8266900000 0.2750320000 0.6413070000 1.0000000000

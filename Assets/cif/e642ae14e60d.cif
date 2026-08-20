@@ -1,0 +1,48 @@
+# generated using pymatgen
+data_FeSn4H24C8(Se5N)2
+_symmetry_space_group_name_H-M   I-4
+_cell_length_a   10.45704800
+_cell_length_b   10.45704800
+_cell_length_c   16.33163000
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   82
+_chemical_formula_structural   FeSn4H24C8(Se5N)2
+_chemical_formula_sum   'Fe2 Sn8 H48 C16 Se20 N4'
+_cell_volume   1785.86133770
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  'y, -x, -z'
+  3  '-x, -y, z'
+  4  '-y, x, -z'
+  5  'x+1/2, y+1/2, z+1/2'
+  6  'y+1/2, -x+1/2, -z+1/2'
+  7  '-x+1/2, -y+1/2, z+1/2'
+  8  '-y+1/2, x+1/2, -z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Fe  Fe0  2  0.00000000  0.00000000  0.50000000  1.0
+  Sn  Sn1  8  0.06426250  0.68715750  0.65984250  1.0
+  H  H2  8  0.01806800  0.85786100  0.09086100  1.0
+  H  H3  8  0.05078600  0.63286400  0.15833800  1.0
+  H  H4  8  0.05603300  0.30668500  0.23621300  1.0
+  H  H5  8  0.05818600  0.86777800  0.90871700  1.0
+  H  H6  8  0.08584900  0.61548300  0.34091300  1.0
+  H  H7  8  0.09971400  0.17534600  0.01306400  1.0
+  C  C8  8  0.03303500  0.38801100  0.19680600  1.0
+  C  C9  8  0.05801500  0.10187600  0.05287200  1.0
+  Se  Se10  8  0.11835350  0.23640750  0.75500250  1.0
+  Se  Se11  8  0.12988800  0.15182700  0.42619500  1.0
+  Se  Se12  4  0.00000000  0.50000000  0.56420100  1.0
+  N  N13  2  0.00000000  0.00000000  0.00000000  1.0
+  N  N14  2  0.00000000  0.50000000  0.25000000  1.0

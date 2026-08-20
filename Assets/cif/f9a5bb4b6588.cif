@@ -1,0 +1,49 @@
+# generated using pymatgen
+data_Sr14Hg51
+_symmetry_space_group_name_H-M   P-6
+_cell_length_a   14.17250084
+_cell_length_b   14.17250084
+_cell_length_c   10.37258000
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   174
+_chemical_formula_structural   Sr14Hg51
+_chemical_formula_sum   'Sr14 Hg51'
+_cell_volume   1804.30688902
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x+y, -x, -z'
+  3  '-y, x-y, z'
+  4  'x, y, -z'
+  5  '-x+y, -x, z'
+  6  '-y, x-y, -z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Sr  Sr0  3  0.00771600  0.80611700  0.50000000  1.0
+  Sr  Sr1  3  0.05204000  0.26878600  0.00000000  1.0
+  Sr  Sr2  3  0.44835000  0.39293400  0.00000000  1.0
+  Sr  Sr3  3  0.47462200  0.13435600  0.50000000  1.0
+  Sr  Sr4  2  0.33333333  0.66666667  0.69164300  1.0
+  Hg  Hg5  6  0.06233800  0.47268000  0.22881100  1.0
+  Hg  Hg6  6  0.14150400  0.74119000  0.22390400  1.0
+  Hg  Hg7  6  0.21982500  0.17411100  0.14726500  1.0
+  Hg  Hg8  6  0.22641700  0.00262000  0.33619200  1.0
+  Hg  Hg9  6  0.43860800  0.32804000  0.33587600  1.0
+  Hg  Hg10  6  0.44755400  0.16117500  0.14665200  1.0
+  Hg  Hg11  3  0.09804200  0.61042300  0.50000000  1.0
+  Hg  Hg12  3  0.15666100  0.43352000  0.50000000  1.0
+  Hg  Hg13  3  0.22161700  0.53810800  0.00000000  1.0
+  Hg  Hg14  2  0.00000000  0.00000000  0.31197900  1.0
+  Hg  Hg15  2  0.66666667  0.33333333  0.69232600  1.0
+  Hg  Hg16  1  0.00000000  0.00000000  0.00000000  1.0
+  Hg  Hg17  1  0.66666667  0.33333333  0.00000000  1.0

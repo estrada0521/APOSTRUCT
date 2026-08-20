@@ -1,0 +1,50 @@
+# generated using pymatgen
+data_Ba10MgAs6(ClO12)2
+_symmetry_space_group_name_H-M   P-1
+_cell_length_a   7.75631726
+_cell_length_b   10.82833743
+_cell_length_c   10.93470702
+_cell_angle_alpha   61.56491220
+_cell_angle_beta   88.87157133
+_cell_angle_gamma   87.38241250
+_symmetry_Int_Tables_number   2
+_chemical_formula_structural   Ba10MgAs6(ClO12)2
+_chemical_formula_sum   'Ba10 Mg1 As6 Cl2 O24'
+_cell_volume   806.74303231
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ba  Ba0  2  0.00721122  0.33087203  0.32622737  1.0
+  Ba  Ba1  2  0.23778818  0.75183053  0.99356191  1.0
+  Ba  Ba2  2  0.25459904  0.00571383  0.25354624  1.0
+  Ba  Ba3  2  0.26203592  0.24553307  0.74913979  1.0
+  Ba  Ba4  2  0.49941155  0.63429189  0.67742976  1.0
+  Mg  Mg5  1  0.50000000  0.00000000  0.50000000  1.0
+  As  As6  2  0.20249706  0.98733489  0.61115584  1.0
+  As  As7  2  0.23325657  0.63149126  0.40617702  1.0
+  As  As8  2  0.25888555  0.40496128  0.96457948  1.0
+  Cl  Cl9  1  0.00000000  0.00000000  0.00000000  1.0
+  Cl  Cl10  1  0.50000000  0.00000000  0.00000000  1.0
+  O  O11  2  0.05499467  0.74615159  0.36759899  1.0
+  O  O12  2  0.05655749  0.87709234  0.74739763  1.0
+  O  O13  2  0.08353704  0.34855352  0.91299122  1.0
+  O  O14  2  0.22742075  0.53124526  0.32238582  1.0
+  O  O15  2  0.24138856  0.52643361  0.58545099  1.0
+  O  O16  2  0.24939518  0.58745222  0.87601462  1.0
+  O  O17  2  0.26981559  0.34141364  0.14077559  1.0
+  O  O18  2  0.27569632  0.87049578  0.54350846  1.0
+  O  O19  2  0.29455689  0.14470465  0.43803295  1.0
+  O  O20  2  0.39619467  0.97153055  0.70473143  1.0
+  O  O21  2  0.41493909  0.73087155  0.35883773  1.0
+  O  O22  2  0.43958685  0.35453718  0.90081979  1.0

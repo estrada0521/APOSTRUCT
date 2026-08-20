@@ -1,0 +1,40 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'P2_1/c'
+_symmetry_Int_Tables_number   14
+_chemical_formula_structural   BaNaFe2F9
+_cell_length_a   5.5828220000
+_cell_length_b   17.7670350000
+_cell_length_c   9.1251820157
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   125.3899780769
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-x,-y,-z'
+ 3  '-x,y+1/2,-z+1/2'
+ 4  'x,-y+1/2,z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Ba Ba0 4 4e 0.6528820000 0.7137900000 0.9360600000 1.0000000000
+ Na Na1 4 4e 0.4662160000 0.9628110000 0.7029910000 1.0000000000
+ Fe Fe2 4 4e 0.9869690000 0.5813250000 0.7298760000 1.0000000000
+ Fe Fe3 4 4e 0.8119940000 0.1232940000 0.0897270000 1.0000000000
+ F F4 4 4e 0.1745020000 0.9316710000 0.0958460000 1.0000000000
+ F F5 4 4e 0.3900110000 0.7931290000 0.0687900000 1.0000000000
+ F F6 4 4e 0.0041550000 0.5311200000 0.2601570000 1.0000000000
+ F F7 4 4e 0.8055290000 0.6657630000 0.3025650000 1.0000000000
+ F F8 4 4e 0.8134930000 0.5808700000 0.8584650000 1.0000000000
+ F F9 4 4e 0.4152400000 0.0763500000 0.0026110000 1.0000000000
+ F F10 4 4e 0.0076100000 0.6880630000 0.7144680000 1.0000000000
+ F F11 4 4e 0.6186210000 0.0828790000 0.5548810000 1.0000000000
+ F F12 4 4e 0.2098280000 0.8354840000 0.7235360000 1.0000000000

@@ -1,0 +1,57 @@
+# generated using pymatgen
+data_Si4H2O9
+_symmetry_space_group_name_H-M   Fdd2
+_cell_length_a   10.59253000
+_cell_length_b   29.96358200
+_cell_length_c   10.65686800
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   43
+_chemical_formula_structural   Si4H2O9
+_chemical_formula_sum   'Si64 H32 O144'
+_cell_volume   3382.38483972
+_cell_formula_units_Z   16
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, z'
+  3  '-x+1/4, y+3/4, z+3/4'
+  4  'x+1/4, -y+3/4, z+3/4'
+  5  'x+1/2, y+1/2, z'
+  6  '-x+1/2, -y+1/2, z'
+  7  '-x+3/4, y+1/4, z+3/4'
+  8  'x+3/4, -y+1/4, z+3/4'
+  9  'x+1/2, y, z+1/2'
+  10  '-x+1/2, -y, z+1/2'
+  11  '-x+3/4, y+3/4, z+1/4'
+  12  'x+3/4, -y+3/4, z+1/4'
+  13  'x, y+1/2, z+1/2'
+  14  '-x, -y+1/2, z+1/2'
+  15  '-x+1/4, y+1/4, z+1/4'
+  16  'x+1/4, -y+1/4, z+1/4'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Si  Si0  16  0.04349950  0.25219550  0.49971700  1.0
+  Si  Si1  16  0.09556550  0.07911300  0.63532850  1.0
+  Si  Si2  16  0.10224650  0.42305700  0.35044850  1.0
+  Si  Si3  8  0.00000000  0.00000000  0.03306400  1.0
+  Si  Si4  8  0.00000000  0.00000000  0.45737600  1.0
+  H  H5  16  0.01671500  0.13249300  0.23528300  1.0
+  H  H6  16  0.10275700  0.29556950  0.07490750  1.0
+  O  O7  16  0.00370450  0.40639500  0.24301350  1.0
+  O  O8  16  0.01373400  0.45657150  0.44225350  1.0
+  O  O9  16  0.02935200  0.04246500  0.54438400  1.0
+  O  O10  16  0.04165700  0.20518300  0.02943500  1.0
+  O  O11  16  0.06217650  0.29177150  0.99145500  1.0
+  O  O12  16  0.07075900  0.36612950  0.82927750  1.0
+  O  O13  16  0.08994000  0.13079950  0.16613050  1.0
+  O  O14  16  0.12008100  0.48846600  0.86769800  1.0
+  O  O15  16  0.12232850  0.25433350  0.36989400  1.0

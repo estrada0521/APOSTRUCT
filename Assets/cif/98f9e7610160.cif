@@ -1,0 +1,53 @@
+# generated using pymatgen
+data_Mg3BeAl8O16
+_symmetry_space_group_name_H-M   P6_3mc
+_cell_length_a   5.74035975
+_cell_length_b   5.74035975
+_cell_length_c   18.50777400
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   186
+_chemical_formula_structural   Mg3BeAl8O16
+_chemical_formula_sum   'Mg6 Be2 Al16 O32'
+_cell_volume   528.15699976
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  'x-y, x, z+1/2'
+  3  '-y, x-y, z'
+  4  '-x, -y, z+1/2'
+  5  '-x+y, -x, z'
+  6  'y, -x+y, z+1/2'
+  7  'y, x, z+1/2'
+  8  'x, x-y, z'
+  9  'x-y, -y, z+1/2'
+  10  '-y, -x, z'
+  11  '-x, -x+y, z+1/2'
+  12  '-x+y, y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Mg  Mg0  2  0.00000000  0.00000000  0.00008700  1.0
+  Mg  Mg1  2  0.00000000  0.00000000  0.20060000  1.0
+  Mg  Mg2  2  0.33333333  0.66666667  0.76657100  1.0
+  Be  Be3  2  0.33333333  0.66666667  0.50371700  1.0
+  Al  Al4  6  0.00340900  0.50170450  0.60638200  1.0
+  Al  Al5  6  0.16705700  0.83294300  0.36077200  1.0
+  Al  Al6  2  0.33333333  0.66666667  0.23279700  1.0
+  Al  Al7  2  0.33333333  0.66666667  0.95024200  1.0
+  O  O8  6  0.03903300  0.51951650  0.30017500  1.0
+  O  O9  6  0.16193000  0.32386000  0.91724300  1.0
+  O  O10  6  0.18550700  0.37101400  0.54740800  1.0
+  O  O11  6  0.18575400  0.81424600  0.16541400  1.0
+  O  O12  2  0.00000000  0.00000000  0.30875700  1.0
+  O  O13  2  0.33333333  0.66666667  0.04793800  1.0
+  O  O14  2  0.33333333  0.66666667  0.41655600  1.0
+  O  O15  2  0.33333333  0.66666667  0.66145300  1.0

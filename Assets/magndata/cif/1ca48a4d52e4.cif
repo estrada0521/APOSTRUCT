@@ -1,0 +1,37 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'C2/c'
+_symmetry_Int_Tables_number   15
+_chemical_formula_structural   CaCo(GeO3)2
+_cell_length_a   10.2951182136
+_cell_length_b   9.0590539072
+_cell_length_c   5.5071047379
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   105.2962867239
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-x,-y,-z'
+ 3  '-x,y,-z+1/2'
+ 4  'x,-y,z+1/2'
+ 5  'x+1/2,y+1/2,z'
+ 6  '-x+1/2,-y+1/2,-z'
+ 7  '-x+1/2,y+1/2,-z+1/2'
+ 8  'x+1/2,-y+1/2,z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Ca Ca0 4 4e 0.0000000000 0.3033810000 0.7500000000 1.0000000000
+ Co Co1 4 4e 0.0000000000 0.0905300000 0.2500000000 1.0000000000
+ Ge Ge2 8 8f 0.7841640000 0.5990080000 0.7263530000 1.0000000000
+ O O3 8 8f 0.6080410000 0.5928370000 0.6344680000 1.0000000000
+ O O4 8 8f 0.8642110000 0.7625390000 0.8453550000 1.0000000000
+ O O5 8 8f 0.8589275000 0.5307135000 0.4842110000 1.0000000000

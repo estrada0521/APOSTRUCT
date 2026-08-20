@@ -1,0 +1,41 @@
+data_structure
+_cell_length_a 7.23931577
+_cell_length_b 7.23931577
+_cell_length_c 4.12058789
+_cell_angle_alpha 90
+_cell_angle_beta 90
+_cell_angle_gamma 90
+_space_group_IT_number 127
+_space_group_name_H-M_alt 'P4/mbm'
+loop_
+_space_group_symop_id
+_space_group_symop_operation_xyz
+1 'x,y,z'
+2 '-x,-y,-z'
+3 '-y,x,z'
+4 'y,-x,-z'
+5 '-x,-y,z'
+6 'x,y,-z'
+7 'y,-x,z'
+8 '-y,x,-z'
+9 'x+1/2,-y+1/2,-z'
+10 '-x+1/2,y+1/2,z'
+11 '-y+1/2,-x+1/2,-z'
+12 'y+1/2,x+1/2,z'
+13 '-x+1/2,y+1/2,-z'
+14 'x+1/2,-y+1/2,z'
+15 'y+1/2,x+1/2,-z'
+16 '-y+1/2,-x+1/2,z'
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_symmetry_multiplicity
+_atom_site_Wyckoff_label
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_occupancy
+Nd1 Nd 4 g 0.68303436 0.18303436 0 1
+B1 B 4 h 0.58820875 0.91179125 0.5 1
+B2 B 8 j 0.17372881 0.03869389 0.5 1
+B3 B 4 e 0 0 0.2049934 1

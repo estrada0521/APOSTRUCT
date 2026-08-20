@@ -1,0 +1,51 @@
+# generated using pymatgen
+data_Ce9(Ni13P6)2
+_symmetry_space_group_name_H-M   P-6m2
+_cell_length_a   14.36983598
+_cell_length_b   14.36983598
+_cell_length_c   3.84758800
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   187
+_chemical_formula_structural   Ce9(Ni13P6)2
+_chemical_formula_sum   'Ce9 Ni26 P12'
+_cell_volume   688.05446156
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x+y, -x, -z'
+  3  '-y, x-y, z'
+  4  'x, y, -z'
+  5  '-x+y, -x, z'
+  6  '-y, x-y, -z'
+  7  '-y, -x, -z'
+  8  'x, x-y, z'
+  9  '-x+y, y, -z'
+  10  '-y, -x, z'
+  11  'x, x-y, -z'
+  12  '-x+y, y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ce  Ce0  3  0.09242967  0.18485933  0.00000000  1.0
+  Ce  Ce1  3  0.15012667  0.57506333  0.50000000  1.0
+  Ce  Ce2  3  0.38230667  0.19115333  0.00000000  1.0
+  Ni  Ni3  6  0.05145567  0.37952833  0.00000000  1.0
+  Ni  Ni4  6  0.45390367  0.07661933  0.50000000  1.0
+  Ni  Ni5  3  0.18942067  0.37884133  0.50000000  1.0
+  Ni  Ni6  3  0.19276967  0.09638483  0.50000000  1.0
+  Ni  Ni7  3  0.55332067  0.27666033  0.50000000  1.0
+  Ni  Ni8  3  0.60232867  0.20465733  0.00000000  1.0
+  Ni  Ni9  1  0.00000000  0.00000000  0.50000000  1.0
+  Ni  Ni10  1  0.33333333  0.66666667  0.00000000  1.0
+  P  P11  6  0.00255167  0.27717733  0.50000000  1.0
+  P  P12  3  0.24061467  0.48122933  0.00000000  1.0
+  P  P13  3  0.51497167  0.02994333  0.00000000  1.0

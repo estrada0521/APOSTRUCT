@@ -1,0 +1,45 @@
+# generated using pymatgen
+data_Si2Os3C12(ClO2)6
+_symmetry_space_group_name_H-M   P-1
+_cell_length_a   8.41677900
+_cell_length_b   8.54191587
+_cell_length_c   11.60459414
+_cell_angle_alpha   80.53909881
+_cell_angle_beta   69.85543736
+_cell_angle_gamma   66.49354135
+_symmetry_Int_Tables_number   2
+_chemical_formula_structural   Si2Os3C12(ClO2)6
+_chemical_formula_sum   'Si2 Os3 C12 Cl6 O12'
+_cell_volume   717.92518404
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Si  Si0  2  0.22491900  0.36310700  0.13722900  1.0
+  Os  Os1  2  0.35763000  0.19698600  0.29640200  1.0
+  Os  Os2  1  0.50000000  0.00000000  0.50000000  1.0
+  C  C3  2  0.11827900  0.28579900  0.41781800  1.0
+  C  C4  2  0.28384400  0.94057500  0.56583900  1.0
+  C  C5  2  0.30095400  0.00353100  0.27671800  1.0
+  C  C6  2  0.37554700  0.20539800  0.59705600  1.0
+  C  C7  2  0.39730200  0.89858300  0.82190800  1.0
+  C  C8  2  0.41907200  0.38302900  0.32516300  1.0
+  Cl  Cl9  2  0.00097800  0.68077100  0.86142500  1.0
+  Cl  Cl10  2  0.13402400  0.62523100  0.15353700  1.0
+  Cl  Cl11  2  0.39882600  0.31774600  0.95820300  1.0
+  O  O12  2  0.02538600  0.66281900  0.51103900  1.0
+  O  O13  2  0.15510700  0.90518600  0.60277200  1.0
+  O  O14  2  0.25395300  0.95277000  0.89208900  1.0
+  O  O15  2  0.26297800  0.89141200  0.26704800  1.0
+  O  O16  2  0.30221600  0.32822000  0.65336400  1.0
+  O  O17  2  0.45372000  0.49296900  0.34324600  1.0

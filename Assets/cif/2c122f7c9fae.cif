@@ -1,0 +1,47 @@
+# generated using pymatgen
+data_Ag3SBr
+_symmetry_space_group_name_H-M   Fmm2
+_cell_length_a   9.60245600
+_cell_length_b   9.81120000
+_cell_length_c   9.92773600
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   42
+_chemical_formula_structural   Ag3SBr
+_chemical_formula_sum   'Ag24 S8 Br8'
+_cell_volume   935.30805483
+_cell_formula_units_Z   8
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, z'
+  3  '-x, y, z'
+  4  'x, -y, z'
+  5  'x+1/2, y, z+1/2'
+  6  '-x+1/2, -y, z+1/2'
+  7  '-x+1/2, y, z+1/2'
+  8  'x+1/2, -y, z+1/2'
+  9  'x+1/2, y+1/2, z'
+  10  '-x+1/2, -y+1/2, z'
+  11  '-x+1/2, y+1/2, z'
+  12  'x+1/2, -y+1/2, z'
+  13  'x, y+1/2, z+1/2'
+  14  '-x, -y+1/2, z+1/2'
+  15  '-x, y+1/2, z+1/2'
+  16  'x, -y+1/2, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ag  Ag0  8  0.00000000  0.18772900  0.24839900  1.0
+  Ag  Ag1  8  0.25000000  0.25000000  0.06414700  1.0
+  Ag  Ag2  4  0.00000000  0.00000000  0.55467000  1.0
+  Ag  Ag3  4  0.00000000  0.00000000  0.93620900  1.0
+  S  S4  8  0.00000000  0.24983650  0.49568250  1.0
+  Br  Br5  8  0.24998000  0.00000000  0.75383100  1.0

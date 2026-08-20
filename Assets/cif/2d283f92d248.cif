@@ -1,0 +1,69 @@
+# generated using pymatgen
+data_Ti5(B6O13)2
+_symmetry_space_group_name_H-M   I4_1/acd
+_cell_length_a   11.29920000
+_cell_length_b   11.29920000
+_cell_length_c   22.23972600
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   142
+_chemical_formula_structural   Ti5(B6O13)2
+_chemical_formula_sum   'Ti40 B96 O208'
+_cell_volume   2839.38853293
+_cell_formula_units_Z   8
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y, x+1/2, z+1/4'
+  3  '-x+1/2, -y+1/2, z+1/2'
+  4  'y+1/2, -x, z+3/4'
+  5  'x+1/2, -y, -z+1/4'
+  6  '-y+1/2, -x+1/2, -z'
+  7  '-x, y+1/2, -z+3/4'
+  8  'y, x, -z+1/2'
+  9  '-x, -y+1/2, -z+1/4'
+  10  'y, -x, -z'
+  11  'x+1/2, y, -z+3/4'
+  12  '-y+1/2, x+1/2, -z+1/2'
+  13  '-x+1/2, y+1/2, z'
+  14  'y+1/2, x, z+1/4'
+  15  'x, -y, z+1/2'
+  16  '-y, -x+1/2, z+3/4'
+  17  'x+1/2, y+1/2, z+1/2'
+  18  '-y+1/2, x, z+3/4'
+  19  '-x, -y, z'
+  20  'y, -x+1/2, z+1/4'
+  21  'x, -y+1/2, -z+3/4'
+  22  '-y, -x, -z+1/2'
+  23  '-x+1/2, y, -z+1/4'
+  24  'y+1/2, x+1/2, -z'
+  25  '-x+1/2, -y, -z+3/4'
+  26  'y+1/2, -x+1/2, -z+1/2'
+  27  'x, y+1/2, -z+1/4'
+  28  '-y, x, -z'
+  29  '-x, y, z+1/2'
+  30  'y, x+1/2, z+3/4'
+  31  'x+1/2, -y+1/2, z'
+  32  '-y+1/2, -x, z+1/4'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ti  Ti0  32  0.15837950  0.17958450  0.08262150  1.0
+  Ti  Ti1  8  0.00000000  0.00000000  0.25000000  1.0
+  B  B2  32  0.06570700  0.24561300  0.95757200  1.0
+  B  B3  32  0.07245950  0.08780450  0.87621650  1.0
+  B  B4  32  0.09335650  0.23339250  0.54230150  1.0
+  O  O5  32  0.00059300  0.16393700  0.41679300  1.0
+  O  O6  32  0.01501150  0.30362150  0.50111150  1.0
+  O  O7  32  0.02323250  0.15940450  0.58506050  1.0
+  O  O8  32  0.13167100  0.16288600  0.82945900  1.0
+  O  O9  32  0.15213950  0.17293850  0.99158150  1.0
+  O  O10  32  0.16732850  0.19006150  0.17038650  1.0
+  O  O11  16  0.00000000  0.00000000  0.15584700  1.0

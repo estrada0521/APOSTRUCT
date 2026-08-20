@@ -1,0 +1,36 @@
+# generated using pymatgen
+data_MgScMo3O8
+_symmetry_space_group_name_H-M   P-1
+_cell_length_a   5.17368756
+_cell_length_b   6.14097142
+_cell_length_c   6.19890101
+_cell_angle_alpha   60.78990261
+_cell_angle_beta   89.90109010
+_cell_angle_gamma   89.15264553
+_symmetry_Int_Tables_number   2
+_chemical_formula_structural   MgScMo3O8
+_chemical_formula_sum   'Mg1 Sc1 Mo3 O8'
+_cell_volume   171.88127969
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Mg  Mg0  1  0.50000000  0.50000000  0.50000000  1.0
+  Sc  Sc1  1  0.00000000  0.50000000  0.50000000  1.0
+  Mo  Mo2  1  0.50000000  0.00000000  0.00000000  1.0
+  Mo  Mo3  1  0.50000000  0.00000000  0.50000000  1.0
+  Mo  Mo4  1  0.50000000  0.50000000  0.00000000  1.0
+  O  O5  2  0.27581700  0.34323200  0.34631300  1.0
+  O  O6  2  0.27979900  0.82008400  0.34794900  1.0
+  O  O7  2  0.28004200  0.33537600  0.81317700  1.0
+  O  O8  2  0.30618800  0.84974900  0.82326300  1.0

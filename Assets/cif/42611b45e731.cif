@@ -1,0 +1,44 @@
+# generated using pymatgen
+data_Sm2F
+_symmetry_space_group_name_H-M   Cm
+_cell_length_a   27.50370600
+_cell_length_b   3.88768200
+_cell_length_c   7.63436737
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   98.00227681
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   8
+_chemical_formula_structural   Sm2F
+_chemical_formula_sum   'Sm20 F10'
+_cell_volume   808.36100430
+_cell_formula_units_Z   10
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  'x, -y, z'
+  3  'x+1/2, y+1/2, z'
+  4  'x+1/2, -y+1/2, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Sm  Sm0  2  0.00010900  0.00000000  0.49986700  1.0
+  Sm  Sm1  2  0.09894300  0.50000000  0.29436400  1.0
+  Sm  Sm2  2  0.10054700  0.50000000  0.80804000  1.0
+  Sm  Sm3  2  0.19858000  0.00000000  0.09914100  1.0
+  Sm  Sm4  2  0.20237300  0.00000000  0.60061400  1.0
+  Sm  Sm5  2  0.29974300  0.50000000  0.40004600  1.0
+  Sm  Sm6  2  0.30029500  0.50000000  0.90038800  1.0
+  Sm  Sm7  2  0.39811700  0.00000000  0.20087200  1.0
+  Sm  Sm8  2  0.40182800  0.00000000  0.69866200  1.0
+  Sm  Sm9  2  0.49966700  0.50000000  0.00120100  1.0
+  F  F10  2  0.05137600  0.00000000  0.77466200  1.0
+  F  F11  2  0.15019700  0.50000000  0.57356100  1.0
+  F  F12  2  0.24840800  0.50000000  0.12342700  1.0
+  F  F13  2  0.35103100  0.50000000  0.67599800  1.0
+  F  F14  2  0.44878700  0.50000000  0.22415700  1.0

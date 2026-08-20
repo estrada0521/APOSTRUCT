@@ -1,0 +1,44 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'P2_13'
+_symmetry_Int_Tables_number   198
+_chemical_formula_structural   Cs2Fe2(MoO4)3
+_cell_length_a   11.0934960000
+_cell_length_b   11.0934960000
+_cell_length_c   11.0934960000
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   90.0000000000
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-x+1/2,-y,z+1/2'
+ 3  'x+1/2,-y+1/2,-z'
+ 4  '-x,y+1/2,-z+1/2'
+ 5  'z,x,y'
+ 6  'z+1/2,-x+1/2,-y'
+ 7  '-z,x+1/2,-y+1/2'
+ 8  '-z+1/2,-x,y+1/2'
+ 9  'y,z,x'
+ 10  '-y,z+1/2,-x+1/2'
+ 11  '-y+1/2,-z,x+1/2'
+ 12  'y+1/2,-z+1/2,-x'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Cs Cs0 4 4a 0.8206110000 0.8206110000 0.8206110000 1.0000000000
+ Cs Cs1 4 4a 0.9572560000 0.5427440000 0.4572560000 1.0000000000
+ Fe Fe2 4 4a 0.1628820000 0.6628820000 0.8371180000 1.0000000000
+ Fe Fe3 4 4a 0.8877890000 0.3877890000 0.1122110000 1.0000000000
+ Mo Mo4 12 12b 0.9735040000 0.6997230000 0.1229580000 1.0000000000
+ O O5 12 12b 0.0539500000 0.7233920000 0.9833270000 1.0000000000
+ O O6 12 12b 0.9822160000 0.5450460000 0.1717230000 1.0000000000
+ O O7 12 12b 0.8203120000 0.7494160000 0.1037300000 1.0000000000
+ O O8 12 12b 0.0481770000 0.7890180000 0.2357880000 1.0000000000

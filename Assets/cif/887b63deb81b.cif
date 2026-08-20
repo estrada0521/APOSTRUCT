@@ -1,0 +1,52 @@
+# generated using pymatgen
+data_Ba2Sr2CaTi5O15
+_symmetry_space_group_name_H-M   Pm
+_cell_length_a   8.87995500
+_cell_length_b   3.97088600
+_cell_length_c   8.88774370
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.02265982
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   6
+_chemical_formula_structural   Ba2Sr2CaTi5O15
+_chemical_formula_sum   'Ba2 Sr2 Ca1 Ti5 O15'
+_cell_volume   313.39327439
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  'x, -y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ba  Ba0  1  0.09872300  0.50000000  0.70009600  1.0
+  Ba  Ba1  1  0.30080100  0.50000000  0.10024100  1.0
+  Sr  Sr2  1  0.50079700  0.50000000  0.49938300  1.0
+  Sr  Sr3  1  0.70020200  0.50000000  0.90022500  1.0
+  Ca  Ca4  1  0.89964900  0.50000000  0.29987100  1.0
+  Ti  Ti5  1  0.19817100  0.00000000  0.39932200  1.0
+  Ti  Ti6  1  0.40465300  0.00000000  0.79808300  1.0
+  Ti  Ti7  1  0.60495800  0.00000000  0.20229000  1.0
+  Ti  Ti8  1  0.79761500  0.00000000  0.59665800  1.0
+  Ti  Ti9  1  0.99461900  0.00000000  0.00368500  1.0
+  O  O10  1  0.09202500  0.00000000  0.20412300  1.0
+  O  O11  1  0.19684000  0.50000000  0.39895400  1.0
+  O  O12  1  0.19991400  0.00000000  0.90068500  1.0
+  O  O13  1  0.30439100  0.00000000  0.59716100  1.0
+  O  O14  1  0.40306300  0.00000000  0.30402500  1.0
+  O  O15  1  0.40758200  0.50000000  0.79622800  1.0
+  O  O16  1  0.50771500  0.00000000  0.99735000  1.0
+  O  O17  1  0.60034200  0.00000000  0.69731100  1.0
+  O  O18  1  0.60910400  0.50000000  0.20315100  1.0
+  O  O19  1  0.70263400  0.00000000  0.39865100  1.0
+  O  O20  1  0.79533800  0.50000000  0.59480800  1.0
+  O  O21  1  0.80104800  0.00000000  0.10438900  1.0
+  O  O22  1  0.89298300  0.00000000  0.80287900  1.0
+  O  O23  1  0.99130500  0.50000000  0.00708000  1.0
+  O  O24  1  0.99552700  0.00000000  0.49335300  1.0

@@ -1,0 +1,58 @@
+# generated using pymatgen
+data_Lu5Ni19B6
+_symmetry_space_group_name_H-M   P6/mmm
+_cell_length_a   4.91599793
+_cell_length_b   4.91599793
+_cell_length_c   16.97113600
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   191
+_chemical_formula_structural   Lu5Ni19B6
+_chemical_formula_sum   'Lu5 Ni19 B6'
+_cell_volume   355.19343387
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  'x-y, x, z'
+  4  '-x+y, -x, -z'
+  5  '-y, x-y, z'
+  6  'y, -x+y, -z'
+  7  '-x, -y, z'
+  8  'x, y, -z'
+  9  '-x+y, -x, z'
+  10  'x-y, x, -z'
+  11  'y, -x+y, z'
+  12  '-y, x-y, -z'
+  13  '-y, -x, -z'
+  14  'y, x, z'
+  15  '-x, -x+y, -z'
+  16  'x, x-y, z'
+  17  '-x+y, y, -z'
+  18  'x-y, -y, z'
+  19  'y, x, -z'
+  20  '-y, -x, z'
+  21  'x, x-y, -z'
+  22  '-x, -x+y, z'
+  23  'x-y, -y, -z'
+  24  '-x+y, y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Lu  Lu0  2  0.00000000  0.00000000  0.09627800  1.0
+  Lu  Lu1  2  0.00000000  0.00000000  0.29802900  1.0
+  Lu  Lu2  1  0.00000000  0.00000000  0.50000000  1.0
+  Ni  Ni3  6  0.00000000  0.50000000  0.17676000  1.0
+  Ni  Ni4  6  0.00000000  0.50000000  0.41470700  1.0
+  Ni  Ni5  4  0.33333333  0.66666667  0.29541500  1.0
+  Ni  Ni6  3  0.00000000  0.50000000  0.00000000  1.0
+  B  B7  4  0.33333333  0.66666667  0.90933100  1.0
+  B  B8  2  0.33333333  0.66666667  0.50000000  1.0

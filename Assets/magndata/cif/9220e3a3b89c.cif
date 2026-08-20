@@ -1,0 +1,35 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'C2/m'
+_symmetry_Int_Tables_number   12
+_chemical_formula_structural   TlFeS2
+_cell_length_a   11.9687300000
+_cell_length_b   5.0984540000
+_cell_length_c   6.8442366829
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   117.9133815565
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-x,-y,-z'
+ 3  '-x,y,-z'
+ 4  'x,-y,z'
+ 5  'x+1/2,y+1/2,z'
+ 6  '-x+1/2,-y+1/2,-z'
+ 7  '-x+1/2,y+1/2,-z'
+ 8  'x+1/2,-y+1/2,z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Tl Tl0 4 4i 0.6826360000 0.0000000000 0.6407950000 1.0000000000
+ Fe Fe1 4 4g 0.0000000000 0.2505570000 0.0000000000 1.0000000000
+ S S2 4 4i 0.8433840000 0.5000000000 0.9335240000 1.0000000000
+ S S3 4 4i 0.5403220000 0.5000000000 0.2747930000 1.0000000000

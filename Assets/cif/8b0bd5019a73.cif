@@ -1,0 +1,40 @@
+# generated using pymatgen
+data_AgCN3O2
+_symmetry_space_group_name_H-M   Pbcm
+_cell_length_a   5.57427200
+_cell_length_b   12.58828400
+_cell_length_c   5.78825800
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   57
+_chemical_formula_structural   AgCN3O2
+_chemical_formula_sum   'Ag4 C4 N12 O8'
+_cell_volume   406.16506814
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x, -y, z+1/2'
+  4  'x, y, -z+1/2'
+  5  'x, -y+1/2, -z'
+  6  '-x, y+1/2, z'
+  7  '-x, y+1/2, -z+1/2'
+  8  'x, -y+1/2, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ag  Ag0  4  0.44887300  0.69712400  0.25000000  1.0
+  C  C1  4  0.33241400  0.54344800  0.75000000  1.0
+  N  N2  4  0.05508300  0.08722000  0.25000000  1.0
+  N  N3  4  0.29530200  0.05950600  0.25000000  1.0
+  N  N4  4  0.38684300  0.63344800  0.75000000  1.0
+  O  O5  4  0.01240600  0.18440300  0.25000000  1.0
+  O  O6  4  0.10120400  0.51655500  0.25000000  1.0

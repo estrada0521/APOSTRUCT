@@ -1,0 +1,43 @@
+# generated using pymatgen
+data_CaZrAl9BO18
+_symmetry_space_group_name_H-M   P6_3
+_cell_length_a   8.80233575
+_cell_length_b   8.80233575
+_cell_length_c   8.55223000
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   173
+_chemical_formula_structural   CaZrAl9BO18
+_chemical_formula_sum   'Ca2 Zr2 Al18 B2 O36'
+_cell_volume   573.85988006
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  'x-y, x, z+1/2'
+  3  '-y, x-y, z'
+  4  '-x, -y, z+1/2'
+  5  '-x+y, -x, z'
+  6  'y, -x+y, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ca  Ca0  2  0.00000000  0.00000000  0.49357000  1.0
+  Zr  Zr1  2  0.33333333  0.66666667  0.74956400  1.0
+  Al  Al2  6  0.00432000  0.66760100  0.74956600  1.0
+  Al  Al3  6  0.01731200  0.65674400  0.42165600  1.0
+  Al  Al4  6  0.01789800  0.65694300  0.07795200  1.0
+  B  B5  2  0.33333333  0.66666667  0.24952100  1.0
+  O  O6  6  0.10675000  0.29901600  0.41720800  1.0
+  O  O7  6  0.10720600  0.30008300  0.08171300  1.0
+  O  O8  6  0.10975700  0.32832400  0.74963500  1.0
+  O  O9  6  0.11752100  0.59467500  0.90713100  1.0
+  O  O10  6  0.11771200  0.59474800  0.59195900  1.0
+  O  O11  6  0.15370800  0.60102800  0.24949700  1.0

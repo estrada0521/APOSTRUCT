@@ -1,0 +1,47 @@
+# generated using pymatgen
+data_TaO2
+_symmetry_space_group_name_H-M   I4_1/a
+_cell_length_a   13.82264800
+_cell_length_b   13.82264800
+_cell_length_c   6.02363000
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   88
+_chemical_formula_structural   TaO2
+_chemical_formula_sum   'Ta32 O64'
+_cell_volume   1150.90846647
+_cell_formula_units_Z   32
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y, x+1/2, z+1/4'
+  3  '-x+1/2, -y+1/2, z+1/2'
+  4  'y+1/2, -x, z+3/4'
+  5  '-x, -y+1/2, -z+1/4'
+  6  'y, -x, -z'
+  7  'x+1/2, y, -z+3/4'
+  8  '-y+1/2, x+1/2, -z+1/2'
+  9  'x+1/2, y+1/2, z+1/2'
+  10  '-y+1/2, x, z+3/4'
+  11  '-x, -y, z'
+  12  'y, -x+1/2, z+1/4'
+  13  '-x+1/2, -y, -z+3/4'
+  14  'y+1/2, -x+1/2, -z+1/2'
+  15  'x, y+1/2, -z+1/4'
+  16  '-y, x, -z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ta  Ta0  16  0.11461350  0.12654750  0.15012750  1.0
+  Ta  Ta1  16  0.12481650  0.36763350  0.84896450  1.0
+  O  O2  16  0.01276400  0.37662900  0.60956100  1.0
+  O  O3  16  0.02728550  0.37361050  0.13084450  1.0
+  O  O4  16  0.12476000  0.22570000  0.87577800  1.0
+  O  O5  16  0.12554800  0.23770300  0.36868600  1.0

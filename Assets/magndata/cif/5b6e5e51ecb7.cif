@@ -1,0 +1,45 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'Pnna'
+_symmetry_Int_Tables_number   52
+_chemical_formula_structural   MnH9C4(NO2)3
+_cell_length_a   8.3965555303
+_cell_length_b   11.8345439711
+_cell_length_c   9.0705175396
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   90.0000000000
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-x,-y,-z'
+ 3  '-x+1/2,-y,z'
+ 4  'x+1/2,y,-z'
+ 5  'x,-y+1/2,-z+1/2'
+ 6  '-x,y+1/2,z+1/2'
+ 7  '-x+1/2,y+1/2,-z+1/2'
+ 8  'x+1/2,-y+1/2,z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Mn Mn0 4 4d 0.2598703174 0.2500000000 0.2500000000 1.0000000000
+ H H1 4 4c 0.2500000000 0.5000000000 0.1924764754 1.0000000000
+ H H2 8 8e 0.6096710089 0.2720729889 0.4238042824 1.0000000000
+ H H3 8 8e 0.3264973824 0.4186798203 0.5791355358 1.0000000000
+ H H4 8 8e 0.4173811396 0.3767367373 0.7478909731 1.0000000000
+ H H5 8 8e 0.1894295814 0.5609918517 0.9667997240 1.0000000000
+ C C6 4 4c 0.2500000000 0.5000000000 0.3135545395 1.0000000000
+ C C7 8 8e 0.5296267858 0.2136332844 0.4830963253 1.0000000000
+ C C8 4 4c 0.2500000000 0.5000000000 0.7638275624 1.0000000000
+ N N9 8 8e 0.3389143327 0.4253766012 0.6905037726 1.0000000000
+ N N10 4 4c 0.2500000000 0.5000000000 0.9104729396 1.0000000000
+ O O11 8 8e 0.2653782357 0.4060165818 0.3780388429 1.0000000000
+ O O12 8 8e 0.4105670264 0.1746776688 0.4147339048 1.0000000000
+ O O13 8 8e 0.5621631059 0.1903433082 0.6154443576 1.0000000000

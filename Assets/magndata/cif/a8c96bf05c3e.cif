@@ -1,0 +1,38 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'Pnma'
+_symmetry_Int_Tables_number   62
+_chemical_formula_structural   NaMn2O4
+_cell_length_a   8.8511545400
+_cell_length_b   2.8564149500
+_cell_length_c   11.0214715300
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   90.0000000000
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-x,-y,-z'
+ 3  '-x+1/2,-y,z+1/2'
+ 4  'x+1/2,y,-z+1/2'
+ 5  'x+1/2,-y+1/2,-z+1/2'
+ 6  '-x+1/2,y+1/2,z+1/2'
+ 7  '-x,y+1/2,-z'
+ 8  'x,-y+1/2,z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Na Na0 4 4c 0.2464212200 0.2500000000 0.3374556900 1.0000000000
+ Mn Mn1 4 4c 0.0688512700 0.2500000000 0.1122479200 1.0000000000
+ Mn Mn2 4 4c 0.0817294000 0.2500000000 0.5967781000 1.0000000000
+ O O3 4 4c 0.2884850600 0.2500000000 0.6522507400 1.0000000000
+ O O4 4 4c 0.3835217900 0.2500000000 0.9797355200 1.0000000000
+ O O5 4 4c 0.4729916200 0.2500000000 0.1994742800 1.0000000000
+ O O6 4 4c 0.0694494600 0.2500000000 0.9154558800 1.0000000000

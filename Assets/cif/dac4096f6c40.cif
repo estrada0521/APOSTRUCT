@@ -1,0 +1,63 @@
+# generated using pymatgen
+data_GaH18C3(N3F2)3
+_symmetry_space_group_name_H-M   Pa-3
+_cell_length_a   14.22982665
+_cell_length_b   14.22982665
+_cell_length_c   14.22982665
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   205
+_chemical_formula_structural   GaH18C3(N3F2)3
+_chemical_formula_sum   'Ga8 H144 C24 N72 F48'
+_cell_volume   2881.36866185
+_cell_formula_units_Z   8
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x+1/2, -y, z+1/2'
+  4  'x+1/2, y, -z+1/2'
+  5  'x+1/2, -y+1/2, -z'
+  6  '-x+1/2, y+1/2, z'
+  7  '-x, y+1/2, -z+1/2'
+  8  'x, -y+1/2, z+1/2'
+  9  'z, x, y'
+  10  '-z, -x, -y'
+  11  'z+1/2, -x+1/2, -y'
+  12  '-z+1/2, x+1/2, y'
+  13  '-z, x+1/2, -y+1/2'
+  14  'z, -x+1/2, y+1/2'
+  15  '-z+1/2, -x, y+1/2'
+  16  'z+1/2, x, -y+1/2'
+  17  'y, z, x'
+  18  '-y, -z, -x'
+  19  '-y, z+1/2, -x+1/2'
+  20  'y, -z+1/2, x+1/2'
+  21  '-y+1/2, -z, x+1/2'
+  22  'y+1/2, z, -x+1/2'
+  23  'y+1/2, -z+1/2, -x'
+  24  '-y+1/2, z+1/2, x'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ga  Ga0  4  0.00000000  0.00000000  0.00000000  1.0
+  Ga  Ga1  4  0.00000000  0.00000000  0.50000000  1.0
+  H  H2  24  0.00694352  0.73787450  0.38936468  1.0
+  H  H3  24  0.00938612  0.65088221  0.83643942  1.0
+  H  H4  24  0.01227981  0.60131704  0.30696885  1.0
+  H  H5  24  0.03030212  0.60266753  0.18572393  1.0
+  H  H6  24  0.03635726  0.64883993  0.66309788  1.0
+  H  H7  24  0.04187395  0.74151283  0.10783457  1.0
+  C  C8  24  0.02659016  0.73298124  0.24863974  1.0
+  N  N9  24  0.01547758  0.72233503  0.83045228  1.0
+  N  N10  24  0.02433896  0.63889360  0.24720563  1.0
+  N  N11  24  0.04172386  0.72039077  0.66838793  1.0
+  F  F12  24  0.02145330  0.63186288  0.47257929  1.0
+  F  F13  24  0.02613510  0.03042208  0.63032390  1.0

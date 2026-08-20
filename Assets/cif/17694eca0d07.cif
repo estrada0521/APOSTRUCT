@@ -1,0 +1,39 @@
+# generated using pymatgen
+data_Sr2MnNbO6
+_symmetry_space_group_name_H-M   C2/c
+_cell_length_a   9.77264062
+_cell_length_b   5.77351028
+_cell_length_c   9.79792143
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   108.37173350
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   15
+_chemical_formula_structural   Sr2MnNbO6
+_chemical_formula_sum   'Sr8 Mn4 Nb4 O24'
+_cell_volume   524.64616959
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x, y, -z+1/2'
+  4  'x, -y, z+1/2'
+  5  'x+1/2, y+1/2, z'
+  6  '-x+1/2, -y+1/2, -z'
+  7  '-x+1/2, y+1/2, -z+1/2'
+  8  'x+1/2, -y+1/2, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Sr  Sr0  8  0.12551850  0.24823700  0.12566650  1.0
+  Mn  Mn1  4  0.25000000  0.25000000  0.50000000  1.0
+  Nb  Nb2  4  0.00000000  0.26587000  0.75000000  1.0
+  O  O3  8  0.12219100  0.04138950  0.88020800  1.0
+  O  O4  8  0.12439100  0.46724950  0.36778600  1.0
+  O  O5  8  0.12812575  0.27531325  0.62471550  1.0

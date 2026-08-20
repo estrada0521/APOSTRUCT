@@ -1,0 +1,46 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'I4_1cd'
+_symmetry_Int_Tables_number   110
+_chemical_formula_structural   V2Co2PbO8
+_cell_length_a   12.5611960000
+_cell_length_b   12.5611960000
+_cell_length_c   8.5885030000
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   90.0000000000
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-y,x+1/2,z+1/4'
+ 3  '-x+1/2,-y+1/2,z+1/2'
+ 4  'y+1/2,-x,z+3/4'
+ 5  '-x,y,z+1/2'
+ 6  'y,x+1/2,z+3/4'
+ 7  'x+1/2,-y+1/2,z'
+ 8  '-y+1/2,-x,z+1/4'
+ 9  'x+1/2,y+1/2,z+1/2'
+ 10  '-y+1/2,x,z+3/4'
+ 11  '-x,-y,z'
+ 12  'y,-x+1/2,z+1/4'
+ 13  '-x+1/2,y+1/2,z'
+ 14  'y+1/2,x,z+1/4'
+ 15  'x,-y,z+1/2'
+ 16  '-y,-x+1/2,z+3/4'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ V V0 16 16b 0.4202940000 0.7382400000 0.0509810000 1.0000000000
+ Co Co1 16 16b 0.6679430000 0.1706710000 0.6847830000 1.0000000000
+ Pb Pb2 8 8a 0.5000000000 0.0000000000 0.0167610000 1.0000000000
+ O O3 16 16b 0.5049160000 0.3513700000 0.4530820000 1.0000000000
+ O O4 16 16b 0.3268835000 0.1604905000 0.9387935000 1.0000000000
+ O O5 16 16b 0.8157015000 0.8414985000 0.6738205000 1.0000000000
+ O O6 16 16b 0.5037425000 0.1747645000 0.6498595000 1.0000000000

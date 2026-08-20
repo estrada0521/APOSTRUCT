@@ -1,0 +1,48 @@
+# generated using pymatgen
+data_Re3Ni2P5
+_symmetry_space_group_name_H-M   Imm2
+_cell_length_a   3.13161800
+_cell_length_b   5.79847100
+_cell_length_c   30.21527200
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   44
+_chemical_formula_structural   Re3Ni2P5
+_chemical_formula_sum   'Re12 Ni8 P20'
+_cell_volume   548.66692199
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, z'
+  3  '-x, y, z'
+  4  'x, -y, z'
+  5  'x+1/2, y+1/2, z+1/2'
+  6  '-x+1/2, -y+1/2, z+1/2'
+  7  '-x+1/2, y+1/2, z+1/2'
+  8  'x+1/2, -y+1/2, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Re  Re0  2  0.00000000  0.00000000  0.00240700  1.0
+  Re  Re1  2  0.00000000  0.00000000  0.20039650  1.0
+  Re  Re2  2  0.00000000  0.00000000  0.39987250  1.0
+  Re  Re3  2  0.00000000  0.00000000  0.60062800  1.0
+  Re  Re4  2  0.00000000  0.00000000  0.79834550  1.0
+  Re  Re5  2  0.00000000  0.50000000  0.38212850  1.0
+  Ni  Ni6  2  0.00000000  0.50000000  0.17988000  1.0
+  Ni  Ni7  2  0.00000000  0.50000000  0.58134150  1.0
+  Ni  Ni8  2  0.00000000  0.50000000  0.78031000  1.0
+  Ni  Ni9  2  0.00000000  0.50000000  0.98036400  1.0
+  P  P10  4  0.00000000  0.28853350  0.85449350  1.0
+  P  P11  4  0.00000000  0.29246650  0.45530050  1.0
+  P  P12  4  0.00000000  0.29492750  0.65429450  1.0
+  P  P13  4  0.00000000  0.29519250  0.25325150  1.0
+  P  P14  4  0.00000000  0.29665250  0.05481850  1.0

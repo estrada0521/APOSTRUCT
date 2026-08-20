@@ -1,0 +1,43 @@
+# generated using pymatgen
+data_SbClF10
+_symmetry_space_group_name_H-M   Pbcm
+_cell_length_a   5.87169035
+_cell_length_b   15.03419492
+_cell_length_c   7.96056983
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   57
+_chemical_formula_structural   SbClF10
+_chemical_formula_sum   'Sb4 Cl4 F40'
+_cell_volume   702.72835476
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x, -y, z+1/2'
+  4  'x, y, -z+1/2'
+  5  'x, -y+1/2, -z'
+  6  '-x, y+1/2, z'
+  7  '-x, y+1/2, -z+1/2'
+  8  'x, -y+1/2, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Sb  Sb0  4  0.09171909  0.14193039  0.25000000  1.0
+  Cl  Cl1  4  0.41221901  0.65858757  0.75000000  1.0
+  F  F2  8  0.08925401  0.14608122  0.01388944  1.0
+  F  F3  8  0.41077232  0.65361126  0.54208646  1.0
+  F  F4  4  0.10078852  0.54184791  0.25000000  1.0
+  F  F5  4  0.16997085  0.71951716  0.25000000  1.0
+  F  F6  4  0.19305280  0.59942630  0.75000000  1.0
+  F  F7  4  0.27872550  0.24738333  0.25000000  1.0
+  F  F8  4  0.35685654  0.07157749  0.25000000  1.0
+  F  F9  4  0.40351247  0.08363178  0.75000000  1.0

@@ -1,0 +1,40 @@
+# generated using pymatgen
+data_Eu(GaAs)2
+_symmetry_space_group_name_H-M   P2/m
+_cell_length_a   9.48302424
+_cell_length_b   4.04584430
+_cell_length_c   12.43216053
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   95.17219509
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   10
+_chemical_formula_structural   Eu(GaAs)2
+_chemical_formula_sum   'Eu4 Ga8 As8'
+_cell_volume   475.04056113
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x, y, -z'
+  4  'x, -y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Eu  Eu0  2  0.20104656  0.00000000  0.27567485  1.0
+  Eu  Eu1  1  0.00000000  0.50000000  0.00000000  1.0
+  Eu  Eu2  1  0.50000000  0.50000000  0.50000000  1.0
+  Ga  Ga3  2  0.10869888  0.50000000  0.56229650  1.0
+  Ga  Ga4  2  0.19326850  0.00000000  0.82393183  1.0
+  Ga  Ga5  2  0.39443560  0.00000000  0.71785488  1.0
+  Ga  Ga6  2  0.39851629  0.50000000  0.05457143  1.0
+  As  As7  2  0.04779829  0.50000000  0.75783633  1.0
+  As  As8  2  0.24000450  0.00000000  0.02568570  1.0
+  As  As9  2  0.26214648  0.00000000  0.53056355  1.0
+  As  As10  2  0.44715893  0.50000000  0.25633836  1.0

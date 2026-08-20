@@ -1,0 +1,42 @@
+# generated using pymatgen
+data_KNaMg14
+_symmetry_space_group_name_H-M   Amm2
+_cell_length_a   10.81218033
+_cell_length_b   6.43434131
+_cell_length_c   11.55067515
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   38
+_chemical_formula_structural   KNaMg14
+_chemical_formula_sum   'K2 Na2 Mg28'
+_cell_volume   803.57190634
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, z'
+  3  '-x, y, z'
+  4  'x, -y, z'
+  5  'x, y+1/2, z+1/2'
+  6  '-x, -y+1/2, z+1/2'
+  7  '-x, y+1/2, z+1/2'
+  8  'x, -y+1/2, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  K  K0  2  0.50000000  0.00000000  0.16662800  1.0
+  Na  Na1  2  0.50000000  0.00000000  0.66599221  1.0
+  Mg  Mg2  8  0.23146724  0.24582599  0.57913297  1.0
+  Mg  Mg3  4  0.00000000  0.24986716  0.91660622  1.0
+  Mg  Mg4  4  0.23838780  0.00000000  0.33891763  1.0
+  Mg  Mg5  4  0.24824063  0.00000000  0.83579632  1.0
+  Mg  Mg6  4  0.50000000  0.24866628  0.41694464  1.0
+  Mg  Mg7  2  0.00000000  0.00000000  0.16718265  1.0
+  Mg  Mg8  2  0.00000000  0.00000000  0.66712769  1.0

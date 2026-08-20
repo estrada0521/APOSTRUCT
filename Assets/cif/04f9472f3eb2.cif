@@ -1,0 +1,52 @@
+# generated using pymatgen
+data_Zn2In2S5
+_symmetry_space_group_name_H-M   R3m
+_cell_length_a   3.92201217
+_cell_length_b   3.92201217
+_cell_length_c   46.89725627
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   160
+_chemical_formula_structural   Zn2In2S5
+_chemical_formula_sum   'Zn6 In6 S15'
+_cell_volume   624.73514966
+_cell_formula_units_Z   3
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y, x-y, z'
+  3  '-x+y, -x, z'
+  4  '-y, -x, z'
+  5  '-x+y, y, z'
+  6  'x, x-y, z'
+  7  'x+2/3, y+1/3, z+1/3'
+  8  '-y+2/3, x-y+1/3, z+1/3'
+  9  '-x+y+2/3, -x+1/3, z+1/3'
+  10  '-y+2/3, -x+1/3, z+1/3'
+  11  '-x+y+2/3, y+1/3, z+1/3'
+  12  'x+2/3, x-y+1/3, z+1/3'
+  13  'x+1/3, y+2/3, z+2/3'
+  14  '-y+1/3, x-y+2/3, z+2/3'
+  15  '-x+y+1/3, -x+2/3, z+2/3'
+  16  '-y+1/3, -x+2/3, z+2/3'
+  17  '-x+y+1/3, y+2/3, z+2/3'
+  18  'x+1/3, x-y+2/3, z+2/3'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Zn  Zn0  3  0.00000000  0.00000000  0.31180400  1.0
+  Zn  Zn1  3  0.00000000  0.00000000  0.48286700  1.0
+  In  In2  3  0.00000000  0.00000000  0.07773500  1.0
+  In  In3  3  0.00000000  0.00000000  0.89609600  1.0
+  S  S4  3  0.00000000  0.00000000  0.13112200  1.0
+  S  S5  3  0.00000000  0.00000000  0.25701600  1.0
+  S  S6  3  0.00000000  0.00000000  0.38882600  1.0
+  S  S7  3  0.00000000  0.00000000  0.53077400  1.0
+  S  S8  3  0.00000000  0.00000000  0.99176000  1.0

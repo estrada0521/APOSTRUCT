@@ -1,0 +1,44 @@
+data_structure
+_cell_length_a 15.3254347549
+_cell_length_b 6.32225027222
+_cell_length_c 13.2903396712
+_cell_angle_alpha 90
+_cell_angle_beta 120.176832851
+_cell_angle_gamma 90
+_space_group_IT_number 12
+_space_group_name_H-M_alt 'C2/m'
+loop_
+_space_group_symop_id
+_space_group_symop_operation_xyz
+1 'x,y,z'
+2 '-x,-y,-z'
+3 '-x,y,-z'
+4 'x,-y,z'
+5 'x+1/2,y+1/2,z'
+6 '-x+1/2,-y+1/2,-z'
+7 '-x+1/2,y+1/2,-z'
+8 'x+1/2,-y+1/2,z'
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_symmetry_multiplicity
+_atom_site_Wyckoff_label
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_occupancy
+Cu1 Cu 4 i 0.3783785 0.5 0.906213 1
+Cu2 Cu 4 i 0.2891185 0 0.734734 1
+Cu3 Cu 4 i 0.8844515 0.5 0.215219 1
+Cu4 Cu 2 d 0 0.5 0.5 1
+Cu5 Cu 4 e 0.75 0.25 0 1
+Se1 Se 4 i 0.960554 0 0.194836 1
+Se2 Se 4 i 0.754078 0.5 0.362241 1
+Cl1 Cl 4 i 0.367119 0 0.929652 1
+Cl2 Cl 4 i 0.948741 0.5 0.638809 1
+Cl3 Cl 4 i 0.163948 0 0.552977 1
+O1 O 4 i 0.258611 0.5 0.920899 1
+O2 O 8 j 0.125909 0.206524 0.845794 1
+O3 O 4 i 0.868511 0.5 0.364399 1
+O4 O 4 i 0.9841565 0 0.079198 1
+O5 O 8 j 0.687987 0.307104 0.254017 1

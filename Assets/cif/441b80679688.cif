@@ -1,0 +1,41 @@
+# generated using pymatgen
+data_K3NaTh2O6
+_symmetry_space_group_name_H-M   C2/c
+_cell_length_a   6.34246400
+_cell_length_b   10.99144200
+_cell_length_c   12.76951498
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   99.56102136
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   15
+_chemical_formula_structural   K3NaTh2O6
+_chemical_formula_sum   'K12 Na4 Th8 O24'
+_cell_volume   877.83344549
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x, y, -z+1/2'
+  4  'x, -y, z+1/2'
+  5  'x+1/2, y+1/2, z'
+  6  '-x+1/2, -y+1/2, -z'
+  7  '-x+1/2, y+1/2, -z+1/2'
+  8  'x+1/2, -y+1/2, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  K  K0  8  0.23457700  0.07814300  0.49981200  1.0
+  K  K1  4  0.25000000  0.25000000  0.00000000  1.0
+  Na  Na2  4  0.00000000  0.08426300  0.75000000  1.0
+  Th  Th3  4  0.00000000  0.24990600  0.25000000  1.0
+  Th  Th4  4  0.00000000  0.41731000  0.75000000  1.0
+  O  O5  8  0.09673850  0.41609550  0.15271800  1.0
+  O  O6  8  0.15179400  0.10047400  0.15302900  1.0
+  O  O7  8  0.15261250  0.26907350  0.65311100  1.0

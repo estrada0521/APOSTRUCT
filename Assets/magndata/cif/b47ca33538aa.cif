@@ -1,0 +1,52 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'P6_3/mmc'
+_symmetry_Int_Tables_number   194
+_chemical_formula_structural   Nb4FeS8
+_cell_length_a   6.7298959246
+_cell_length_b   6.7298959246
+_cell_length_c   12.1152543500
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   90.0000000000
+_cell_angle_gamma   120.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-x,-y,-z'
+ 3  'x-y,x,z+1/2'
+ 4  '-x+y,-x,-z+1/2'
+ 5  '-y,x-y,z'
+ 6  'y,-x+y,-z'
+ 7  '-x,-y,z+1/2'
+ 8  'x,y,-z+1/2'
+ 9  '-x+y,-x,z'
+ 10  'x-y,x,-z'
+ 11  'y,-x+y,z+1/2'
+ 12  '-y,x-y,-z+1/2'
+ 13  '-y,-x,-z+1/2'
+ 14  'y,x,z+1/2'
+ 15  '-x,-x+y,-z'
+ 16  'x,x-y,z'
+ 17  '-x+y,y,-z+1/2'
+ 18  'x-y,-y,z+1/2'
+ 19  'y,x,-z'
+ 20  '-y,-x,z'
+ 21  'x,x-y,-z+1/2'
+ 22  '-x,-x+y,z+1/2'
+ 23  'x-y,-y,-z'
+ 24  '-x+y,y,z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Nb Nb0 2 2b 0.0000000000 0.0000000000 0.7500000000 1.0000000000
+ Nb Nb1 6 6h 0.9860117300 0.4930058650 0.2500000000 1.0000000000
+ Fe Fe2 2 2a 0.0000000000 0.0000000000 0.0000000000 1.0000000000
+ S S3 4 4f 0.6666666667 0.3333333333 0.3822763700 1.0000000000
+ S S4 12 12k 0.6642412800 0.8321206400 0.3785272300 1.0000000000

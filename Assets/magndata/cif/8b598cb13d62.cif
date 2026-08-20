@@ -1,0 +1,40 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'Pna2_1'
+_symmetry_Int_Tables_number   33
+_chemical_formula_structural   BaCaCo4O7
+_cell_length_a   11.1030630000
+_cell_length_b   6.4002490000
+_cell_length_c   10.3010960000
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   90.0000000000
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-x,-y,z+1/2'
+ 3  '-x+1/2,y+1/2,z+1/2'
+ 4  'x+1/2,-y+1/2,z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Ba Ba0 4 4a 0.1643290000 0.5050310000 0.9969830000 1.0000000000
+ Ca Ca1 4 4a 0.8260330000 0.5048160000 0.1267920000 1.0000000000
+ Co Co2 4 4a 0.4210760000 0.2377220000 0.8185490000 1.0000000000
+ Co Co3 4 4a 0.1738670000 0.9980910000 0.8115400000 1.0000000000
+ Co Co4 4 4a 0.5856320000 0.2505510000 0.3063420000 1.0000000000
+ Co Co5 4 4a 0.5022050000 0.4968990000 0.5541060000 1.0000000000
+ O O6 4 4a 0.5016780000 0.4879350000 0.7447240000 1.0000000000
+ O O7 4 4a 0.8464590000 0.0693580000 0.4962980000 1.0000000000
+ O O8 4 4a 0.7365990000 0.2110810000 0.2161610000 1.0000000000
+ O O9 4 4a 0.2591910000 0.2708360000 0.7917430000 1.0000000000
+ O O10 4 4a 0.3986570000 0.7157160000 0.9968830000 1.0000000000
+ O O11 4 4a 0.5502050000 0.7648660000 0.5043000000 1.0000000000
+ O O12 4 4a 0.4923670000 0.9924490000 0.2693800000 1.0000000000

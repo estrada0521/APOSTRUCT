@@ -1,0 +1,36 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'P2_1/m'
+_symmetry_Int_Tables_number   11
+_chemical_formula_structural   Ba2Co2ClF7
+_cell_length_a   7.8275310000
+_cell_length_b   5.8782780000
+_cell_length_c   9.0386958489
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   106.7766438817
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-x,-y,-z'
+ 3  '-x,y+1/2,-z'
+ 4  'x,-y+1/2,z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Ba Ba0 2 2e 0.6979950000 0.2500000000 0.9268310000 1.0000000000
+ Ba Ba1 2 2e 0.3312610000 0.7500000000 0.5875460000 1.0000000000
+ Co Co2 2 2e 0.8260020000 0.7500000000 0.7337720000 1.0000000000
+ Co Co3 2 2e 0.1821960000 0.2500000000 0.8244080000 1.0000000000
+ Cl Cl4 2 2e 0.1171520000 0.2500000000 0.5306550000 1.0000000000
+ F F5 4 4f 0.3700000000 0.0073630000 0.8393980000 1.0000000000
+ F F6 4 4f 0.6385960000 0.9971400000 0.6545570000 1.0000000000
+ F F7 2 2e 0.7457660000 0.7500000000 0.9341770000 1.0000000000
+ F F8 4 4f 0.0050620000 0.5021430000 0.8277800000 1.0000000000

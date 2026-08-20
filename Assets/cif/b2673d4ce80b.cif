@@ -1,0 +1,47 @@
+# generated using pymatgen
+data_CsSr2MgNb3O10
+_symmetry_space_group_name_H-M   P4mm
+_cell_length_a   4.07581046
+_cell_length_b   4.07581046
+_cell_length_c   16.33351012
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   99
+_chemical_formula_structural   CsSr2MgNb3O10
+_chemical_formula_sum   'Cs1 Sr2 Mg1 Nb3 O10'
+_cell_volume   271.33604162
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y, x, z'
+  3  '-x, -y, z'
+  4  'y, -x, z'
+  5  '-x, y, z'
+  6  'y, x, z'
+  7  'x, -y, z'
+  8  '-y, -x, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Cs  Cs0  1  0.50000000  0.50000000  0.55804194  1.0
+  Sr  Sr1  1  0.50000000  0.50000000  0.10862645  1.0
+  Sr  Sr2  1  0.50000000  0.50000000  0.85441857  1.0
+  Mg  Mg3  1  0.50000000  0.50000000  0.31942741  1.0
+  Nb  Nb4  1  0.00000000  0.00000000  0.25696148  1.0
+  Nb  Nb5  1  0.00000000  0.00000000  0.73397259  1.0
+  Nb  Nb6  1  0.00000000  0.00000000  0.99596863  1.0
+  O  O7  2  0.00000000  0.50000000  0.00241849  1.0
+  O  O8  2  0.00000000  0.50000000  0.25190586  1.0
+  O  O9  2  0.00000000  0.50000000  0.75520661  1.0
+  O  O10  1  0.00000000  0.00000000  0.12413227  1.0
+  O  O11  1  0.00000000  0.00000000  0.37214518  1.0
+  O  O12  1  0.00000000  0.00000000  0.62215057  1.0
+  O  O13  1  0.00000000  0.00000000  0.87675996  1.0

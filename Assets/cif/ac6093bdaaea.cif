@@ -1,0 +1,39 @@
+# generated using pymatgen
+data_NaSm2Cl6
+_symmetry_space_group_name_H-M   P3
+_cell_length_a   13.89386161
+_cell_length_b   13.89386161
+_cell_length_c   3.81237600
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   143
+_chemical_formula_structural   NaSm2Cl6
+_chemical_formula_sum   'Na3 Sm6 Cl18'
+_cell_volume   637.34164387
+_cell_formula_units_Z   3
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y, x-y, z'
+  3  '-x+y, -x, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Na  Na0  1  0.00000000  0.00000000  0.75171600  1.0
+  Na  Na1  1  0.33333333  0.66666667  0.50087200  1.0
+  Na  Na2  1  0.66666667  0.33333333  0.00557300  1.0
+  Sm  Sm3  3  0.00043300  0.33689200  0.24956000  1.0
+  Sm  Sm4  3  0.00104800  0.67012800  0.74972600  1.0
+  Cl  Cl5  3  0.06643800  0.84523200  0.24953000  1.0
+  Cl  Cl6  3  0.10494600  0.59592300  0.25075300  1.0
+  Cl  Cl7  3  0.17593800  0.43441100  0.74879500  1.0
+  Cl  Cl8  3  0.23519400  0.07212400  0.74924000  1.0
+  Cl  Cl9  3  0.43913800  0.26565600  0.24943500  1.0
+  Cl  Cl10  3  0.50907600  0.10469200  0.75024100  1.0

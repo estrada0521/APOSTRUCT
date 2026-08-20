@@ -1,0 +1,38 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'P-42_1c'
+_symmetry_Int_Tables_number   114
+_chemical_formula_structural   Mn(PbO2)2
+_cell_length_a   13.0853790000
+_cell_length_b   13.0853790000
+_cell_length_c   5.2455010000
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   90.0000000000
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  'y,-x,-z'
+ 3  '-x,-y,z'
+ 4  '-y,x,-z'
+ 5  'x+1/2,-y+1/2,-z+1/2'
+ 6  'y+1/2,x+1/2,z+1/2'
+ 7  '-x+1/2,y+1/2,-z+1/2'
+ 8  '-y+1/2,-x+1/2,z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Mn Mn0 8 8e 0.7710360000 0.1938100000 0.7606500000 1.0000000000
+ Pb Pb1 8 8e 0.8273850000 0.4942290000 0.2935350000 1.0000000000
+ Pb Pb2 8 8e 0.6233820000 0.4204280000 0.7433380000 1.0000000000
+ O O3 8 8e 0.0579370000 0.2264870000 0.0999190000 1.0000000000
+ O O4 8 8e 0.2565130000 0.1760520000 0.9269040000 1.0000000000
+ O O5 8 8e 0.6412670000 0.2203390000 0.9332990000 1.0000000000
+ O O6 8 8e 0.3148550000 0.5874560000 0.1548870000 1.0000000000

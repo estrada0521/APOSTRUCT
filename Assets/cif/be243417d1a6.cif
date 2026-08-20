@@ -1,0 +1,46 @@
+# generated using pymatgen
+data_Hf(Se2Cl3)2
+_symmetry_space_group_name_H-M   P4_2/ncm
+_cell_length_a   10.99167943
+_cell_length_b   10.99167943
+_cell_length_c   10.63295212
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   138
+_chemical_formula_structural   Hf(Se2Cl3)2
+_chemical_formula_sum   'Hf4 Se16 Cl24'
+_cell_volume   1284.64155377
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y+1/2, x+1/2, z+1/2'
+  3  '-x, -y, z'
+  4  'y+1/2, -x+1/2, z+1/2'
+  5  'x+1/2, -y+1/2, -z'
+  6  '-y, -x, -z+1/2'
+  7  '-x+1/2, y+1/2, -z'
+  8  'y, x, -z+1/2'
+  9  '-x+1/2, -y+1/2, -z+1/2'
+  10  'y, -x, -z'
+  11  'x+1/2, y+1/2, -z+1/2'
+  12  '-y, x, -z'
+  13  '-x, y, z+1/2'
+  14  'y+1/2, x+1/2, z'
+  15  'x, -y, z+1/2'
+  16  '-y+1/2, -x+1/2, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Hf  Hf0  4  0.25000000  0.25000000  0.25000000  1.0
+  Se  Se1  8  0.14532261  0.14532261  0.75000000  1.0
+  Se  Se2  8  0.15921588  0.65921588  0.17152918  1.0
+  Cl  Cl3  16  0.08297248  0.19395145  0.10603690  1.0
+  Cl  Cl4  8  0.11552195  0.38447805  0.36340992  1.0

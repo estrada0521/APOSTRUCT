@@ -1,0 +1,39 @@
+# generated using pymatgen
+data_KCrCuF6
+_symmetry_space_group_name_H-M   P2_1/c
+_cell_length_a   7.42913205
+_cell_length_b   10.18761800
+_cell_length_c   6.84503700
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   94.12133349
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   14
+_chemical_formula_structural   KCrCuF6
+_chemical_formula_sum   'K4 Cr4 Cu4 F24'
+_cell_volume   516.72804111
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x, y+1/2, -z+1/2'
+  4  'x, -y+1/2, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  K  K0  4  0.24269600  0.11529900  0.49813300  1.0
+  Cr  Cr1  2  0.00000000  0.00000000  0.00000000  1.0
+  Cr  Cr2  2  0.50000000  0.00000000  0.00000000  1.0
+  Cu  Cu3  4  0.25497800  0.73276300  0.81875900  1.0
+  F  F4  4  0.02683700  0.16502100  0.13520000  1.0
+  F  F5  4  0.07708600  0.58938400  0.74440300  1.0
+  F  F6  4  0.24413700  0.66952700  0.07999300  1.0
+  F  F7  4  0.24495400  0.02256800  0.91328500  1.0
+  F  F8  4  0.44596700  0.55828900  0.75659100  1.0
+  F  F9  4  0.48803000  0.68051600  0.40077100  1.0

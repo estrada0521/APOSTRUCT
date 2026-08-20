@@ -1,0 +1,47 @@
+# generated using pymatgen
+data_K4Ga8P8O32F
+_symmetry_space_group_name_H-M   P4_2/n
+_cell_length_a   13.49119000
+_cell_length_b   13.49119000
+_cell_length_c   8.83107200
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   86
+_chemical_formula_structural   K4Ga8P8O32F
+_chemical_formula_sum   'K8 Ga16 P16 O64 F2'
+_cell_volume   1607.36291034
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y+1/2, x+1/2, z+1/2'
+  3  '-x, -y, z'
+  4  'y+1/2, -x+1/2, z+1/2'
+  5  '-x+1/2, -y+1/2, -z+1/2'
+  6  'y, -x, -z'
+  7  'x+1/2, y+1/2, -z+1/2'
+  8  '-y, x, -z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  K  K0  8  0.16723800  0.75454600  0.50637700  1.0
+  Ga  Ga1  8  0.05699100  0.13518900  0.15456700  1.0
+  Ga  Ga2  8  0.06764000  0.38129500  0.65964400  1.0
+  P  P3  8  0.06895500  0.16482700  0.79670300  1.0
+  P  P4  8  0.07338000  0.35596800  0.30330900  1.0
+  O  O5  8  0.04277900  0.64069300  0.30286300  1.0
+  O  O6  8  0.04362600  0.84797900  0.76363200  1.0
+  O  O7  8  0.07106500  0.87098000  0.24921600  1.0
+  O  O8  8  0.07364700  0.61317000  0.67595800  1.0
+  O  O9  8  0.09005500  0.19551000  0.96370700  1.0
+  O  O10  8  0.10630800  0.61359500  0.95794000  1.0
+  O  O11  8  0.11009700  0.24956500  0.69406000  1.0
+  O  O12  8  0.11038000  0.24913300  0.27258200  1.0
+  F  F13  2  0.00000000  0.00000000  0.00000000  1.0

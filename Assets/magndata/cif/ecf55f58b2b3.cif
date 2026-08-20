@@ -1,0 +1,37 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'Ima2'
+_symmetry_Int_Tables_number   46
+_chemical_formula_structural   Ca2Cr2O5
+_cell_length_a   15.0770160000
+_cell_length_b   5.6305140000
+_cell_length_c   5.4400280000
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   90.0000000000
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-x,-y,z'
+ 3  '-x+1/2,y,z'
+ 4  'x+1/2,-y,z'
+ 5  'x+1/2,y+1/2,z+1/2'
+ 6  '-x+1/2,-y+1/2,z+1/2'
+ 7  '-x,y+1/2,z+1/2'
+ 8  'x,-y+1/2,z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Ca Ca0 8 8c 0.6042595000 0.0221665000 0.4925955000 1.0000000000
+ Cr Cr1 4 4a 0.0000000000 0.5000000000 0.4838310000 1.0000000000
+ Cr Cr2 4 4b 0.7500000000 0.9334410000 0.0323670000 1.0000000000
+ O O3 8 8c 0.9843170000 0.7550760000 0.2388580000 1.0000000000
+ O O4 8 8c 0.6358305000 0.0624685000 0.9645815000 1.0000000000
+ O O5 4 4b 0.7500000000 0.8835550000 0.3897310000 1.0000000000

@@ -1,0 +1,50 @@
+# generated using pymatgen
+data_Zr2Si7Ni3
+_symmetry_space_group_name_H-M   I4mm
+_cell_length_a   3.91162700
+_cell_length_b   3.91162700
+_cell_length_c   23.27479000
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   107
+_chemical_formula_structural   Zr2Si7Ni3
+_chemical_formula_sum   'Zr4 Si14 Ni6'
+_cell_volume   356.12350702
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y, x, z'
+  3  '-x, -y, z'
+  4  'y, -x, z'
+  5  '-x, y, z'
+  6  'y, x, z'
+  7  'x, -y, z'
+  8  '-y, -x, z'
+  9  'x+1/2, y+1/2, z+1/2'
+  10  '-y+1/2, x+1/2, z+1/2'
+  11  '-x+1/2, -y+1/2, z+1/2'
+  12  'y+1/2, -x+1/2, z+1/2'
+  13  '-x+1/2, y+1/2, z+1/2'
+  14  'y+1/2, x+1/2, z+1/2'
+  15  'x+1/2, -y+1/2, z+1/2'
+  16  '-y+1/2, -x+1/2, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Zr  Zr0  2  0.00000000  0.00000000  0.15020550  1.0
+  Zr  Zr1  2  0.00000000  0.00000000  0.85812600  1.0
+  Si  Si2  4  0.00000000  0.50000000  0.05377450  1.0
+  Si  Si3  4  0.00000000  0.50000000  0.45186500  1.0
+  Si  Si4  2  0.00000000  0.00000000  0.29520950  1.0
+  Si  Si5  2  0.00000000  0.00000000  0.39412950  1.0
+  Si  Si6  2  0.00000000  0.00000000  0.69574900  1.0
+  Ni  Ni7  4  0.00000000  0.50000000  0.24823900  1.0
+  Ni  Ni8  2  0.00000000  0.00000000  0.59882900  1.0

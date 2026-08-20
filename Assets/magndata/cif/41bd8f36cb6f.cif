@@ -1,0 +1,37 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'P2_1/c'
+_symmetry_Int_Tables_number   14
+_chemical_formula_structural   BaMnFeF7
+_cell_length_a   5.6580710000
+_cell_length_b   11.1357590000
+_cell_length_c   9.3539265724
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   94.7326249253
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-x,-y,-z'
+ 3  '-x,y+1/2,-z+1/2'
+ 4  'x,-y+1/2,z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Ba Ba0 4 4e 0.2354040000 0.6685260000 0.5399300000 1.0000000000
+ Mn Mn1 4 4e 0.1839330000 0.4359710000 0.1186570000 1.0000000000
+ Fe Fe2 4 4e 0.6905630000 0.6197510000 0.2649000000 1.0000000000
+ F F3 4 4e 0.7058980000 0.9053970000 0.9730820000 1.0000000000
+ F F4 4 4e 0.3446520000 0.1458950000 0.4409920000 1.0000000000
+ F F5 4 4e 0.1037190000 0.2381120000 0.7106960000 1.0000000000
+ F F6 4 4e 0.4057520000 0.7131720000 0.2818420000 1.0000000000
+ F F7 4 4e 0.4961530000 0.9696500000 0.2536040000 1.0000000000
+ F F8 4 4e 0.1381400000 0.6017460000 0.0101740000 1.0000000000
+ F F9 4 4e 0.9769990000 0.5152630000 0.2822120000 1.0000000000

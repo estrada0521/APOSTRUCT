@@ -1,0 +1,36 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'P2_1/c'
+_symmetry_Int_Tables_number   14
+_chemical_formula_structural   Ba2YFeO5
+_cell_length_a   7.9372364243
+_cell_length_b   6.1805560000
+_cell_length_c   14.8076658378
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   120.3685819388
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-x,-y,-z'
+ 3  '-x,y+1/2,-z+1/2'
+ 4  'x,-y+1/2,z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Ba Ba0 4 4e 0.1376070000 0.7633420000 0.6540120000 1.0000000000
+ Ba Ba1 4 4e 0.6109390000 0.7507970000 0.6187900000 1.0000000000
+ Y Y2 4 4e 0.6394700000 0.7506420000 0.3705090000 1.0000000000
+ Fe Fe3 4 4e 0.1583560000 0.7352900000 0.4162710000 1.0000000000
+ O O4 4 4e 0.3451980000 0.7540800000 0.3708830000 1.0000000000
+ O O5 4 4e 0.8869280000 0.7243340000 0.8213630000 1.0000000000
+ O O6 4 4e 0.4701250000 0.5441530000 0.7276180000 1.0000000000
+ O O7 4 4e 0.2465970000 0.5508350000 0.0244360000 1.0000000000
+ O O8 4 4e 0.2043920000 0.0469940000 0.9786270000 1.0000000000

@@ -1,0 +1,33 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'Pc'
+_symmetry_Int_Tables_number   7
+_chemical_formula_structural   Li2FeGeS4
+_cell_length_a   6.2834880000
+_cell_length_b   6.6493020000
+_cell_length_c   10.0219843030
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   128.7089443025
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  'x,-y,z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Li Li0 2 2a 0.3915640000 0.6679720000 0.8737900000 1.0000000000
+ Li Li1 2 2a 0.1258770000 0.8427200000 0.1103630000 1.0000000000
+ Fe Fe2 2 2a 0.8783130000 0.3240480000 0.8626070000 1.0000000000
+ Ge Ge3 2 2a 0.6276520000 0.8203670000 0.6149090000 1.0000000000
+ S S4 2 2a 0.7529300000 0.8553230000 0.1277900000 1.0000000000
+ S S5 2 2a 0.9775270000 0.6551540000 0.8514980000 1.0000000000
+ S S6 2 2a 0.2585720000 0.8102380000 0.6069900000 1.0000000000
+ S S7 2 2a 0.5245640000 0.3211790000 0.8760540000 1.0000000000

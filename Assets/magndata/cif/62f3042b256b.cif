@@ -1,0 +1,33 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'P2_1/c'
+_symmetry_Int_Tables_number   14
+_chemical_formula_structural   Ca2FeOsO6
+_cell_length_a   5.4496890000
+_cell_length_b   5.5824120000
+_cell_length_c   9.4863708918
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   125.0358505468
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-x,-y,-z'
+ 3  '-x,y+1/2,-z+1/2'
+ 4  'x,-y+1/2,z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Ca Ca0 4 4e 0.7620320000 0.4500720000 0.2510420000 1.0000000000
+ Fe Fe1 2 2c 0.0000000000 0.0000000000 0.5000000000 1.0000000000
+ Os Os2 2 2b 0.5000000000 0.5000000000 0.5000000000 1.0000000000
+ O O3 4 4e 0.1611170000 0.7020420000 0.4551910000 1.0000000000
+ O O4 4 4e 0.7454560000 0.7077470000 0.0474570000 1.0000000000
+ O O5 4 4e 0.3405220000 0.5260650000 0.2525500000 1.0000000000

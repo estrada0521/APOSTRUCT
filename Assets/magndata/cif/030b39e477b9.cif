@@ -1,0 +1,39 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'C222_1'
+_symmetry_Int_Tables_number   20
+_chemical_formula_structural   Tb3NbO7
+_cell_length_a   7.5572229000
+_cell_length_b   10.5479431200
+_cell_length_c   7.4732876700
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   90.0000000000
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-x,-y,z+1/2'
+ 3  'x,-y,-z'
+ 4  '-x,y,-z+1/2'
+ 5  'x+1/2,y+1/2,z'
+ 6  '-x+1/2,-y+1/2,z+1/2'
+ 7  'x+1/2,-y+1/2,-z'
+ 8  '-x+1/2,y+1/2,-z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Tb Tb0 8 8c 0.2321442850 0.7681705550 0.2603840600 1.0000000000
+ Tb Tb1 4 4a 0.4645366400 0.0000000000 0.0000000000 1.0000000000
+ Nb Nb2 4 4a 0.0020441600 0.0000000000 0.5000000000 1.0000000000
+ O O3 4 4b 0.5000000000 0.5715406300 0.7500000000 1.0000000000
+ O O4 4 4b 0.5000000000 0.8610522400 0.7500000000 1.0000000000
+ O O5 8 8c 0.1790207250 0.8718132050 0.5470260500 1.0000000000
+ O O6 4 4b 0.5000000000 0.8708619500 0.2500000000 1.0000000000
+ O O7 8 8c 0.7923429100 0.8767242700 0.5224932900 1.0000000000

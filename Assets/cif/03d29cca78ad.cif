@@ -1,0 +1,39 @@
+# generated using pymatgen
+data_Y2Ge2O7
+_symmetry_space_group_name_H-M   P4_32_12
+_cell_length_a   6.81659758
+_cell_length_b   6.81659758
+_cell_length_c   12.41204628
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   96
+_chemical_formula_structural   Y2Ge2O7
+_chemical_formula_sum   'Y8 Ge8 O28'
+_cell_volume   576.73817432
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y+1/2, x+1/2, z+3/4'
+  3  '-x, -y, z+1/2'
+  4  'y+1/2, -x+1/2, z+1/4'
+  5  'x+1/2, -y+1/2, -z+1/4'
+  6  '-y, -x, -z+1/2'
+  7  '-x+1/2, y+1/2, -z+3/4'
+  8  'y, x, -z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Y  Y0  8  0.12428115  0.64734576  0.86492217  1.0
+  Ge  Ge1  8  0.09931220  0.84725665  0.38055677  1.0
+  O  O2  8  0.03147022  0.92260819  0.62348286  1.0
+  O  O3  8  0.06317909  0.33836568  0.92870900  1.0
+  O  O4  8  0.14308476  0.68444351  0.04482853  1.0
+  O  O5  4  0.19618637  0.80381363  0.25000000  1.0

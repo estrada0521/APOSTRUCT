@@ -1,0 +1,52 @@
+# generated using pymatgen
+data_Mg8B5IN10
+_symmetry_space_group_name_H-M   Imma
+_cell_length_a   9.39005600
+_cell_length_b   13.66813400
+_cell_length_c   11.29664000
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   74
+_chemical_formula_structural   Mg8B5IN10
+_chemical_formula_sum   'Mg32 B20 I4 N40'
+_cell_volume   1449.86210587
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x, -y+1/2, z'
+  4  'x, y+1/2, -z'
+  5  'x, -y, -z'
+  6  '-x, y, z'
+  7  '-x, y+1/2, -z'
+  8  'x, -y+1/2, z'
+  9  'x+1/2, y+1/2, z+1/2'
+  10  '-x+1/2, -y+1/2, -z+1/2'
+  11  '-x+1/2, -y, z+1/2'
+  12  'x+1/2, y, -z+1/2'
+  13  'x+1/2, -y+1/2, -z+1/2'
+  14  '-x+1/2, y+1/2, z+1/2'
+  15  '-x+1/2, y, -z+1/2'
+  16  'x+1/2, -y, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Mg  Mg0  8  0.20405300  0.25000000  0.52526800  1.0
+  Mg  Mg1  8  0.24889500  0.00000000  0.50000000  1.0
+  Mg  Mg2  8  0.25000000  0.06569700  0.75000000  1.0
+  Mg  Mg3  8  0.25000000  0.14519300  0.25000000  1.0
+  B  B4  8  0.00000000  0.04429300  0.14815800  1.0
+  B  B5  8  0.00000000  0.11414100  0.59960300  1.0
+  B  B6  4  0.00000000  0.25000000  0.34670900  1.0
+  I  I7  4  0.00000000  0.25000000  0.90246300  1.0
+  N  N8  16  0.14244150  0.04325850  0.14994750  1.0
+  N  N9  16  0.14330900  0.11529400  0.59729900  1.0
+  N  N10  8  0.14269700  0.25000000  0.34928200  1.0

@@ -1,0 +1,44 @@
+data_structure
+_cell_length_a 8.225816
+_cell_length_b 8.13517199999
+_cell_length_c 21.674389
+_cell_angle_alpha 90
+_cell_angle_beta 90
+_cell_angle_gamma 90
+_space_group_IT_number 64
+_space_group_name_H-M_alt 'Cmce'
+loop_
+_space_group_symop_id
+_space_group_symop_operation_xyz
+1 'x,y,z'
+2 '-x,-y,-z'
+3 '-x+1/2,-y,z+1/2'
+4 'x+1/2,y,-z+1/2'
+5 'x,-y,-z'
+6 '-x,y,z'
+7 '-x+1/2,y,-z+1/2'
+8 'x+1/2,-y,z+1/2'
+9 'x+1/2,y+1/2,z'
+10 '-x+1/2,-y+1/2,-z'
+11 '-x,-y+1/2,z+1/2'
+12 'x,y+1/2,-z+1/2'
+13 'x+1/2,-y+1/2,-z'
+14 '-x+1/2,y+1/2,z'
+15 '-x,y+1/2,-z+1/2'
+16 'x,-y+1/2,z+1/2'
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_symmetry_multiplicity
+_atom_site_Wyckoff_label
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_occupancy
+Dy1 Dy 16 g 0.7513655 0.6243785 0.581217 1
+Ge1 Ge 16 g 0.2771945 0.3738775 0.692855 1
+Ge2 Ge 8 f 0 0.38134 0.956544 1
+Ge3 Ge 8 f 0 0.367497 0.528205 1
+Ge4 Ge 8 f 0 0.152381 0.808055 1
+Ge5 Ge 8 f 0 0.095085 0.693053 1
+Pd1 Pd 8 f 0 0.372711 0.641695 1

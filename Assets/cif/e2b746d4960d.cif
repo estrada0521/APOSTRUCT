@@ -1,0 +1,54 @@
+# generated using pymatgen
+data_MgSc4(Si2O7)2
+_symmetry_space_group_name_H-M   R3m
+_cell_length_a   6.63140301
+_cell_length_b   6.63140301
+_cell_length_c   17.24917057
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   160
+_chemical_formula_structural   MgSc4(Si2O7)2
+_chemical_formula_sum   'Mg3 Sc12 Si12 O42'
+_cell_volume   656.91577731
+_cell_formula_units_Z   3
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y, x-y, z'
+  3  '-x+y, -x, z'
+  4  '-y, -x, z'
+  5  '-x+y, y, z'
+  6  'x, x-y, z'
+  7  'x+2/3, y+1/3, z+1/3'
+  8  '-y+2/3, x-y+1/3, z+1/3'
+  9  '-x+y+2/3, -x+1/3, z+1/3'
+  10  '-y+2/3, -x+1/3, z+1/3'
+  11  '-x+y+2/3, y+1/3, z+1/3'
+  12  'x+2/3, x-y+1/3, z+1/3'
+  13  'x+1/3, y+2/3, z+2/3'
+  14  '-y+1/3, x-y+2/3, z+2/3'
+  15  '-x+y+1/3, -x+2/3, z+2/3'
+  16  '-y+1/3, -x+2/3, z+2/3'
+  17  '-x+y+1/3, y+2/3, z+2/3'
+  18  'x+1/3, x-y+2/3, z+2/3'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Mg  Mg0  3  0.00000000  0.00000000  0.76188100  1.0
+  Sc  Sc1  9  0.18828000  0.37656000  0.85042600  1.0
+  Sc  Sc2  3  0.00000000  0.00000000  0.99721400  1.0
+  Si  Si3  9  0.00554133  0.50277067  0.99683067  1.0
+  Si  Si4  3  0.00000000  0.00000000  0.49469500  1.0
+  O  O5  9  0.06039067  0.53019533  0.10563633  1.0
+  O  O6  9  0.07512533  0.53756267  0.34971267  1.0
+  O  O7  9  0.19967500  0.39935000  0.22429100  1.0
+  O  O8  9  0.20113033  0.40226067  0.97904267  1.0
+  O  O9  3  0.00000000  0.00000000  0.11282400  1.0
+  O  O10  3  0.00000000  0.00000000  0.87556800  1.0

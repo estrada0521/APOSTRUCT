@@ -1,0 +1,40 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'P-3c1'
+_symmetry_Int_Tables_number   165
+_chemical_formula_structural   Mn4Nb2O9
+_cell_length_a   5.2974237909
+_cell_length_b   5.2974237909
+_cell_length_c   14.3562346000
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   90.0000000000
+_cell_angle_gamma   120.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-x,-y,-z'
+ 3  '-y,x-y,z'
+ 4  'y,-x+y,-z'
+ 5  '-x+y,-x,z'
+ 6  'x-y,x,-z'
+ 7  'y,x,-z+1/2'
+ 8  '-y,-x,z+1/2'
+ 9  'x-y,-y,-z+1/2'
+ 10  '-x+y,y,z+1/2'
+ 11  '-x,-x+y,-z+1/2'
+ 12  'x,x-y,z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Mn Mn0 4 4d 0.3333333333 0.6666666667 0.1971202100 1.0000000000
+ Mn Mn1 4 4d 0.3333333333 0.6666666667 0.4835450100 1.0000000000
+ Nb Nb2 4 4c 0.0000000000 0.0000000000 0.3582389800 1.0000000000
+ O O3 6 6f 0.0000000000 0.2827113650 0.2500000000 1.0000000000
+ O O4 12 12g 0.0253751600 0.6839874400 0.0848553200 1.0000000000

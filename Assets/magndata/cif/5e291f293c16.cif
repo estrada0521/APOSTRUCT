@@ -1,0 +1,43 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'Pnma'
+_symmetry_Int_Tables_number   62
+_chemical_formula_structural   Cu3Mo2O9
+_cell_length_a   7.7378330000
+_cell_length_b   6.9147790000
+_cell_length_c   14.8260300000
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   90.0000000000
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-x,-y,-z'
+ 3  '-x+1/2,-y,z+1/2'
+ 4  'x+1/2,y,-z+1/2'
+ 5  'x+1/2,-y+1/2,-z+1/2'
+ 6  '-x+1/2,y+1/2,z+1/2'
+ 7  '-x,y+1/2,-z'
+ 8  'x,-y+1/2,z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Cu Cu0 4 4c 0.2040510000 0.2500000000 0.4357550000 1.0000000000
+ Cu Cu1 4 4c 0.3358260000 0.2500000000 0.6433530000 1.0000000000
+ Cu Cu2 4 4a 0.0000000000 0.0000000000 0.0000000000 1.0000000000
+ Mo Mo3 4 4c 0.7645320000 0.2500000000 0.3310140000 1.0000000000
+ Mo Mo4 4 4c 0.3418300000 0.2500000000 0.8874060000 1.0000000000
+ O O5 8 8d 0.2540580000 0.9656280000 0.4400890000 1.0000000000
+ O O6 4 4c 0.7083520000 0.7500000000 0.2300760000 1.0000000000
+ O O7 4 4c 0.3038800000 0.2500000000 0.2853330000 1.0000000000
+ O O8 4 4c 0.0873070000 0.7500000000 0.0165980000 1.0000000000
+ O O9 8 8d 0.3605150000 0.9653650000 0.6366370000 1.0000000000
+ O O10 4 4c 0.5308060000 0.7500000000 0.8892100000 1.0000000000
+ O O11 4 4c 0.5668340000 0.2500000000 0.9038080000 1.0000000000

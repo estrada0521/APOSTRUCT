@@ -1,0 +1,36 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'P2/c'
+_symmetry_Int_Tables_number   13
+_chemical_formula_structural   V3O5
+_cell_length_a   7.1067472465
+_cell_length_b   5.1893250000
+_cell_length_c   9.9895502660
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   109.1700177153
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-x,-y,-z'
+ 3  '-x,y,-z+1/2'
+ 4  'x,-y,z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ V V0 4 4g 0.6594630000 0.2468290000 0.3776960000 1.0000000000
+ V V1 4 4g 0.1601890000 0.2528170000 0.3805140000 1.0000000000
+ V V2 4 4g 0.7484530000 0.7525040000 0.2487730000 1.0000000000
+ O O3 4 4g 0.2759860000 0.0898100000 0.9360640000 1.0000000000
+ O O4 4 4g 0.7838400000 0.3949680000 0.9487940000 1.0000000000
+ O O5 4 4g 0.6163010000 0.5986390000 0.6707990000 1.0000000000
+ O O6 4 4g 0.8907140000 0.9007150000 0.8288540000 1.0000000000
+ O O7 2 2e 0.0000000000 0.4543530000 0.7500000000 1.0000000000
+ O O8 2 2f 0.5000000000 0.0614850000 0.7500000000 1.0000000000

@@ -1,0 +1,38 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'Pnma'
+_symmetry_Int_Tables_number   62
+_chemical_formula_structural   RbFe2F6
+_cell_length_a   6.9590262800
+_cell_length_b   7.4103453600
+_cell_length_c   10.0670034800
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   90.0000000000
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-x,-y,-z'
+ 3  '-x+1/2,-y,z+1/2'
+ 4  'x+1/2,y,-z+1/2'
+ 5  'x+1/2,-y+1/2,-z+1/2'
+ 6  '-x+1/2,y+1/2,z+1/2'
+ 7  '-x,y+1/2,-z'
+ 8  'x,-y+1/2,z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Rb Rb0 4 4c 0.4960749100 0.2500000000 0.1274155500 1.0000000000
+ Fe Fe1 4 4c 0.3033444600 0.2500000000 0.7703341800 1.0000000000
+ Fe Fe2 4 4a 0.0000000000 0.0000000000 0.0000000000 1.0000000000
+ F F3 8 8d 0.2446085200 0.0725806400 0.9202661100 1.0000000000
+ F F4 8 8d 0.8699763600 0.0202290400 0.8244568100 1.0000000000
+ F F5 4 4c 0.9297981400 0.2500000000 0.0473045900 1.0000000000
+ F F6 4 4c 0.0715842500 0.2500000000 0.6584640400 1.0000000000

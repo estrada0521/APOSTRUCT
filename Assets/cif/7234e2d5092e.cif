@@ -1,0 +1,50 @@
+# generated using pymatgen
+data_Cs2Te4O9
+_symmetry_space_group_name_H-M   I-42d
+_cell_length_a   10.96281600
+_cell_length_b   10.96281600
+_cell_length_c   20.90715800
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   122
+_chemical_formula_structural   Cs2Te4O9
+_chemical_formula_sum   'Cs16 Te32 O72'
+_cell_volume   2512.69196649
+_cell_formula_units_Z   8
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  'y, -x, -z'
+  3  '-x, -y, z'
+  4  '-y, x, -z'
+  5  'x, -y+1/2, -z+1/4'
+  6  'y, x+1/2, z+1/4'
+  7  '-x, y+1/2, -z+1/4'
+  8  '-y, -x+1/2, z+1/4'
+  9  'x+1/2, y+1/2, z+1/2'
+  10  'y+1/2, -x+1/2, -z+1/2'
+  11  '-x+1/2, -y+1/2, z+1/2'
+  12  '-y+1/2, x+1/2, -z+1/2'
+  13  'x+1/2, -y, -z+3/4'
+  14  'y+1/2, x, z+3/4'
+  15  '-x+1/2, y, -z+3/4'
+  16  '-y+1/2, -x, z+3/4'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Cs  Cs0  8  0.00000000  0.00000000  0.24482600  1.0
+  Cs  Cs1  8  0.22162900  0.25000000  0.62500000  1.0
+  Te  Te2  16  0.10827800  0.36429000  0.82151900  1.0
+  Te  Te3  16  0.12250900  0.12551500  0.93915000  1.0
+  O  O4  16  0.00799950  0.70313550  0.76660950  1.0
+  O  O5  16  0.05414200  0.21478300  0.34746500  1.0
+  O  O6  16  0.06758550  0.17150550  0.02199250  1.0
+  O  O7  16  0.17404700  0.71265900  0.05304900  1.0
+  O  O8  8  0.00000000  0.00000000  0.39675400  1.0

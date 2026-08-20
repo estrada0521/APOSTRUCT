@@ -1,0 +1,40 @@
+# generated using pymatgen
+data_Sm3NbS3O4
+_symmetry_space_group_name_H-M   Pna2_1
+_cell_length_a   6.73897800
+_cell_length_b   14.36753900
+_cell_length_c   7.72392500
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   33
+_chemical_formula_structural   Sm3NbS3O4
+_chemical_formula_sum   'Sm12 Nb4 S12 O16'
+_cell_volume   747.84995412
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, z+1/2'
+  3  '-x+1/2, y+1/2, z+1/2'
+  4  'x+1/2, -y+1/2, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Sm  Sm0  4  0.21692500  0.34450200  0.00585700  1.0
+  Sm  Sm1  4  0.22197200  0.58234900  0.24949700  1.0
+  Sm  Sm2  4  0.22885500  0.33094600  0.49524100  1.0
+  Nb  Nb3  4  0.17879300  0.57347600  0.76470800  1.0
+  S  S4  4  0.00208800  0.22736100  0.76064600  1.0
+  S  S5  4  0.03246100  0.00844200  0.46964900  1.0
+  S  S6  4  0.04907300  0.20133000  0.23949800  1.0
+  O  O7  4  0.11832800  0.63870000  0.97890800  1.0
+  O  O8  4  0.12437700  0.61279100  0.52992500  1.0
+  O  O9  4  0.13449400  0.42660300  0.26358400  1.0
+  O  O10  4  0.14178800  0.43775900  0.74268900  1.0

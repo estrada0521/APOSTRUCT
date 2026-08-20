@@ -1,0 +1,40 @@
+data_structure
+_cell_length_a 13.16505622
+_cell_length_b 5.97596741
+_cell_length_c 8.16832815
+_cell_angle_alpha 90
+_cell_angle_beta 90
+_cell_angle_gamma 90
+_space_group_IT_number 62
+_space_group_name_H-M_alt 'Pnma'
+loop_
+_space_group_symop_id
+_space_group_symop_operation_xyz
+1 'x,y,z'
+2 '-x,-y,-z'
+3 '-x+1/2,-y,z+1/2'
+4 'x+1/2,y,-z+1/2'
+5 'x+1/2,-y+1/2,-z+1/2'
+6 '-x+1/2,y+1/2,z+1/2'
+7 '-x,y+1/2,-z'
+8 'x,-y+1/2,z'
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_symmetry_multiplicity
+_atom_site_Wyckoff_label
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_occupancy
+Na1 Na 4 c 0.24873891 0.75 0.12448539 1
+Co1 Co 4 a 0.5 0 0.5 1
+Co2 Co 4 c 0.60968955 0.25 0.21465424 1
+H1 H 4 c 0.16499873 0.25 0.97596128 1
+Se1 Se 4 c 0.82718363 0.25 0.22794206 1
+Se2 Se 4 c 0.52590334 0.75 0.11454687 1
+O1 O 4 c 0.60678337 0.75 0.54168311 1
+O2 O 4 c 0.59101731 0.25 0.97729003 1
+O3 O 8 d 0.75730642 0.96227913 0.69298411 1
+O4 O 8 d 0.51129166 0.97350864 0.24552186 1
+O5 O 4 c 0.10456249 0.25 0.04393506 1

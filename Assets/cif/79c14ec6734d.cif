@@ -1,0 +1,47 @@
+# generated using pymatgen
+data_TlHgAsS3
+_symmetry_space_group_name_H-M   I-42m
+_cell_length_a   11.67291400
+_cell_length_b   11.67291400
+_cell_length_c   10.62632600
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   121
+_chemical_formula_structural   TlHgAsS3
+_chemical_formula_sum   'Tl8 Hg8 As8 S24'
+_cell_volume   1447.91046497
+_cell_formula_units_Z   8
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  'y, -x, -z'
+  3  '-x, -y, z'
+  4  '-y, x, -z'
+  5  'x, -y, -z'
+  6  'y, x, z'
+  7  '-x, y, -z'
+  8  '-y, -x, z'
+  9  'x+1/2, y+1/2, z+1/2'
+  10  'y+1/2, -x+1/2, -z+1/2'
+  11  '-x+1/2, -y+1/2, z+1/2'
+  12  '-y+1/2, x+1/2, -z+1/2'
+  13  'x+1/2, -y+1/2, -z+1/2'
+  14  'y+1/2, x+1/2, z+1/2'
+  15  '-x+1/2, y+1/2, -z+1/2'
+  16  '-y+1/2, -x+1/2, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Tl  Tl0  4  0.00000000  0.00000000  0.34241200  1.0
+  Tl  Tl1  4  0.00000000  0.50000000  0.25000000  1.0
+  Hg  Hg2  8  0.00000000  0.27669500  0.00000000  1.0
+  As  As3  8  0.24816050  0.24816050  0.77066150  1.0
+  S  S4  16  0.12242000  0.32451500  0.40921300  1.0
+  S  S5  8  0.12997400  0.12997400  0.15638300  1.0

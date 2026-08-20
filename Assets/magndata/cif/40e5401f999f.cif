@@ -1,0 +1,42 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'P6_3mc'
+_symmetry_Int_Tables_number   186
+_chemical_formula_structural   Co2Mo3O8
+_cell_length_a   5.8713621529
+_cell_length_b   5.8713621529
+_cell_length_c   10.0209370000
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   90.0000000000
+_cell_angle_gamma   120.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  'x-y,x,z+1/2'
+ 3  '-y,x-y,z'
+ 4  '-x,-y,z+1/2'
+ 5  '-x+y,-x,z'
+ 6  'y,-x+y,z+1/2'
+ 7  'y,x,z+1/2'
+ 8  'x,x-y,z'
+ 9  'x-y,-y,z+1/2'
+ 10  '-y,-x,z'
+ 11  '-x,-x+y,z+1/2'
+ 12  '-x+y,y,z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Co Co0 2 2b 0.6666666667 0.3333333333 0.4469590000 1.0000000000
+ Co Co1 2 2b 0.6666666667 0.3333333333 0.0156890000 1.0000000000
+ Mo Mo2 6 6c 0.8540190000 0.7080380000 0.7492180000 1.0000000000
+ O O3 6 6c 0.1680420000 0.3360840000 0.6324030000 1.0000000000
+ O O4 6 6c 0.4878410000 0.9756820000 0.3650530000 1.0000000000
+ O O5 2 2a 0.0000000000 0.0000000000 0.8923980000 1.0000000000
+ O O6 2 2b 0.6666666667 0.3333333333 0.6439310000 1.0000000000

@@ -1,0 +1,57 @@
+data_structure
+_cell_length_a 6.97527
+_cell_length_b 11.7281
+_cell_length_c 23.4507
+_cell_angle_alpha 90
+_cell_angle_beta 98.813
+_cell_angle_gamma 90
+_space_group_IT_number 14
+_space_group_name_H-M_alt 'P2_1/c'
+loop_
+_space_group_symop_id
+_space_group_symop_operation_xyz
+1 'x,y,z'
+2 '-x,-y,-z'
+3 '-x,y+1/2,-z+1/2'
+4 'x,-y+1/2,z+1/2'
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_symmetry_multiplicity
+_atom_site_Wyckoff_label
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_occupancy
+Ba1 Ba 4 e 0.0546 0.3517 0.1145 1
+Ba2 Ba 4 e 0.25 0.6141 0.3283 1
+Ba3 Ba 4 e 0.1431 0.1304 0.3215 1
+Ba4 Ba 4 e 0.3257 0.6328 0.0379 1
+Ba5 Ba 4 e 0.0547 0.6176 0.6001 1
+Ba6 Ba 4 e 0.5603 0.3549 0.2558 1
+Ba7 Ba 4 e 0.3544 0.1102 0.0364 1
+Fe1 Fe 4 e 0.5249 0.3531 0.1038 1
+Fe2 Fe 4 e 0.3848 0.5816 0.186 1
+Fe3 Fe 4 e 0.062 0.3996 0.2595 1
+Fe4 Fe 4 e 0.1739 0.1525 0.4707 1
+Fe5 Fe 4 e 0.4359 0.3817 0.3988 1
+Fe6 Fe 4 e 0.2707 0.1045 0.1746 1
+Fe7 Fe 4 e 0.1458 0.6217 0.4644 1
+O1 O 2 a 0 0 0 1
+O2 O 4 e 0.2972 0.7097 0.1485 1
+O3 O 4 e 0.9372 0.277 0.2271 1
+O4 O 4 e 0.0382 0.0449 0.4273 1
+O5 O 4 e 0.008 0.2474 0.0021 1
+O6 O 4 e 0.2954 0.5 0.4297 1
+O7 O 4 e 0.7133 0.2597 0.0766 1
+O8 O 4 e 0.0559 0.1195 0.1079 1
+O9 O 4 e 0.406 0.9862 0.1436 1
+O10 O 4 e 0.4063 0.2443 0.147 1
+O11 O 4 e 0.1173 0.0036 0.2168 1
+O12 O 4 e 0.45 0.1263 0.2497 1
+O13 O 4 e 0.1944 0.4907 0.211 1
+O14 O 4 e 0.5416 0.4917 0.1449 1
+O15 O 4 e 0.3115 0.2406 0.4261 1
+O16 O 4 e 0.3596 0.3923 0.0364 1
+O17 O 4 e 0.2515 0.3583 0.3225 1
+O18 O 4 e 0.653 0.3669 0.4636 1

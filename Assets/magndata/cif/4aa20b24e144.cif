@@ -1,0 +1,38 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'C2/m'
+_symmetry_Int_Tables_number   12
+_chemical_formula_structural   FeBi4S7
+_cell_length_a   12.5555240000
+_cell_length_b   3.9015080000
+_cell_length_c   11.9205276203
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   104.5945626065
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-x,-y,-z'
+ 3  '-x,y,-z'
+ 4  'x,-y,z'
+ 5  'x+1/2,y+1/2,z'
+ 6  '-x+1/2,-y+1/2,-z'
+ 7  '-x+1/2,y+1/2,-z'
+ 8  'x+1/2,-y+1/2,z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Fe Fe0 2 2c 0.0000000000 0.0000000000 0.5000000000 1.0000000000
+ Bi Bi1 4 4i 0.3811260000 0.5000000000 0.0827450000 1.0000000000
+ Bi Bi2 4 4i 0.1820300000 0.5000000000 0.3373530000 1.0000000000
+ S S3 4 4i 0.0289410000 0.0000000000 0.3197400000 1.0000000000
+ S S4 4 4i 0.2489520000 0.5000000000 0.8566650000 1.0000000000
+ S S5 4 4i 0.1251980000 0.5000000000 0.5387690000 1.0000000000
+ S S6 2 2b 0.0000000000 0.5000000000 0.0000000000 1.0000000000

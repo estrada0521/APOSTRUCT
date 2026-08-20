@@ -30,3 +30,13 @@ Suggested citations:
   - B. J. Campbell, H. T. Stokes, D. E. Tanner, and D. M. Hatch,
     "ISODISPLACE: a web-based tool for exploring structural distortions,"
     Journal of Applied Crystallography 39, 607-614 (2006).
+
+The CIF files under Assets/ are parent structures used as Validation input,
+not part of APOSTRUCT itself. Most, including all of Assets/cif/ and the
+majority of Assets/magndata/cif/, are from the Materials Project
+(https://materialsproject.org), licensed CC BY 4.0; attribution is requested
+via their citation guidelines at
+https://next-gen.materialsproject.org/about/cite. A small remainder within
+Assets/magndata/cif/ is from the Crystallography Open Database
+(https://www.crystallography.net/cod/), dedicated to the public domain under
+CC0.

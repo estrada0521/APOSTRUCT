@@ -1,0 +1,45 @@
+# generated using pymatgen
+data_Na2TiSi4H2O13
+_symmetry_space_group_name_H-M   Pbcn
+_cell_length_a   8.78701600
+_cell_length_b   7.44642800
+_cell_length_c   16.53026400
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   60
+_chemical_formula_structural   Na2TiSi4H2O13
+_chemical_formula_sum   'Na8 Ti4 Si16 H8 O52'
+_cell_volume   1081.60628313
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x+1/2, -y+1/2, z+1/2'
+  4  'x+1/2, y+1/2, -z+1/2'
+  5  'x+1/2, -y+1/2, -z'
+  6  '-x+1/2, y+1/2, z'
+  7  '-x, y, -z+1/2'
+  8  'x, -y, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Na  Na0  8  0.19244000  0.12042700  0.39746500  1.0
+  Ti  Ti1  4  0.00000000  0.50000000  0.00000000  1.0
+  Si  Si2  8  0.05983000  0.24156000  0.65720100  1.0
+  Si  Si3  8  0.15968900  0.12253800  0.08044800  1.0
+  H  H4  8  0.18187900  0.34392800  0.25537300  1.0
+  O  O5  8  0.03588700  0.26952600  0.05119500  1.0
+  O  O6  8  0.04109700  0.38497400  0.89347800  1.0
+  O  O7  8  0.05041100  0.04102700  0.61615300  1.0
+  O  O8  8  0.21226600  0.37494600  0.31130300  1.0
+  O  O9  8  0.22069900  0.44165900  0.51108500  1.0
+  O  O10  8  0.24115400  0.29990000  0.65927700  1.0
+  O  O11  4  0.00000000  0.22700500  0.75000000  1.0

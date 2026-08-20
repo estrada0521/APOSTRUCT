@@ -1,0 +1,37 @@
+# generated using pymatgen
+data_MgCd2Te2(MoO6)2
+_symmetry_space_group_name_H-M   P-4
+_cell_length_a   5.34286700
+_cell_length_b   5.34286700
+_cell_length_c   10.39293000
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   81
+_chemical_formula_structural   MgCd2Te2(MoO6)2
+_chemical_formula_sum   'Mg1 Cd2 Te2 Mo2 O12'
+_cell_volume   296.67894708
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  'y, -x, -z'
+  3  '-x, -y, z'
+  4  '-y, x, -z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Mg  Mg0  1  0.50000000  0.50000000  0.00000000  1.0
+  Cd  Cd1  1  0.00000000  0.00000000  0.50000000  1.0
+  Cd  Cd2  1  0.50000000  0.50000000  0.50000000  1.0
+  Te  Te3  2  0.00000000  0.50000000  0.26965300  1.0
+  Mo  Mo4  2  0.00000000  0.50000000  0.78073300  1.0
+  O  O5  4  0.19889700  0.30678900  0.38747700  1.0
+  O  O6  4  0.21251500  0.26530600  0.69362800  1.0
+  O  O7  4  0.23570700  0.64123100  0.88861000  1.0

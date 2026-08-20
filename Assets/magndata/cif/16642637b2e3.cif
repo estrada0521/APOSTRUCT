@@ -1,0 +1,39 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'P6_322'
+_symmetry_Int_Tables_number   182
+_chemical_formula_structural   Ta3CoS6
+_cell_length_a   5.7840637778
+_cell_length_b   5.7840637778
+_cell_length_c   12.0225502600
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   90.0000000000
+_cell_angle_gamma   120.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  'x-y,x,z+1/2'
+ 3  '-y,x-y,z'
+ 4  '-x,-y,z+1/2'
+ 5  '-x+y,-x,z'
+ 6  'y,-x+y,z+1/2'
+ 7  '-y,-x,-z+1/2'
+ 8  '-x,-x+y,-z'
+ 9  '-x+y,y,-z+1/2'
+ 10  'y,x,-z'
+ 11  'x,x-y,-z+1/2'
+ 12  'x-y,-y,-z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Ta Ta0 2 2a 0.0000000000 0.0000000000 0.5000000000 1.0000000000
+ Ta Ta1 4 4f 0.6666666667 0.3333333333 0.0013228800 1.0000000000
+ Co Co2 2 2c 0.6666666667 0.3333333333 0.7500000000 1.0000000000
+ S S3 12 12i 0.9998913500 0.6674742800 0.6291113000 1.0000000000

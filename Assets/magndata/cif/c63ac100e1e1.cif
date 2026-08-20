@@ -1,0 +1,35 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'P2_1/c'
+_symmetry_Int_Tables_number   14
+_chemical_formula_structural   CrTe3
+_cell_length_a   8.2069032632
+_cell_length_b   11.5575034700
+_cell_length_c   11.6884016253
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   117.8577558882
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-x,-y,-z'
+ 3  '-x,y+1/2,-z+1/2'
+ 4  'x,-y+1/2,z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Cr Cr0 4 4e 0.4981617500 0.0002458600 0.8259767500 1.0000000000
+ Cr Cr1 4 4e 0.4814945000 0.2841888200 0.9938689400 1.0000000000
+ Te Te2 4 4e 0.2921193100 0.9061403400 0.9326213500 1.0000000000
+ Te Te3 4 4e 0.2495971300 0.3227866800 0.2634815800 1.0000000000
+ Te Te4 4 4e 0.2502661000 0.1746892700 0.0711398800 1.0000000000
+ Te Te5 4 4e 0.2955784200 0.6160001300 0.0976672500 1.0000000000
+ Te Te6 4 4e 0.2047124500 0.4484000300 0.9023621500 1.0000000000
+ Te Te7 4 4e 0.2977285800 0.6161572500 0.7684241800 1.0000000000

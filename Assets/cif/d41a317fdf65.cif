@@ -1,0 +1,44 @@
+# generated using pymatgen
+data_Cu7As6Se13
+_symmetry_space_group_name_H-M   R3
+_cell_length_a   13.66116886
+_cell_length_b   13.66116886
+_cell_length_c   11.48224024
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   146
+_chemical_formula_structural   Cu7As6Se13
+_chemical_formula_sum   'Cu21 As18 Se39'
+_cell_volume   1855.80773204
+_cell_formula_units_Z   3
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y, x-y, z'
+  3  '-x+y, -x, z'
+  4  'x+2/3, y+1/3, z+1/3'
+  5  '-y+2/3, x-y+1/3, z+1/3'
+  6  '-x+y+2/3, -x+1/3, z+1/3'
+  7  'x+1/3, y+2/3, z+2/3'
+  8  '-y+1/3, x-y+2/3, z+2/3'
+  9  '-x+y+1/3, -x+2/3, z+2/3'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Cu  Cu0  9  0.04857967  0.15943133  0.09534533  1.0
+  Cu  Cu1  9  0.17495200  0.13458900  0.41227400  1.0
+  Cu  Cu2  3  0.00000000  0.00000000  0.75389700  1.0
+  As  As3  9  0.05470100  0.59852300  0.44258000  1.0
+  As  As4  9  0.11732933  0.35092167  0.40954267  1.0
+  Se  Se5  9  0.03437400  0.60908100  0.70651800  1.0
+  Se  Se6  9  0.03848667  0.16828033  0.31131633  1.0
+  Se  Se7  9  0.09792033  0.36123767  0.68894167  1.0
+  Se  Se8  9  0.16931167  0.11701833  0.62671833  1.0
+  Se  Se9  3  0.00000000  0.00000000  0.96996500  1.0

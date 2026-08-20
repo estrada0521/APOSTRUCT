@@ -1,0 +1,39 @@
+data_structure
+_cell_length_a 5.47413077
+_cell_length_b 19.25117844
+_cell_length_c 9.21015288
+_cell_angle_alpha 90
+_cell_angle_beta 90
+_cell_angle_gamma 90
+_space_group_IT_number 61
+_space_group_name_H-M_alt 'Pbca'
+loop_
+_space_group_symop_id
+_space_group_symop_operation_xyz
+1 'x,y,z'
+2 '-x,-y,-z'
+3 '-x+1/2,-y,z+1/2'
+4 'x+1/2,y,-z+1/2'
+5 'x+1/2,-y+1/2,-z'
+6 '-x+1/2,y+1/2,z'
+7 '-x,y+1/2,-z+1/2'
+8 'x,-y+1/2,z+1/2'
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_symmetry_multiplicity
+_atom_site_Wyckoff_label
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_occupancy
+Mn1 Mn 8 c 0.85137255 0.62252053 0.01710505 1
+Mn2 Mn 8 c 0.85960929 0.87646293 0.15372477 1
+Ge1 Ge 8 c 0.30105013 0.52731195 0.1625605 1
+Ge2 Ge 8 c 0.46324067 0.27066804 0.84330376 1
+O1 O 8 c 0.69476601 0.93646352 0.33981785 1
+O2 O 8 c 0.17726039 0.56917149 0.01455028 1
+O3 O 8 c 0.61459043 0.94504732 0.68518887 1
+O4 O 8 c 0.45419543 0.18942446 0.51126611 1
+O5 O 8 c 0.47532614 0.18028516 0.84001502 1
+O6 O 8 c 0.82073573 0.80641056 0.72124203 1

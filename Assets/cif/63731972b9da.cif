@@ -1,0 +1,40 @@
+# generated using pymatgen
+data_Bi2Se2Cl7
+_symmetry_space_group_name_H-M   P4/n
+_cell_length_a   10.97531900
+_cell_length_b   10.97531900
+_cell_length_c   10.52050500
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   85
+_chemical_formula_structural   Bi2Se2Cl7
+_chemical_formula_sum   'Bi8 Se8 Cl28'
+_cell_volume   1267.27506874
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y+1/2, x+1/2, z'
+  3  '-x, -y, z'
+  4  'y+1/2, -x+1/2, z'
+  5  '-x+1/2, -y+1/2, -z'
+  6  'y, -x, -z'
+  7  'x+1/2, y+1/2, -z'
+  8  '-y, x, -z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Bi  Bi0  8  0.10957100  0.76705400  0.34959000  1.0
+  Se  Se1  8  0.07931800  0.62826000  0.89226800  1.0
+  Cl  Cl2  8  0.09968700  0.14552200  0.85450800  1.0
+  Cl  Cl3  8  0.11229500  0.30175000  0.55979900  1.0
+  Cl  Cl4  8  0.12830800  0.23302300  0.22661500  1.0
+  Cl  Cl5  2  0.00000000  0.00000000  0.50000000  1.0
+  Cl  Cl6  2  0.00000000  0.50000000  0.32809700  1.0

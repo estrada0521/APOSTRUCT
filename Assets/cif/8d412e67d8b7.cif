@@ -1,0 +1,53 @@
+# generated using pymatgen
+data_Re3Te4Cl5
+_symmetry_space_group_name_H-M   Pna2_1
+_cell_length_a   20.33187700
+_cell_length_b   16.00341100
+_cell_length_c   9.43250600
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   33
+_chemical_formula_structural   Re3Te4Cl5
+_chemical_formula_sum   'Re24 Te32 Cl40'
+_cell_volume   3069.14299216
+_cell_formula_units_Z   8
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, z+1/2'
+  3  '-x+1/2, y+1/2, z+1/2'
+  4  'x+1/2, -y+1/2, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Re  Re0  4  0.13079500  0.70504700  0.72635100  1.0
+  Re  Re1  4  0.13310300  0.86291600  0.62318400  1.0
+  Re  Re2  4  0.15869700  0.73282200  0.45117700  1.0
+  Re  Re3  4  0.22849100  0.80936300  0.80075600  1.0
+  Re  Re4  4  0.24464400  0.33699700  0.02752200  1.0
+  Re  Re5  4  0.24712000  0.18098800  0.12641200  1.0
+  Te  Te6  4  0.03484800  0.75435200  0.54623000  1.0
+  Te  Te7  4  0.03824500  0.97697400  0.61185100  1.0
+  Te  Te8  4  0.05853900  0.60213700  0.88933200  1.0
+  Te  Te9  4  0.10693700  0.83491300  0.90226200  1.0
+  Te  Te10  4  0.15741400  0.57269200  0.55456600  1.0
+  Te  Te11  4  0.16277100  0.89125100  0.34712800  1.0
+  Te  Te12  4  0.22884500  0.64946400  0.90117500  1.0
+  Te  Te13  4  0.23098200  0.96866100  0.69760300  1.0
+  Cl  Cl14  4  0.01167900  0.47736900  0.23587000  1.0
+  Cl  Cl15  4  0.03065500  0.31879200  0.48470400  1.0
+  Cl  Cl16  4  0.05177800  0.07381000  0.80793500  1.0
+  Cl  Cl17  4  0.07189000  0.08345400  0.44573100  1.0
+  Cl  Cl18  4  0.12332700  0.68211700  0.22312500  1.0
+  Cl  Cl19  4  0.15814900  0.28352600  0.19642000  1.0
+  Cl  Cl20  4  0.15867000  0.40775400  0.90582900  1.0
+  Cl  Cl21  4  0.16405600  0.07770600  0.10940500  1.0
+  Cl  Cl22  4  0.22020100  0.35361300  0.51500100  1.0
+  Cl  Cl23  4  0.22415500  0.21327300  0.86823000  1.0

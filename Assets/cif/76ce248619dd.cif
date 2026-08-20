@@ -1,0 +1,55 @@
+# generated using pymatgen
+data_Ba8LiNb7O24
+_symmetry_space_group_name_H-M   P3m1
+_cell_length_a   5.92238760
+_cell_length_b   5.92238760
+_cell_length_c   19.22246600
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   156
+_chemical_formula_structural   Ba8LiNb7O24
+_chemical_formula_sum   'Ba8 Li1 Nb7 O24'
+_cell_volume   583.89315981
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y, x-y, z'
+  3  '-x+y, -x, z'
+  4  '-y, -x, z'
+  5  '-x+y, y, z'
+  6  'x, x-y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ba  Ba0  1  0.00000000  0.00000000  0.24966600  1.0
+  Ba  Ba1  1  0.00000000  0.00000000  0.63479900  1.0
+  Ba  Ba2  1  0.00000000  0.00000000  0.85679700  1.0
+  Ba  Ba3  1  0.33333333  0.66666667  0.50217700  1.0
+  Ba  Ba4  1  0.33333333  0.66666667  0.99420800  1.0
+  Ba  Ba5  1  0.66666667  0.33333333  0.13215300  1.0
+  Ba  Ba6  1  0.66666667  0.33333333  0.36522000  1.0
+  Ba  Ba7  1  0.66666667  0.33333333  0.75208200  1.0
+  Li  Li8  1  0.33333333  0.66666667  0.83142700  1.0
+  Nb  Nb9  1  0.00000000  0.00000000  0.05990100  1.0
+  Nb  Nb10  1  0.00000000  0.00000000  0.43947900  1.0
+  Nb  Nb11  1  0.33333333  0.66666667  0.18246000  1.0
+  Nb  Nb12  1  0.33333333  0.66666667  0.31793200  1.0
+  Nb  Nb13  1  0.33333333  0.66666667  0.69002100  1.0
+  Nb  Nb14  1  0.66666667  0.33333333  0.56044300  1.0
+  Nb  Nb15  1  0.66666667  0.33333333  0.93404200  1.0
+  O  O16  3  0.00980133  0.50490067  0.24980900  1.0
+  O  O17  3  0.16385783  0.83614217  0.12428700  1.0
+  O  O18  3  0.16445183  0.83554817  0.37673700  1.0
+  O  O19  3  0.17475933  0.34951867  0.74349800  1.0
+  O  O20  3  0.33164633  0.16582317  0.00376200  1.0
+  O  O21  3  0.33438333  0.16719167  0.49915200  1.0
+  O  O22  3  0.50184233  0.00368467  0.62068400  1.0
+  O  O23  3  0.50702733  0.01405467  0.88114000  1.0

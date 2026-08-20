@@ -1,0 +1,50 @@
+# generated using pymatgen
+data_NaFe6H12S4O29
+_symmetry_space_group_name_H-M   P2/m
+_cell_length_a   7.01104600
+_cell_length_b   7.40539300
+_cell_length_c   10.26027004
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   93.61807468
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   10
+_chemical_formula_structural   NaFe6H12S4O29
+_chemical_formula_sum   'Na1 Fe6 H12 S4 O29'
+_cell_volume   531.64685642
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x, y, -z'
+  4  'x, -y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Na  Na0  1  0.00000000  0.00000000  0.00000000  1.0
+  Fe  Fe1  4  0.24394800  0.25065400  0.24566300  1.0
+  Fe  Fe2  1  0.00000000  0.50000000  0.50000000  1.0
+  Fe  Fe3  1  0.50000000  0.00000000  0.00000000  1.0
+  H  H4  4  0.18952500  0.21862800  0.49317200  1.0
+  H  H5  4  0.31142800  0.29338300  0.00826400  1.0
+  H  H6  2  0.01199700  0.00000000  0.30421300  1.0
+  H  H7  2  0.47374300  0.50000000  0.18468900  1.0
+  S  S8  2  0.12947600  0.50000000  0.81053900  1.0
+  S  S9  2  0.38730000  0.00000000  0.69110500  1.0
+  O  O10  4  0.01438500  0.33477100  0.83729700  1.0
+  O  O11  4  0.16350600  0.31712500  0.42967600  1.0
+  O  O12  4  0.32116300  0.18661800  0.06605300  1.0
+  O  O13  4  0.49725700  0.16501000  0.33211000  1.0
+  O  O14  2  0.13033100  0.00000000  0.25726900  1.0
+  O  O15  2  0.18374900  0.50000000  0.67378000  1.0
+  O  O16  2  0.21510000  0.00000000  0.60101100  1.0
+  O  O17  2  0.30272600  0.50000000  0.90120300  1.0
+  O  O18  2  0.32915500  0.00000000  0.82896900  1.0
+  O  O19  2  0.34992600  0.50000000  0.22584300  1.0
+  O  O20  1  0.50000000  0.50000000  0.50000000  1.0

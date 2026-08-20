@@ -1,0 +1,53 @@
+# generated using pymatgen
+data_Ba14In4Cu2N7
+_symmetry_space_group_name_H-M   P2/m
+_cell_length_a   9.45004700
+_cell_length_b   8.18606600
+_cell_length_c   21.92920301
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   102.15273692
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   10
+_chemical_formula_structural   Ba14In4Cu2N7
+_chemical_formula_sum   'Ba28 In8 Cu4 N14'
+_cell_volume   1658.39796707
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x, y, -z'
+  4  'x, -y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ba  Ba0  4  0.07539600  0.25239400  0.19103500  1.0
+  Ba  Ba1  4  0.25189100  0.25099100  0.39294500  1.0
+  Ba  Ba2  4  0.34089700  0.26607300  0.58547900  1.0
+  Ba  Ba3  2  0.00000000  0.25249400  0.00000000  1.0
+  Ba  Ba4  2  0.11106900  0.00000000  0.69293400  1.0
+  Ba  Ba5  2  0.24707900  0.00000000  0.91240300  1.0
+  Ba  Ba6  2  0.24827600  0.50000000  0.91621400  1.0
+  Ba  Ba7  2  0.32794800  0.50000000  0.09291900  1.0
+  Ba  Ba8  2  0.33098600  0.00000000  0.09103000  1.0
+  Ba  Ba9  2  0.41546200  0.00000000  0.28888200  1.0
+  Ba  Ba10  1  0.00000000  0.00000000  0.50000000  1.0
+  Ba  Ba11  1  0.00000000  0.50000000  0.50000000  1.0
+  In  In12  4  0.36434600  0.29935900  0.78067500  1.0
+  In  In13  2  0.14172100  0.50000000  0.69193600  1.0
+  In  In14  2  0.43839700  0.50000000  0.28161800  1.0
+  Cu  Cu15  2  0.50000000  0.24391700  0.00000000  1.0
+  Cu  Cu16  1  0.50000000  0.00000000  0.50000000  1.0
+  Cu  Cu17  1  0.50000000  0.50000000  0.50000000  1.0
+  N  N18  4  0.30257700  0.24259500  0.00291200  1.0
+  N  N19  2  0.04640500  0.50000000  0.10229100  1.0
+  N  N20  2  0.05254500  0.00000000  0.11435900  1.0
+  N  N21  2  0.14522000  0.00000000  0.29930500  1.0
+  N  N22  2  0.29733700  0.50000000  0.49430000  1.0
+  N  N23  2  0.47236100  0.00000000  0.41272300  1.0

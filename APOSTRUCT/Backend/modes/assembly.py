@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
+from decimal import Decimal
 from fractions import Fraction
 from typing import Any
 import gemmi
@@ -103,6 +104,132 @@ from APOSTRUCT.Backend.modes.site_transport import (
     _parent_setting_bridge,
     _source_default_wyckoff_params,
 )
+
+
+def _independent_mode_columns(
+    columns: list[dict[tuple[str, int], int]],
+) -> tuple[int, ...]:
+    from sympy.polys.domains import GF
+    from sympy.polys.matrices import DomainMatrix
+
+    coordinates = sorted({item for column in columns for item in column})
+    row_index = {item: index for index, item in enumerate(coordinates)}
+    rows: dict[int, dict[int, int]] = {}
+    for column_index, column in enumerate(columns):
+        for item, value in column.items():
+            rows.setdefault(row_index[item], {})[column_index] = value
+    matrix = DomainMatrix.from_dict_sympy(
+        len(coordinates), len(columns), rows
+    )
+    modular = matrix.convert_to(GF(1_000_003))
+    _reduced, modular_pivots = modular.rref()
+    free = set(range(len(columns))) - set(modular_pivots)
+    for relation in modular.nullspace().to_list():
+        support = [index for index, value in enumerate(relation) if value]
+        free_support = free.intersection(support)
+        if len(free_support) != 1:
+            raise ValueError("modular mode relation has no unique free column")
+        support_rows = {
+            row_index: {
+                column_index: value
+                for column_index, source_index in enumerate(support)
+                if (value := rows.get(row_index, {}).get(source_index, 0))
+            }
+            for row_index in range(len(coordinates))
+        }
+        support_rows = {index: row for index, row in support_rows.items() if row}
+        if DomainMatrix.from_dict_sympy(
+            len(coordinates), len(support), support_rows
+        ).to_field().rank() == len(support):
+            _exact_reduced, exact_pivots = matrix.to_field().rref()
+            return tuple(int(index) for index in exact_pivots)
+    return tuple(int(index) for index in modular_pivots)
+
+
+def _independent_child_mode_union(
+    definitions: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Keep the Source-ordered independent union across parent-irrep specs."""
+
+    def finish(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        for item in items:
+            item.pop("_selected_source_subspace_replaced", None)
+            item.pop("_source_occurrence_family", None)
+        return items
+
+    family_specs: dict[tuple[int, str, tuple[Any, ...]], set[int]] = {}
+    for definition in definitions:
+        family = tuple(definition.get("_source_occurrence_family") or ())
+        if family:
+            family_specs.setdefault(
+                (
+                    int(definition.get("_site_order") or 0),
+                    str(definition.get("_mode_kind") or ""),
+                    family,
+                ),
+                set(),
+            ).add(int(definition.get("_spec_order") or 0))
+    affected_groups = {
+        (
+            int(definition.get("_site_order") or 0),
+            str(definition.get("_mode_kind") or ""),
+        )
+        for definition in definitions
+        if definition.get("_selected_source_subspace_replaced")
+        and len(
+            family_specs.get(
+                (
+                    int(definition.get("_site_order") or 0),
+                    str(definition.get("_mode_kind") or ""),
+                    tuple(definition.get("_source_occurrence_family") or ()),
+                ),
+                (),
+            )
+        )
+        > 1
+    }
+    if not affected_groups:
+        return finish(definitions)
+
+    grouped: dict[
+        tuple[int, str],
+        list[tuple[int, dict[tuple[str, int], int]]],
+    ] = {}
+    for definition_index, definition in enumerate(definitions):
+        key = (
+            int(definition.get("_site_order") or 0),
+            str(definition.get("_mode_kind") or ""),
+        )
+        if key not in affected_groups:
+            continue
+        rows = definition.get("rows") or []
+        atom_ids = tuple(str(row.get("atom_id") or "") for row in rows)
+        if not atom_ids or not all(atom_ids) or len(set(atom_ids)) != len(atom_ids):
+            raise ValueError("mode definition has no unique atom identity")
+        vector = {
+            (atom_id, axis): quantized
+            for atom_id, row in zip(atom_ids, rows, strict=True)
+            for axis, value in enumerate(row["dxyz"])
+            if (
+                quantized := int(Decimal(format(float(value), ".4f")) * 10_000)
+            )
+        }
+        grouped.setdefault(key, []).append((definition_index, vector))
+    dependent: set[int] = set()
+    for group in grouped.values():
+        pivots = _independent_mode_columns([vector for _index, vector in group])
+        dependent.update(
+            definition_index
+            for column_index, (definition_index, _vector) in enumerate(group)
+            if column_index not in pivots
+        )
+    return finish(
+        [
+            definition
+            for definition_index, definition in enumerate(definitions)
+            if definition_index not in dependent
+        ]
+    )
 
 
 def _secondary_invariant_factors(
@@ -621,12 +748,15 @@ def build_mode_details(
             "reason": "mode kernel requires a selected irrep label",
             "irrep": selected_irrep,
         }
+    selected_iso = _isotropy_from_opd_row(selected_opd) or {}
+    coupled_slot_source_rows = selected_iso.pop("_slot_source_numeric_rows", [])
     render_specs = (
         _coupled_render_specs(
             decoder,
             sg,
             selected_slots,
             selected_opd,
+            coupled_slot_source_rows,
             include_displacive=displacive_row_ids is None or bool(displacive_row_ids),
             include_magnetic=include_magnetic
             and (magnetic_row_ids is None or bool(magnetic_row_ids)),
@@ -719,6 +849,7 @@ def build_mode_details(
                 sg,
                 selected_slots,
                 selected_opd,
+                coupled_slot_source_rows,
                 include_displacive=True,
                 include_magnetic=False,
             )
@@ -1208,6 +1339,12 @@ def build_mode_details(
                         "_spec_order": spec_index,
                         "_site_order": site_index,
                         "_mode_kind": mode_kind,
+                        "_selected_source_subspace_replaced": bool(
+                            spec.get("_selected_source_subspace_replaced")
+                        ),
+                        "_source_occurrence_family": tuple(
+                            spec.get("source_occurrences") or ()
+                        ),
                         "_source_family_dynamic": bool(
                             spec_gid > 0 and int(spec.get("old_id") or 0) <= 0
                         ),
@@ -1355,6 +1492,9 @@ def build_mode_details(
     magnetic_definitions = _apply_dynamic_source_family_presentation(
         magnetic_definitions
     )
+    if coupled:
+        definitions = _independent_child_mode_union(definitions)
+        magnetic_definitions = _independent_child_mode_union(magnetic_definitions)
     strain_definitions = (
         _strain_mode_definitions(
             sg,

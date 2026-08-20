@@ -1,0 +1,44 @@
+# generated using pymatgen
+data_LiGa4(WO6)2
+_symmetry_space_group_name_H-M   Amm2
+_cell_length_a   9.24088600
+_cell_length_b   6.57914140
+_cell_length_c   6.75110553
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   38
+_chemical_formula_structural   LiGa4(WO6)2
+_chemical_formula_sum   'Li2 Ga8 W4 O24'
+_cell_volume   410.44760879
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, z'
+  3  '-x, y, z'
+  4  'x, -y, z'
+  5  'x, y+1/2, z+1/2'
+  6  '-x, -y+1/2, z+1/2'
+  7  '-x, y+1/2, z+1/2'
+  8  'x, -y+1/2, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Li  Li0  2  0.00000000  0.00000000  0.31033500  1.0
+  Ga  Ga1  4  0.17976000  0.00000000  0.52542650  1.0
+  Ga  Ga2  4  0.33732600  0.00000000  0.00923750  1.0
+  W  W3  2  0.00000000  0.00000000  0.97341250  1.0
+  W  W4  2  0.50000000  0.00000000  0.50425400  1.0
+  O  O5  8  0.34219100  0.19490900  0.49901100  1.0
+  O  O6  4  0.00000000  0.19596550  0.49770450  1.0
+  O  O7  4  0.16614200  0.00000000  0.18131150  1.0
+  O  O8  4  0.17409100  0.00000000  0.80348100  1.0
+  O  O9  2  0.50000000  0.00000000  0.20429700  1.0
+  O  O10  2  0.50000000  0.00000000  0.79726250  1.0

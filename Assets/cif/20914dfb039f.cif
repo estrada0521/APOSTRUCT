@@ -1,0 +1,40 @@
+# generated using pymatgen
+data_LiFeF3
+_symmetry_space_group_name_H-M   P4_2/n
+_cell_length_a   8.81151900
+_cell_length_b   8.81151900
+_cell_length_c   6.20339200
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   86
+_chemical_formula_structural   LiFeF3
+_chemical_formula_sum   'Li8 Fe8 F24'
+_cell_volume   481.64914055
+_cell_formula_units_Z   8
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y+1/2, x+1/2, z+1/2'
+  3  '-x, -y, z'
+  4  'y+1/2, -x+1/2, z+1/2'
+  5  '-x+1/2, -y+1/2, -z+1/2'
+  6  'y, -x, -z'
+  7  'x+1/2, y+1/2, -z+1/2'
+  8  '-y, x, -z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Li  Li0  4  0.25000000  0.25000000  0.75000000  1.0
+  Li  Li1  2  0.00000000  0.00000000  0.00000000  1.0
+  Li  Li2  2  0.00000000  0.00000000  0.50000000  1.0
+  Fe  Fe3  8  0.09092600  0.33566800  0.28378200  1.0
+  F  F4  8  0.04942400  0.83744800  0.32874300  1.0
+  F  F5  8  0.05401700  0.36703900  0.70326000  1.0
+  F  F6  8  0.18552800  0.80478500  0.93236100  1.0

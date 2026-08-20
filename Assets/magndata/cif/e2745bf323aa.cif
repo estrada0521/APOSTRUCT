@@ -1,0 +1,44 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'C2/c'
+_symmetry_Int_Tables_number   15
+_chemical_formula_structural   BaMn2Si2O7
+_cell_length_a   7.4393300000
+_cell_length_b   13.1108140000
+_cell_length_c   14.2287576971
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   90.5854123698
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-x,-y,-z'
+ 3  '-x,y,-z+1/2'
+ 4  'x,-y,z+1/2'
+ 5  'x+1/2,y+1/2,z'
+ 6  '-x+1/2,-y+1/2,-z'
+ 7  '-x+1/2,y+1/2,-z+1/2'
+ 8  'x+1/2,-y+1/2,z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Ba Ba0 8 8f 0.2039165000 0.4850555000 0.1221790000 1.0000000000
+ Mn Mn1 4 4e 0.5000000000 0.2329480000 0.2500000000 1.0000000000
+ Mn Mn2 4 4e 0.0000000000 0.2697990000 0.2500000000 1.0000000000
+ Mn Mn3 8 8f 0.0337735000 0.2665495000 0.5088350000 1.0000000000
+ Si Si4 8 8f 0.2165665000 0.1232615000 0.1347460000 1.0000000000
+ Si Si5 8 8f 0.3238455000 0.3989425000 0.3808670000 1.0000000000
+ O O6 8 8f 0.0869950000 0.2224020000 0.1154990000 1.0000000000
+ O O7 8 8f 0.1719450000 0.3875250000 0.2989840000 1.0000000000
+ O O8 8 8f 0.2481690000 0.1328380000 0.5145130000 1.0000000000
+ O O9 8 8f 0.4948295000 0.3278145000 0.1332120000 1.0000000000
+ O O10 8 8f 0.0912460000 0.0176960000 0.1206400000 1.0000000000
+ O O11 8 8f 0.2802170000 0.1341590000 0.2456590000 1.0000000000
+ O O12 8 8f 0.3827820000 0.1108210000 0.0614980000 1.0000000000

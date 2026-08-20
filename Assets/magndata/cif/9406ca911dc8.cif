@@ -1,0 +1,43 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'P2_13'
+_symmetry_Int_Tables_number   198
+_chemical_formula_structural   Cu2SeO4
+_cell_length_a   9.0315040000
+_cell_length_b   9.0315040000
+_cell_length_c   9.0315040000
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   90.0000000000
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-x+1/2,-y,z+1/2'
+ 3  'x+1/2,-y+1/2,-z'
+ 4  '-x,y+1/2,-z+1/2'
+ 5  'z,x,y'
+ 6  'z+1/2,-x+1/2,-y'
+ 7  '-z,x+1/2,-y+1/2'
+ 8  '-z+1/2,-x,y+1/2'
+ 9  'y,z,x'
+ 10  '-y,z+1/2,-x+1/2'
+ 11  '-y+1/2,-z,x+1/2'
+ 12  'y+1/2,-z+1/2,-x'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Cu Cu0 12 12b 0.8780320000 0.3735880000 0.3682220000 1.0000000000
+ Cu Cu1 4 4a 0.8818240000 0.8818240000 0.8818240000 1.0000000000
+ Se Se2 4 4a 0.2886820000 0.7886820000 0.7113180000 1.0000000000
+ Se Se3 4 4a 0.5405010000 0.9594990000 0.0405010000 1.0000000000
+ O O4 4 4a 0.5086360000 0.4913640000 0.9913640000 1.0000000000
+ O O5 12 12b 0.6877660000 0.4701670000 0.7298160000 1.0000000000
+ O O6 4 4a 0.2402230000 0.2597770000 0.7402230000 1.0000000000
+ O O7 12 12b 0.4828520000 0.4684810000 0.2668770000 1.0000000000

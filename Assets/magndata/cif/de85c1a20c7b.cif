@@ -1,0 +1,36 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'Pbcn'
+_symmetry_Int_Tables_number   60
+_chemical_formula_structural   Nb2FeO6
+_cell_length_a   14.2553617700
+_cell_length_b   5.7641539300
+_cell_length_c   5.0617938100
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   90.0000000000
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-x,-y,-z'
+ 3  '-x+1/2,-y+1/2,z+1/2'
+ 4  'x+1/2,y+1/2,-z+1/2'
+ 5  'x+1/2,-y+1/2,-z'
+ 6  '-x+1/2,y+1/2,z'
+ 7  '-x,y,-z+1/2'
+ 8  'x,-y,z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Nb Nb0 8 8d 0.1595775200 0.8166389600 0.2585226600 1.0000000000
+ Fe Fe1 4 4c 0.0000000000 0.6620140300 0.7500000000 1.0000000000
+ O O2 8 8d 0.2555080100 0.3779689100 0.9312369700 1.0000000000
+ O O3 8 8d 0.9215620500 0.3841986300 0.9069701200 1.0000000000
+ O O4 8 8d 0.9056474300 0.8928705500 0.9129768800 1.0000000000

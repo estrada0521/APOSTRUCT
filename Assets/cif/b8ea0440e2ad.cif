@@ -1,0 +1,49 @@
+# generated using pymatgen
+data_U3(PS4)4
+_symmetry_space_group_name_H-M   I-4c2
+_cell_length_a   10.95999200
+_cell_length_b   10.95999200
+_cell_length_c   18.79297200
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   120
+_chemical_formula_structural   U3(PS4)4
+_chemical_formula_sum   'U12 P16 S64'
+_cell_volume   2257.43856986
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  'y, -x, -z'
+  3  '-x, -y, z'
+  4  '-y, x, -z'
+  5  '-x, y, z+1/2'
+  6  '-y, -x, -z+1/2'
+  7  'x, -y, z+1/2'
+  8  'y, x, -z+1/2'
+  9  'x+1/2, y+1/2, z+1/2'
+  10  'y+1/2, -x+1/2, -z+1/2'
+  11  '-x+1/2, -y+1/2, z+1/2'
+  12  '-y+1/2, x+1/2, -z+1/2'
+  13  '-x+1/2, y+1/2, z'
+  14  '-y+1/2, -x+1/2, -z'
+  15  'x+1/2, -y+1/2, z'
+  16  'y+1/2, x+1/2, -z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  U  U0  4  0.00000000  0.00000000  0.25000000  1.0
+  U  U1  4  0.00000000  0.50000000  0.00000000  1.0
+  U  U2  4  0.00000000  0.50000000  0.25000000  1.0
+  P  P3  16  0.03441000  0.25207300  0.37537600  1.0
+  S  S4  16  0.06421800  0.25893500  0.96652200  1.0
+  S  S5  16  0.07350500  0.25771000  0.78476100  1.0
+  S  S6  16  0.08619250  0.36608850  0.62434650  1.0
+  S  S7  16  0.09870400  0.13704800  0.14070100  1.0

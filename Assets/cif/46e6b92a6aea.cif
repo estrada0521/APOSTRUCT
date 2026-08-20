@@ -1,0 +1,50 @@
+# generated using pymatgen
+data_Ti2C2O9
+_symmetry_space_group_name_H-M   Cmce
+_cell_length_a   15.65208000
+_cell_length_b   11.04908200
+_cell_length_c   9.79925400
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   64
+_chemical_formula_structural   Ti2C2O9
+_chemical_formula_sum   'Ti16 C16 O72'
+_cell_volume   1694.69391676
+_cell_formula_units_Z   8
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x+1/2, -y, z+1/2'
+  4  'x+1/2, y, -z+1/2'
+  5  'x, -y, -z'
+  6  '-x, y, z'
+  7  '-x+1/2, y, -z+1/2'
+  8  'x+1/2, -y, z+1/2'
+  9  'x+1/2, y+1/2, z'
+  10  '-x+1/2, -y+1/2, -z'
+  11  '-x, -y+1/2, z+1/2'
+  12  'x, y+1/2, -z+1/2'
+  13  'x+1/2, -y+1/2, -z'
+  14  '-x+1/2, y+1/2, z'
+  15  '-x, y+1/2, -z+1/2'
+  16  'x, -y+1/2, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ti  Ti0  16  0.18249350  0.35833750  0.40296000  1.0
+  C  C1  8  0.00000000  0.11192600  0.83059400  1.0
+  C  C2  8  0.00000000  0.18244300  0.96699000  1.0
+  O  O3  16  0.07254900  0.20603900  0.01724000  1.0
+  O  O4  16  0.07273050  0.08532050  0.78331500  1.0
+  O  O5  16  0.14884650  0.19789950  0.31081800  1.0
+  O  O6  8  0.18492600  0.00000000  0.00000000  1.0
+  O  O7  8  0.25000000  0.12067400  0.75000000  1.0
+  O  O8  8  0.25000000  0.25000000  0.00000000  1.0

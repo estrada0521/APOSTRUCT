@@ -1,0 +1,35 @@
+data_structure
+_cell_length_a 9.92642277994
+_cell_length_b 9.23413878
+_cell_length_c 5.25893102465
+_cell_angle_alpha 90
+_cell_angle_beta 101.375374751
+_cell_angle_gamma 90
+_space_group_IT_number 15
+_space_group_name_H-M_alt 'C2/c'
+loop_
+_space_group_symop_id
+_space_group_symop_operation_xyz
+1 'x,y,z'
+2 '-x+1,-y,-z'
+3 '-x,y,-z+1/2'
+4 'x,-y,z+1/2'
+5 'x+1/2,y+1/2,z'
+6 '-x+1/2,-y+1/2,-z'
+7 '-x+1/2,y+1/2,-z+1/2'
+8 'x+1/2,-y+1/2,z+1/2'
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_symmetry_multiplicity
+_atom_site_Wyckoff_label
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_occupancy
+Mn1 Mn 4 e 0.5 0.40501349 0.75 1
+Mn2 Mn 4 e 0.5 0.77439214 0.75 1
+Ge1 Ge 8 f 0.29886726 0.90795661 0.21761507 1
+O1 O 8 f 0.119351515 0.909007785 0.14078595 1
+O2 O 8 f 0.381101785 0.760540225 0.37862487 1
+O3 O 8 f 0.357792765 0.935906455 0.91725723 1

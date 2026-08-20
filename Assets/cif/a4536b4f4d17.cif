@@ -1,0 +1,45 @@
+# generated using pymatgen
+data_Ca10V3P3(O12F)2
+_symmetry_space_group_name_H-M   P-6
+_cell_length_a   9.69160600
+_cell_length_b   9.69160600
+_cell_length_c   6.98894600
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   174
+_chemical_formula_structural   Ca10V3P3(O12F)2
+_chemical_formula_sum   'Ca10 V3 P3 O24 F2'
+_cell_volume   568.50438247
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x+y, -x, -z'
+  3  '-y, x-y, z'
+  4  'x, y, -z'
+  5  '-x+y, -x, z'
+  6  '-y, x-y, -z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ca  Ca0  3  0.00181200  0.75631300  0.00000000  1.0
+  Ca  Ca1  3  0.00658700  0.24472400  0.50000000  1.0
+  Ca  Ca2  2  0.33333333  0.66666667  0.74773400  1.0
+  Ca  Ca3  2  0.66666667  0.33333333  0.25588900  1.0
+  V  V4  3  0.39834300  0.02922600  0.00000000  1.0
+  P  P5  3  0.02899600  0.62953000  0.50000000  1.0
+  O  O6  6  0.08355000  0.74060700  0.32155000  1.0
+  O  O7  6  0.33357300  0.08975600  0.19507300  1.0
+  O  O8  3  0.12120400  0.53529600  0.50000000  1.0
+  O  O9  3  0.17570300  0.48971400  0.00000000  1.0
+  O  O10  3  0.48703900  0.33332200  0.50000000  1.0
+  O  O11  3  0.52677300  0.39240800  0.00000000  1.0
+  F  F12  1  0.00000000  0.00000000  0.00000000  1.0
+  F  F13  1  0.00000000  0.00000000  0.50000000  1.0

@@ -1,0 +1,45 @@
+# generated using pymatgen
+data_Ba5Re3NO18
+_symmetry_space_group_name_H-M   P6_3cm
+_cell_length_a   11.46720613
+_cell_length_b   11.46720613
+_cell_length_c   7.81435000
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   185
+_chemical_formula_structural   Ba5Re3NO18
+_chemical_formula_sum   'Ba10 Re6 N2 O36'
+_cell_volume   889.89492321
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  'x-y, x, z+1/2'
+  3  '-y, x-y, z'
+  4  '-x, -y, z+1/2'
+  5  '-x+y, -x, z'
+  6  'y, -x+y, z+1/2'
+  7  'y, x, z'
+  8  'x, x-y, z+1/2'
+  9  'x-y, -y, z'
+  10  '-y, -x, z+1/2'
+  11  '-x, -x+y, z'
+  12  '-x+y, y, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ba  Ba0  6  0.00000000  0.27926900  0.75213700  1.0
+  Ba  Ba1  4  0.33333333  0.66666667  0.00327100  1.0
+  Re  Re2  6  0.00000000  0.39562800  0.30235500  1.0
+  N  N3  2  0.00000000  0.00000000  0.43876900  1.0
+  O  O4  12  0.12761600  0.55039700  0.76103700  1.0
+  O  O5  12  0.12902400  0.39709600  0.44426200  1.0
+  O  O6  6  0.00000000  0.11050600  0.43674200  1.0
+  O  O7  6  0.00000000  0.30490900  0.12006400  1.0

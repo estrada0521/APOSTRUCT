@@ -1,0 +1,52 @@
+# generated using pymatgen
+data_Na8Al3Ga3Si6(ClO12)2
+_symmetry_space_group_name_H-M   R3
+_cell_length_a   12.75138722
+_cell_length_b   12.75138722
+_cell_length_c   15.61280210
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   146
+_chemical_formula_structural   Na8Al3Ga3Si6(ClO12)2
+_chemical_formula_sum   'Na24 Al9 Ga9 Si18 Cl6 O72'
+_cell_volume   2198.49941663
+_cell_formula_units_Z   3
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y, x-y, z'
+  3  '-x+y, -x, z'
+  4  'x+1/3, y+2/3, z+2/3'
+  5  '-y+1/3, x-y+2/3, z+2/3'
+  6  '-x+y+1/3, -x+2/3, z+2/3'
+  7  'x+2/3, y+1/3, z+1/3'
+  8  '-y+2/3, x-y+1/3, z+1/3'
+  9  '-x+y+2/3, -x+1/3, z+1/3'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Na  Na0  9  0.09848300  0.54985300  0.22498100  1.0
+  Na  Na1  9  0.09910533  0.55011167  0.72565467  1.0
+  Na  Na2  3  0.00000000  0.00000000  0.32434400  1.0
+  Na  Na3  3  0.00000000  0.00000000  0.82375600  1.0
+  Al  Al4  9  0.08377133  0.66669067  0.41669367  1.0
+  Ga  Ga5  9  0.08306967  0.41632733  0.91674633  1.0
+  Si  Si6  9  0.00023567  0.24803733  0.74978033  1.0
+  Si  Si7  9  0.08132700  0.66687400  0.91689300  1.0
+  Cl  Cl8  3  0.00000000  0.00000000  0.50010400  1.0
+  Cl  Cl9  3  0.00000000  0.00000000  0.99988400  1.0
+  O  O10  9  0.00433567  0.28342833  0.64810733  1.0
+  O  O11  9  0.04072833  0.37293367  0.80423267  1.0
+  O  O12  9  0.04454333  0.66709267  0.81600667  1.0
+  O  O13  9  0.04472467  0.67054933  0.30878633  1.0
+  O  O14  9  0.08603667  0.89560933  0.25896733  1.0
+  O  O15  9  0.09306067  0.19478233  0.76035033  1.0
+  O  O16  9  0.18197667  0.80108633  0.95351633  1.0
+  O  O17  9  0.18919400  0.38830600  0.44992100  1.0

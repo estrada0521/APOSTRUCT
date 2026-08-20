@@ -1,0 +1,41 @@
+# generated using pymatgen
+data_K3H(SO4)2
+_symmetry_space_group_name_H-M   C2/c
+_cell_length_a   14.56122711
+_cell_length_b   5.67244809
+_cell_length_c   9.70546887
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   103.25478604
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   15
+_chemical_formula_structural   K3H(SO4)2
+_chemical_formula_sum   'K12 H4 S8 O32'
+_cell_volume   780.29454504
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x, y, -z+1/2'
+  4  'x, -y, z+1/2'
+  5  'x+1/2, y+1/2, z'
+  6  '-x+1/2, -y+1/2, -z'
+  7  '-x+1/2, y+1/2, -z+1/2'
+  8  'x+1/2, -y+1/2, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  K  K0  8  0.19268632  0.22949019  0.15195904  1.0
+  K  K1  4  0.00000000  0.25047820  0.75000000  1.0
+  H  H2  4  0.00000000  0.50000000  0.00000000  1.0
+  S  S3  8  0.11647557  0.27531279  0.46292978  1.0
+  O  O4  8  0.00931162  0.31795168  0.43979452  1.0
+  O  O5  8  0.12913659  0.05603437  0.39136901  1.0
+  O  O6  8  0.15350161  0.26125500  0.61653942  1.0
+  O  O7  8  0.15476448  0.47945672  0.40248445  1.0

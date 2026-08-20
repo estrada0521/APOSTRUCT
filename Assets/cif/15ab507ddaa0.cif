@@ -1,0 +1,53 @@
+# generated using pymatgen
+data_Ti12Fe5O32
+_symmetry_space_group_name_H-M   R3
+_cell_length_a   11.94854628
+_cell_length_b   11.94854628
+_cell_length_c   14.59957104
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   146
+_chemical_formula_structural   Ti12Fe5O32
+_chemical_formula_sum   'Ti36 Fe15 O96'
+_cell_volume   1805.09834412
+_cell_formula_units_Z   3
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y, x-y, z'
+  3  '-x+y, -x, z'
+  4  'x+2/3, y+1/3, z+1/3'
+  5  '-y+2/3, x-y+1/3, z+1/3'
+  6  '-x+y+2/3, -x+1/3, z+1/3'
+  7  'x+1/3, y+2/3, z+2/3'
+  8  '-y+1/3, x-y+2/3, z+2/3'
+  9  '-x+y+1/3, -x+2/3, z+2/3'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ti  Ti0  9  0.00914367  0.48749233  0.37186833  1.0
+  Ti  Ti1  9  0.08112500  0.17869300  0.53417900  1.0
+  Ti  Ti2  9  0.09451767  0.67656133  0.54000933  1.0
+  Ti  Ti3  9  0.16844333  0.07646667  0.22180867  1.0
+  Fe  Fe4  9  0.00266267  0.50905533  0.75376433  1.0
+  Fe  Fe5  3  0.00000000  0.00000000  0.00500900  1.0
+  Fe  Fe6  3  0.00000000  0.00000000  0.74094300  1.0
+  O  O7  9  0.00698033  0.51565767  0.13497867  1.0
+  O  O8  9  0.01457167  0.24571433  0.62685933  1.0
+  O  O9  9  0.03140800  0.76406600  0.61905700  1.0
+  O  O10  9  0.07317667  0.89963533  0.78589933  1.0
+  O  O11  9  0.07556367  0.92043533  0.27421133  1.0
+  O  O12  9  0.09021300  0.68580200  0.79813800  1.0
+  O  O13  9  0.10471900  0.43129600  0.78306300  1.0
+  O  O14  9  0.15810933  0.81481367  0.95649367  1.0
+  O  O15  9  0.16913333  0.08602567  0.47430467  1.0
+  O  O16  9  0.17204033  0.10233167  0.96256267  1.0
+  O  O17  3  0.00000000  0.00000000  0.13440800  1.0
+  O  O18  3  0.00000000  0.00000000  0.61062100  1.0
