@@ -1,0 +1,50 @@
+# generated using pymatgen
+data_Ca8TiMn7O23
+_symmetry_space_group_name_H-M   P4mm
+_cell_length_a   7.65215300
+_cell_length_b   7.65215300
+_cell_length_c   7.65005300
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   99
+_chemical_formula_structural   Ca8TiMn7O23
+_chemical_formula_sum   'Ca8 Ti1 Mn7 O23'
+_cell_volume   447.95226178
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y, x, z'
+  3  '-x, -y, z'
+  4  'y, -x, z'
+  5  '-x, y, z'
+  6  'y, x, z'
+  7  'x, -y, z'
+  8  '-y, -x, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ca  Ca0  4  0.26192500  0.26192500  0.74422000  1.0
+  Ca  Ca1  4  0.26272600  0.26272600  0.25101700  1.0
+  Ti  Ti2  1  0.00000000  0.00000000  0.98576200  1.0
+  Mn  Mn3  2  0.00000000  0.50000000  0.00617700  1.0
+  Mn  Mn4  2  0.00000000  0.50000000  0.49753400  1.0
+  Mn  Mn5  1  0.00000000  0.00000000  0.49850400  1.0
+  Mn  Mn6  1  0.50000000  0.50000000  0.49987400  1.0
+  Mn  Mn7  1  0.50000000  0.50000000  0.99983200  1.0
+  O  O8  4  0.00000000  0.24793900  0.02559700  1.0
+  O  O9  4  0.00000000  0.24815000  0.47743400  1.0
+  O  O10  4  0.25007000  0.50000000  0.99815200  1.0
+  O  O11  4  0.25075700  0.50000000  0.50327800  1.0
+  O  O12  2  0.00000000  0.50000000  0.25123400  1.0
+  O  O13  2  0.00000000  0.50000000  0.75120800  1.0
+  O  O14  1  0.00000000  0.00000000  0.75462600  1.0
+  O  O15  1  0.50000000  0.50000000  0.25047400  1.0
+  O  O16  1  0.50000000  0.50000000  0.74983200  1.0

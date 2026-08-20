@@ -1,0 +1,37 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'Cmc2_1'
+_symmetry_Int_Tables_number   36
+_chemical_formula_structural   BaCoF4
+_cell_length_a   4.3754190400
+_cell_length_b   14.0488950400
+_cell_length_c   5.5939267900
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   90.0000000000
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-x,-y,z+1/2'
+ 3  '-x,y,z'
+ 4  'x,-y,z+1/2'
+ 5  'x+1/2,y+1/2,z'
+ 6  '-x+1/2,-y+1/2,z+1/2'
+ 7  '-x+1/2,y+1/2,z'
+ 8  'x+1/2,-y+1/2,z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Ba Ba0 4 4a 0.0000000000 0.8634535400 0.0245386200 1.0000000000
+ Co Co1 4 4a 0.5000000000 0.9071363600 0.4984193500 1.0000000000
+ F F2 4 4a 0.0000000000 0.9233274000 0.5046555400 1.0000000000
+ F F3 4 4a 0.5000000000 0.9814310800 0.2053417000 1.0000000000
+ F F4 4 4a 0.0000000000 0.6987421800 0.7819359800 1.0000000000
+ F F5 4 4a 0.0000000000 0.6747901300 0.2675088100 1.0000000000

@@ -1,0 +1,39 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'Pbca'
+_symmetry_Int_Tables_number   61
+_chemical_formula_structural   RbFeO2
+_cell_length_a   5.8276810000
+_cell_length_b   11.7260990000
+_cell_length_c   16.6836140000
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   90.0000000000
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-x,-y,-z'
+ 3  '-x+1/2,-y,z+1/2'
+ 4  'x+1/2,y,-z+1/2'
+ 5  'x+1/2,-y+1/2,-z'
+ 6  '-x+1/2,y+1/2,z'
+ 7  '-x,y+1/2,-z+1/2'
+ 8  'x,-y+1/2,z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Rb Rb0 8 8c 0.3003470000 0.2394020000 0.8146490000 1.0000000000
+ Rb Rb1 8 8c 0.2482060000 0.5108370000 0.4380050000 1.0000000000
+ Fe Fe2 8 8c 0.2147330000 0.7390420000 0.5636310000 1.0000000000
+ Fe Fe3 8 8c 0.7545910000 0.4944330000 0.8112650000 1.0000000000
+ O O4 8 8c 0.8065410000 0.1576480000 0.3484050000 1.0000000000
+ O O5 8 8c 0.0576120000 0.0204600000 0.7809510000 1.0000000000
+ O O6 8 8c 0.8320710000 0.9024460000 0.3959060000 1.0000000000
+ O O7 8 8c 0.9177720000 0.7104800000 0.5189440000 1.0000000000

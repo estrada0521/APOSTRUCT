@@ -1,0 +1,38 @@
+# generated using pymatgen
+data_Li(CN)2
+_symmetry_space_group_name_H-M   C2/m
+_cell_length_a   7.57177800
+_cell_length_b   10.02921000
+_cell_length_c   3.47650798
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   99.69442107
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   12
+_chemical_formula_structural   Li(CN)2
+_chemical_formula_sum   'Li4 C8 N8'
+_cell_volume   260.23238362
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x, y, -z'
+  4  'x, -y, z'
+  5  'x+1/2, y+1/2, z'
+  6  '-x+1/2, -y+1/2, -z'
+  7  '-x+1/2, y+1/2, -z'
+  8  'x+1/2, -y+1/2, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Li  Li0  4  0.00000000  0.36016200  0.50000000  1.0
+  C  C1  4  0.00000000  0.11728900  0.00000000  1.0
+  C  C2  4  0.14355800  0.00000000  0.18961900  1.0
+  N  N3  4  0.00000000  0.23728600  0.00000000  1.0
+  N  N4  4  0.20351400  0.50000000  0.64514200  1.0

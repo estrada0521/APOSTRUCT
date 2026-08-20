@@ -1,0 +1,35 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'P-1'
+_symmetry_Int_Tables_number   2
+_chemical_formula_structural   VCrMoO7
+_cell_length_a   5.6400910000
+_cell_length_b   6.7548516623
+_cell_length_c   8.0210443826
+_cell_angle_alpha   96.0177659811
+_cell_angle_beta   90.0378160080
+_cell_angle_gamma   101.4060223438
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-x,-y,-z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ V V0 2 2i 0.6912840000 0.7612570000 0.3366600000 1.0000000000
+ Cr Cr1 2 2i 0.1702980000 0.6880380000 0.5955400000 1.0000000000
+ Mo Mo2 2 2i 0.7025180000 0.7871540000 0.8904680000 1.0000000000
+ O O3 2 2i 0.7779160000 0.0487500000 0.8995250000 1.0000000000
+ O O4 2 2i 0.4272690000 0.7060140000 0.7682090000 1.0000000000
+ O O5 2 2i 0.9323370000 0.6830350000 0.7802660000 1.0000000000
+ O O6 2 2i 0.2030470000 0.9880800000 0.6123470000 1.0000000000
+ O O7 2 2i 0.1059670000 0.3773060000 0.5760180000 1.0000000000
+ O O8 2 2i 0.3349180000 0.2941360000 0.8910040000 1.0000000000
+ O O9 2 2i 0.5861940000 0.3071960000 0.5823480000 1.0000000000

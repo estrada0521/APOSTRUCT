@@ -1,0 +1,42 @@
+data_structure
+_cell_length_a 9.295784
+_cell_length_b 13.858718
+_cell_length_c 9.401463
+_cell_angle_alpha 90
+_cell_angle_beta 90
+_cell_angle_gamma 90
+_space_group_IT_number 61
+_space_group_name_H-M_alt 'Pbca'
+loop_
+_space_group_symop_id
+_space_group_symop_operation_xyz
+1 'x,y,z'
+2 '-x,-y,-z'
+3 '-x+1/2,-y,z+1/2'
+4 'x+1/2,y,-z+1/2'
+5 'x+1/2,-y+1/2,-z'
+6 '-x+1/2,y+1/2,z'
+7 '-x,y+1/2,-z+1/2'
+8 'x,-y+1/2,z+1/2'
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_symmetry_multiplicity
+_atom_site_Wyckoff_label
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_occupancy
+Li1 Li 8 c 0.779792 0.626037 0.966336 1
+Li2 Li 8 c 0.045491 0.627315 0.775473 1
+Fe1 Fe 8 c 0.896916 0.876548 0.860677 1
+S1 S 8 c 0.930192 0.272458 0.925783 1
+S2 S 8 c 0.312456 0.509323 0.839207 1
+O1 O 8 c 0.299781 0.523444 0.995951 1
+O2 O 8 c 0.002427 0.65387 0.982274 1
+O3 O 8 c 0.537849 0.671186 0.974656 1
+O4 O 8 c 0.769477 0.278198 0.927536 1
+O5 O 8 c 0.268573 0.918041 0.812129 1
+O6 O 8 c 0.034027 0.996741 0.795199 1
+O7 O 8 c 0.985705 0.278478 0.776869 1
+O8 O 8 c 0.255057 0.592875 0.758354 1

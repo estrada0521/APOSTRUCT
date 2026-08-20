@@ -1,0 +1,38 @@
+# generated using pymatgen
+data_MgNb4(NiO6)2
+_symmetry_space_group_name_H-M   P2/m
+_cell_length_a   4.87031344
+_cell_length_b   9.03418800
+_cell_length_c   4.97392105
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.03237168
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   10
+_chemical_formula_structural   MgNb4(NiO6)2
+_chemical_formula_sum   'Mg1 Nb4 Ni2 O12'
+_cell_volume   218.84914505
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x, y, -z'
+  4  'x, -y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Mg  Mg0  1  0.50000000  0.00000000  0.00000000  1.0
+  Nb  Nb1  2  0.00000000  0.35070600  0.00000000  1.0
+  Nb  Nb2  2  0.50000000  0.18202700  0.50000000  1.0
+  Ni  Ni3  1  0.00000000  0.00000000  0.00000000  1.0
+  Ni  Ni4  1  0.50000000  0.50000000  0.50000000  1.0
+  O  O5  4  0.24219300  0.16110100  0.82195400  1.0
+  O  O6  4  0.27298200  0.32563400  0.30890300  1.0
+  O  O7  2  0.22776600  0.50000000  0.79616300  1.0
+  O  O8  2  0.29235700  0.00000000  0.33230700  1.0

@@ -1,0 +1,31 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'Pna2_1'
+_symmetry_Int_Tables_number   33
+_chemical_formula_structural   MnGeN2
+_cell_length_a   5.5598670000
+_cell_length_b   6.6994940000
+_cell_length_c   5.3169770000
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   90.0000000000
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-x,-y,z+1/2'
+ 3  '-x+1/2,y+1/2,z+1/2'
+ 4  'x+1/2,-y+1/2,z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Mn Mn0 4 4a 0.5814230000 0.8759620000 0.9980010000 1.0000000000
+ Ge Ge1 4 4a 0.0720220000 0.1253800000 0.0008600000 1.0000000000
+ N N2 4 4a 0.6027790000 0.8543390000 0.3986490000 1.0000000000
+ N N3 4 4a 0.5603760000 0.3944850000 0.3554900000 1.0000000000

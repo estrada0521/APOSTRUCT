@@ -1,0 +1,41 @@
+data_structure
+_cell_length_a 5.39499771379
+_cell_length_b 18.023941
+_cell_length_c 6.16721836124
+_cell_angle_alpha 90
+_cell_angle_beta 106.70444981
+_cell_angle_gamma 90
+_space_group_IT_number 11
+_space_group_name_H-M_alt 'P2_1/m'
+loop_
+_space_group_symop_id
+_space_group_symop_operation_xyz
+1 'x,y,z'
+2 '-x,-y,-z'
+3 '-x,y+1/2,-z'
+4 'x,-y+1/2,z'
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_symmetry_multiplicity
+_atom_site_Wyckoff_label
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_occupancy
+Ca1 Ca 2 e 0.583047 0.75 0.89522 1
+Ca2 Ca 2 e 0.578784 0.75 0.39415 1
+Fe1 Fe 4 f 0.551113 0.92545 0.138934 1
+Fe2 Fe 4 f 0.9191 0.151704 0.229243 1
+Fe3 Fe 2 a 0 0 0 1
+Fe4 Fe 4 f 0.548914 0.926353 0.63681 1
+Fe5 Fe 4 f 0.91633 0.154679 0.72741 1
+Fe6 Fe 2 c 0 0 0.5 1
+O1 O 2 e 0.899731 0.75 0.225312 1
+O2 O 4 f 0.849004 0.605351 0.957068 1
+O3 O 4 f 0.25857 0.531808 0.827059 1
+O4 O 4 f 0.344399 0.670089 0.080152 1
+O5 O 2 e 0.917679 0.75 0.729946 1
+O6 O 4 f 0.844975 0.608701 0.469352 1
+O7 O 4 f 0.265687 0.531239 0.304195 1
+O8 O 4 f 0.344081 0.668935 0.593919 1

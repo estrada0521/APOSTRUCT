@@ -1,0 +1,42 @@
+# generated using pymatgen
+data_Tb5Se2Cl3O10
+_symmetry_space_group_name_H-M   C2/m
+_cell_length_a   12.28238800
+_cell_length_b   5.50994800
+_cell_length_c   9.90766473
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.99126297
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   12
+_chemical_formula_structural   Tb5Se2Cl3O10
+_chemical_formula_sum   'Tb10 Se4 Cl6 O20'
+_cell_volume   670.40402886
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x, y, -z'
+  4  'x, -y, z'
+  5  'x+1/2, y+1/2, z'
+  6  '-x+1/2, -y+1/2, -z'
+  7  '-x+1/2, y+1/2, -z'
+  8  'x+1/2, -y+1/2, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Tb  Tb0  4  0.09872100  0.00000000  0.76570300  1.0
+  Tb  Tb1  4  0.21370500  0.00000000  0.10321700  1.0
+  Tb  Tb2  2  0.00000000  0.50000000  0.00000000  1.0
+  Se  Se3  4  0.09239000  0.50000000  0.31614100  1.0
+  Cl  Cl4  4  0.16341600  0.50000000  0.64952500  1.0
+  Cl  Cl5  2  0.00000000  0.00000000  0.50000000  1.0
+  O  O6  8  0.05569350  0.26125150  0.20418000  1.0
+  O  O7  8  0.14419100  0.24580300  0.94117200  1.0
+  O  O8  4  0.22664000  0.50000000  0.28410000  1.0

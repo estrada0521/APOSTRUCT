@@ -1,0 +1,50 @@
+# generated using pymatgen
+data_KSr4Si8H17O29
+_symmetry_space_group_name_H-M   P4nc
+_cell_length_a   9.25827700
+_cell_length_b   9.25827700
+_cell_length_c   16.47701700
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   104
+_chemical_formula_structural   KSr4Si8H17O29
+_chemical_formula_sum   'K2 Sr8 Si16 H34 O58'
+_cell_volume   1412.33893087
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y, x, z'
+  3  '-x, -y, z'
+  4  'y, -x, z'
+  5  '-x+1/2, y+1/2, z+1/2'
+  6  'y+1/2, x+1/2, z+1/2'
+  7  'x+1/2, -y+1/2, z+1/2'
+  8  '-y+1/2, -x+1/2, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  K  K0  2  0.00000000  0.00000000  0.50040700  1.0
+  Sr  Sr1  8  0.10850400  0.73920600  0.00183800  1.0
+  Si  Si2  8  0.09326800  0.21912300  0.19207700  1.0
+  Si  Si3  8  0.09354500  0.21871000  0.80766400  1.0
+  H  H4  8  0.04827600  0.73161300  0.35416200  1.0
+  H  H5  8  0.04831800  0.73315500  0.64664300  1.0
+  H  H6  8  0.07407900  0.32715900  0.59057100  1.0
+  H  H7  8  0.07443300  0.32804400  0.40995800  1.0
+  H  H8  2  0.00000000  0.00000000  0.93799000  1.0
+  O  O9  8  0.02566800  0.71697500  0.41137300  1.0
+  O  O10  8  0.02610200  0.71808300  0.58936500  1.0
+  O  O11  8  0.07579700  0.81103800  0.78053600  1.0
+  O  O12  8  0.07619400  0.81093800  0.21852400  1.0
+  O  O13  8  0.10738300  0.25831600  0.90272800  1.0
+  O  O14  8  0.10832100  0.26158000  0.09769200  1.0
+  O  O15  8  0.14753000  0.35156300  0.25050300  1.0
+  O  O16  2  0.00000000  0.00000000  0.99706000  1.0

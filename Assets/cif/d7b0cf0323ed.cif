@@ -1,0 +1,50 @@
+# generated using pymatgen
+data_CsCoH24(C7N4)2
+_symmetry_space_group_name_H-M   C2/m
+_cell_length_a   16.48824000
+_cell_length_b   9.54934800
+_cell_length_c   9.53845341
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   124.59028686
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   12
+_chemical_formula_structural   CsCoH24(C7N4)2
+_chemical_formula_sum   'Cs2 Co2 H48 C28 N16'
+_cell_volume   1236.37027338
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x, y, -z'
+  4  'x, -y, z'
+  5  'x+1/2, y+1/2, z'
+  6  '-x+1/2, -y+1/2, -z'
+  7  '-x+1/2, y+1/2, -z'
+  8  'x+1/2, -y+1/2, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Cs  Cs0  2  0.00000000  0.50000000  0.50000000  1.0
+  Co  Co1  2  0.00000000  0.00000000  0.00000000  1.0
+  H  H2  8  0.13069150  0.40568750  0.03200800  1.0
+  H  H3  8  0.13224450  0.12734950  0.56010300  1.0
+  H  H4  8  0.15113700  0.12711700  0.76575900  1.0
+  H  H5  8  0.15406750  0.40554050  0.30419500  1.0
+  H  H6  8  0.23543950  0.21987750  0.73553800  1.0
+  H  H7  4  0.21519900  0.50000000  0.00418000  1.0
+  H  H8  4  0.24418000  0.00000000  0.51973200  1.0
+  C  C9  8  0.00365000  0.13996700  0.14277500  1.0
+  C  C10  8  0.18705350  0.12849950  0.69815800  1.0
+  C  C11  4  0.13861200  0.00000000  0.12814600  1.0
+  C  C12  4  0.17581400  0.50000000  0.06575300  1.0
+  C  C13  4  0.19977400  0.50000000  0.34272800  1.0
+  N  N14  8  0.00590850  0.22777650  0.23160900  1.0
+  N  N15  4  0.22531600  0.00000000  0.20882600  1.0
+  N  N16  4  0.24928200  0.00000000  0.74622100  1.0

@@ -1,0 +1,33 @@
+# generated using pymatgen
+data_CaLa2FeO6
+_symmetry_space_group_name_H-M   P-1
+_cell_length_a   5.59904882
+_cell_length_b   5.63057006
+_cell_length_c   5.77903744
+_cell_angle_alpha   117.37366944
+_cell_angle_beta   91.12000889
+_cell_angle_gamma   117.09586849
+_symmetry_Int_Tables_number   2
+_chemical_formula_structural   CaLa2FeO6
+_chemical_formula_sum   'Ca1 La2 Fe1 O6'
+_cell_volume   137.85816874
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ca  Ca0  1  0.50000000  0.00000000  0.50000000  1.0
+  La  La1  2  0.24527775  0.52417825  0.76966175  1.0
+  Fe  Fe2  1  0.00000000  0.00000000  0.00000000  1.0
+  O  O3  2  0.14287925  0.86337325  0.17848975  1.0
+  O  O4  2  0.22186100  0.47429400  0.34856400  1.0
+  O  O5  2  0.31672150  0.10619900  0.86077500  1.0

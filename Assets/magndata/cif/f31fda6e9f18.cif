@@ -1,0 +1,34 @@
+data_structure
+_cell_length_a 9.18800051098
+_cell_length_b 9.18800051098
+_cell_length_c 5.102986
+_cell_angle_alpha 90
+_cell_angle_beta 90
+_cell_angle_gamma 120
+_space_group_IT_number 150
+_space_group_name_H-M_alt 'P321'
+loop_
+_space_group_symop_id
+_space_group_symop_operation_xyz
+1 'x,y,z'
+2 '-y,x-y,z'
+3 '-x+y,-x,z'
+4 'y,x+1,-z'
+5 'x-y,-y,-z'
+6 '-x,-x+y,-z'
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_symmetry_multiplicity
+_atom_site_Wyckoff_label
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_occupancy
+Na1 Na 3 e 0.626109 0 0 1
+Mn1 Mn 3 f 0.297524 0 0.5 1
+Fe1 Fe 2 d 0.333333333333 0.666666666667 0.499844 1
+Fe2 Fe 1 a 0 0 0 1
+F1 F 6 g 0.130872 0.535691 0.286593 1
+F2 F 6 g 0.10435 0.201531 0.221202 1
+F3 F 6 g 0.458691 0.231286 0.289073 1

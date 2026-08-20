@@ -1,0 +1,37 @@
+# generated using pymatgen
+data_Na4ReN3
+_symmetry_space_group_name_H-M   Cc
+_cell_length_a   10.86893686
+_cell_length_b   6.01549115
+_cell_length_c   8.79735715
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   114.78594526
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   9
+_chemical_formula_structural   Na4ReN3
+_chemical_formula_sum   'Na16 Re4 N12'
+_cell_volume   522.20255815
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  'x, -y, z+1/2'
+  3  'x+1/2, y+1/2, z'
+  4  'x+1/2, -y+1/2, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Na  Na0  4  0.10499635  0.36211373  0.95655272  1.0
+  Na  Na1  4  0.18750864  0.18834902  0.63642395  1.0
+  Na  Na2  4  0.29550156  0.33499932  0.36135255  1.0
+  Na  Na3  4  0.38353046  0.17952449  0.02660998  1.0
+  Re  Re4  4  0.01022311  0.14728448  0.24886560  1.0
+  N  N5  4  0.04109551  0.41977327  0.18907467  1.0
+  N  N6  4  0.16100980  0.01155463  0.86831976  1.0
+  N  N7  4  0.34533904  0.48443505  0.64490378  1.0

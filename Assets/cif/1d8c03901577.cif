@@ -1,0 +1,83 @@
+# generated using pymatgen
+data_Li10B14Cl2O25
+_symmetry_space_group_name_H-M   F23
+_cell_length_a   12.23569200
+_cell_length_b   12.23569200
+_cell_length_c   12.23569200
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   196
+_chemical_formula_structural   Li10B14Cl2O25
+_chemical_formula_sum   'Li40 B56 Cl8 O100'
+_cell_volume   1831.83186274
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, z'
+  3  'x, -y, -z'
+  4  '-x, y, -z'
+  5  'z, x, y'
+  6  'z, -x, -y'
+  7  '-z, x, -y'
+  8  '-z, -x, y'
+  9  'y, z, x'
+  10  '-y, z, -x'
+  11  '-y, -z, x'
+  12  'y, -z, -x'
+  13  'x+1/2, y+1/2, z'
+  14  '-x+1/2, -y+1/2, z'
+  15  'x+1/2, -y+1/2, -z'
+  16  '-x+1/2, y+1/2, -z'
+  17  'z+1/2, x+1/2, y'
+  18  'z+1/2, -x+1/2, -y'
+  19  '-z+1/2, x+1/2, -y'
+  20  '-z+1/2, -x+1/2, y'
+  21  'y+1/2, z+1/2, x'
+  22  '-y+1/2, z+1/2, -x'
+  23  '-y+1/2, -z+1/2, x'
+  24  'y+1/2, -z+1/2, -x'
+  25  'x+1/2, y, z+1/2'
+  26  '-x+1/2, -y, z+1/2'
+  27  'x+1/2, -y, -z+1/2'
+  28  '-x+1/2, y, -z+1/2'
+  29  'z+1/2, x, y+1/2'
+  30  'z+1/2, -x, -y+1/2'
+  31  '-z+1/2, x, -y+1/2'
+  32  '-z+1/2, -x, y+1/2'
+  33  'y+1/2, z, x+1/2'
+  34  '-y+1/2, z, -x+1/2'
+  35  '-y+1/2, -z, x+1/2'
+  36  'y+1/2, -z, -x+1/2'
+  37  'x, y+1/2, z+1/2'
+  38  '-x, -y+1/2, z+1/2'
+  39  'x, -y+1/2, -z+1/2'
+  40  '-x, y+1/2, -z+1/2'
+  41  'z, x+1/2, y+1/2'
+  42  'z, -x+1/2, -y+1/2'
+  43  '-z, x+1/2, -y+1/2'
+  44  '-z, -x+1/2, y+1/2'
+  45  'y, z+1/2, x+1/2'
+  46  '-y, z+1/2, -x+1/2'
+  47  '-y, -z+1/2, x+1/2'
+  48  'y, -z+1/2, -x+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Li  Li0  24  0.04333000  0.25000000  0.75000000  1.0
+  Li  Li1  16  0.13505833  0.13505833  0.13505833  1.0
+  B  B2  24  0.00000000  0.00000000  0.25051100  1.0
+  B  B3  16  0.08095300  0.08095300  0.91904700  1.0
+  B  B4  16  0.10085100  0.10085100  0.39914900  1.0
+  Cl  Cl5  4  0.25000000  0.25000000  0.25000000  1.0
+  Cl  Cl6  4  0.25000000  0.25000000  0.75000000  1.0
+  O  O7  48  0.01932500  0.17998200  0.90295700  1.0
+  O  O8  48  0.02298250  0.09859050  0.31731800  1.0
+  O  O9  4  0.00000000  0.00000000  0.00000000  1.0

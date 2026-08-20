@@ -1,0 +1,53 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'Immm'
+_symmetry_Int_Tables_number   71
+_chemical_formula_structural   Er(FeGe)6
+_cell_length_a   5.1048170000
+_cell_length_b   8.1120040000
+_cell_length_c   26.4865220000
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   90.0000000000
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-x,-y,-z'
+ 3  '-x,-y,z'
+ 4  'x,y,-z'
+ 5  'x,-y,-z'
+ 6  '-x,y,z'
+ 7  '-x,y,-z'
+ 8  'x,-y,z'
+ 9  'x+1/2,y+1/2,z+1/2'
+ 10  '-x+1/2,-y+1/2,-z+1/2'
+ 11  '-x+1/2,-y+1/2,z+1/2'
+ 12  'x+1/2,y+1/2,-z+1/2'
+ 13  'x+1/2,-y+1/2,-z+1/2'
+ 14  '-x+1/2,y+1/2,z+1/2'
+ 15  '-x+1/2,y+1/2,-z+1/2'
+ 16  'x+1/2,-y+1/2,z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Er Er0 4 4j 0.5000000000 0.0000000000 0.6673715000 1.0000000000
+ Er Er1 2 2c 0.0000000000 0.0000000000 0.5000000000 1.0000000000
+ Fe Fe2 4 4g 0.5000000000 0.2485695000 0.5000000000 1.0000000000
+ Fe Fe3 8 8k 0.7500000000 0.2500000000 0.7500000000 1.0000000000
+ Fe Fe4 8 8l 0.5000000000 0.2482420000 0.8333045000 1.0000000000
+ Fe Fe5 16 16o 0.7501835000 0.2486355000 0.5832160000 1.0000000000
+ Ge Ge6 4 4j 0.5000000000 0.0000000000 0.5556395000 1.0000000000
+ Ge Ge7 4 4i 0.5000000000 0.5000000000 0.5556405000 1.0000000000
+ Ge Ge8 4 4i 0.0000000000 0.0000000000 0.6120500000 1.0000000000
+ Ge Ge9 4 4j 0.0000000000 0.5000000000 0.6105160000 1.0000000000
+ Ge Ge10 4 4i 0.0000000000 0.0000000000 0.7225710000 1.0000000000
+ Ge Ge11 4 4j 0.0000000000 0.5000000000 0.7211155000 1.0000000000
+ Ge Ge12 4 4h 0.0000000000 0.3455265000 0.5000000000 1.0000000000
+ Ge Ge13 8 8l 0.5000000000 0.3464185000 0.6666040000 1.0000000000

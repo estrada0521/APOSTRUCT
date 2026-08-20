@@ -1,0 +1,41 @@
+# generated using pymatgen
+data_ZrGa6FeCo5
+_symmetry_space_group_name_H-M   Imm2
+_cell_length_a   5.04288400
+_cell_length_b   8.04295000
+_cell_length_c   8.60911200
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   44
+_chemical_formula_structural   ZrGa6FeCo5
+_chemical_formula_sum   'Zr2 Ga12 Fe2 Co10'
+_cell_volume   349.18268892
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, z'
+  3  '-x, y, z'
+  4  'x, -y, z'
+  5  'x+1/2, y+1/2, z+1/2'
+  6  '-x+1/2, -y+1/2, z+1/2'
+  7  '-x+1/2, y+1/2, z+1/2'
+  8  'x+1/2, -y+1/2, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Zr  Zr0  2  0.00000000  0.00000000  0.00187800  1.0
+  Ga  Ga1  8  0.24953450  0.25172750  0.24974150  1.0
+  Ga  Ga2  4  0.00000000  0.28453850  0.50025950  1.0
+  Fe  Fe3  2  0.00000000  0.50000000  0.71898600  1.0
+  Co  Co4  4  0.00000000  0.34860450  0.99793250  1.0
+  Co  Co5  2  0.00000000  0.00000000  0.35452900  1.0
+  Co  Co6  2  0.00000000  0.00000000  0.64559200  1.0
+  Co  Co7  2  0.00000000  0.50000000  0.28366400  1.0

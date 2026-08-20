@@ -1,0 +1,47 @@
+# generated using pymatgen
+data_Ba14Na17CaN6
+_symmetry_space_group_name_H-M   P-1
+_cell_length_a   11.17379603
+_cell_length_b   12.04399352
+_cell_length_c   13.72688480
+_cell_angle_alpha   66.68601435
+_cell_angle_beta   67.61054621
+_cell_angle_gamma   78.80058796
+_symmetry_Int_Tables_number   2
+_chemical_formula_structural   Ba14Na17CaN6
+_chemical_formula_sum   'Ba14 Na17 Ca1 N6'
+_cell_volume   1566.54494043
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ba  Ba0  2  0.03016050  0.61820679  0.67768440  1.0
+  Ba  Ba1  2  0.26263450  0.52082559  0.40571154  1.0
+  Ba  Ba2  2  0.27638777  0.30901520  0.69651790  1.0
+  Ba  Ba3  2  0.34192613  0.16245816  0.45656657  1.0
+  Ba  Ba4  2  0.36922758  0.77910990  0.44566263  1.0
+  Ba  Ba5  2  0.38476935  0.56886769  0.73358386  1.0
+  Ba  Ba6  2  0.47629829  0.78870919  0.11932021  1.0
+  Na  Na7  2  0.04035607  0.81550014  0.31115750  1.0
+  Na  Na8  2  0.09519261  0.35491909  0.01553689  1.0
+  Na  Na9  2  0.13611252  0.89264503  0.75418876  1.0
+  Na  Na10  2  0.14784861  0.02836651  0.00837432  1.0
+  Na  Na11  2  0.16906949  0.68937624  0.05595520  1.0
+  Na  Na12  2  0.23658347  0.09581677  0.20904559  1.0
+  Na  Na13  2  0.36942357  0.40114097  0.10539943  1.0
+  Na  Na14  2  0.41286359  0.91382445  0.81320027  1.0
+  Na  Na15  1  0.00000000  0.00000000  0.50000000  1.0
+  Ca  Ca16  1  0.50000000  0.50000000  0.50000000  1.0
+  N  N17  2  0.26340000  0.55891382  0.59327357  1.0
+  N  N18  2  0.42640626  0.32714225  0.47603914  1.0
+  N  N19  2  0.48818935  0.64195703  0.30688838  1.0

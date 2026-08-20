@@ -1,0 +1,43 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'C2/c'
+_symmetry_Int_Tables_number   15
+_chemical_formula_structural   Co5Te4(ClO6)2
+_cell_length_a   20.1811700000
+_cell_length_b   5.3287280000
+_cell_length_c   16.5586168929
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   124.9671622418
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-x,-y,-z'
+ 3  '-x,y,-z+1/2'
+ 4  'x,-y,z+1/2'
+ 5  'x+1/2,y+1/2,z'
+ 6  '-x+1/2,-y+1/2,-z'
+ 7  '-x+1/2,y+1/2,-z+1/2'
+ 8  'x+1/2,-y+1/2,z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Co Co0 8 8f 0.4089725000 0.7164865000 0.5244550000 1.0000000000
+ Co Co1 8 8f 0.4916625000 0.2814295000 0.8817130000 1.0000000000
+ Co Co2 4 4e 0.5000000000 0.7338420000 0.7500000000 1.0000000000
+ Te Te3 8 8f 0.6459510000 0.7924060000 0.3778210000 1.0000000000
+ Te Te4 8 8f 0.3740370000 0.1835230000 0.3603340000 1.0000000000
+ Cl Cl5 8 8f 0.7349430000 0.1663360000 0.5931960000 1.0000000000
+ O O6 8 8f 0.6148920000 0.8406870000 0.2489450000 1.0000000000
+ O O7 8 8f 0.4294460000 0.8854240000 0.4307050000 1.0000000000
+ O O8 8 8f 0.4365080000 0.0087040000 0.1327610000 1.0000000000
+ O O9 8 8f 0.0979005000 0.8553925000 0.0221150000 1.0000000000
+ O O10 8 8f 0.5409160000 0.6617790000 0.6424110000 1.0000000000
+ O O11 8 8f 0.5781000000 0.4886330000 0.8562280000 1.0000000000

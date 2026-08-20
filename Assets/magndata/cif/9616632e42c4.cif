@@ -1,0 +1,33 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'P2_1/c'
+_symmetry_Int_Tables_number   14
+_chemical_formula_structural   LiLa2RuO6
+_cell_length_a   5.5667050000
+_cell_length_b   5.7949550000
+_cell_length_c   9.6365813766
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   125.1102698972
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-x,-y,-z'
+ 3  '-x,y+1/2,-z+1/2'
+ 4  'x,-y+1/2,z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Li Li0 2 2b 0.5000000000 0.0000000000 0.0000000000 1.0000000000
+ La La1 4 4e 0.7369890000 0.5595390000 0.2486700000 1.0000000000
+ Ru Ru2 2 2c 0.0000000000 0.5000000000 0.0000000000 1.0000000000
+ O O3 4 4e 0.1530530000 0.0271810000 0.7424360000 1.0000000000
+ O O4 4 4e 0.7637820000 0.2850770000 0.4508770000 1.0000000000
+ O O5 4 4e 0.6660310000 0.6898320000 0.9552590000 1.0000000000

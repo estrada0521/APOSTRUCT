@@ -1,0 +1,35 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'Pnma'
+_symmetry_Int_Tables_number   62
+_chemical_formula_structural   CeCrO3
+_cell_length_a   5.7197570000
+_cell_length_b   7.8083150000
+_cell_length_c   5.4862460000
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   90.0000000000
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-x,-y,-z'
+ 3  '-x+1/2,-y,z+1/2'
+ 4  'x+1/2,y,-z+1/2'
+ 5  'x+1/2,-y+1/2,-z+1/2'
+ 6  '-x+1/2,y+1/2,z+1/2'
+ 7  '-x,y+1/2,-z'
+ 8  'x,-y+1/2,z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Ce Ce0 4 4c 0.0592740000 0.2500000000 0.4852720000 1.0000000000
+ Cr Cr1 4 4a 0.0000000000 0.0000000000 0.0000000000 1.0000000000
+ O O2 4 4c 0.0290700000 0.7500000000 0.0978880000 1.0000000000
+ O O3 8 8d 0.2008790000 0.5507770000 0.6988710000 1.0000000000

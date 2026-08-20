@@ -1,0 +1,36 @@
+# generated using pymatgen
+data_CuClF10
+_symmetry_space_group_name_H-M   P2_1/c
+_cell_length_a   4.37678382
+_cell_length_b   8.82623131
+_cell_length_c   8.11227804
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   97.13726128
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   14
+_chemical_formula_structural   CuClF10
+_chemical_formula_sum   'Cu2 Cl2 F20'
+_cell_volume   310.95312484
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x, y+1/2, -z+1/2'
+  4  'x, -y+1/2, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Cu  Cu0  2  0.00000000  0.00000000  0.00000000  1.0
+  Cl  Cl1  2  0.50000000  0.00000000  0.50000000  1.0
+  F  F2  4  0.03105137  0.66617328  0.38537136  1.0
+  F  F3  4  0.23773666  0.09257574  0.87439895  1.0
+  F  F4  4  0.24810809  0.54884588  0.84543420  1.0
+  F  F5  4  0.28565331  0.14158598  0.53886824  1.0
+  F  F6  4  0.32969149  0.60619017  0.12288642  1.0

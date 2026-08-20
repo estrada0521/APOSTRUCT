@@ -1,0 +1,60 @@
+# generated using pymatgen
+data_Bi8Te7
+_symmetry_space_group_name_H-M   P-3m1
+_cell_length_a   4.45873468
+_cell_length_b   4.45873468
+_cell_length_c   94.03974230
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   164
+_chemical_formula_structural   Bi8Te7
+_chemical_formula_sum   'Bi24 Te21'
+_cell_volume   1619.06887073
+_cell_formula_units_Z   3
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-y, x-y, z'
+  4  'y, -x+y, -z'
+  5  '-x+y, -x, z'
+  6  'x-y, x, -z'
+  7  'y, x, -z'
+  8  '-y, -x, z'
+  9  'x-y, -y, -z'
+  10  '-x+y, y, z'
+  11  '-x, -x+y, -z'
+  12  'x, x-y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Bi  Bi0  2  0.00000000  0.00000000  0.06875318  1.0
+  Bi  Bi1  2  0.00000000  0.00000000  0.13364582  1.0
+  Bi  Bi2  2  0.00000000  0.00000000  0.33463420  1.0
+  Bi  Bi3  2  0.00000000  0.00000000  0.40013351  1.0
+  Bi  Bi4  2  0.33333333  0.66666667  0.02149383  1.0
+  Bi  Bi5  2  0.33333333  0.66666667  0.08631941  1.0
+  Bi  Bi6  2  0.33333333  0.66666667  0.28712235  1.0
+  Bi  Bi7  2  0.33333333  0.66666667  0.35221755  1.0
+  Bi  Bi8  2  0.33333333  0.66666667  0.49120856  1.0
+  Bi  Bi9  2  0.33333333  0.66666667  0.55671115  1.0
+  Bi  Bi10  2  0.33333333  0.66666667  0.75578138  1.0
+  Bi  Bi11  2  0.33333333  0.66666667  0.82343394  1.0
+  Te  Te12  2  0.00000000  0.00000000  0.19445120  1.0
+  Te  Te13  2  0.00000000  0.00000000  0.26576814  1.0
+  Te  Te14  2  0.00000000  0.00000000  0.46140404  1.0
+  Te  Te15  2  0.33333333  0.66666667  0.15497374  1.0
+  Te  Te16  2  0.33333333  0.66666667  0.22637369  1.0
+  Te  Te17  2  0.33333333  0.66666667  0.42171520  1.0
+  Te  Te18  2  0.33333333  0.66666667  0.61797086  1.0
+  Te  Te19  2  0.33333333  0.66666667  0.69473988  1.0
+  Te  Te20  2  0.33333333  0.66666667  0.88447865  1.0
+  Te  Te21  2  0.33333333  0.66666667  0.96044727  1.0
+  Te  Te22  1  0.00000000  0.00000000  0.00000000  1.0

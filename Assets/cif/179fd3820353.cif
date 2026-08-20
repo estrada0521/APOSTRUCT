@@ -1,0 +1,40 @@
+# generated using pymatgen
+data_Sc2CrC3
+_symmetry_space_group_name_H-M   Pbam
+_cell_length_a   5.78245476
+_cell_length_b   14.10551413
+_cell_length_c   3.29237870
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   55
+_chemical_formula_structural   Sc2CrC3
+_chemical_formula_sum   'Sc8 Cr4 C12'
+_cell_volume   268.54121366
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x, -y, z'
+  4  'x, y, -z'
+  5  'x+1/2, -y+1/2, -z'
+  6  '-x+1/2, y+1/2, z'
+  7  '-x+1/2, y+1/2, -z'
+  8  'x+1/2, -y+1/2, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Sc  Sc0  4  0.12314531  0.31275567  0.00000000  1.0
+  Sc  Sc1  2  0.00000000  0.00000000  0.00000000  1.0
+  Sc  Sc2  2  0.00000000  0.50000000  0.50000000  1.0
+  Cr  Cr3  4  0.20056035  0.15406826  0.50000000  1.0
+  C  C4  4  0.10618838  0.77839501  0.50000000  1.0
+  C  C5  4  0.13858910  0.88254644  0.50000000  1.0
+  C  C6  4  0.18259523  0.59200255  0.00000000  1.0

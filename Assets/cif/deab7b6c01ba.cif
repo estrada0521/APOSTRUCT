@@ -1,0 +1,42 @@
+# generated using pymatgen
+data_Ce2Ni7P4
+_symmetry_space_group_name_H-M   Pmn2_1
+_cell_length_a   3.75905900
+_cell_length_b   9.14972600
+_cell_length_c   10.35275200
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   31
+_chemical_formula_structural   Ce2Ni7P4
+_chemical_formula_sum   'Ce4 Ni14 P8'
+_cell_volume   356.07627791
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x+1/2, -y, z+1/2'
+  3  '-x, y, z'
+  4  'x+1/2, -y, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ce  Ce0  2  0.00000000  0.06113100  0.00020100  1.0
+  Ce  Ce1  2  0.00000000  0.44100200  0.77875700  1.0
+  Ni  Ni2  2  0.00000000  0.07999700  0.30886600  1.0
+  Ni  Ni3  2  0.00000000  0.19280600  0.56723600  1.0
+  Ni  Ni4  2  0.00000000  0.40047600  0.07835300  1.0
+  Ni  Ni5  2  0.00000000  0.44071400  0.47554700  1.0
+  Ni  Ni6  2  0.00000000  0.75540100  0.89950300  1.0
+  Ni  Ni7  2  0.00000000  0.77745800  0.66740600  1.0
+  Ni  Ni8  2  0.00000000  0.81470900  0.26433200  1.0
+  P  P9  2  0.00000000  0.02587500  0.71840200  1.0
+  P  P10  2  0.00000000  0.31676700  0.28339700  1.0
+  P  P11  2  0.00000000  0.65538500  0.08808200  1.0
+  P  P12  2  0.00000000  0.68907800  0.46522500  1.0

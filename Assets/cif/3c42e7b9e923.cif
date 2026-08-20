@@ -1,0 +1,41 @@
+# generated using pymatgen
+data_Pr3Si6N11
+_symmetry_space_group_name_H-M   P4bm
+_cell_length_a   10.12684513
+_cell_length_b   10.12684513
+_cell_length_c   4.85940257
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   100
+_chemical_formula_structural   Pr3Si6N11
+_chemical_formula_sum   'Pr6 Si12 N22'
+_cell_volume   498.34627428
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y, x, z'
+  3  '-x, -y, z'
+  4  'y, -x, z'
+  5  '-x+1/2, y+1/2, z'
+  6  'y+1/2, x+1/2, z'
+  7  'x+1/2, -y+1/2, z'
+  8  '-y+1/2, -x+1/2, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Pr  Pr0  4  0.18176250  0.31823750  0.37082972  1.0
+  Pr  Pr1  2  0.00000000  0.00000000  0.35444653  1.0
+  Si  Si2  8  0.07886580  0.79085788  0.89487264  1.0
+  Si  Si3  4  0.11707756  0.61707756  0.40479644  1.0
+  N  N4  8  0.07555480  0.76900276  0.54239299  1.0
+  N  N5  8  0.07959740  0.17896945  0.00365286  1.0
+  N  N6  4  0.15375022  0.65375022  0.05909709  1.0
+  N  N7  2  0.00000000  0.50000000  0.43181503  1.0

@@ -1,0 +1,48 @@
+# generated using pymatgen
+data_Na3AlP2H2O9
+_symmetry_space_group_name_H-M   C2/m
+_cell_length_a   15.43622200
+_cell_length_b   7.11605800
+_cell_length_c   7.13941117
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   96.64215243
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   12
+_chemical_formula_structural   Na3AlP2H2O9
+_chemical_formula_sum   'Na12 Al4 P8 H8 O36'
+_cell_volume   778.96519094
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x, y, -z'
+  4  'x, -y, z'
+  5  'x+1/2, y+1/2, z'
+  6  '-x+1/2, -y+1/2, -z'
+  7  '-x+1/2, y+1/2, -z'
+  8  'x+1/2, -y+1/2, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Na  Na0  4  0.00000000  0.23489500  0.00000000  1.0
+  Na  Na1  4  0.11023500  0.50000000  0.70927300  1.0
+  Na  Na2  4  0.25000000  0.25000000  0.50000000  1.0
+  Al  Al3  4  0.25000000  0.25000000  0.00000000  1.0
+  P  P4  4  0.11976800  0.00000000  0.70997200  1.0
+  P  P5  4  0.12288900  0.50000000  0.22583800  1.0
+  H  H6  4  0.06247000  0.00000000  0.40375800  1.0
+  H  H7  4  0.19318600  0.00000000  0.17522000  1.0
+  O  O8  8  0.15204100  0.32034100  0.11918800  1.0
+  O  O9  8  0.17039600  0.18012600  0.77659700  1.0
+  O  O10  4  0.02354900  0.50000000  0.21267800  1.0
+  O  O11  4  0.02587400  0.00000000  0.75854900  1.0
+  O  O12  4  0.12095900  0.00000000  0.48422900  1.0
+  O  O13  4  0.16641400  0.50000000  0.43024700  1.0
+  O  O14  4  0.24343100  0.00000000  0.10492200  1.0

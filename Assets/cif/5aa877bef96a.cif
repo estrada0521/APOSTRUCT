@@ -1,0 +1,45 @@
+# generated using pymatgen
+data_BaFe2(P2O7)2
+_symmetry_space_group_name_H-M   C2/c
+_cell_length_a   10.74014200
+_cell_length_b   10.62727400
+_cell_length_c   9.85307081
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   103.23173991
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   15
+_chemical_formula_structural   BaFe2(P2O7)2
+_chemical_formula_sum   'Ba4 Fe8 P16 O56'
+_cell_volume   1094.75808409
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x, y, -z+1/2'
+  4  'x, -y, z+1/2'
+  5  'x+1/2, y+1/2, z'
+  6  '-x+1/2, -y+1/2, -z'
+  7  '-x+1/2, y+1/2, -z+1/2'
+  8  'x+1/2, -y+1/2, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ba  Ba0  4  0.25000000  0.25000000  0.00000000  1.0
+  Fe  Fe1  4  0.00000000  0.04690800  0.25000000  1.0
+  Fe  Fe2  4  0.00000000  0.50000000  0.00000000  1.0
+  P  P3  8  0.06055200  0.18972400  0.55565300  1.0
+  P  P4  8  0.21932350  0.45703950  0.29848500  1.0
+  O  O5  8  0.02449050  0.32570850  0.58116800  1.0
+  O  O6  8  0.03277500  0.10080000  0.89290200  1.0
+  O  O7  8  0.06498300  0.16644700  0.40473800  1.0
+  O  O8  8  0.12874750  0.41845150  0.16146100  1.0
+  O  O9  8  0.15234200  0.49515400  0.41259100  1.0
+  O  O10  8  0.18093750  0.05692650  0.21380900  1.0
+  O  O11  8  0.20156400  0.17306400  0.65621900  1.0

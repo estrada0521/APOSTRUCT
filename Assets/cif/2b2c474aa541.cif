@@ -1,0 +1,38 @@
+# generated using pymatgen
+data_CoSb2S2(OF3)4
+_symmetry_space_group_name_H-M   P-1
+_cell_length_a   5.20344730
+_cell_length_b   7.96766410
+_cell_length_c   8.78006424
+_cell_angle_alpha   93.57322769
+_cell_angle_beta   91.30298891
+_cell_angle_gamma   97.94694256
+_symmetry_Int_Tables_number   2
+_chemical_formula_structural   CoSb2S2(OF3)4
+_chemical_formula_sum   'Co1 Sb2 S2 O4 F12'
+_cell_volume   359.63773072
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Co  Co0  1  0.50000000  0.50000000  0.50000000  1.0
+  Sb  Sb1  2  0.03134050  0.73805700  0.26461200  1.0
+  S  S2  2  0.49958000  0.20160400  0.21399800  1.0
+  O  O3  2  0.24766700  0.22286600  0.15402450  1.0
+  O  O4  2  0.40454900  0.69242100  0.64727600  1.0
+  F  F5  2  0.15900550  0.44931300  0.85152750  1.0
+  F  F6  2  0.16498750  0.34191200  0.55606800  1.0
+  F  F7  2  0.22172750  0.11842000  0.77394100  1.0
+  F  F8  2  0.22622800  0.91216700  0.39547600  1.0
+  F  F9  2  0.23608650  0.80180200  0.09567850  1.0
+  F  F10  2  0.28275800  0.58694500  0.32488600  1.0

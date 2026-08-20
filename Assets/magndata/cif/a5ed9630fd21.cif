@@ -1,0 +1,42 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'I4_1md'
+_symmetry_Int_Tables_number   109
+_chemical_formula_structural   NdAlGe
+_cell_length_a   4.2678146129
+_cell_length_b   4.2678146129
+_cell_length_c   14.6549021306
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   90.0000000000
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-y,x+1/2,z+1/4'
+ 3  '-x+1/2,-y+1/2,z+1/2'
+ 4  'y+1/2,-x,z+3/4'
+ 5  '-x,y,z'
+ 6  'y,x+1/2,z+1/4'
+ 7  'x+1/2,-y+1/2,z+1/2'
+ 8  '-y+1/2,-x,z+3/4'
+ 9  'x+1/2,y+1/2,z+1/2'
+ 10  '-y+1/2,x,z+3/4'
+ 11  '-x,-y,z'
+ 12  'y,-x+1/2,z+1/4'
+ 13  '-x+1/2,y+1/2,z+1/2'
+ 14  'y+1/2,x,z+3/4'
+ 15  'x,-y,z'
+ 16  '-y,-x+1/2,z+1/4'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Nd Nd0 4 4a 0.5000000000 0.5000000000 0.0818336250 1.0000000000
+ Al Al1 4 4a 0.0000000000 0.0000000000 0.1658171900 1.0000000000
+ Ge Ge2 4 4a 0.5000000000 0.5000000000 0.4997773600 1.0000000000

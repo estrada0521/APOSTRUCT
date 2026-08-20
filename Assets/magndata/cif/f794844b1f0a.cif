@@ -1,0 +1,38 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'Pnma'
+_symmetry_Int_Tables_number   62
+_chemical_formula_structural   BaDy2CuO5
+_cell_length_a   12.2656880000
+_cell_length_b   5.7053930000
+_cell_length_c   7.2337150000
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   90.0000000000
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-x,-y,-z'
+ 3  '-x+1/2,-y,z+1/2'
+ 4  'x+1/2,y,-z+1/2'
+ 5  'x+1/2,-y+1/2,-z+1/2'
+ 6  '-x+1/2,y+1/2,z+1/2'
+ 7  '-x,y+1/2,-z'
+ 8  'x,-y+1/2,z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Ba Ba0 4 4c 0.4039280000 0.2500000000 0.5665410000 1.0000000000
+ Dy Dy1 4 4c 0.5736940000 0.2500000000 0.1042490000 1.0000000000
+ Dy Dy2 4 4c 0.7867990000 0.2500000000 0.3887900000 1.0000000000
+ Cu Cu3 4 4c 0.1606620000 0.2500000000 0.7802690000 1.0000000000
+ O O4 4 4c 0.5994160000 0.2500000000 0.4169890000 1.0000000000
+ O O5 8 8d 0.2719770000 0.0037220000 0.8533750000 1.0000000000
+ O O6 8 8d 0.0683450000 0.4945910000 0.6605200000 1.0000000000

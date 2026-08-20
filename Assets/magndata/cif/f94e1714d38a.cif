@@ -1,0 +1,39 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'P2_1/c'
+_symmetry_Int_Tables_number   14
+_chemical_formula_structural   CsNiC3(SN)3
+_cell_length_a   5.5408980000
+_cell_length_b   13.2992060000
+_cell_length_c   13.1688608796
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   108.2505928203
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-x,-y,-z'
+ 3  '-x,y+1/2,-z+1/2'
+ 4  'x,-y+1/2,z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Cs Cs0 4 4e 0.0641410000 0.2708790000 0.7174960000 1.0000000000
+ Ni Ni1 2 2d 0.5000000000 0.0000000000 0.5000000000 1.0000000000
+ Ni Ni2 2 2a 0.0000000000 0.0000000000 0.0000000000 1.0000000000
+ C C3 4 4e 0.0379160000 0.9058520000 0.5741470000 1.0000000000
+ C C4 4 4e 0.3192000000 0.5501830000 0.7375810000 1.0000000000
+ C C5 4 4e 0.4810260000 0.8820120000 0.9904650000 1.0000000000
+ S S6 4 4e 0.5098890000 0.1087700000 0.6540110000 1.0000000000
+ S S7 4 4e 0.7691990000 0.6604040000 0.5155050000 1.0000000000
+ S S8 4 4e 0.6902940000 0.3567560000 0.9227380000 1.0000000000
+ N N9 4 4e 0.1929190000 0.5105680000 0.6585320000 1.0000000000
+ N N10 4 4e 0.2728010000 0.9140600000 0.9717620000 1.0000000000
+ N N11 4 4e 0.1615270000 0.4412990000 0.9301670000 1.0000000000

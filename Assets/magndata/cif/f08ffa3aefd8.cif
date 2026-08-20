@@ -1,0 +1,37 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'P-1'
+_symmetry_Int_Tables_number   2
+_chemical_formula_structural   LiFe(MoO4)2
+_cell_length_a   6.8680230000
+_cell_length_b   7.2615124197
+_cell_length_c   7.4881435516
+_cell_angle_alpha   91.0150643943
+_cell_angle_beta   110.1750335843
+_cell_angle_gamma   105.0112264233
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-x,-y,-z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Li Li0 2 2i 0.7731660000 0.4490170000 0.2524670000 1.0000000000
+ Fe Fe1 2 2i 0.4035940000 0.1008750000 0.3191400000 1.0000000000
+ Mo Mo2 2 2i 0.8217380000 0.9660480000 0.2154370000 1.0000000000
+ Mo Mo3 2 2i 0.3332320000 0.5772660000 0.2868730000 1.0000000000
+ O O4 2 2i 0.5752620000 0.1597830000 0.6108540000 1.0000000000
+ O O5 2 2i 0.2415580000 0.0407570000 0.0384590000 1.0000000000
+ O O6 2 2i 0.7190040000 0.7284180000 0.2594100000 1.0000000000
+ O O7 2 2i 0.8885920000 0.9506790000 0.6568570000 1.0000000000
+ O O8 2 2i 0.6892970000 0.1317900000 0.2749410000 1.0000000000
+ O O9 2 2i 0.5186790000 0.6134320000 0.6561890000 1.0000000000
+ O O10 2 2i 0.9057050000 0.5130970000 0.6689960000 1.0000000000
+ O O11 2 2i 0.2531180000 0.5761540000 0.0396040000 1.0000000000

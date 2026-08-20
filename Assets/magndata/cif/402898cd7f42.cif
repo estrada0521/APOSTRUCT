@@ -1,0 +1,52 @@
+data_structure
+_cell_length_a 8.87334003432
+_cell_length_b 8.87334003432
+_cell_length_c 9.67070893
+_cell_angle_alpha 90
+_cell_angle_beta 90
+_cell_angle_gamma 120
+_space_group_IT_number 194
+_space_group_name_H-M_alt 'P6_3/mmc'
+loop_
+_space_group_symop_id
+_space_group_symop_operation_xyz
+1 'x,y,z'
+2 '-x,-y,-z'
+3 'x-y,x,z+1/2'
+4 '-x+y,-x,-z+1/2'
+5 '-y,x-y,z'
+6 'y,-x+y,-z'
+7 '-x,-y,z+1/2'
+8 'x,y,-z+1/2'
+9 '-x+y,-x,z'
+10 'x-y,x,-z'
+11 'y,-x+y,z+1/2'
+12 '-y,x-y,-z+1/2'
+13 '-y,-x,-z+1/2'
+14 'y,x,z+1/2'
+15 '-x,-x+y,-z'
+16 'x,x-y,z'
+17 '-x+y,y,-z+1/2'
+18 'x-y,-y,z+1/2'
+19 'y,x,-z'
+20 '-y,-x,z'
+21 'x,x-y,-z+1/2'
+22 '-x,-x+y,z+1/2'
+23 'x-y,-y,-z'
+24 '-x+y,y,z'
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_symmetry_multiplicity
+_atom_site_Wyckoff_label
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_occupancy
+Pr1 Pr 6 h 0.192727725 0.38545545 0.25 1
+Al1 Al 4 f 0.333333333333 0.666666666667 0.00113333 1
+Al2 Al 12 k 0.162544025 0.32508805 0.57497495 1
+Al3 Al 6 h 0.562847935 0.12569587 0.25 1
+Al4 Al 2 b 0 0 0.25 1
+Ru1 Ru 6 g 0.5 0 0 1
+Ru2 Ru 2 a 0 0 0 1

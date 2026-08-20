@@ -1,0 +1,47 @@
+# generated using pymatgen
+data_LiTl3(MoO4)2
+_symmetry_space_group_name_H-M   P6_3mc
+_cell_length_a   6.14308409
+_cell_length_b   6.14308409
+_cell_length_c   16.19244900
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   186
+_chemical_formula_structural   LiTl3(MoO4)2
+_chemical_formula_sum   'Li2 Tl6 Mo4 O16'
+_cell_volume   529.19543532
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  'x-y, x, z+1/2'
+  3  '-y, x-y, z'
+  4  '-x, -y, z+1/2'
+  5  '-x+y, -x, z'
+  6  'y, -x+y, z+1/2'
+  7  'y, x, z+1/2'
+  8  'x, x-y, z'
+  9  'x-y, -y, z+1/2'
+  10  '-y, -x, z'
+  11  '-x, -x+y, z+1/2'
+  12  '-x+y, y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Li  Li0  2  0.33333333  0.66666667  0.89717100  1.0
+  Tl  Tl1  2  0.00000000  0.00000000  0.00107400  1.0
+  Tl  Tl2  2  0.00000000  0.00000000  0.25379800  1.0
+  Tl  Tl3  2  0.33333333  0.66666667  0.09984800  1.0
+  Mo  Mo4  2  0.33333333  0.66666667  0.39958700  1.0
+  Mo  Mo5  2  0.33333333  0.66666667  0.67056600  1.0
+  O  O6  6  0.01432000  0.50716000  0.43841700  1.0
+  O  O7  6  0.17186300  0.34372600  0.63506100  1.0
+  O  O8  2  0.33333333  0.66666667  0.28933100  1.0
+  O  O9  2  0.33333333  0.66666667  0.77949200  1.0

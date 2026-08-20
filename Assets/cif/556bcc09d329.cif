@@ -1,0 +1,58 @@
+# generated using pymatgen
+data_Cd3Fe2Cu10(SnSe4)5
+_symmetry_space_group_name_H-M   Fmm2
+_cell_length_a   8.24956400
+_cell_length_b   41.26123400
+_cell_length_c   11.53479000
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   42
+_chemical_formula_structural   Cd3Fe2Cu10(SnSe4)5
+_chemical_formula_sum   'Cd12 Fe8 Cu40 Sn20 Se80'
+_cell_volume   3926.29476228
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, z'
+  3  '-x, y, z'
+  4  'x, -y, z'
+  5  'x+1/2, y+1/2, z'
+  6  '-x+1/2, -y+1/2, z'
+  7  '-x+1/2, y+1/2, z'
+  8  'x+1/2, -y+1/2, z'
+  9  'x+1/2, y, z+1/2'
+  10  '-x+1/2, -y, z+1/2'
+  11  '-x+1/2, y, z+1/2'
+  12  'x+1/2, -y, z+1/2'
+  13  'x, y+1/2, z+1/2'
+  14  '-x, -y+1/2, z+1/2'
+  15  '-x, y+1/2, z+1/2'
+  16  'x, -y+1/2, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Cd  Cd0  8  0.00000000  0.10006200  0.09998000  1.0
+  Cd  Cd1  4  0.00000000  0.00000000  0.60019300  1.0
+  Fe  Fe2  8  0.00000000  0.20004350  0.59994750  1.0
+  Cu  Cu3  16  0.24847850  0.15038700  0.35009250  1.0
+  Cu  Cu4  16  0.24990750  0.04997950  0.35011600  1.0
+  Cu  Cu5  8  0.25000000  0.25000000  0.34990100  1.0
+  Sn  Sn6  8  0.00000000  0.10065050  0.59926750  1.0
+  Sn  Sn7  8  0.00000000  0.20060100  0.10082200  1.0
+  Sn  Sn8  4  0.00000000  0.00000000  0.09996200  1.0
+  Se  Se9  16  0.23460700  0.20009650  0.73194550  1.0
+  Se  Se10  16  0.24545100  0.10010700  0.74247600  1.0
+  Se  Se11  8  0.00000000  0.04896700  0.95826000  1.0
+  Se  Se12  8  0.00000000  0.05115450  0.45803750  1.0
+  Se  Se13  8  0.00000000  0.15115050  0.95816950  1.0
+  Se  Se14  8  0.00000000  0.15316200  0.46732800  1.0
+  Se  Se15  8  0.00000000  0.24691900  0.46714000  1.0
+  Se  Se16  8  0.24473050  0.00000000  0.24181050  1.0

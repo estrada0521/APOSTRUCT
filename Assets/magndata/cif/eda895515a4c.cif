@@ -1,0 +1,38 @@
+data_structure
+_cell_length_a 9.19214
+_cell_length_b 5.30901
+_cell_length_c 11.91553
+_cell_angle_alpha 90
+_cell_angle_beta 104.87505
+_cell_angle_gamma 90
+_space_group_IT_number 15
+_space_group_name_H-M_alt 'C2/c'
+loop_
+_space_group_symop_id
+_space_group_symop_operation_xyz
+1 'x,y,z'
+2 '-x+1,-y,-z'
+3 '-x+1,y,-z+1/2'
+4 'x+1,-y,z+1/2'
+5 'x+1/2,y+1/2,z'
+6 '-x+1/2,-y+1/2,-z'
+7 '-x+1/2,y+1/2,-z+1/2'
+8 'x+1/2,-y+1/2,z+1/2'
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_symmetry_multiplicity
+_atom_site_Wyckoff_label
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_occupancy
+Ni1 Ni 8 f 0.58239 0.7494 0.49951 0.8817
+Sb1 Sb 8 f 0.58239 0.7494 0.49951 0.1183
+Cu1 Cu 8 f 0.8251 0.09064 0.24918 1
+Cu2 Cu 4 e 0.5 0.08536 0.25 1
+O1 O 8 f 0.11917 0.08868 0.09149 1
+O2 O 8 f 0.22323 0.07631 0.40875 1
+O3 O 8 f 0.43967 0.08237 0.08835 1
+Sb2 Sb 4 c 0.75 0.75 0 0.8029
+Ni2 Ni 4 c 0.75 0.75 0 0.1971

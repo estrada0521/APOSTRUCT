@@ -1,0 +1,43 @@
+# generated using pymatgen
+data_La6Si7Br3
+_symmetry_space_group_name_H-M   Pmmn
+_cell_length_a   4.15349208
+_cell_length_b   16.97593138
+_cell_length_c   11.89989926
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   59
+_chemical_formula_structural   La6Si7Br3
+_chemical_formula_sum   'La12 Si14 Br6'
+_cell_volume   839.05471568
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, z'
+  3  'x+1/2, -y+1/2, -z'
+  4  '-x+1/2, y+1/2, -z'
+  5  '-x+1/2, -y+1/2, -z'
+  6  'x+1/2, y+1/2, -z'
+  7  '-x, y, z'
+  8  'x, -y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  La  La0  4  0.00000000  0.25596633  0.35652153  1.0
+  La  La1  4  0.00000000  0.38079798  0.06599746  1.0
+  La  La2  2  0.00000000  0.00000000  0.34210757  1.0
+  La  La3  2  0.00000000  0.50000000  0.35801846  1.0
+  Si  Si4  4  0.00000000  0.12360284  0.74452189  1.0
+  Si  Si5  4  0.00000000  0.12431374  0.54192356  1.0
+  Si  Si6  4  0.00000000  0.37691731  0.56383053  1.0
+  Si  Si7  2  0.00000000  0.00000000  0.84663651  1.0
+  Br  Br8  4  0.00000000  0.19224435  0.10783618  1.0
+  Br  Br9  2  0.00000000  0.50000000  0.86229543  1.0

@@ -1,0 +1,42 @@
+# generated using pymatgen
+data_Hf2Ag3F14
+_symmetry_space_group_name_H-M   C2/m
+_cell_length_a   9.30558301
+_cell_length_b   6.71059912
+_cell_length_c   9.04733968
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   91.64676345
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   12
+_chemical_formula_structural   Hf2Ag3F14
+_chemical_formula_sum   'Hf4 Ag6 F28'
+_cell_volume   564.73717301
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x, y, -z'
+  4  'x, -y, z'
+  5  'x+1/2, y+1/2, z'
+  6  '-x+1/2, -y+1/2, -z'
+  7  '-x+1/2, y+1/2, -z'
+  8  'x+1/2, -y+1/2, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Hf  Hf0  4  0.09075061  0.50000000  0.21712313  1.0
+  Ag  Ag1  4  0.18726522  0.00000000  0.39679259  1.0
+  Ag  Ag2  2  0.00000000  0.00000000  0.00000000  1.0
+  F  F3  8  0.06097806  0.20504474  0.16374495  1.0
+  F  F4  8  0.17074824  0.32334465  0.38860645  1.0
+  F  F5  4  0.11086340  0.50000000  0.70676897  1.0
+  F  F6  4  0.22584952  0.00000000  0.87814284  1.0
+  F  F7  2  0.00000000  0.00000000  0.50000000  1.0
+  F  F8  2  0.00000000  0.50000000  0.00000000  1.0

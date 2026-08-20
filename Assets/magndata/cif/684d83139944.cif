@@ -1,0 +1,33 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'P2_12_12'
+_symmetry_Int_Tables_number   18
+_chemical_formula_structural   CoTeMoO6
+_cell_length_a   5.1161151343
+_cell_length_b   5.3319983614
+_cell_length_c   9.1859350172
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   90.0000000000
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-x,-y,z'
+ 3  'x+1/2,-y+1/2,-z'
+ 4  '-x+1/2,y+1/2,-z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Co Co0 2 2a 0.5000000000 0.5000000000 0.0259490000 1.0000000000
+ Te Te1 2 2b 0.0000000000 0.5000000000 0.7603360000 1.0000000000
+ Mo Mo2 2 2b 0.5000000000 0.0000000000 0.6980070000 1.0000000000
+ O O3 4 4c 0.2419870000 0.8152220000 0.7996900000 1.0000000000
+ O O4 4 4c 0.2812550000 0.8208340000 0.1036950000 1.0000000000
+ O O5 4 4c 0.6608780000 0.7913630000 0.5835300000 1.0000000000

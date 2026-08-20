@@ -1,0 +1,46 @@
+# generated using pymatgen
+data_Na4CuTe2O29
+_symmetry_space_group_name_H-M   P-1
+_cell_length_a   4.90060500
+_cell_length_b   8.96047126
+_cell_length_c   13.31823606
+_cell_angle_alpha   92.12661973
+_cell_angle_beta   94.36092590
+_cell_angle_gamma   105.72141176
+_symmetry_Int_Tables_number   2
+_chemical_formula_structural   Na4CuTe2O29
+_chemical_formula_sum   'Na4 Cu1 Te2 O29'
+_cell_volume   560.30329235
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Na  Na0  2  0.34969000  0.64760700  0.04395100  1.0
+  Na  Na1  2  0.37724900  0.21484700  0.68067200  1.0
+  Cu  Cu2  1  0.00000000  0.00000000  0.00000000  1.0
+  Te  Te3  2  0.00827500  0.23810100  0.19818500  1.0
+  O  O4  2  0.01383600  0.22280400  0.03314600  1.0
+  O  O5  2  0.04381800  0.69272600  0.36562800  1.0
+  O  O6  2  0.07064000  0.83693600  0.58461200  1.0
+  O  O7  2  0.10525400  0.02559200  0.86549300  1.0
+  O  O8  2  0.14622500  0.48793400  0.19438200  1.0
+  O  O9  2  0.16534900  0.82813000  0.33897600  1.0
+  O  O10  2  0.17564100  0.34932300  0.98476800  1.0
+  O  O11  2  0.21099500  0.97560500  0.57663800  1.0
+  O  O12  2  0.36310600  0.59476500  0.57822700  1.0
+  O  O13  2  0.36841700  0.11865900  0.85221500  1.0
+  O  O14  2  0.38283500  0.74393400  0.86768300  1.0
+  O  O15  2  0.42226900  0.22661900  0.21285400  1.0
+  O  O16  2  0.42424800  0.54948400  0.22184000  1.0
+  O  O17  2  0.47487600  0.32067500  0.47579800  1.0
+  O  O18  1  0.50000000  0.00000000  0.50000000  1.0

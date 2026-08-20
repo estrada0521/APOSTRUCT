@@ -1,0 +1,46 @@
+# generated using pymatgen
+data_Mo3Br6O
+_symmetry_space_group_name_H-M   I4/m
+_cell_length_a   10.80620600
+_cell_length_b   10.80620600
+_cell_length_c   12.28947600
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   87
+_chemical_formula_structural   Mo3Br6O
+_chemical_formula_sum   'Mo12 Br24 O4'
+_cell_volume   1435.09235330
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-y, x, z'
+  4  'y, -x, -z'
+  5  '-x, -y, z'
+  6  'x, y, -z'
+  7  'y, -x, z'
+  8  '-y, x, -z'
+  9  'x+1/2, y+1/2, z+1/2'
+  10  '-x+1/2, -y+1/2, -z+1/2'
+  11  '-y+1/2, x+1/2, z+1/2'
+  12  'y+1/2, -x+1/2, -z+1/2'
+  13  '-x+1/2, -y+1/2, z+1/2'
+  14  'x+1/2, y+1/2, -z+1/2'
+  15  'y+1/2, -x+1/2, z+1/2'
+  16  '-y+1/2, x+1/2, -z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Mo  Mo0  8  0.10374000  0.79940500  0.00000000  1.0
+  Mo  Mo1  4  0.00000000  0.00000000  0.18935500  1.0
+  Br  Br2  16  0.07890150  0.24867050  0.14452950  1.0
+  Br  Br3  8  0.09046100  0.28768200  0.50000000  1.0
+  O  O4  4  0.00000000  0.00000000  0.32898700  1.0

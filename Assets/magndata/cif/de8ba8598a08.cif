@@ -1,0 +1,61 @@
+data_structure
+_cell_length_a 5.817
+_cell_length_b 5.817
+_cell_length_c 14.244
+_cell_angle_alpha 90
+_cell_angle_beta 90
+_cell_angle_gamma 120
+_space_group_IT_number 166
+_space_group_name_H-M_alt 'R-3m'
+loop_
+_space_group_symop_id
+_space_group_symop_operation_xyz
+1 'x,y,z'
+2 '-x+1,-y+1,-z+1'
+3 '-y+1,x-y+1,z+1'
+4 'y+1,-x+y+1,-z+1'
+5 '-x+y+1,-x+1,z+1'
+6 'x-y+1,x,-z+1'
+7 'y+1,x,-z+1'
+8 '-y+1,-x+1,z+1'
+9 'x-y+1,-y+1,-z+1'
+10 '-x+y+1,y+1,z+1'
+11 '-x+1,-x+y+1,-z+1'
+12 'x,x-y,z'
+13 'x+2/3,y+1/3,z+1/3'
+14 '-x+2/3,-y+1/3,-z+1/3'
+15 '-y+2/3,x-y+1/3,z+1/3'
+16 'y+2/3,-x+y+1/3,-z+1/3'
+17 '-x+y+2/3,-x+1/3,z+1/3'
+18 'x-y+2/3,x+1/3,-z+1/3'
+19 'y+2/3,x+1/3,-z+1/3'
+20 '-y+2/3,-x+1/3,z+1/3'
+21 'x-y+2/3,-y+1/3,-z+1/3'
+22 '-x+y+2/3,y+1/3,z+1/3'
+23 '-x+2/3,-x+y+1/3,-z+1/3'
+24 'x+2/3,x-y+1/3,z+1/3'
+25 'x+1/3,y+2/3,z+2/3'
+26 '-x+1/3,-y+2/3,-z+2/3'
+27 '-y+1/3,x-y+2/3,z+2/3'
+28 'y+1/3,-x+y+2/3,-z+2/3'
+29 '-x+y+1/3,-x+2/3,z+2/3'
+30 'x-y+1/3,x+2/3,-z+2/3'
+31 'y+1/3,x+2/3,-z+2/3'
+32 '-y+1/3,-x+2/3,z+2/3'
+33 'x-y+1/3,-y+2/3,-z+2/3'
+34 '-x+y+1/3,y+2/3,z+2/3'
+35 '-x+1/3,-x+y+2/3,-z+2/3'
+36 'x+1/3,x-y+2/3,z+2/3'
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_symmetry_multiplicity
+_atom_site_Wyckoff_label
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_occupancy
+Mn1 Mn 3 a 0 0 0 1
+Ba1 Ba 6 c 0.333333333333 0.666666666667 0.916706666667 1
+Te1 Te 3 b 0.333333333333 0.666666666667 0.166666666667 1
+O1 O 18 h 0.489766666667 0.979533333333 0.244933333333 1

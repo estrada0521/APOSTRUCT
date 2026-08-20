@@ -1,0 +1,36 @@
+data_structure
+_cell_length_a 6.57097903634
+_cell_length_b 8.29909359
+_cell_length_c 9.40556025978
+_cell_angle_alpha 90
+_cell_angle_beta 100.089147026
+_cell_angle_gamma 90
+_space_group_IT_number 14
+_space_group_name_H-M_alt 'P2_1/c'
+loop_
+_space_group_symop_id
+_space_group_symop_operation_xyz
+1 'x,y,z'
+2 '-x+1,-y,-z'
+3 '-x,y+1/2,-z+1/2'
+4 'x,-y+1/2,z+1/2'
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_symmetry_multiplicity
+_atom_site_Wyckoff_label
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_occupancy
+V1 V 4 e 0.36384146 0.25942954 0.03104737 1
+V2 V 4 e 0.19586845 0.51885654 0.31243419 1
+Co1 Co 4 e 0.14402433 0.62198948 0.96312526 1
+Co2 Co 4 e 0.30217464 0.88844841 0.17852183 1
+O1 O 4 e 0.60351387 0.63184476 0.62456332 1
+O2 O 4 e 0.42456658 0.62657399 0.89401637 1
+O3 O 4 e 0.17177703 0.86839703 0.96072996 1
+O4 O 4 e 0.25308891 0.85576223 0.67967927 1
+O5 O 4 e 0.67724839 0.87765538 0.84832089 1
+O6 O 4 e 0.02816795 0.5829129 0.74844788 1
+O7 O 4 e 0.85232984 0.87983079 0.50585396 1

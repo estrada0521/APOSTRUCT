@@ -1,0 +1,49 @@
+# generated using pymatgen
+data_Ba4CaV4Cu2F28
+_symmetry_space_group_name_H-M   C2
+_cell_length_a   14.23661200
+_cell_length_b   5.44258600
+_cell_length_c   15.18423654
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   91.39363631
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   5
+_chemical_formula_structural   Ba4CaV4Cu2F28
+_chemical_formula_sum   'Ba8 Ca2 V8 Cu4 F56'
+_cell_volume   1176.18713629
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, y, -z'
+  3  'x+1/2, y+1/2, z'
+  4  '-x+1/2, y+1/2, -z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ba  Ba0  4  0.18036450  0.91594050  0.37672300  1.0
+  Ba  Ba1  4  0.18637100  0.07890700  0.87482600  1.0
+  Ca  Ca2  2  0.00000000  0.57908100  0.00000000  1.0
+  V  V3  4  0.12347900  0.97906600  0.62205900  1.0
+  V  V4  4  0.12380850  0.02355050  0.12459900  1.0
+  Cu  Cu5  4  0.00223300  0.50040400  0.25024600  1.0
+  F  F6  4  0.00175300  0.06581800  0.60199900  1.0
+  F  F7  4  0.00684650  0.92002850  0.90365000  1.0
+  F  F8  4  0.05348200  0.43798800  0.86315000  1.0
+  F  F9  4  0.05662500  0.56604700  0.35846300  1.0
+  F  F10  4  0.08203400  0.20842400  0.23392700  1.0
+  F  F11  4  0.08583900  0.78774100  0.72763000  1.0
+  F  F12  4  0.11542300  0.29428900  0.03750000  1.0
+  F  F13  4  0.12488150  0.71415850  0.54394200  1.0
+  F  F14  4  0.14601150  0.74048350  0.20380600  1.0
+  F  F15  4  0.14796950  0.24997250  0.70322900  1.0
+  F  F16  4  0.15933700  0.80075300  0.02564000  1.0
+  F  F17  4  0.17152000  0.18038300  0.53089500  1.0
+  F  F18  4  0.24720550  0.88955450  0.65088700  1.0
+  F  F19  4  0.24847650  0.61092150  0.85202000  1.0

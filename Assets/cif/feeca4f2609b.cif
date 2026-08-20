@@ -1,0 +1,53 @@
+# generated using pymatgen
+data_CeZr6O14
+_symmetry_space_group_name_H-M   Pmm2
+_cell_length_a   3.68250400
+_cell_length_b   25.72219700
+_cell_length_c   5.29756400
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   25
+_chemical_formula_structural   CeZr6O14
+_chemical_formula_sum   'Ce2 Zr12 O28'
+_cell_volume   501.79635169
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, z'
+  3  '-x, y, z'
+  4  'x, -y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ce  Ce0  2  0.50000000  0.35637700  0.49894800  1.0
+  Zr  Zr1  2  0.00000000  0.14158800  0.00082400  1.0
+  Zr  Zr2  2  0.00000000  0.28287600  0.99971200  1.0
+  Zr  Zr3  2  0.00000000  0.42983300  0.00005500  1.0
+  Zr  Zr4  2  0.50000000  0.07075100  0.49945400  1.0
+  Zr  Zr5  2  0.50000000  0.21214200  0.49996400  1.0
+  Zr  Zr6  1  0.00000000  0.00000000  0.00053200  1.0
+  Zr  Zr7  1  0.50000000  0.50000000  0.50017900  1.0
+  O  O8  2  0.00000000  0.07076600  0.80194300  1.0
+  O  O9  2  0.00000000  0.07112000  0.30244000  1.0
+  O  O10  2  0.00000000  0.21177300  0.79854400  1.0
+  O  O11  2  0.00000000  0.21327200  0.30056400  1.0
+  O  O12  2  0.00000000  0.35635800  0.79047700  1.0
+  O  O13  2  0.00000000  0.35674000  0.26231000  1.0
+  O  O14  2  0.50000000  0.14122100  0.69946200  1.0
+  O  O15  2  0.50000000  0.14239800  0.19879900  1.0
+  O  O16  2  0.50000000  0.28117300  0.71839100  1.0
+  O  O17  2  0.50000000  0.28138200  0.20607100  1.0
+  O  O18  2  0.50000000  0.43099700  0.72029000  1.0
+  O  O19  2  0.50000000  0.43212400  0.20770900  1.0
+  O  O20  1  0.00000000  0.50000000  0.29783200  1.0
+  O  O21  1  0.00000000  0.50000000  0.79400000  1.0
+  O  O22  1  0.50000000  0.00000000  0.19732000  1.0
+  O  O23  1  0.50000000  0.00000000  0.69822000  1.0

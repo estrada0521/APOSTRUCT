@@ -1,0 +1,47 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'I-42d'
+_symmetry_Int_Tables_number   122
+_chemical_formula_structural   Cu(BO2)2
+_cell_length_a   11.4911695002
+_cell_length_b   11.4911695002
+_cell_length_c   5.6260171100
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   90.0000000000
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  'y,-x,-z'
+ 3  '-x,-y,z'
+ 4  '-y,x,-z'
+ 5  'x,-y+1/2,-z+1/4'
+ 6  'y,x+1/2,z+1/4'
+ 7  '-x,y+1/2,-z+1/4'
+ 8  '-y,-x+1/2,z+1/4'
+ 9  'x+1/2,y+1/2,z+1/2'
+ 10  'y+1/2,-x+1/2,-z+1/2'
+ 11  '-x+1/2,-y+1/2,z+1/2'
+ 12  '-y+1/2,x+1/2,-z+1/2'
+ 13  'x+1/2,-y,-z+3/4'
+ 14  'y+1/2,x,z+3/4'
+ 15  '-x+1/2,y,-z+3/4'
+ 16  '-y+1/2,-x,z+3/4'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Cu Cu0 4 4b 0.5000000000 0.0000000000 0.2500000000 1.0000000000
+ Cu Cu1 8 8d 0.7500000000 0.9180739750 0.8750000000 1.0000000000
+ B B2 16 16e 0.6476479150 0.8150525450 0.4474790900 1.0000000000
+ B B3 8 8d 0.7500000000 0.0007413500 0.3750000000 1.0000000000
+ O O4 16 16e 0.5698314950 0.8414587850 0.2445297200 1.0000000000
+ O O5 8 8d 0.2500000000 0.2473004800 0.8750000000 1.0000000000
+ O O6 8 8d 0.5835993400 0.7500000000 0.6250000000 1.0000000000
+ O O7 16 16e 0.6879594850 0.9261775550 0.5482100100 1.0000000000

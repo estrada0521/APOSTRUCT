@@ -1,0 +1,37 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'C2/c'
+_symmetry_Int_Tables_number   15
+_chemical_formula_structural   NaMn(GeO3)2
+_cell_length_a   10.0211773198
+_cell_length_b   8.8672030000
+_cell_length_c   5.6883831088
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   105.3100442519
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-x,-y,-z'
+ 3  '-x,y,-z+1/2'
+ 4  'x,-y,z+1/2'
+ 5  'x+1/2,y+1/2,z'
+ 6  '-x+1/2,-y+1/2,-z'
+ 7  '-x+1/2,y+1/2,-z+1/2'
+ 8  'x+1/2,-y+1/2,z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Na Na0 4 4e 0.0000000000 0.8007020000 0.7500000000 1.0000000000
+ Mn Mn1 4 4e 0.0000000000 0.4095185000 0.7500000000 1.0000000000
+ Ge Ge2 8 8f 0.2907375000 0.5920005000 0.7406540000 1.0000000000
+ O O3 8 8f 0.1084135000 0.5796045000 0.6513850000 1.0000000000
+ O O4 8 8f 0.3643875000 0.5103095000 0.5173050000 1.0000000000
+ O O5 8 8f 0.1389300000 0.2722720000 0.6899020000 1.0000000000

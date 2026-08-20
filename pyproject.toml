@@ -16,11 +16,18 @@ dependencies = [
   "sympy",
 ]
 
+[project.optional-dependencies]
+verification = ["scipy"]
+
 [project.scripts]
 apo = "APOSTRUCT.cli:main"
+apostruct-compare = "Verification.verify_comparison:main"
+apostruct-verify-local = "Verification.verify_local_output:main"
+apostruct-verify-web = "Verification.verify_web_text:main"
+apostruct-validation-summary = "Verification.reproduce:main"
 
 [tool.setuptools.packages.find]
-include = ["APOSTRUCT*", "Source"]
+include = ["APOSTRUCT*", "Source", "Verification*"]
 exclude = ["APOSTRUCT.debug*"]
 namespaces = true
 
@@ -39,6 +46,13 @@ namespaces = true
   "Backend/source/_compiled/*.npy",
   "Backend/source/_compiled/manifest.json",
   "Backend/source/_compiled/README.md",
+]
+"Verification.mathematics" = [
+  "data/*.md",
+  "data/*.txt",
+  "data/*.gz",
+  "data/upstream/spglib-2.7.0/*.yaml",
+  "data/upstream/spglib-2.7.0/*.csv",
 ]
 
 [tool.setuptools.exclude-package-data]

@@ -1,0 +1,35 @@
+# generated using pymatgen
+data_Na4MgV2O6
+_symmetry_space_group_name_H-M   P-1
+_cell_length_a   5.49301677
+_cell_length_b   5.70270656
+_cell_length_c   6.01023731
+_cell_angle_alpha   63.01588617
+_cell_angle_beta   74.11948042
+_cell_angle_gamma   61.90714262
+_symmetry_Int_Tables_number   2
+_chemical_formula_structural   Na4MgV2O6
+_chemical_formula_sum   'Na4 Mg1 V2 O6'
+_cell_volume   147.57700686
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Na  Na0  2  0.26055902  0.98240899  0.55229792  1.0
+  Na  Na1  1  0.00000000  0.00000000  0.00000000  1.0
+  Na  Na2  1  0.00000000  0.50000000  0.50000000  1.0
+  Mg  Mg3  1  0.50000000  0.50000000  0.50000000  1.0
+  V  V4  2  0.32159556  0.32718738  0.01095608  1.0
+  O  O5  2  0.02693534  0.70380144  0.77135249  1.0
+  O  O6  2  0.36813640  0.52133046  0.21480117  1.0
+  O  O7  2  0.40393386  0.13402263  0.76493250  1.0

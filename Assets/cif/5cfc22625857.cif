@@ -1,0 +1,51 @@
+# generated using pymatgen
+data_HfMg14CO16
+_symmetry_space_group_name_H-M   Pmmm
+_cell_length_a   4.18770106
+_cell_length_b   8.73878181
+_cell_length_c   8.91944318
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   47
+_chemical_formula_structural   HfMg14CO16
+_chemical_formula_sum   'Hf1 Mg14 C1 O16'
+_cell_volume   326.41064312
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x, -y, z'
+  4  'x, y, -z'
+  5  'x, -y, -z'
+  6  '-x, y, z'
+  7  '-x, y, -z'
+  8  'x, -y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Hf  Hf0  1  0.00000000  0.00000000  0.50000000  1.0
+  Mg  Mg1  4  0.00000000  0.24892764  0.22995821  1.0
+  Mg  Mg2  2  0.50000000  0.00000000  0.22409833  1.0
+  Mg  Mg3  2  0.50000000  0.24763974  0.00000000  1.0
+  Mg  Mg4  2  0.50000000  0.26271491  0.50000000  1.0
+  Mg  Mg5  2  0.50000000  0.50000000  0.24292550  1.0
+  Mg  Mg6  1  0.00000000  0.50000000  0.00000000  1.0
+  Mg  Mg7  1  0.00000000  0.50000000  0.50000000  1.0
+  C  C8  1  0.00000000  0.00000000  0.00000000  1.0
+  O  O9  4  0.50000000  0.24639901  0.25047247  1.0
+  O  O10  2  0.00000000  0.00000000  0.27656913  1.0
+  O  O11  2  0.00000000  0.24408539  0.50000000  1.0
+  O  O12  2  0.00000000  0.28115166  0.00000000  1.0
+  O  O13  2  0.00000000  0.50000000  0.26024206  1.0
+  O  O14  1  0.50000000  0.00000000  0.00000000  1.0
+  O  O15  1  0.50000000  0.00000000  0.50000000  1.0
+  O  O16  1  0.50000000  0.50000000  0.00000000  1.0
+  O  O17  1  0.50000000  0.50000000  0.50000000  1.0

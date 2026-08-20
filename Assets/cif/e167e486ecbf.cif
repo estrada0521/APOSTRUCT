@@ -1,0 +1,38 @@
+# generated using pymatgen
+data_Li14Cr2N8O
+_symmetry_space_group_name_H-M   P-3
+_cell_length_a   5.81298416
+_cell_length_b   5.81298416
+_cell_length_c   8.22629000
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   147
+_chemical_formula_structural   Li14Cr2N8O
+_chemical_formula_sum   'Li14 Cr2 N8 O1'
+_cell_volume   240.73150239
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-y, x-y, z'
+  4  'y, -x+y, -z'
+  5  '-x+y, -x, z'
+  6  'x-y, x, -z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Li  Li0  6  0.03973400  0.35233700  0.58611500  1.0
+  Li  Li1  6  0.07203900  0.69633100  0.90972900  1.0
+  Li  Li2  2  0.00000000  0.00000000  0.25676000  1.0
+  Cr  Cr3  2  0.33333333  0.66666667  0.23912400  1.0
+  N  N4  6  0.06116500  0.69319300  0.16865500  1.0
+  N  N5  2  0.33333333  0.66666667  0.45217000  1.0
+  O  O6  1  0.00000000  0.00000000  0.50000000  1.0

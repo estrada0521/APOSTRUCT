@@ -1,0 +1,43 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'Pccn'
+_symmetry_Int_Tables_number   56
+_chemical_formula_structural   Fe2Se2O7
+_cell_length_a   6.7793080000
+_cell_length_b   13.0703100000
+_cell_length_c   13.8122260000
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   90.0000000000
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-x,-y,-z'
+ 3  '-x+1/2,-y+1/2,z'
+ 4  'x+1/2,y+1/2,-z'
+ 5  'x+1/2,-y,-z+1/2'
+ 6  '-x+1/2,y,z+1/2'
+ 7  '-x,y+1/2,-z+1/2'
+ 8  'x,-y+1/2,z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Fe Fe0 4 4c 0.2500000000 0.2500000000 0.3354810000 1.0000000000
+ Fe Fe1 4 4d 0.2500000000 0.7500000000 0.2105890000 1.0000000000
+ Fe Fe2 8 8e 0.0317630000 0.6214030000 0.0267240000 1.0000000000
+ Se Se3 8 8e 0.0119660000 0.4479700000 0.2165550000 1.0000000000
+ Se Se4 8 8e 0.0262800000 0.1349700000 0.0356600000 1.0000000000
+ O O5 8 8e 0.0224670000 0.7039400000 0.1459400000 1.0000000000
+ O O6 8 8e 0.1951450000 0.3597750000 0.2319860000 1.0000000000
+ O O7 8 8e 0.7976810000 0.3757060000 0.2195900000 1.0000000000
+ O O8 8 8e 0.0201600000 0.4737790000 0.0902630000 1.0000000000
+ O O9 8 8e 0.9818100000 0.2611600000 0.0613950000 1.0000000000
+ O O10 8 8e 0.8278650000 0.1018490000 0.9631280000 1.0000000000
+ O O11 8 8e 0.2148400000 0.1381030000 0.9467870000 1.0000000000

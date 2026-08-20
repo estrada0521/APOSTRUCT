@@ -1,0 +1,57 @@
+data_structure
+_cell_length_a 5.837
+_cell_length_b 5.837
+_cell_length_c 9.932
+_cell_angle_alpha 90
+_cell_angle_beta 90
+_cell_angle_gamma 90
+_space_group_IT_number 141
+_space_group_name_H-M_alt 'I4_1/amd'
+loop_
+_space_group_symop_id
+_space_group_symop_operation_xyz
+1 'x,y,z'
+2 '-y,x+1/2,z+1/4'
+3 '-x+1/2,-y+1/2,z+1/2'
+4 'y+1/2,-x,z+3/4'
+5 'x,-y+1/2,-z+1/4'
+6 '-y,-x,-z'
+7 '-x+1/2,y,-z+3/4'
+8 'y+1/2,x+1/2,-z+1/2'
+9 '-x,-y+1/2,-z+1/4'
+10 'y,-x,-z'
+11 'x+1/2,y,-z+3/4'
+12 '-y+1/2,x+1/2,-z+1/2'
+13 '-x,y,z'
+14 'y,x+1/2,z+1/4'
+15 'x+1/2,-y+1/2,z+1/2'
+16 '-y+1/2,-x,z+3/4'
+17 'x+1/2,y+1/2,z+1/2'
+18 '-y+1/2,x,z+3/4'
+19 '-x,-y,z'
+20 'y,-x+1/2,z+1/4'
+21 'x+1/2,-y,-z+3/4'
+22 '-y+1/2,-x+1/2,-z+1/2'
+23 '-x,y+1/2,-z+1/4'
+24 'y,x,-z'
+25 '-x+1/2,-y,-z+3/4'
+26 'y+1/2,-x+1/2,-z+1/2'
+27 'x,y+1/2,-z+1/4'
+28 '-y,x,-z'
+29 '-x+1/2,y+1/2,z+1/2'
+30 'y+1/2,x,z+3/4'
+31 'x,-y,z'
+32 '-y,-x+1/2,z+1/4'
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_symmetry_multiplicity
+_atom_site_Wyckoff_label
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_occupancy
+Cu1 Cu 8 c 0 0.75 0.125 1
+Cu2 Cu 8 d 0.5 0.25 0.125 1
+O1 O 8 e 0 0 0.2423 1
+O2 O 4 b 0 0 0.5 1

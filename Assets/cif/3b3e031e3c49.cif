@@ -1,0 +1,55 @@
+# generated using pymatgen
+data_K2NdN5O17
+_symmetry_space_group_name_H-M   Fdd2
+_cell_length_a   11.30942400
+_cell_length_b   21.50921200
+_cell_length_c   12.26042000
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   43
+_chemical_formula_structural   K2NdN5O17
+_chemical_formula_sum   'K16 Nd8 N40 O136'
+_cell_volume   2982.43051641
+_cell_formula_units_Z   8
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, z'
+  3  '-x+1/4, y+3/4, z+3/4'
+  4  'x+1/4, -y+3/4, z+3/4'
+  5  'x+1/2, y+1/2, z'
+  6  '-x+1/2, -y+1/2, z'
+  7  '-x+3/4, y+1/4, z+3/4'
+  8  'x+3/4, -y+1/4, z+3/4'
+  9  'x+1/2, y, z+1/2'
+  10  '-x+1/2, -y, z+1/2'
+  11  '-x+3/4, y+3/4, z+1/4'
+  12  'x+3/4, -y+3/4, z+1/4'
+  13  'x, y+1/2, z+1/2'
+  14  '-x, -y+1/2, z+1/2'
+  15  '-x+1/4, y+1/4, z+1/4'
+  16  'x+1/4, -y+1/4, z+1/4'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  K  K0  16  0.05629850  0.10298350  0.73345800  1.0
+  Nd  Nd1  8  0.00000000  0.00000000  0.24729300  1.0
+  N  N2  16  0.01121600  0.24087350  0.06316050  1.0
+  N  N3  16  0.05460150  0.07575200  0.04277950  1.0
+  N  N4  8  0.00000000  0.00000000  0.50373100  1.0
+  O  O5  16  0.01944050  0.38228150  0.77644300  1.0
+  O  O6  16  0.03043850  0.20930850  0.51728900  1.0
+  O  O7  16  0.04240350  0.45432700  0.95026550  1.0
+  O  O8  16  0.05117800  0.43718250  0.57152850  1.0
+  O  O9  16  0.06383200  0.29924400  0.59472500  1.0
+  O  O10  16  0.07679600  0.10282900  0.95556200  1.0
+  O  O11  16  0.11252150  0.30965100  0.35774950  1.0
+  O  O12  16  0.11904700  0.23369450  0.07397950  1.0
+  O  O13  8  0.00000000  0.00000000  0.60559500  1.0

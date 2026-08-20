@@ -1,0 +1,42 @@
+data_structure
+_cell_length_a 5.1968
+_cell_length_b 5.1968
+_cell_length_c 13.9363
+_cell_angle_alpha 90
+_cell_angle_beta 90
+_cell_angle_gamma 120
+_space_group_IT_number 161
+_space_group_name_H-M_alt 'R3c'
+loop_
+_space_group_symop_id
+_space_group_symop_operation_xyz
+1 'x,y,z'
+2 '-y,x-y,z'
+3 '-x+y,-x,z'
+4 '-y,-x+1,z+1/2'
+5 '-x+y,y+1,z+1/2'
+6 'x,x-y+1,z+1/2'
+7 'x+2/3,y+1/3,z+1/3'
+8 '-y+2/3,x-y+1/3,z+1/3'
+9 '-x+y+2/3,-x+1/3,z+1/3'
+10 '-y+2/3,-x+1/3,z+5/6'
+11 '-x+y+2/3,y+1/3,z+5/6'
+12 'x+2/3,x-y+1/3,z+5/6'
+13 'x+1/3,y+2/3,z+2/3'
+14 '-y+1/3,x-y+2/3,z+2/3'
+15 '-x+y+1/3,-x+2/3,z+2/3'
+16 '-y+1/3,-x+2/3,z+1/6'
+17 '-x+y+1/3,y+2/3,z+1/6'
+18 'x+1/3,x-y+2/3,z+1/6'
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_symmetry_multiplicity
+_atom_site_Wyckoff_label
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_occupancy
+Sc1 Sc 6 a 0 0 0.2105 1
+Fe1 Fe 6 a 0 0 3.70074341542e-17 1
+O1 O 18 b 0.016 0.3112 0.1045 1

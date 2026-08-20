@@ -1368,6 +1368,16 @@ def coupled_opd_rows(
                 "opd_label": direction_label,
                 "direction_label": direction_label,
                 "direction_domains": list(displayed_domains),
+                "_slot_source_numeric_rows": [
+                    [
+                        [
+                            float(transformed[index][row * 48 + column])
+                            for column in range(int(slot["irrep"]["full_dim"]))
+                        ]
+                        for row in range(int(canonical[index][0]))
+                    ]
+                    for index, slot in enumerate(slots)
+                ],
                 "display_opd": display_opd,
                 "source_opd": display_opd,
                 "op_rows": sum(source[0] for source in canonical),

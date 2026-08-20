@@ -1,0 +1,38 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'P6_3mc'
+_symmetry_Int_Tables_number   186
+_chemical_formula_structural   CeGeAu
+_cell_length_a   4.3727097118
+_cell_length_b   4.3727097118
+_cell_length_c   8.1079861200
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   90.0000000000
+_cell_angle_gamma   120.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  'x-y,x,z+1/2'
+ 3  '-y,x-y,z'
+ 4  '-x,-y,z+1/2'
+ 5  '-x+y,-x,z'
+ 6  'y,-x+y,z+1/2'
+ 7  'y,x,z+1/2'
+ 8  'x,x-y,z'
+ 9  'x-y,-y,z+1/2'
+ 10  '-y,-x,z'
+ 11  '-x,-x+y,z+1/2'
+ 12  '-x+y,y,z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Ce Ce0 2 2a 0.0000000000 0.0000000000 0.5030468100 1.0000000000
+ Ge Ge1 2 2b 0.3333333333 0.6666666667 0.7291897200 1.0000000000
+ Au Au2 2 2b 0.6666666667 0.3333333333 0.7709634700 1.0000000000

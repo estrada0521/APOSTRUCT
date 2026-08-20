@@ -1,0 +1,50 @@
+# generated using pymatgen
+data_Na2BiO3
+_symmetry_space_group_name_H-M   Fdd2
+_cell_length_a   6.70683201
+_cell_length_b   9.62581701
+_cell_length_c   20.31326807
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   43
+_chemical_formula_structural   Na2BiO3
+_chemical_formula_sum   'Na32 Bi16 O48'
+_cell_volume   1311.39894405
+_cell_formula_units_Z   16
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, z'
+  3  '-x+1/4, y+3/4, z+3/4'
+  4  'x+1/4, -y+3/4, z+3/4'
+  5  'x+1/2, y, z+1/2'
+  6  '-x+1/2, -y, z+1/2'
+  7  '-x+3/4, y+3/4, z+1/4'
+  8  'x+3/4, -y+3/4, z+1/4'
+  9  'x+1/2, y+1/2, z'
+  10  '-x+1/2, -y+1/2, z'
+  11  '-x+3/4, y+1/4, z+3/4'
+  12  'x+3/4, -y+1/4, z+3/4'
+  13  'x, y+1/2, z+1/2'
+  14  '-x, -y+1/2, z+1/2'
+  15  '-x+1/4, y+1/4, z+1/4'
+  16  'x+1/4, -y+1/4, z+1/4'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Na  Na0  8  0.00000000  0.00000000  0.25511513  1.0
+  Na  Na1  8  0.00000000  0.00000000  0.42083726  1.0
+  Na  Na2  8  0.00000000  0.00000000  0.58074460  1.0
+  Na  Na3  8  0.00000000  0.00000000  0.74934054  1.0
+  Bi  Bi4  8  0.00000000  0.00000000  0.08538551  1.0
+  Bi  Bi5  8  0.00000000  0.00000000  0.91805651  1.0
+  O  O6  16  0.00168502  0.22202958  0.08721824  1.0
+  O  O7  16  0.01911230  0.25346354  0.40911320  1.0
+  O  O8  16  0.02670858  0.25275675  0.25886450  1.0

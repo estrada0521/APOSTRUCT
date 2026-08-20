@@ -1,0 +1,47 @@
+# generated using pymatgen
+data_Ba5LiGaN3F5
+_symmetry_space_group_name_H-M   Pnma
+_cell_length_a   15.59964100
+_cell_length_b   5.79322400
+_cell_length_c   12.35912900
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   62
+_chemical_formula_structural   Ba5LiGaN3F5
+_chemical_formula_sum   'Ba20 Li4 Ga4 N12 F20'
+_cell_volume   1116.92185866
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x+1/2, -y, z+1/2'
+  4  'x+1/2, y, -z+1/2'
+  5  'x+1/2, -y+1/2, -z+1/2'
+  6  '-x+1/2, y+1/2, z+1/2'
+  7  '-x, y+1/2, -z'
+  8  'x, -y+1/2, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ba  Ba0  4  0.01115200  0.75000000  0.62062600  1.0
+  Ba  Ba1  4  0.06472000  0.75000000  0.18305800  1.0
+  Ba  Ba2  4  0.15707300  0.25000000  0.96937000  1.0
+  Ba  Ba3  4  0.16427000  0.25000000  0.63347600  1.0
+  Ba  Ba4  4  0.24467700  0.75000000  0.77849100  1.0
+  Li  Li5  4  0.04222900  0.75000000  0.90167700  1.0
+  Ga  Ga6  4  0.14114900  0.75000000  0.42448800  1.0
+  N  N7  4  0.02039000  0.75000000  0.39838900  1.0
+  N  N8  4  0.18416600  0.75000000  0.57259700  1.0
+  N  N9  4  0.21835100  0.75000000  0.30278800  1.0
+  F  F10  8  0.08895900  0.51216200  0.80104600  1.0
+  F  F11  4  0.00000000  0.00000000  0.00000000  1.0
+  F  F12  4  0.09275300  0.25000000  0.18550700  1.0
+  F  F13  4  0.17804400  0.75000000  0.99346600  1.0

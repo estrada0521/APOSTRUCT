@@ -1,0 +1,42 @@
+# generated using pymatgen
+data_LaTa3O9
+_symmetry_space_group_name_H-M   Pnma
+_cell_length_a   6.62099900
+_cell_length_b   7.75428800
+_cell_length_c   12.67823500
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   62
+_chemical_formula_structural   LaTa3O9
+_chemical_formula_sum   'La4 Ta12 O36'
+_cell_volume   650.91495053
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x+1/2, -y, z+1/2'
+  4  'x+1/2, y, -z+1/2'
+  5  'x+1/2, -y+1/2, -z+1/2'
+  6  '-x+1/2, y+1/2, z+1/2'
+  7  '-x, y+1/2, -z'
+  8  'x, -y+1/2, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  La  La0  4  0.05072100  0.25000000  0.47323300  1.0
+  Ta  Ta1  8  0.21670900  0.00206500  0.71546200  1.0
+  Ta  Ta2  4  0.00000000  0.00000000  0.00000000  1.0
+  O  O3  8  0.02632600  0.03131700  0.84371900  1.0
+  O  O4  8  0.09131700  0.02047800  0.33307900  1.0
+  O  O5  8  0.21413200  0.52687400  0.54183100  1.0
+  O  O6  4  0.06288700  0.75000000  0.98039100  1.0
+  O  O7  4  0.19017200  0.25000000  0.68194600  1.0
+  O  O8  4  0.20651700  0.75000000  0.70157000  1.0

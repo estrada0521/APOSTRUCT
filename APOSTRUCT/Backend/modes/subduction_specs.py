@@ -20,6 +20,8 @@ from APOSTRUCT.Backend.modes.engine.dynamic_subduction import (
     stored_occurrence_alias_candidates,
     _strict_integral_values,
 )
+
+
 from APOSTRUCT.Backend.modes.engine.project.mode_counts import (
     little_records_for_k,
 )
@@ -44,10 +46,6 @@ from APOSTRUCT.Backend.modes.structure_runtime import (
     _source_split_origin_from_opd_row,
     _subgroup_parent_operation_records,
 )
-
-
-# Matches isotropy.engine.get_isotropy._fmt_matrix_value's fixed-six-decimal cell.
-_DYNAMIC_SOURCE_MATRIX_ROUNDING_CELL = float(np.nextafter(5e-7, np.inf))
 
 
 def _opd_source_data(decoder: ModeDataDecoder) -> OpdSourceData:
@@ -1098,6 +1096,14 @@ def _subduced_mode_specs(
                 and tuple(spec.get("source_kparam") or ()) == tuple(selected_source_kparam)
             ):
                 spec["source_free_count"] = int(selected_iso.get("free") or 0)
+                if fallback_direction_matrix is not None:
+                    # Promotion selects the occurrence heading, not a new
+                    # calculation frame for the selected Source OPD.
+                    spec["source_numeric_rows"] = [
+                        [float(value) for value in row]
+                        for row in fallback_source_rows
+                    ]
+                    spec["direction_matrix"] = fallback_direction_matrix
         if not specs:
             return [fallback]
         if not any(spec["primary"] for spec in specs):
@@ -1312,105 +1318,6 @@ def _ordinary_subduced_mode_specs_from_magnetic_embedding(
     return _canonicalize_exact_pml_alias_specs(specs)
 
 
-def _selected_primary_stokes_direction(
-    *,
-    primary: bool,
-    magnetic: bool,
-    coupled: bool,
-    little_type: int,
-    selected_source_rows: Any,
-    recomputed_direction: list[list[float]],
-    carrier_source_kparam: Sequence[int] | None,
-    selected_source_rounded: bool = False,
-) -> tuple[list[list[float]], list[list[float]] | None]:
-    """Retain a selected Source Stokes frame when it spans the same carrier."""
-
-    if not (
-        primary
-        and magnetic
-        and not coupled
-        and int(little_type) in {1, 3}
-        and isinstance(selected_source_rows, list)
-        and len(selected_source_rows) > 1
-    ):
-        return recomputed_direction, None
-    try:
-        selected_rows = np.asarray(selected_source_rows, dtype=float)
-        recomputed = np.asarray(recomputed_direction, dtype=float)
-    except (TypeError, ValueError) as exc:
-        raise ValueError("selected Stokes direction is not numeric") from exc
-    if (
-        selected_rows.ndim != 2
-        or recomputed.ndim != 2
-        or selected_rows.size == 0
-        or recomputed.size == 0
-        or not np.all(np.isfinite(selected_rows))
-        or not np.all(np.isfinite(recomputed))
-    ):
-        raise ValueError("selected Stokes direction is not a finite matrix")
-    selected = selected_rows.T
-    if selected.shape != recomputed.shape:
-        raise ValueError("selected and recomputed Stokes directions differ in shape")
-    uses_dynamic_rounding_cell = (
-        selected_source_rounded and carrier_source_kparam is None
-    )
-    free_count = int(selected.shape[1])
-    if (
-        free_count <= 1
-        or int(np.linalg.matrix_rank(selected, tol=1e-10)) != free_count
-        or int(np.linalg.matrix_rank(recomputed, tol=1e-10)) != free_count
-    ):
-        raise ValueError("selected or recomputed Stokes direction lost rank")
-    if np.array_equal(selected, recomputed):
-        return recomputed_direction, None
-    if not uses_dynamic_rounding_cell and (
-        int(
-            np.linalg.matrix_rank(
-                np.column_stack((recomputed, selected)), tol=1e-10
-            )
-        )
-        != free_count
-    ):
-        # Occurrence promotion can attach the selected heading to a conjugate
-        # carrier.  Its raw Source columns need an explicit occurrence
-        # intertwiner before they can replace that carrier's computed frame.
-        if carrier_source_kparam is not None:
-            return recomputed_direction, None
-        raise ValueError("selected and recomputed Stokes directions differ in span")
-    transform, _residuals, transform_rank, _singular = np.linalg.lstsq(
-        recomputed, selected, rcond=None
-    )
-    scale = max(1.0, float(np.max(np.abs(selected))))
-    residual_limit = (
-        _DYNAMIC_SOURCE_MATRIX_ROUNDING_CELL
-        if uses_dynamic_rounding_cell
-        else 1e-10 * scale
-    )
-    transform_is_invalid = (
-        int(transform_rank) != free_count
-        or int(np.linalg.matrix_rank(transform, tol=1e-10)) != free_count
-        or float(np.max(np.abs(recomputed @ transform - selected)))
-        > residual_limit
-    )
-    if transform_is_invalid:
-        raise ValueError("selected Stokes direction has no exact carrier transform")
-    return selected.tolist(), recomputed.tolist()
-
-
-def _selected_stokes_rows_use_dynamic_display_precision(
-    selected_opd: dict[str, Any] | None,
-    selected_iso: dict[str, Any],
-) -> bool:
-    direction = (
-        selected_opd.get("direction") if isinstance(selected_opd, dict) else None
-    )
-    return bool(
-        isinstance(direction, dict)
-        and direction.get("dynamic") is True
-        and not selected_iso.get("embedding_selected")
-    )
-
-
 def _magnetic_subduced_mode_specs(
     decoder: ModeDataDecoder,
     sg: int,
@@ -1460,10 +1367,36 @@ def _magnetic_subduced_mode_specs(
         rows=raw_rows,
         selected_cases=[(selected_gid, source_kparam, None)],
     )
-    selected_source_rounded = _selected_stokes_rows_use_dynamic_display_precision(
-        selected_opd,
-        iso,
-    )
+    selected = np.asarray(source_rows, dtype=float)
+    if (
+        selected.ndim != 2
+        or selected.shape[0] < 1
+        or selected.shape[1] < 1
+        or not np.all(np.isfinite(selected))
+    ):
+        raise ValueError("selected Stokes direction is malformed")
+    selected_direction = selected.T
+
+    def duplicates_sibling_occurrence(row: Any) -> bool:
+        family = tuple(row.source_occurrences)
+        if not family:
+            return False
+        selected_rank = int(np.linalg.matrix_rank(selected_direction, tol=1e-10))
+        return any(
+            other is not row
+            and tuple(other.source_occurrences) == family
+            and np.asarray(other.direction_matrix).shape == selected_direction.shape
+            and int(
+                np.linalg.matrix_rank(
+                    np.column_stack(
+                        (selected_direction, np.asarray(other.direction_matrix))
+                    ),
+                    tol=1e-10,
+                )
+            )
+            == selected_rank
+            for other in rows
+        )
 
     def row_spec(row: Any) -> dict[str, Any]:
         reciprocal_vector_pml = tuple(row.reciprocal_vector_pml)
@@ -1475,16 +1408,18 @@ def _magnetic_subduced_mode_specs(
             selected_gid=selected_gid,
             selected_source_kparam=source_kparam,
         )
-        direction_matrix, retained_recomputed = _selected_primary_stokes_direction(
-            primary=primary,
-            magnetic=True,
-            coupled=False,
-            little_type=int(little.irrep_type),
-            selected_source_rows=source_rows,
-            recomputed_direction=recomputed_direction,
-            carrier_source_kparam=row.carrier_source_kparam,
-            selected_source_rounded=selected_source_rounded,
-        )
+        if primary and not duplicates_sibling_occurrence(row):
+            if selected_direction.shape[0] != len(recomputed_direction):
+                raise ValueError("selected Stokes direction has the wrong dimension")
+            direction_matrix = selected_direction.tolist()
+            retained_recomputed = (
+                recomputed_direction
+                if direction_matrix != recomputed_direction
+                else None
+            )
+        else:
+            direction_matrix = recomputed_direction
+            retained_recomputed = None
         source_free_count = (
             len(direction_matrix[0])
             if direction_matrix
@@ -1558,6 +1493,7 @@ def _coupled_render_specs(
     sg: int,
     selected_slots: list[dict[str, Any]],
     selected_opd: dict[str, Any] | None,
+    slot_source_rows: list[Any],
     *,
     include_displacive: bool,
     include_magnetic: bool,
@@ -1574,6 +1510,8 @@ def _coupled_render_specs(
     )
     if basis is None or not operations:
         return []
+    if len(slot_source_rows) != len(selected_slots):
+        raise ValueError("coupled OPD lost its per-slot Source rows")
     subgroup = iso.get("subgroup") if isinstance(iso.get("subgroup"), dict) else {}
     magnetic_embedding = bool(subgroup.get("ordinary_number"))
     table = magnetic_data().table if magnetic_embedding else None
@@ -1624,6 +1562,10 @@ def _coupled_render_specs(
                     or slot.get("k_params")
                     or {}
                 ),
+                "source_numeric_rows": [
+                    [float(value) for value in row]
+                    for row in slot_source_rows[index]
+                ],
             }
         )
     specs: list[tuple[int, dict[str, Any], str, int, str]] = []
@@ -1677,6 +1619,46 @@ def _coupled_render_specs(
             old_id = int(little_record.old_id)
             little_type = int(little_record.irrep_type)
             direction_matrix = [list(values) for values in row.direction_matrix]
+            selected_source_subspace_replaced = False
+            if primary_slot is not None:
+                selected_rows = primary_slot["source_numeric_rows"]
+                selected_direction = np.asarray(selected_rows, dtype=float).T
+                occurrence_direction = np.asarray(direction_matrix, dtype=float)
+                if selected_direction.shape != occurrence_direction.shape:
+                    raise ValueError("coupled Source direction has the wrong shape")
+                occurrence_rank = int(
+                    np.linalg.matrix_rank(occurrence_direction, tol=1e-10)
+                )
+                selected_rank = int(
+                    np.linalg.matrix_rank(selected_direction, tol=1e-10)
+                )
+                transform, _residuals, transform_rank, _singular = np.linalg.lstsq(
+                    occurrence_direction,
+                    selected_direction,
+                    rcond=None,
+                )
+                residual_limit = (
+                    float(np.nextafter(5e-7, np.inf))
+                    if row.carrier_source_kparam is None
+                    else 1e-10
+                )
+                same_subspace = (
+                    occurrence_rank == selected_rank
+                    and int(transform_rank) == selected_rank
+                    and int(np.linalg.matrix_rank(transform, tol=1e-10))
+                    == selected_rank
+                    and float(
+                        np.max(
+                            np.abs(
+                                occurrence_direction @ transform - selected_direction
+                            )
+                        )
+                    )
+                    <= residual_limit
+                )
+                if not same_subspace and row.carrier_source_kparam is None:
+                    direction_matrix = selected_direction.tolist()
+                    selected_source_subspace_replaced = True
             source_free_count = (
                 len(direction_matrix[0])
                 if direction_matrix
@@ -1713,6 +1695,7 @@ def _coupled_render_specs(
                 "_primary_slot_order": (
                     None if primary_slot is None else primary_slot["order"]
                 ),
+                "_selected_source_subspace_replaced": selected_source_subspace_replaced,
                 "source_occurrences": tuple(row.source_occurrences),
             }
 

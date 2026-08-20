@@ -1,0 +1,49 @@
+# generated using pymatgen
+data_Si2Ag6O7
+_symmetry_space_group_name_H-M   C2/m
+_cell_length_a   13.01148000
+_cell_length_b   9.92468200
+_cell_length_c   10.85646712
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   106.51812492
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   12
+_chemical_formula_structural   Si2Ag6O7
+_chemical_formula_sum   'Si12 Ag36 O42'
+_cell_volume   1344.08911993
+_cell_formula_units_Z   6
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x, y, -z'
+  4  'x, -y, z'
+  5  'x+1/2, y+1/2, z'
+  6  '-x+1/2, -y+1/2, -z'
+  7  '-x+1/2, y+1/2, -z'
+  8  'x+1/2, -y+1/2, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Si  Si0  4  0.10516700  0.00000000  0.12670100  1.0
+  Si  Si1  4  0.15607900  0.50000000  0.87245200  1.0
+  Si  Si2  4  0.19721200  0.00000000  0.61737200  1.0
+  Ag  Ag3  8  0.01085450  0.15096950  0.34300200  1.0
+  Ag  Ag4  8  0.08251250  0.35750750  0.13860500  1.0
+  Ag  Ag5  8  0.18307250  0.17947950  0.86526700  1.0
+  Ag  Ag6  8  0.22340800  0.32742100  0.62059800  1.0
+  Ag  Ag7  4  0.04114900  0.50000000  0.36434600  1.0
+  O  O8  8  0.11084100  0.13632300  0.21336200  1.0
+  O  O9  8  0.11285150  0.36205650  0.92670500  1.0
+  O  O10  8  0.12327350  0.13686350  0.57062400  1.0
+  O  O11  4  0.12597800  0.50000000  0.71410800  1.0
+  O  O12  4  0.20557200  0.50000000  0.45355500  1.0
+  O  O13  4  0.20974200  0.00000000  0.06757200  1.0
+  O  O14  4  0.24636200  0.00000000  0.77823100  1.0
+  O  O15  2  0.00000000  0.00000000  0.00000000  1.0

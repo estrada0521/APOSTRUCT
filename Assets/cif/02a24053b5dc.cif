@@ -1,0 +1,38 @@
+# generated using pymatgen
+data_Li2GeF6
+_symmetry_space_group_name_H-M   P321
+_cell_length_a   8.33342072
+_cell_length_b   8.33342072
+_cell_length_c   4.53554700
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   150
+_chemical_formula_structural   Li2GeF6
+_chemical_formula_sum   'Li6 Ge3 F18'
+_cell_volume   272.77647912
+_cell_formula_units_Z   3
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y, x-y, z'
+  3  '-x+y, -x, z'
+  4  'y, x, -z'
+  5  'x-y, -y, -z'
+  6  '-x, -x+y, -z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Li  Li0  3  0.00000000  0.36548813  0.50000000  1.0
+  Li  Li1  3  0.00000000  0.70015376  0.00000000  1.0
+  Ge  Ge2  2  0.33333333  0.66666667  0.98997170  1.0
+  Ge  Ge3  1  0.00000000  0.00000000  0.50000000  1.0
+  F  F4  6  0.09724637  0.20693552  0.72331494  1.0
+  F  F5  6  0.12712471  0.57825242  0.76487235  1.0
+  F  F6  6  0.22240462  0.45952062  0.21419201  1.0

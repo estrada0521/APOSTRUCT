@@ -1,0 +1,45 @@
+# generated using pymatgen
+data_Ca(Al4Co)2
+_symmetry_space_group_name_H-M   Pbam
+_cell_length_a   12.37181863
+_cell_length_b   14.35666571
+_cell_length_c   3.93297335
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   55
+_chemical_formula_structural   Ca(Al4Co)2
+_chemical_formula_sum   'Ca4 Al32 Co8'
+_cell_volume   698.56711335
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x, -y, z'
+  4  'x, y, -z'
+  5  'x+1/2, -y+1/2, -z'
+  6  '-x+1/2, y+1/2, z'
+  7  '-x+1/2, y+1/2, -z'
+  8  'x+1/2, -y+1/2, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ca  Ca0  4  0.15887088  0.68106943  0.50000000  1.0
+  Al  Al1  4  0.02636496  0.36693199  0.00000000  1.0
+  Al  Al2  4  0.04714346  0.82079381  0.00000000  1.0
+  Al  Al3  4  0.09598509  0.24537268  0.50000000  1.0
+  Al  Al4  4  0.15995753  0.11883474  0.00000000  1.0
+  Al  Al5  4  0.16101041  0.95491425  0.50000000  1.0
+  Al  Al6  4  0.16806904  0.50669962  0.00000000  1.0
+  Al  Al7  4  0.23551848  0.32686234  0.00000000  1.0
+  Al  Al8  2  0.00000000  0.00000000  0.00000000  1.0
+  Al  Al9  2  0.00000000  0.50000000  0.50000000  1.0
+  Co  Co10  4  0.03447050  0.09274529  0.50000000  1.0
+  Co  Co11  4  0.14948266  0.40154867  0.50000000  1.0

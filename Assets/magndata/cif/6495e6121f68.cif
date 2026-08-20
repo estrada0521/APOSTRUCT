@@ -1,0 +1,40 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'Cmc2_1'
+_symmetry_Int_Tables_number   36
+_chemical_formula_structural   Mn5SiC
+_cell_length_a   10.0825040000
+_cell_length_b   7.7969080000
+_cell_length_c   7.5047870000
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   90.0000000000
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-x,-y,z+1/2'
+ 3  '-x,y,z'
+ 4  'x,-y,z+1/2'
+ 5  'x+1/2,y+1/2,z'
+ 6  '-x+1/2,-y+1/2,z+1/2'
+ 7  '-x+1/2,y+1/2,z'
+ 8  'x+1/2,-y+1/2,z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Mn Mn0 8 8b 0.8489390000 0.6620810000 0.8745550000 1.0000000000
+ Mn Mn1 4 4a 0.0000000000 0.5404160000 0.1769250000 1.0000000000
+ Mn Mn2 4 4a 0.0000000000 0.8609480000 0.6902760000 1.0000000000
+ Mn Mn3 8 8b 0.3750625000 0.4968265000 0.9397680000 1.0000000000
+ Mn Mn4 8 8b 0.8827540000 0.8223970000 0.1909340000 1.0000000000
+ Mn Mn5 8 8b 0.8494335000 0.6661825000 0.5021030000 1.0000000000
+ Si Si6 8 8b 0.2453580000 0.4188860000 0.6885340000 1.0000000000
+ C C7 4 4a 0.0000000000 0.7981660000 0.9746110000 1.0000000000
+ C C8 4 4a 0.0000000000 0.8072310000 0.4077990000 1.0000000000

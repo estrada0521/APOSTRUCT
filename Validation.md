@@ -9,8 +9,7 @@ For each Web branch, they refer to the most recent Validation output produced by
 The unit of validation is a pair consisting of one input structure and one order-parameter direction (OPD).
 
 - **Strict pass**: The display setting of the OPD, the child structure, and the mode types, mode counts, atom correspondence, normalization factors, and vectors agree exactly with the Web output, including their order.
-- **Physical pass**: Even when there are differences in the displayed mode order, in signs, in the choice of basis within the same mode space, or in equivalent crystallographic settings, the child structure and the physical mode space that is spanned are equivalent, and only purely conventional differences, such as the choice of basis, remain.
-  Every Strict pass is also included in Physical pass.
+- **Physical pass**: Even when there are differences in the displayed mode order, in signs, in the choice of basis within the same mode space, or in equivalent crystallographic settings, the child structure and the physical mode space that is spanned are equivalent, and only purely conventional differences, such as the choice of basis, remain. Every Strict pass is also included in Physical pass.
 - **Physical fail**: The OPD does not exist, the child structure is physically different, required modes are missing, or the mode vectors do not span the same physical space — that is, the result is physically different from the reference implementation. Potential candidate Physical passes, in which neither the reference implementation nor the local implementation violates mathematics but a non-trivial physical equivalence could not be decided, are also treated conservatively as fail.
 
 ## Definition of the Valid Population
@@ -24,8 +23,14 @@ The Validation population consists of the branches for which both Web and Local 
 
 ## Reproducibility
 
-The counts and percentages in this document are produced from raw per-branch comparison records by a fixed judgment procedure, neither of which is published yet.
-Publishing both, so a third party can recompute every figure here from the raw records instead of taking this document on trust, is planned.
+The public checkout includes a `Branches/` bundle containing each canonical
+input, selected OPD, and recorded comparison and mathematics statuses. It does
+not include saved Web or Local output payloads or a Web automation wrapper.
+The standalone `Verification/` package contains the exact parser, mathematical
+checks, Strict/Physical comparator, and result projection used by the private
+monorepo Validation operation. A third party can select a branch, run APOSTRUCT,
+submit the same input to the public ISODISTORT Web application, and apply those
+checks to the two outputs without depending on the private sweep/store schema.
 
 ## Two Validation Populations
 
@@ -47,16 +52,12 @@ The current population is not a single simple random sampling, but the union of 
 Each campaign records its seed, filters, target count, and the ordered input IDs that were generated.
 
 1. CIFs are filtered by space group, crystal system, centering, number of sites, number of atoms, and so on.
-2. Depending on the campaign, a bucket of space group, crystal system, or centering is selected uniformly first, and then a CIF within that bucket is selected uniformly.
-   For comparison, campaigns that select from all candidates without using buckets are also included.
-3. Strain, and the enablement or disablement of displacive and magnetic modes for each element, are selected.
-   When random selection is specified, each element is selected independently, but strata fixed to ordinary-only, magnetic-only, mixed, and so on are also included.
-4. The number of K slots is selected in the range from 1 to 4, and the number and arrangement of fixed and parametric slots are selected.
-   Multi-parametric configurations, different positions of the parametric slots, multi-dimensional parametric K, and multi-K, which were thin in the initial population, were explicitly supplemented in later campaigns.
+2. Depending on the campaign, a bucket of space group, crystal system, or centering is selected uniformly first, and then a CIF within that bucket is selected uniformly. For comparison, campaigns that select from all candidates without using buckets are also included.
+3. Strain, and the enablement or disablement of displacive and magnetic modes for each element, are selected. When random selection is specified, each element is selected independently, but strata fixed to ordinary-only, magnetic-only, mixed, and so on are also included.
+4. The number of K slots is selected in the range from 1 to 4, and the number and arrangement of fixed and parametric slots are selected. Multi-parametric configurations, different positions of the parametric slots, multi-dimensional parametric K, and multi-K, which were thin in the initial population, were explicitly supplemented in later campaigns.
 5. For each slot, only the K/IR combinations that are valid in Source for that space group, for the Wyckoff rows of the selected elements, and for the mode kind are enumerated, and the selection is made from those candidates.
 6. The values of parametric K are enumerated as irreducible rational numbers within the Source domain with a denominator of at most 6, and are selected from the set obtained after removing duplicates of the canonical values.
-7. After the OPD list has been obtained from the Web, the 1-based ordinals explicitly specified by the campaign are collected.
-   When several OPDs are collected from a single input, each is counted as a separate branch.
+7. After the OPD list has been obtained from the Web, the 1-based ordinals explicitly specified by the campaign are collected. When several OPDs are collected from a single input, each is counted as a separate branch.
 
 The pass rates below are therefore **the achievement rates of a stratified stress test**, centred on random sampling but with the difficult configurations that were lacking deliberately made heavier.
 
@@ -74,8 +75,7 @@ The pass rates below are therefore **the achievement rates of a stratified stres
 
 #### By K-signature
 
-`F` denotes a fixed K and `P` denotes a parametric K.
-Every column uses the Validation population defined above.
+`F` denotes a fixed K and `P` denotes a parametric K. Every column uses the Validation population defined above.
 
 | K | Validation population | Physical pass | Strict pass |
 |---|---:|---:|---:|

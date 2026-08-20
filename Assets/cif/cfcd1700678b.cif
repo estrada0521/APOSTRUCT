@@ -1,0 +1,51 @@
+# generated using pymatgen
+data_NaSc(BH4)4
+_symmetry_space_group_name_H-M   Cmcm
+_cell_length_a   8.22700400
+_cell_length_b   11.81107400
+_cell_length_c   8.73494300
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   63
+_chemical_formula_structural   NaSc(BH4)4
+_chemical_formula_sum   'Na4 Sc4 B16 H64'
+_cell_volume   848.77225415
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x, -y, z+1/2'
+  4  'x, y, -z+1/2'
+  5  'x, -y, -z'
+  6  '-x, y, z'
+  7  '-x, y, -z+1/2'
+  8  'x, -y, z+1/2'
+  9  'x+1/2, y+1/2, z'
+  10  '-x+1/2, -y+1/2, -z'
+  11  '-x+1/2, -y+1/2, z+1/2'
+  12  'x+1/2, y+1/2, -z+1/2'
+  13  'x+1/2, -y+1/2, -z'
+  14  '-x+1/2, y+1/2, z'
+  15  '-x+1/2, y+1/2, -z+1/2'
+  16  'x+1/2, -y+1/2, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Na  Na0  4  0.00000000  0.00000000  0.00000000  1.0
+  Sc  Sc1  4  0.00000000  0.35931900  0.75000000  1.0
+  B  B2  8  0.00000000  0.24834200  0.53351500  1.0
+  B  B3  8  0.23019100  0.47365700  0.75000000  1.0
+  H  H4  16  0.12098050  0.23161850  0.61500600  1.0
+  H  H5  16  0.14555650  0.49277350  0.63642200  1.0
+  H  H6  8  0.00000000  0.19259800  0.08184000  1.0
+  H  H7  8  0.00000000  0.35037000  0.50177100  1.0
+  H  H8  8  0.14906700  0.03204200  0.75000000  1.0
+  H  H9  8  0.23696850  0.12850850  0.25000000  1.0

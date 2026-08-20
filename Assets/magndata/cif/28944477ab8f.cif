@@ -1,0 +1,38 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'Pnma'
+_symmetry_Int_Tables_number   62
+_chemical_formula_structural   SrEr2O4
+_cell_length_a   9.9960825500
+_cell_length_b   3.3674712200
+_cell_length_c   11.7997792500
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   90.0000000000
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-x,-y,-z'
+ 3  '-x+1/2,-y,z+1/2'
+ 4  'x+1/2,y,-z+1/2'
+ 5  'x+1/2,-y+1/2,-z+1/2'
+ 6  '-x+1/2,y+1/2,z+1/2'
+ 7  '-x,y+1/2,-z'
+ 8  'x,-y+1/2,z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Sr Sr0 4 4c 0.2530138200 0.7500000000 0.1500594000 1.0000000000
+ Er Er1 4 4c 0.5773544100 0.2500000000 0.1100011500 1.0000000000
+ Er Er2 4 4c 0.5759637200 0.2500000000 0.6118963300 1.0000000000
+ O O3 4 4c 0.4842499000 0.2500000000 0.7835951500 1.0000000000
+ O O4 4 4c 0.6239921100 0.7500000000 0.9803937800 1.0000000000
+ O O5 4 4c 0.2109620700 0.7500000000 0.8277875400 1.0000000000
+ O O6 4 4c 0.4257704700 0.7500000000 0.5767929200 1.0000000000

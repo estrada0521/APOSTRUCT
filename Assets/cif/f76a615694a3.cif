@@ -1,0 +1,39 @@
+# generated using pymatgen
+data_LiEuPSe4
+_symmetry_space_group_name_H-M   Ama2
+_cell_length_a   9.71258600
+_cell_length_b   10.01211000
+_cell_length_c   7.59333600
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   40
+_chemical_formula_structural   LiEuPSe4
+_chemical_formula_sum   'Li4 Eu4 P4 Se16'
+_cell_volume   738.40241302
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, z'
+  3  '-x+1/2, y, z'
+  4  'x+1/2, -y, z'
+  5  'x, y+1/2, z+1/2'
+  6  '-x, -y+1/2, z+1/2'
+  7  '-x+1/2, y+1/2, z+1/2'
+  8  'x+1/2, -y+1/2, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Li  Li0  4  0.00000000  0.00000000  0.63203500  1.0
+  Eu  Eu1  4  0.00000000  0.00000000  0.10663900  1.0
+  P  P2  4  0.25000000  0.21587300  0.63095100  1.0
+  Se  Se3  8  0.05688400  0.21304100  0.46686900  1.0
+  Se  Se4  4  0.25000000  0.02907800  0.80149500  1.0
+  Se  Se5  4  0.25000000  0.39953650  0.80114450  1.0

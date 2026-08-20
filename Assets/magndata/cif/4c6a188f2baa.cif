@@ -1,0 +1,40 @@
+data_structure
+_cell_length_a 4.23395769003
+_cell_length_b 4.23395769003
+_cell_length_c 14.69498942
+_cell_angle_alpha 90
+_cell_angle_beta 90
+_cell_angle_gamma 90
+_space_group_IT_number 109
+_space_group_name_H-M_alt 'I4_1md'
+loop_
+_space_group_symop_id
+_space_group_symop_operation_xyz
+1 'x,y,z'
+2 '-y,x+1/2,z+1/4'
+3 '-x+1/2,-y+1/2,z+1/2'
+4 'y+1/2,-x,z+3/4'
+5 '-x,y,z'
+6 'y,x+1/2,z+1/4'
+7 'x+1/2,-y+1/2,z+1/2'
+8 '-y+1/2,-x,z+3/4'
+9 'x+1/2,y+1/2,z+1/2'
+10 '-y+1/2,x,z+3/4'
+11 '-x,-y,z'
+12 'y,-x+1/2,z+1/4'
+13 '-x+1/2,y+1/2,z+1/2'
+14 'y+1/2,x,z+3/4'
+15 'x,-y,z'
+16 '-y,-x+1/2,z+1/4'
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_symmetry_multiplicity
+_atom_site_Wyckoff_label
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_occupancy
+Ce1 Ce 4 a 0 0.5 0.41804456 1
+Al1 Al 4 a 0.5 0 0.3345417 1
+Si1 Si 4 a 0 0.5 0.00040888 1

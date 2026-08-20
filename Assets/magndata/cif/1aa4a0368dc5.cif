@@ -1,0 +1,60 @@
+data_structure
+_cell_length_a 8.07564999993
+_cell_length_b 8.07564999993
+_cell_length_c 23.7423060001
+_cell_angle_alpha 90
+_cell_angle_beta 90
+_cell_angle_gamma 90
+_space_group_IT_number 140
+_space_group_name_H-M_alt 'I4/mcm'
+loop_
+_space_group_symop_id
+_space_group_symop_operation_xyz
+1 'x,y,z'
+2 '-x,-y,-z'
+3 '-y,x,z'
+4 'y,-x,-z'
+5 '-x,-y,z'
+6 'x,y,-z'
+7 'y,-x,z'
+8 '-y,x,-z'
+9 'x,-y+1,-z+1/2'
+10 '-x,y+1,z+1/2'
+11 '-y,-x+1,-z+1/2'
+12 'y,x+1,z+1/2'
+13 '-x,y+1,-z+1/2'
+14 'x,-y+1,z+1/2'
+15 'y,x+1,-z+1/2'
+16 '-y,-x+1,z+1/2'
+17 'x+1/2,y+1/2,z+1/2'
+18 '-x+1/2,-y+1/2,-z+1/2'
+19 '-y+1/2,x+1/2,z+1/2'
+20 'y+1/2,-x+1/2,-z+1/2'
+21 '-x+1/2,-y+1/2,z+1/2'
+22 'x+1/2,y+1/2,-z+1/2'
+23 'y+1/2,-x+1/2,z+1/2'
+24 '-y+1/2,x+1/2,-z+1/2'
+25 'x+1/2,-y+1/2,-z'
+26 '-x+1/2,y+1/2,z'
+27 '-y+1/2,-x+1/2,-z'
+28 'y+1/2,x+1/2,z'
+29 '-x+1/2,y+1/2,-z'
+30 'x+1/2,-y+1/2,z'
+31 'y+1/2,x+1/2,-z'
+32 '-y+1/2,-x+1/2,z'
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_symmetry_multiplicity
+_atom_site_Wyckoff_label
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_occupancy
+Pr1 Pr 8 f 0.5 0.5 0.104406 1
+Pr2 Pr 16 l 0.1634465 0.3365535 0.3150375 1
+Fe1 Fe 4 d 0.5 0 0 1
+Fe2 Fe 16 k 0.566692 0.289808 0 1
+Fe3 Fe 16 l 0.1786135 0.3213865 0.4421785 1
+Fe4 Fe 16 l 0.3874345 0.1125655 0.4076635 1
+Sn1 Sn 4 a 0 0 0.25 1

@@ -1,0 +1,46 @@
+# generated using pymatgen
+data_Np(PS3)4
+_symmetry_space_group_name_H-M   I4_1/a
+_cell_length_a   13.14066399
+_cell_length_b   13.14066399
+_cell_length_c   9.84880239
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   88
+_chemical_formula_structural   Np(PS3)4
+_chemical_formula_sum   'Np4 P16 S48'
+_cell_volume   1700.66214445
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y, x+1/2, z+1/4'
+  3  '-x+1/2, -y+1/2, z+1/2'
+  4  'y+1/2, -x, z+3/4'
+  5  '-x, -y+1/2, -z+1/4'
+  6  'y, -x, -z'
+  7  'x+1/2, y, -z+3/4'
+  8  '-y+1/2, x+1/2, -z+1/2'
+  9  'x+1/2, y+1/2, z+1/2'
+  10  '-y+1/2, x, z+3/4'
+  11  '-x, -y, z'
+  12  'y, -x+1/2, z+1/4'
+  13  '-x+1/2, -y, -z+3/4'
+  14  'y+1/2, -x+1/2, -z+1/2'
+  15  'x, y+1/2, -z+1/4'
+  16  '-y, x, -z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Np  Np0  4  0.00000000  0.00000000  0.50000000  1.0
+  P  P1  16  0.00636775  0.31625000  0.00563192  1.0
+  S  S2  16  0.06381782  0.16952350  0.05101311  1.0
+  S  S3  16  0.08297180  0.11632438  0.72209907  1.0
+  S  S4  16  0.09151991  0.17845567  0.39844073  1.0

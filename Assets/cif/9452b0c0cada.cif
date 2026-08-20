@@ -1,0 +1,36 @@
+# generated using pymatgen
+data_Rb2CN2
+_symmetry_space_group_name_H-M   C2/m
+_cell_length_a   6.07990053
+_cell_length_b   5.99450910
+_cell_length_c   5.98513313
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   108.51351785
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   12
+_chemical_formula_structural   Rb2CN2
+_chemical_formula_sum   'Rb4 C2 N4'
+_cell_volume   206.84555827
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x, y, -z'
+  4  'x, -y, z'
+  5  'x+1/2, y+1/2, z'
+  6  '-x+1/2, -y+1/2, -z'
+  7  '-x+1/2, y+1/2, -z'
+  8  'x+1/2, -y+1/2, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Rb  Rb0  4  0.17603696  0.00000000  0.28742246  1.0
+  C  C1  2  0.00000000  0.50000000  0.00000000  1.0
+  N  N2  4  0.15403500  0.50000000  0.19415914  1.0

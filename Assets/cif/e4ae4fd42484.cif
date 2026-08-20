@@ -1,0 +1,38 @@
+# generated using pymatgen
+data_Ni7Sn8
+_symmetry_space_group_name_H-M   P2/m
+_cell_length_a   5.25806693
+_cell_length_b   4.08843300
+_cell_length_c   12.46215900
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   100.86946901
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   10
+_chemical_formula_structural   Ni7Sn8
+_chemical_formula_sum   'Ni7 Sn8'
+_cell_volume   263.09585831
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x, y, -z'
+  4  'x, -y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ni  Ni0  2  0.12658100  0.00000000  0.78567600  1.0
+  Ni  Ni1  2  0.37226700  0.50000000  0.70898700  1.0
+  Ni  Ni2  1  0.00000000  0.00000000  0.00000000  1.0
+  Ni  Ni3  1  0.50000000  0.00000000  0.00000000  1.0
+  Ni  Ni4  1  0.50000000  0.50000000  0.50000000  1.0
+  Sn  Sn5  2  0.14239300  0.50000000  0.33183000  1.0
+  Sn  Sn6  2  0.22069800  0.50000000  0.92038700  1.0
+  Sn  Sn7  2  0.25750400  0.00000000  0.56966100  1.0
+  Sn  Sn8  2  0.35350000  0.00000000  0.18328900  1.0

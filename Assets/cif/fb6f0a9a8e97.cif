@@ -1,0 +1,40 @@
+# generated using pymatgen
+data_CoMoH2SeO7
+_symmetry_space_group_name_H-M   P-1
+_cell_length_a   5.06416147
+_cell_length_b   6.71388399
+_cell_length_c   8.95831124
+_cell_angle_alpha   91.71753520
+_cell_angle_beta   96.91563868
+_cell_angle_gamma   109.35946925
+_symmetry_Int_Tables_number   2
+_chemical_formula_structural   CoMoH2SeO7
+_chemical_formula_sum   'Co2 Mo2 H4 Se2 O14'
+_cell_volume   284.47633577
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Co  Co0  1  0.00000000  0.50000000  0.50000000  1.0
+  Co  Co1  1  0.50000000  0.00000000  0.00000000  1.0
+  Mo  Mo2  2  0.20664700  0.40753300  0.10340600  1.0
+  H  H3  2  0.37770900  0.85546600  0.63884900  1.0
+  H  H4  2  0.46697100  0.25046100  0.48036400  1.0
+  Se  Se5  2  0.14616800  0.18588300  0.74215000  1.0
+  O  O6  2  0.14450500  0.46106600  0.28658100  1.0
+  O  O7  2  0.16189500  0.69038700  0.01022800  1.0
+  O  O8  2  0.20856300  0.27383700  0.57026600  1.0
+  O  O9  2  0.26776600  0.16135600  0.10348200  1.0
+  O  O10  2  0.34368700  0.02508500  0.77669700  1.0
+  O  O11  2  0.35538400  0.74123500  0.56051700  1.0
+  O  O12  2  0.37013700  0.41504000  0.87118100  1.0

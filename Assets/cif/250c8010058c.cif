@@ -1,0 +1,47 @@
+# generated using pymatgen
+data_Rb6Na2U2C6O23
+_symmetry_space_group_name_H-M   P3
+_cell_length_a   9.63115692
+_cell_length_b   9.63115692
+_cell_length_c   8.56086704
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   143
+_chemical_formula_structural   Rb6Na2U2C6O23
+_chemical_formula_sum   'Rb6 Na2 U2 C6 O23'
+_cell_volume   687.70993977
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y, x-y, z'
+  3  '-x+y, -x, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Rb  Rb0  3  0.05089867  0.38355533  0.49979700  1.0
+  Rb  Rb1  3  0.05254567  0.38525233  0.99914700  1.0
+  Na  Na2  1  0.00000000  0.00000000  0.24976800  1.0
+  Na  Na3  1  0.66666667  0.33333333  0.75018000  1.0
+  U  U4  1  0.00000000  0.00000000  0.75001900  1.0
+  U  U5  1  0.66666667  0.33333333  0.24996300  1.0
+  C  C6  3  0.32025867  0.28258533  0.74964800  1.0
+  C  C7  3  0.34726367  0.29577733  0.25002000  1.0
+  O  O8  3  0.07089867  0.79158733  0.24995200  1.0
+  O  O9  3  0.10317667  0.81241733  0.74949700  1.0
+  O  O10  3  0.29405767  0.13453633  0.74989100  1.0
+  O  O11  3  0.37220867  0.17338633  0.25028200  1.0
+  O  O12  3  0.45888367  0.40456033  0.74947400  1.0
+  O  O13  3  0.47979867  0.43598033  0.25001100  1.0
+  O  O14  1  0.00000000  0.00000000  0.53421800  1.0
+  O  O15  1  0.00000000  0.00000000  0.96575700  1.0
+  O  O16  1  0.33333333  0.66666667  0.20488800  1.0
+  O  O17  1  0.66666667  0.33333333  0.03488600  1.0
+  O  O18  1  0.66666667  0.33333333  0.46505900  1.0

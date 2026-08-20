@@ -1,0 +1,57 @@
+# generated using pymatgen
+data_MgTi3Pb5WO15
+_symmetry_space_group_name_H-M   P4/nmm
+_cell_length_a   5.68507100
+_cell_length_b   5.68507100
+_cell_length_c   19.88940300
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   129
+_chemical_formula_structural   MgTi3Pb5WO15
+_chemical_formula_sum   'Mg2 Ti6 Pb10 W2 O30'
+_cell_volume   642.82614689
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y+1/2, x+1/2, z'
+  3  '-x, -y, z'
+  4  'y+1/2, -x+1/2, z'
+  5  'x+1/2, -y+1/2, -z'
+  6  '-y, -x, -z'
+  7  '-x+1/2, y+1/2, -z'
+  8  'y, x, -z'
+  9  '-x+1/2, -y+1/2, -z'
+  10  'y, -x, -z'
+  11  'x+1/2, y+1/2, -z'
+  12  '-y, x, -z'
+  13  '-x, y, z'
+  14  'y+1/2, x+1/2, z'
+  15  'x, -y, z'
+  16  '-y+1/2, -x+1/2, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Mg  Mg0  2  0.00000000  0.50000000  0.89858500  1.0
+  Ti  Ti1  2  0.00000000  0.50000000  0.30448200  1.0
+  Ti  Ti2  2  0.00000000  0.50000000  0.50368100  1.0
+  Ti  Ti3  2  0.00000000  0.50000000  0.70393600  1.0
+  Pb  Pb4  4  0.00000000  0.00000000  0.20319300  1.0
+  Pb  Pb5  4  0.00000000  0.00000000  0.40065800  1.0
+  Pb  Pb6  2  0.00000000  0.00000000  0.00000000  1.0
+  W  W7  2  0.00000000  0.50000000  0.09936000  1.0
+  O  O8  8  0.24146000  0.25854000  0.09992100  1.0
+  O  O9  8  0.24874800  0.25125200  0.30006100  1.0
+  O  O10  4  0.25000000  0.25000000  0.50000000  1.0
+  O  O11  2  0.00000000  0.50000000  0.00256200  1.0
+  O  O12  2  0.00000000  0.50000000  0.19929300  1.0
+  O  O13  2  0.00000000  0.50000000  0.39906000  1.0
+  O  O14  2  0.00000000  0.50000000  0.59810400  1.0
+  O  O15  2  0.00000000  0.50000000  0.79520600  1.0

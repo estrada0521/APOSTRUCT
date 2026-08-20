@@ -9,8 +9,7 @@
 検証単位は、1つの入力構造と1つの order-parameter direction（OPD）の組です。
 
 - **Strict pass**: OPD の表示 setting、子構造、mode の種類・本数・原子対応・正規化係数・vector が、順序まで含め Web 出力と完全に一致します。
-- **Physical pass**: 表示上の mode 順序、符号、同じ mode 空間内の基底選択、等価な crystallographic setting などに違いがあっても、子構造と張られる物理的 mode 空間が等価であり、基底の取り方など、純粋な規約差のみを含むものです。
-  Strict pass はすべて Physical pass に含まれます。
+- **Physical pass**: 表示上の mode 順序、符号、同じ mode 空間内の基底選択、等価な crystallographic setting などに違いがあっても、子構造と張られる物理的 mode 空間が等価であり、基底の取り方など、純粋な規約差のみを含むものです。Strict pass はすべて Physical pass に含まれます。
 - **Physical fail**: OPD が存在しない、子構造が物理的に異なる、必要な mode が欠ける、または mode vector が同じ物理空間を張らない、本家とは物理的に異なる場合です。本家・ローカル共に数学違反がなく、非自明な物理同値を判定しきれていない潜在的な candidate Physical Pass も保守的に fail として扱います。
 
 ## 有効母集団の定義
@@ -24,8 +23,8 @@ Validation母集団は、WebとLocalがともに計算済みで、Web出力が�
 
 ## 再現性
 
-本書の件数・比率は、branch単位の生の比較レコードに固定の判定手続きを適用して算出していますが、どちらも現時点では未公開です。
-第三者が本書を信頼するのではなく生レコードから各数値を再計算できるよう、両方を公開する予定です。
+公開checkoutの`Branches/`には、各branchのcanonical input、選択OPD、比較結果、数学検査statusを収録します。保存済みWeb/Local出力payloadとWeb自動取得ラッパーは含めません。
+独立した`Verification/`には、private monorepo Validation運用と同じparser、数学検査、Strict/Physical comparator、result projectionを収録します。第三者はbranchを選び、APOSTRUCTを実行し、同じ入力を公開ISODISTORT Webへ自分で投入することで、privateなsweep/store schemaに依存せず両出力を検査できます。
 
 ## 二つの検証母集団
 
@@ -47,16 +46,12 @@ CIF pool は Materials Project から作成しました。
 各 campaign は seed、filter、目標件数、生成された順序付き input ID を保存しています。
 
 1. CIF を空間群、結晶系、centering、site数、atom数などでfilterします。
-2. campaign に応じて、空間群・結晶系・centering の bucket を先に一様選択し、その中の CIF を一様選択します。
-   比較用に、bucketを使わず全候補から選ぶ campaign も含みます。
-3. strain と、各元素の displacive/magnetic 有効・無効を選びます。
-   random指定時は各元素を独立に選びますが、ordinary-only、magnetic-only、mixed などを固定した層も含みます。
-4. K slot数を1から4の範囲で選び、fixed/parametric の個数と配置を選びます。
-   初期母集団で薄かったmulti-parametric、parametric の位置違い、多次元parametric K、multi-Kは後続campaignで明示的に補いました。
+2. campaign に応じて、空間群・結晶系・centering の bucket を先に一様選択し、その中の CIF を一様選択します。比較用に、bucketを使わず全候補から選ぶ campaign も含みます。
+3. strain と、各元素の displacive/magnetic 有効・無効を選びます。random指定時は各元素を独立に選びますが、ordinary-only、magnetic-only、mixed などを固定した層も含みます。
+4. K slot数を1から4の範囲で選び、fixed/parametric の個数と配置を選びます。初期母集団で薄かったmulti-parametric、parametric の位置違い、多次元parametric K、multi-Kは後続campaignで明示的に補いました。
 5. 各slotについて、その空間群、選択元素のWyckoff rows、mode kindに対してSource上有効なK/IRだけを列挙し、その候補から選びます。
 6. parametric Kの値はSource domain内かつ分母6以下の既約有理数を列挙し、canonical値を重複除去した集合から選びます。
-7. WebでOPD一覧を取得した後、campaignが明示した1-based ordinalを収集します。
-   1 inputから複数OPDを収集した場合は、それぞれを別branchとして数えます。
+7. WebでOPD一覧を取得した後、campaignが明示した1-based ordinalを収集します。1 inputから複数OPDを収集した場合は、それぞれを別branchとして数えます。
 
 下記のpass率は、randomサンプリングを中心に、不足している難しい形状を意図的に厚くした**層別ストレス試験の達成率**です。
 
@@ -156,7 +151,8 @@ Webの数学違反により有効母集団から外れたケースは現時点�
 
 有効Validation母集団のうち、WebとLocalの両方に`wall_s`が記録されているbranchを性能母集団とします。
 Web時間はCIF uploadからComplete Mode Detailsのtext変換までを測ります。
-Local時間はローカルのmode-details計算本体を測ります。実行環境が異なるため、以下は速度の直接比較ではなく参考値です。
+Local時間はローカルのmode-details計算本体を測ります。
+実行環境が異なるため、以下は速度の直接比較ではなく参考値です。
 
 | 性能母集団 | Local中央値 | Web中央値 | Local p95 | Web p95 |
 |---:|---:|---:|---:|---:|

@@ -1,0 +1,56 @@
+# generated using pymatgen
+data_Na2Fe(Si2O5)3
+_symmetry_space_group_name_H-M   Cmce
+_cell_length_a   14.24967800
+_cell_length_b   17.59892200
+_cell_length_c   10.22460700
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   64
+_chemical_formula_structural   Na2Fe(Si2O5)3
+_chemical_formula_sum   'Na16 Fe8 Si48 O120'
+_cell_volume   2564.11642896
+_cell_formula_units_Z   8
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x+1/2, -y, z+1/2'
+  4  'x+1/2, y, -z+1/2'
+  5  'x, -y, -z'
+  6  '-x, y, z'
+  7  '-x+1/2, y, -z+1/2'
+  8  'x+1/2, -y, z+1/2'
+  9  'x+1/2, y+1/2, z'
+  10  '-x+1/2, -y+1/2, -z'
+  11  '-x, -y+1/2, z+1/2'
+  12  'x, y+1/2, -z+1/2'
+  13  'x+1/2, -y+1/2, -z'
+  14  '-x+1/2, y+1/2, z'
+  15  '-x, y+1/2, -z+1/2'
+  16  'x, -y+1/2, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Na  Na0  8  0.00000000  0.08373700  0.74914200  1.0
+  Na  Na1  8  0.25000000  0.22388100  0.25000000  1.0
+  Fe  Fe2  8  0.25000000  0.08414800  0.75000000  1.0
+  Si  Si3  16  0.11310800  0.13249700  0.01404500  1.0
+  Si  Si4  16  0.11331100  0.18907600  0.54006200  1.0
+  Si  Si5  16  0.11370850  0.42779450  0.80677200  1.0
+  O  O6  16  0.13700400  0.22325000  0.99659000  1.0
+  O  O7  16  0.14023500  0.11256700  0.16606000  1.0
+  O  O8  16  0.14306450  0.36142450  0.91180700  1.0
+  O  O9  16  0.16288200  0.49166000  0.16952400  1.0
+  O  O10  16  0.16582750  0.08191350  0.90668700  1.0
+  O  O11  16  0.16756950  0.16890150  0.67324100  1.0
+  O  O12  8  0.00000000  0.05699000  0.31021100  1.0
+  O  O13  8  0.00000000  0.12057900  0.98913200  1.0
+  O  O14  8  0.00000000  0.17794200  0.56635100  1.0

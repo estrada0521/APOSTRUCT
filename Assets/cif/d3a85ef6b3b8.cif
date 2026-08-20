@@ -1,0 +1,40 @@
+# generated using pymatgen
+data_Ca3Ru2O7
+_symmetry_space_group_name_H-M   Cmc2_1
+_cell_length_a   19.52001286
+_cell_length_b   5.37691354
+_cell_length_c   5.55599760
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   36
+_chemical_formula_structural   Ca3Ru2O7
+_chemical_formula_sum   'Ca12 Ru8 O28'
+_cell_volume   583.14318167
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, z+1/2'
+  3  '-x, y, z'
+  4  'x, -y, z+1/2'
+  5  'x+1/2, y+1/2, z'
+  6  '-x+1/2, -y+1/2, z+1/2'
+  7  '-x+1/2, y+1/2, z'
+  8  'x+1/2, -y+1/2, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ca  Ca0  8  0.18841314  0.25623631  0.19392670  1.0
+  Ca  Ca1  4  0.00000000  0.26610828  0.30875570  1.0
+  Ru  Ru2  8  0.09870834  0.24744345  0.74938040  1.0
+  O  O3  8  0.08067094  0.44801969  0.04866262  1.0
+  O  O4  8  0.11662346  0.04957779  0.45492036  1.0
+  O  O5  8  0.19855759  0.31932041  0.76996908  1.0
+  O  O6  4  0.00000000  0.16301244  0.72942601  1.0

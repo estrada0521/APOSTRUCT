@@ -1,0 +1,42 @@
+# generated using pymatgen
+data_La4MgNi3WO12
+_symmetry_space_group_name_H-M   P2/m
+_cell_length_a   5.47691501
+_cell_length_b   8.97363100
+_cell_length_c   5.61206531
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.62077327
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   10
+_chemical_formula_structural   La4MgNi3WO12
+_chemical_formula_sum   'La4 Mg1 Ni3 W1 O12'
+_cell_volume   275.80455503
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x, y, -z'
+  4  'x, -y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  La  La0  2  0.00000000  0.29379100  0.50000000  1.0
+  La  La1  2  0.50000000  0.19328300  0.00000000  1.0
+  Mg  Mg2  1  0.50000000  0.50000000  0.00000000  1.0
+  Ni  Ni3  1  0.00000000  0.00000000  0.00000000  1.0
+  Ni  Ni4  1  0.00000000  0.50000000  0.00000000  1.0
+  Ni  Ni5  1  0.50000000  0.50000000  0.50000000  1.0
+  W  W6  1  0.50000000  0.00000000  0.50000000  1.0
+  O  O7  2  0.00000000  0.24630900  0.00000000  1.0
+  O  O8  2  0.20093200  0.00000000  0.70086800  1.0
+  O  O9  2  0.24517700  0.50000000  0.74183300  1.0
+  O  O10  2  0.24865600  0.50000000  0.25444300  1.0
+  O  O11  2  0.31471000  0.00000000  0.17612700  1.0
+  O  O12  2  0.50000000  0.23498200  0.50000000  1.0

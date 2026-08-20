@@ -1,0 +1,52 @@
+# generated using pymatgen
+data_Na4Sc2Si4O13
+_symmetry_space_group_name_H-M   Pna2_1
+_cell_length_a   14.16320765
+_cell_length_b   5.27715248
+_cell_length_c   14.41127100
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   33
+_chemical_formula_structural   Na4Sc2Si4O13
+_chemical_formula_sum   'Na16 Sc8 Si16 O52'
+_cell_volume   1077.11866219
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, z+1/2'
+  3  '-x+1/2, y+1/2, z+1/2'
+  4  'x+1/2, -y+1/2, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Na  Na0  4  0.05152580  0.19161176  0.28888578  1.0
+  Na  Na1  4  0.07861783  0.67310292  0.58334853  1.0
+  Na  Na2  4  0.17039790  0.67256754  0.37770520  1.0
+  Na  Na3  4  0.19811229  0.28084614  0.66442570  1.0
+  Sc  Sc4  4  0.07900658  0.34992369  0.87350242  1.0
+  Sc  Sc5  4  0.16993968  0.18974505  0.07885666  1.0
+  Si  Si6  4  0.02321627  0.14926042  0.50065045  1.0
+  Si  Si7  4  0.05835252  0.70005692  0.18066906  1.0
+  Si  Si8  4  0.19350485  0.82698482  0.77159478  1.0
+  Si  Si9  4  0.22635437  0.17292139  0.45365263  1.0
+  O  O10  4  0.01703163  0.40622178  0.44292023  1.0
+  O  O11  4  0.03237613  0.74694219  0.28898735  1.0
+  O  O12  4  0.03302717  0.20629075  0.61363896  1.0
+  O  O13  4  0.05448766  0.07132480  0.98429001  1.0
+  O  O14  4  0.07318327  0.40592402  0.15345619  1.0
+  O  O15  4  0.10570364  0.63731587  0.78324888  1.0
+  O  O16  4  0.12672489  0.01475136  0.47584534  1.0
+  O  O17  4  0.14600063  0.88293956  0.15876947  1.0
+  O  O18  4  0.17511298  0.11386551  0.80638113  1.0
+  O  O19  4  0.19070885  0.46669208  0.96957615  1.0
+  O  O20  4  0.21716418  0.22794840  0.34017804  1.0
+  O  O21  4  0.22324337  0.82016044  0.66285670  1.0
+  O  O22  4  0.22720823  0.43435776  0.51046234  1.0

@@ -1,0 +1,64 @@
+data_structure
+_cell_length_a 5.899
+_cell_length_b 5.899
+_cell_length_c 32.846
+_cell_angle_alpha 90
+_cell_angle_beta 90
+_cell_angle_gamma 120
+_space_group_IT_number 194
+_space_group_name_H-M_alt 'P6_3/mmc'
+loop_
+_space_group_symop_id
+_space_group_symop_operation_xyz
+1 'x,y,z'
+2 '-x,-y,-z'
+3 'x-y,x,z+1/2'
+4 '-x+y,-x,-z+1/2'
+5 '-y,x-y,z'
+6 'y,-x+y,-z'
+7 '-x,-y,z+1/2'
+8 'x,y,-z+1/2'
+9 '-x+y,-x,z'
+10 'x-y,x,-z'
+11 'y,-x+y,z+1/2'
+12 '-y,x-y,-z+1/2'
+13 '-y,-x,-z+1/2'
+14 'y,x,z+1/2'
+15 '-x,-x+y,-z'
+16 'x,x-y,z'
+17 '-x+y,y,-z+1/2'
+18 'x-y,-y,z+1/2'
+19 'y,x,-z'
+20 '-y,-x,z'
+21 'x,x-y,-z+1/2'
+22 '-x,-x+y,z+1/2'
+23 'x-y,-y,-z'
+24 '-x+y,y,z'
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_symmetry_multiplicity
+_atom_site_Wyckoff_label
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_occupancy
+Ba1 Ba 2 b 0 0 0.25 1
+Fe1 Fe 2 d 0.333333333333 0.666666666667 0.75 1
+Fe2 Fe 4 f 0.333333333333 0.666666666667 0.5732 0.914
+Co1 Co 4 f 0.333333333333 0.666666666667 0.5732 0.086
+Fe3 Fe 6 g 0.5 0 0 0.595
+Co2 Co 6 g 0.5 0 0 0.405
+Fe4 Fe 4 e 0 0 0.0552 0.852
+Co3 Co 4 e 0 0 0.0552 0.148
+Fe5 Fe 4 f 0.333333333333 0.666666666667 0.0926 0.876
+Co4 Co 4 f 0.333333333333 0.666666666667 0.0926 0.124
+Fe6 Fe 4 f 0.333333333333 0.666666666667 0.2072 1
+Fe7 Fe 12 k 0.8357 0.6714 0.1506 1
+O1 O 4 e 0 0 0.116 1
+O2 O 4 f 0.333333333333 0.666666666667 0.0317 1
+O3 O 4 f 0.333333333333 0.666666666667 0.673 1
+O4 O 6 h 0.488 0.976 0.25 1
+O5 O 12 k 0.502 0.004 0.1098 1
+O6 O 12 k 0.824 0.648 0.035 1
+O7 O 12 k 0.17 0.34 0.1811 1

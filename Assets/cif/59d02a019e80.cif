@@ -1,0 +1,48 @@
+# generated using pymatgen
+data_HoAlB14
+_symmetry_space_group_name_H-M   Imma
+_cell_length_a   5.90799800
+_cell_length_b   10.47934200
+_cell_length_c   8.23644000
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   74
+_chemical_formula_structural   HoAlB14
+_chemical_formula_sum   'Ho4 Al4 B56'
+_cell_volume   509.93390972
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x, -y+1/2, z'
+  4  'x, y+1/2, -z'
+  5  'x, -y, -z'
+  6  '-x, y, z'
+  7  '-x, y+1/2, -z'
+  8  'x, -y+1/2, z'
+  9  'x+1/2, y+1/2, z+1/2'
+  10  '-x+1/2, -y+1/2, -z+1/2'
+  11  '-x+1/2, -y, z+1/2'
+  12  'x+1/2, y, -z+1/2'
+  13  'x+1/2, -y+1/2, -z+1/2'
+  14  '-x+1/2, y+1/2, z+1/2'
+  15  '-x+1/2, y, -z+1/2'
+  16  'x+1/2, -y, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ho  Ho0  4  0.00000000  0.25000000  0.34952100  1.0
+  Al  Al1  4  0.25000000  0.25000000  0.75000000  1.0
+  B  B2  16  0.16270050  0.06098450  0.16223450  1.0
+  B  B3  16  0.24771600  0.07971700  0.95183200  1.0
+  B  B4  8  0.00000000  0.09014600  0.83332600  1.0
+  B  B5  8  0.00000000  0.14260200  0.62628600  1.0
+  B  B6  8  0.00000000  0.16711500  0.03443700  1.0

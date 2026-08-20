@@ -1,0 +1,33 @@
+data_structure
+_cell_length_a 5.38544485
+_cell_length_b 5.4226381
+_cell_length_c 12.09252077
+_cell_angle_alpha 90
+_cell_angle_beta 90
+_cell_angle_gamma 90
+_space_group_IT_number 61
+_space_group_name_H-M_alt 'Pbca'
+loop_
+_space_group_symop_id
+_space_group_symop_operation_xyz
+1 'x,y,z'
+2 '-x+1,-y,-z'
+3 '-x+1/2,-y,z+1/2'
+4 'x+1/2,y,-z+1/2'
+5 'x+1/2,-y+1/2,-z'
+6 '-x+1/2,y+1/2,z'
+7 '-x+1,y+1/2,-z+1/2'
+8 'x,-y+1/2,z+1/2'
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_symmetry_multiplicity
+_atom_site_Wyckoff_label
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_occupancy
+Ca1 Ca 8 c 0.5107121 0.04436803 0.15072747 1
+Ru1 Ru 4 a 0.5 0 0.5 1
+O1 O 8 c 0.69844203 0.30029617 0.47775279 1
+O2 O 8 c 0.4421725 0.98432883 0.33391983 1

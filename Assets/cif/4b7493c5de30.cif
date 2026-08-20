@@ -1,0 +1,43 @@
+# generated using pymatgen
+data_Ca2SiCl2O3
+_symmetry_space_group_name_H-M   I4
+_cell_length_a   10.79713800
+_cell_length_b   10.79713800
+_cell_length_c   9.49108600
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   79
+_chemical_formula_structural   Ca2SiCl2O3
+_chemical_formula_sum   'Ca16 Si8 Cl16 O24'
+_cell_volume   1106.45361744
+_cell_formula_units_Z   8
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y, x, z'
+  3  '-x, -y, z'
+  4  'y, -x, z'
+  5  'x+1/2, y+1/2, z+1/2'
+  6  '-y+1/2, x+1/2, z+1/2'
+  7  '-x+1/2, -y+1/2, z+1/2'
+  8  'y+1/2, -x+1/2, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ca  Ca0  8  0.08027150  0.74796350  0.73630550  1.0
+  Ca  Ca1  8  0.08037400  0.74778000  0.26882600  1.0
+  Si  Si2  8  0.10391450  0.18753850  0.00269950  1.0
+  Cl  Cl3  8  0.07551800  0.25767800  0.50187200  1.0
+  Cl  Cl4  4  0.00000000  0.50000000  0.24697500  1.0
+  Cl  Cl5  2  0.00000000  0.00000000  0.29028800  1.0
+  Cl  Cl6  2  0.00000000  0.00000000  0.71421100  1.0
+  O  O7  8  0.04963050  0.82664150  0.00252550  1.0
+  O  O8  8  0.13789550  0.24967050  0.85235950  1.0
+  O  O9  8  0.13854050  0.24926550  0.15300050  1.0

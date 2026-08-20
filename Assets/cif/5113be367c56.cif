@@ -1,0 +1,45 @@
+# generated using pymatgen
+data_CsReF8
+_symmetry_space_group_name_H-M   P4/nmm
+_cell_length_a   7.77976452
+_cell_length_b   7.77976452
+_cell_length_c   5.13288672
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   129
+_chemical_formula_structural   CsReF8
+_chemical_formula_sum   'Cs2 Re2 F16'
+_cell_volume   310.66661358
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y+1/2, x+1/2, z'
+  3  '-x, -y, z'
+  4  'y+1/2, -x+1/2, z'
+  5  'x+1/2, -y+1/2, -z'
+  6  '-y, -x, -z'
+  7  '-x+1/2, y+1/2, -z'
+  8  'y, x, -z'
+  9  '-x+1/2, -y+1/2, -z'
+  10  'y, -x, -z'
+  11  'x+1/2, y+1/2, -z'
+  12  '-y, x, -z'
+  13  '-x, y, z'
+  14  'y+1/2, x+1/2, z'
+  15  'x, -y, z'
+  16  '-y+1/2, -x+1/2, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Cs  Cs0  2  0.00000000  0.00000000  0.50000000  1.0
+  Re  Re1  2  0.00000000  0.50000000  0.10835908  1.0
+  F  F2  8  0.00000000  0.29256302  0.91021689  1.0
+  F  F3  8  0.14614265  0.35385735  0.31306516  1.0

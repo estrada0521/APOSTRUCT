@@ -1,0 +1,33 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'Pmn2_1'
+_symmetry_Int_Tables_number   31
+_chemical_formula_structural   FeCu2SiS4
+_cell_length_a   7.3928170000
+_cell_length_b   6.3867900000
+_cell_length_c   6.1301290000
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   90.0000000000
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-x+1/2,-y,z+1/2'
+ 3  '-x,y,z'
+ 4  'x+1/2,-y,z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Fe Fe0 2 2a 0.5000000000 0.1549340000 0.0020190000 1.0000000000
+ Cu Cu1 4 4b 0.2525280000 0.3258270000 0.4917620000 1.0000000000
+ Si Si2 2 2a 0.5000000000 0.8281650000 0.5009750000 1.0000000000
+ S S3 2 2a 0.5000000000 0.8247130000 0.1465580000 1.0000000000
+ S S4 2 2a 0.5000000000 0.1457190000 0.6228380000 1.0000000000
+ S S5 4 4b 0.2405110000 0.3319430000 0.1170430000 1.0000000000

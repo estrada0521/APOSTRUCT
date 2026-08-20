@@ -1,0 +1,38 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'P-3'
+_symmetry_Int_Tables_number   147
+_chemical_formula_structural   NaMnH6C3S3(NO)3
+_cell_length_a   10.2482837495
+_cell_length_b   10.2482837495
+_cell_length_c   6.7253740000
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   90.0000000000
+_cell_angle_gamma   120.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-x,-y,-z'
+ 3  '-y,x-y,z'
+ 4  'y,-x+y,-z'
+ 5  '-x+y,-x,z'
+ 6  'x-y,x,-z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Na Na0 1 1a 0.0000000000 0.0000000000 0.0000000000 1.0000000000
+ Na Na1 1 1b 0.0000000000 0.0000000000 0.5000000000 1.0000000000
+ Mn Mn2 2 2d 0.3333333333 0.6666666667 0.9757860000 1.0000000000
+ H H3 6 6g 0.1017790000 0.2849220000 0.2383300000 1.0000000000
+ H H4 6 6g 0.9261020000 0.1887040000 0.2514000000 1.0000000000
+ C C5 6 6g 0.5798420000 0.9770570000 0.2058780000 1.0000000000
+ S S6 6 6g 0.6793200000 0.1427430000 0.3082180000 1.0000000000
+ N N7 6 6g 0.5086080000 0.8562030000 0.1332780000 1.0000000000
+ O O8 6 6g 0.0183030000 0.1811860000 0.2451660000 1.0000000000

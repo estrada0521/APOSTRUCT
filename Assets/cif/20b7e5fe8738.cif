@@ -1,0 +1,49 @@
+# generated using pymatgen
+data_Li6Zr6HCl18
+_symmetry_space_group_name_H-M   R-3
+_cell_length_a   16.24547294
+_cell_length_b   16.24547294
+_cell_length_c   8.94268214
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   148
+_chemical_formula_structural   Li6Zr6HCl18
+_chemical_formula_sum   'Li18 Zr18 H3 Cl54'
+_cell_volume   2043.91647661
+_cell_formula_units_Z   3
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-y, x-y, z'
+  4  'y, -x+y, -z'
+  5  '-x+y, -x, z'
+  6  'x-y, x, -z'
+  7  'x+2/3, y+1/3, z+1/3'
+  8  '-x+2/3, -y+1/3, -z+1/3'
+  9  '-y+2/3, x-y+1/3, z+1/3'
+  10  'y+2/3, -x+y+1/3, -z+1/3'
+  11  '-x+y+2/3, -x+1/3, z+1/3'
+  12  'x-y+2/3, x+1/3, -z+1/3'
+  13  'x+1/3, y+2/3, z+2/3'
+  14  '-x+1/3, -y+2/3, -z+2/3'
+  15  '-y+1/3, x-y+2/3, z+2/3'
+  16  'y+1/3, -x+y+2/3, -z+2/3'
+  17  '-x+y+1/3, -x+2/3, z+2/3'
+  18  'x-y+1/3, x+2/3, -z+2/3'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Li  Li0  18  0.05825733  0.56516767  0.15909767  1.0
+  Zr  Zr1  18  0.01604533  0.12135467  0.14363067  1.0
+  H  H2  3  0.00000000  0.00000000  0.00000000  1.0
+  Cl  Cl3  18  0.01877567  0.13857233  0.67208333  1.0
+  Cl  Cl4  18  0.03829100  0.26425200  0.33092100  1.0
+  Cl  Cl5  18  0.07661667  0.56557233  0.66815033  1.0

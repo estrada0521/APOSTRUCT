@@ -1,0 +1,47 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'I4_1/a'
+_symmetry_Int_Tables_number   88
+_chemical_formula_structural   Ta2Mn3O8
+_cell_length_a   11.4122120000
+_cell_length_b   11.4122120000
+_cell_length_c   9.9475900000
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   90.0000000000
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-y,x+1/2,z+1/4'
+ 3  '-x+1/2,-y+1/2,z+1/2'
+ 4  'y+1/2,-x,z+3/4'
+ 5  '-x,-y+1/2,-z+1/4'
+ 6  'y,-x,-z'
+ 7  'x+1/2,y,-z+3/4'
+ 8  '-y+1/2,x+1/2,-z+1/2'
+ 9  'x+1/2,y+1/2,z+1/2'
+ 10  '-y+1/2,x,z+3/4'
+ 11  '-x,-y,z'
+ 12  'y,-x+1/2,z+1/4'
+ 13  '-x+1/2,-y,-z+3/4'
+ 14  'y+1/2,-x+1/2,-z+1/2'
+ 15  'x,y+1/2,-z+1/4'
+ 16  '-y,x,-z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Ta Ta0 16 16f 0.9238870000 0.8040390000 0.7544940000 1.0000000000
+ Mn Mn1 4 4b 0.0000000000 0.5000000000 0.7500000000 1.0000000000
+ Mn Mn2 4 4a 0.0000000000 0.5000000000 0.2500000000 1.0000000000
+ Mn Mn3 16 16f 0.3871205000 0.2954095000 0.7198435000 1.0000000000
+ O O4 16 16f 0.8254240000 0.7087340000 0.8704830000 1.0000000000
+ O O5 16 16f 0.6963350000 0.0624410000 0.6204570000 1.0000000000
+ O O6 16 16f 0.9619230000 0.6470530000 0.6435100000 1.0000000000
+ O O7 16 16f 0.3708610000 0.9478430000 0.9076010000 1.0000000000

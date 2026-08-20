@@ -1,0 +1,42 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'P3_121'
+_symmetry_Int_Tables_number   152
+_chemical_formula_structural   DyFe3(BO3)4
+_cell_length_a   9.6180238976
+_cell_length_b   9.6180238976
+_cell_length_c   7.6683750000
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   90.0000000000
+_cell_angle_gamma   120.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-y,x-y,z+1/3'
+ 3  '-x+y,-x,z+2/3'
+ 4  'y,x,-z'
+ 5  'x-y,-y,-z+2/3'
+ 6  '-x,-x+y,-z+1/3'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Dy Dy0 3 3a 0.3358190000 0.3358190000 0.0000000000 1.0000000000
+ Fe Fe1 3 3a 0.8843540000 0.8843540000 0.0000000000 1.0000000000
+ Fe Fe2 6 6c 0.7862980000 0.3347090000 0.9894590000 1.0000000000
+ B B3 3 3b 0.3324440000 0.3324440000 0.5000000000 1.0000000000
+ B B4 6 6c 0.5518670000 0.6755520000 0.1801040000 1.0000000000
+ B B5 3 3b 0.7792140000 0.7792140000 0.5000000000 1.0000000000
+ O O6 3 3b 0.9229570000 0.9229570000 0.5000000000 1.0000000000
+ O O7 6 6c 0.4182030000 0.6926510000 0.2039070000 1.0000000000
+ O O8 6 6c 0.8765930000 0.1825870000 0.5133700000 1.0000000000
+ O O9 6 6c 0.8522600000 0.2131070000 0.1512130000 1.0000000000
+ O O10 6 6c 0.4751550000 0.3305580000 0.4910530000 1.0000000000
+ O O11 3 3b 0.1883970000 0.1883970000 0.5000000000 1.0000000000
+ O O12 6 6c 0.4753490000 0.0102370000 0.5185240000 1.0000000000
