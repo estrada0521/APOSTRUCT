@@ -110,9 +110,7 @@ No result file is created unless one is requested.
 ## Validation
 
 See [Validation methodology and results](Validation.md).
-The source checkout also contains the standalone, single-branch procedures in
-[`Verification/`](Verification/README.md); they are separate from the `apo`
-command and do not automate or redistribute ISODISTORT Web output.
+The source checkout also contains the standalone, single-branch procedures in [`Verification/`](Verification/README.md), separate from the `apo` command.
 
 ## Notice
 

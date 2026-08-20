@@ -20,7 +20,7 @@ from typing import Any, TextIO
 import spglib
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = Path(__file__).with_name("data")
 UPSTREAM_DIR = DATA_DIR / "upstream/spglib-2.7.0"
 HALL_PATH = UPSTREAM_DIR / "magnetic_hall_symbols.yaml"
