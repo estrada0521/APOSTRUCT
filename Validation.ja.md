@@ -23,8 +23,9 @@ Validation母集団は、WebとLocalがともに計算済みで、Web出力が�
 
 ## 再現性
 
-公開checkoutの`Branches/`には、各branchのcanonical input、選択OPD、比較結果、数学検査statusを収録します。保存済みWeb/Local出力payloadとWeb自動取得ラッパーは含めません。
-独立した`Verification/`には、private monorepo Validation運用と同じparser、数学検査、Strict/Physical comparator、result projectionを収録します。第三者はbranchを選び、APOSTRUCTを実行し、同じ入力を公開ISODISTORT Webへ自分で投入することで、privateなsweep/store schemaに依存せず両出力を検査できます。
+公開checkoutの`Branches/`には、各branchのcanonical input、選択OPD、比較結果、数学検査statusを収録します。
+独立した`Verification/`には、private monorepo Validation運用と同じparser、数学検査、Strict/Physical comparator、result projectionを収録します。
+第三者はbranchを選び、APOSTRUCTを実行し、同じ入力を公開ISODISTORT Webへ自分で投入することで、privateなsweep/store schemaに依存せず両出力を検査できます。
 
 ## 二つの検証母集団
 
@@ -142,7 +143,11 @@ primary IRやBNSの欠落、Source labelの非一意性、または同一のinpu
 
 ## 検証限界
 
-successful Web branch 4,141件のうち、現行数学検査で**173件**がrefuted、**1件**がindeterminateです。この174件はすべて有効母集団から除外します。このうち172件にはlanded Local比較があります。対応するLocal出力は、130件が両検査をsatisfied、38件がbasis satisfied・group invariance refuted、3件がその逆、1件がbasis satisfied・invariance indeterminateです。これらは診断には有用ですが、除外されたWeb出力との一致はcorrectness evidenceには数えません。
+successful Web branch 4,141件のうち、現行数学検査で**173件**がrefuted、**1件**がindeterminateです。
+この174件はすべて有効母集団から除外します。
+このうち172件にはlanded Local比較があります。
+対応するLocal出力は、130件が両検査をsatisfied、38件がbasis satisfied・group invariance refuted、3件がその逆、1件がbasis satisfied・invariance indeterminateです。
+これらは診断には有用ですが、除外されたWeb出力との一致はcorrectness evidenceには数えません。
 
 
 ## 計算性能

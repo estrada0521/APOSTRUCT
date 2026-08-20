@@ -95,8 +95,7 @@ pipeline commandは既定でcompact JSONを標準出力します。
 ## Validation
 
 検証方法と結果は[Validation.ja.md](Validation.ja.md)を参照してください。
-source checkoutには、`apo`とは独立した単一branch用の検証手段を
-[`Verification/`](Verification/README.md)に収録します。ISODISTORT Webの自動操作やWeb出力の再配布は行いません。
+source checkoutには、`apo`とは独立した単一branch用の検証手段を[`Verification/`](Verification/README.md)に収録します。
 
 ## Notice
 

@@ -23,14 +23,9 @@ The Validation population consists of the branches for which both Web and Local 
 
 ## Reproducibility
 
-The public checkout includes a `Branches/` bundle containing each canonical
-input, selected OPD, and recorded comparison and mathematics statuses. It does
-not include saved Web or Local output payloads or a Web automation wrapper.
-The standalone `Verification/` package contains the exact parser, mathematical
-checks, Strict/Physical comparator, and result projection used by the private
-monorepo Validation operation. A third party can select a branch, run APOSTRUCT,
-submit the same input to the public ISODISTORT Web application, and apply those
-checks to the two outputs without depending on the private sweep/store schema.
+The public checkout includes a `Branches/` bundle containing each canonical input, selected OPD, and recorded comparison and mathematics statuses.
+The standalone `Verification/` package contains the exact parser, mathematical checks, Strict/Physical comparator, and result projection used by the private monorepo Validation operation.
+A third party can select a branch, run APOSTRUCT, submit the same input to the public ISODISTORT Web application, and apply those checks to the two outputs without depending on the private sweep/store schema.
 
 ## Two Validation Populations
 
@@ -144,20 +139,15 @@ It consists of 458 zero-K, 28 nonzero Type I/III, 412 nonzero Type IV, 19 two-K,
 
 ## Limits of Validation
 
-Among the 4,141 successful Web branches, **173** are refuted by the current
-mathematical checks and **1** is indeterminate, so all 174 are excluded from
-the valid population. Landed Local comparisons are available for 172 of these
-branches. Of those Local outputs, 130 satisfy both checks, 38 satisfy the basis
-check but are refuted by group invariance, 3 show the inverse combination, and
-1 has satisfied basis with indeterminate invariance. These comparisons are
-useful diagnostics, but agreement with an excluded Web result is not counted
-as correctness evidence.
+Among the 4,141 successful Web branches, **173** are refuted by the current mathematical checks and **1** is indeterminate, so all 174 are excluded from the valid population.
+Landed Local comparisons are available for 172 of these branches.
+Of those Local outputs, 130 satisfy both checks, 38 satisfy the basis check but are refuted by group invariance, 3 show the inverse combination, and 1 has satisfied basis with indeterminate invariance.
+These comparisons are useful diagnostics, but agreement with an excluded Web result is not counted as correctness evidence.
 
 ## Computational Performance
 
 The performance population consists of the branches within the valid Validation population for which `wall_s` is recorded for both Web and Local.
-The Web time is the sum of the successful OPD-list request and the selected
-Complete Mode Details request.
+The Web time is the sum of the successful OPD-list request and the selected Complete Mode Details request.
 The Local time measures the local mode-details computation itself.
 Because the execution environments differ, the figures below are reference values and not a direct comparison of speed.
 

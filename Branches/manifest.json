@@ -20,6 +20,6 @@
   "schema": "apostruct.verification-branches.v1",
   "shipped_tool_versions": {
     "comparator": "validation.v9+8a0c2cc56efb",
-    "mathematics_verifier": "mathematics.v4+f2f296980021"
+    "mathematics_verifier": "mathematics.v4+2fe8f5febbf1"
   }
 }
