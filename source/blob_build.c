@@ -1,0 +1,516 @@
+/* Bake the Source text authority into one blob (source_blob.h).
+ *
+ *   source_blob_build <Source dir> <output file>
+ *
+ * Section rules follow the distributed text: a line holding only
+ * [a-z][a-z0-9_]* opens a section; a later section of the same name replaces
+ * the earlier one's values but keeps its position.  A block of quoted strings
+ * only is a string section; any number outside quotes makes it numeric
+ * (real when a number has '.', 'e' or 'E'); bare T/F tokens make it boolean;
+ * otherwise its quoted strings (possibly none). */
+
+#include <ctype.h>
+#include <errno.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "source_blob.h"
+
+static void die(const char *message, const char *detail)
+{
+    fprintf(stderr, "source_blob_build: %s%s%s\n", message, detail ? ": " : "", detail ? detail : "");
+    exit(1);
+}
+
+static void *xmalloc(size_t size)
+{
+    void *p = malloc(size ? size : 1);
+    if (!p) die("out of memory", 0);
+    return p;
+}
+
+static void *xrealloc(void *p, size_t size)
+{
+    p = realloc(p, size ? size : 1);
+    if (!p) die("out of memory", 0);
+    return p;
+}
+
+static char *read_file(const char *path, size_t *size)
+{
+    FILE *f = fopen(path, "rb");
+    if (!f) die("cannot open", path);
+    fseek(f, 0, SEEK_END);
+    long length = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    char *data = xmalloc((size_t)length + 1);
+    if (fread(data, 1, (size_t)length, f) != (size_t)length) die("cannot read", path);
+    fclose(f);
+    data[length] = 0;
+    *size = (size_t)length;
+    return data;
+}
+
+/* ---- SHA-256 ---- */
+
+static const uint32_t K256[64] = {
+    0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
+};
+
+#define ROTR(x, n) (((x) >> (n)) | ((x) << (32 - (n))))
+
+static void sha256_block(uint32_t *h, const unsigned char *p)
+{
+    uint32_t w[64];
+    for (int i = 0; i < 16; i++)
+        w[i] = (uint32_t)p[4 * i] << 24 | (uint32_t)p[4 * i + 1] << 16 | (uint32_t)p[4 * i + 2] << 8 | p[4 * i + 3];
+    for (int i = 16; i < 64; i++) {
+        uint32_t s0 = ROTR(w[i - 15], 7) ^ ROTR(w[i - 15], 18) ^ (w[i - 15] >> 3);
+        uint32_t s1 = ROTR(w[i - 2], 17) ^ ROTR(w[i - 2], 19) ^ (w[i - 2] >> 10);
+        w[i] = w[i - 16] + s0 + w[i - 7] + s1;
+    }
+    uint32_t a = h[0], b = h[1], c = h[2], d = h[3], e = h[4], f = h[5], g = h[6], hh = h[7];
+    for (int i = 0; i < 64; i++) {
+        uint32_t s1 = ROTR(e, 6) ^ ROTR(e, 11) ^ ROTR(e, 25);
+        uint32_t t1 = hh + s1 + ((e & f) ^ (~e & g)) + K256[i] + w[i];
+        uint32_t s0 = ROTR(a, 2) ^ ROTR(a, 13) ^ ROTR(a, 22);
+        uint32_t t2 = s0 + ((a & b) ^ (a & c) ^ (b & c));
+        hh = g;
+        g = f;
+        f = e;
+        e = d + t1;
+        d = c;
+        c = b;
+        b = a;
+        a = t1 + t2;
+    }
+    h[0] += a; h[1] += b; h[2] += c; h[3] += d; h[4] += e; h[5] += f; h[6] += g; h[7] += hh;
+}
+
+static void sha256_hex(const unsigned char *data, size_t size, char *hex)
+{
+    uint32_t h[8] = {0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19};
+    size_t full = size / 64 * 64;
+    for (size_t i = 0; i < full; i += 64) sha256_block(h, data + i);
+    unsigned char tail[128] = {0};
+    size_t rest = size - full;
+    memcpy(tail, data + full, rest);
+    tail[rest] = 0x80;
+    size_t tail_size = rest + 9 <= 64 ? 64 : 128;
+    uint64_t bits = (uint64_t)size * 8;
+    for (int i = 0; i < 8; i++) tail[tail_size - 1 - i] = (unsigned char)(bits >> (8 * i));
+    for (size_t i = 0; i < tail_size; i += 64) sha256_block(h, tail + i);
+    for (int i = 0; i < 8; i++) sprintf(hex + 8 * i, "%08x", h[i]);
+}
+
+/* ---- sections ---- */
+
+typedef struct {
+    char name[BLOB_NAME_SIZE];
+    uint32_t kind;
+    uint64_t count;
+    unsigned char *payload;
+    uint64_t bytes;
+} section;
+
+static section *sections;
+static int section_count, section_capacity;
+
+static section *add_section(const char *name)
+{
+    for (int i = 0; i < section_count; i++)
+        if (!strcmp(sections[i].name, name)) {
+            free(sections[i].payload);
+            return &sections[i];
+        }
+    if (section_count == section_capacity) {
+        section_capacity = section_capacity ? 2 * section_capacity : 256;
+        sections = xrealloc(sections, sizeof *sections * (size_t)section_capacity);
+    }
+    section *s = &sections[section_count++];
+    memset(s, 0, sizeof *s);
+    if (strlen(name) >= BLOB_NAME_SIZE) die("section name too long", name);
+    strcpy(s->name, name);
+    return s;
+}
+
+static int is_header(const char *line, size_t length)
+{
+    size_t start = 0, end = length;
+    while (start < end && isspace((unsigned char)line[start])) start++;
+    while (end > start && isspace((unsigned char)line[end - 1])) end--;
+    if (start == end || !(line[start] >= 'a' && line[start] <= 'z')) return 0;
+    for (size_t i = start; i < end; i++) {
+        char c = line[i];
+        if (!((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_')) return 0;
+    }
+    return 1;
+}
+
+/* Python re [-+]?\d+(?:\.\d*)?(?:[Ee][-+]?\d+)? scanned left to right. */
+static size_t match_number(const char *s, size_t i, size_t n, int *real)
+{
+    size_t j = i;
+    if (j < n && (s[j] == '+' || s[j] == '-')) j++;
+    size_t digits = j;
+    while (j < n && isdigit((unsigned char)s[j])) j++;
+    if (j == digits) return 0;
+    *real = 0;
+    if (j < n && s[j] == '.') {
+        j++;
+        while (j < n && isdigit((unsigned char)s[j])) j++;
+        *real = 1;
+    }
+    if (j < n && (s[j] == 'e' || s[j] == 'E')) {
+        size_t k = j + 1;
+        if (k < n && (s[k] == '+' || s[k] == '-')) k++;
+        size_t exp_digits = k;
+        while (k < n && isdigit((unsigned char)s[k])) k++;
+        if (k > exp_digits) {
+            j = k;
+            *real = 1;
+        }
+    }
+    return j - i;
+}
+
+static void parse_block(const char *table, const char *name, const char *block, size_t n)
+{
+    /* quoted strings and the remaining text */
+    size_t string_count = 0, string_bytes = 0;
+    char *rest = xmalloc(n + 1);
+    for (size_t i = 0; i < n; i++) {
+        if (block[i] == '"') {
+            size_t j = i + 1;
+            while (j < n && block[j] != '"') j++;
+            if (j < n) {
+                string_count++;
+                string_bytes += j - i - 1;
+                rest[i] = ' ';
+                for (size_t k = i + 1; k <= j; k++) rest[k] = ' ';
+                i = j;
+                continue;
+            }
+        }
+        rest[i] = block[i];
+    }
+    rest[n] = 0;
+    /* numbers outside quotes */
+    size_t number_count = 0;
+    int any_real = 0;
+    for (size_t i = 0; i < n;) {
+        int real = 0;
+        size_t m = match_number(rest, i, n, &real);
+        if (m) {
+            number_count++;
+            any_real |= real;
+            i += m;
+        } else {
+            i++;
+        }
+    }
+    char full[BLOB_NAME_SIZE];
+    if ((size_t)snprintf(full, sizeof full, "%s.%s", table, name) >= sizeof full) die("section name too long", name);
+    section *s = add_section(full);
+    if (number_count) {
+        if (any_real) {
+            double *values = xmalloc(sizeof(double) * number_count);
+            size_t k = 0;
+            for (size_t i = 0; i < n;) {
+                int real = 0;
+                size_t m = match_number(rest, i, n, &real);
+                if (m) {
+                    char token[64];
+                    if (m >= sizeof token) die("number too long", full);
+                    memcpy(token, rest + i, m);
+                    token[m] = 0;
+                    values[k++] = strtod(token, 0);
+                    i += m;
+                } else {
+                    i++;
+                }
+            }
+            s->kind = BLOB_F64;
+            s->count = number_count;
+            s->payload = (unsigned char *)values;
+            s->bytes = sizeof(double) * number_count;
+        } else {
+            int64_t *values = xmalloc(sizeof(int64_t) * number_count);
+            size_t k = 0;
+            int64_t low = 0, high = 0;
+            for (size_t i = 0; i < n;) {
+                int real = 0;
+                size_t m = match_number(rest, i, n, &real);
+                if (m) {
+                    char token[64];
+                    if (m >= sizeof token) die("number too long", full);
+                    memcpy(token, rest + i, m);
+                    token[m] = 0;
+                    errno = 0;
+                    long long v = strtoll(token, 0, 10);
+                    if (errno) die("integer out of range", full);
+                    values[k] = v;
+                    if (!k || v < low) low = v;
+                    if (!k || v > high) high = v;
+                    k++;
+                    i += m;
+                } else {
+                    i++;
+                }
+            }
+            int width = low >= INT8_MIN && high <= INT8_MAX ? 1
+                      : low >= INT16_MIN && high <= INT16_MAX ? 2
+                      : low >= INT32_MIN && high <= INT32_MAX ? 4 : 8;
+            unsigned char *payload = xmalloc((size_t)width * number_count);
+            for (size_t i = 0; i < number_count; i++) {
+                if (width == 1) ((int8_t *)payload)[i] = (int8_t)values[i];
+                else if (width == 2) ((int16_t *)payload)[i] = (int16_t)values[i];
+                else if (width == 4) ((int32_t *)payload)[i] = (int32_t)values[i];
+                else ((int64_t *)payload)[i] = values[i];
+            }
+            free(values);
+            s->kind = width == 1 ? BLOB_I8 : width == 2 ? BLOB_I16 : width == 4 ? BLOB_I32 : BLOB_I64;
+            s->count = number_count;
+            s->payload = payload;
+            s->bytes = (uint64_t)width * number_count;
+        }
+        free(rest);
+        return;
+    }
+    if (!string_count) {
+        /* bare T/F tokens */
+        size_t tokens = 0, bools = 0;
+        for (size_t i = 0; i < n;) {
+            while (i < n && isspace((unsigned char)rest[i])) i++;
+            if (i >= n) break;
+            size_t j = i;
+            while (j < n && !isspace((unsigned char)rest[j])) j++;
+            tokens++;
+            if (j - i == 1 && (rest[i] == 'T' || rest[i] == 'F')) bools++;
+            i = j;
+        }
+        if (tokens && tokens == bools) {
+            unsigned char *payload = xmalloc(tokens);
+            size_t k = 0;
+            for (size_t i = 0; i < n; i++)
+                if (rest[i] == 'T' || rest[i] == 'F') payload[k++] = rest[i] == 'T';
+            s->kind = BLOB_BOOL;
+            s->count = tokens;
+            s->payload = payload;
+            s->bytes = tokens;
+            free(rest);
+            return;
+        }
+    }
+    /* string section: offsets[count + 1] then bytes */
+    uint64_t bytes = sizeof(int64_t) * (string_count + 1) + string_bytes;
+    unsigned char *payload = xmalloc((size_t)bytes);
+    int64_t *offsets = (int64_t *)payload;
+    unsigned char *pool = payload + sizeof(int64_t) * (string_count + 1);
+    size_t k = 0, fill = 0;
+    for (size_t i = 0; i < n; i++) {
+        if (block[i] != '"') continue;
+        size_t j = i + 1;
+        while (j < n && block[j] != '"') j++;
+        if (j >= n) break;
+        offsets[k++] = (int64_t)fill;
+        memcpy(pool + fill, block + i + 1, j - i - 1);
+        fill += j - i - 1;
+        i = j;
+    }
+    offsets[k] = (int64_t)fill;
+    s->kind = BLOB_STR;
+    s->count = string_count;
+    s->payload = payload;
+    s->bytes = bytes;
+    free(rest);
+}
+
+static void load_table(const char *dir, const char *table, const char *file)
+{
+    char path[4096];
+    snprintf(path, sizeof path, "%s/%s", dir, file);
+    size_t size;
+    char *text = read_file(path, &size);
+    char name[BLOB_NAME_SIZE] = {0};
+    size_t block_start = 0;
+    int have = 0;
+    size_t line_start = 0;
+    while (line_start <= size) {
+        size_t line_end = line_start;
+        while (line_end < size && text[line_end] != '\n') line_end++;
+        size_t next = line_end < size ? line_end + 1 : size + 1;
+        if (is_header(text + line_start, line_end - line_start)) {
+            if (have) parse_block(table, name, text + block_start, line_start - block_start);
+            size_t a = line_start, b = line_end;
+            while (a < b && isspace((unsigned char)text[a])) a++;
+            while (b > a && isspace((unsigned char)text[b - 1])) b--;
+            if (b - a >= BLOB_NAME_SIZE) die("section name too long", table);
+            memcpy(name, text + a, b - a);
+            name[b - a] = 0;
+            have = 1;
+            block_start = next <= size ? next : size;
+        }
+        line_start = next;
+    }
+    if (have) parse_block(table, name, text + block_start, size - block_start);
+    free(text);
+}
+
+static void load_constants(const char *dir)
+{
+    char path[4096];
+    snprintf(path, sizeof path, "%s/const.dat", dir);
+    size_t size;
+    char *text = read_file(path, &size);
+    int64_t max_code = -1;
+    int64_t codes[4096];
+    double values[4096];
+    int count = 0;
+    char *line = text;
+    while (*line) {
+        char *end = strchr(line, '\n');
+        if (end) *end = 0;
+        char *p = line;
+        while (isspace((unsigned char)*p)) p++;
+        if (*p) {
+            if (count >= 4096) die("too many constants", 0);
+            char *after;
+            codes[count] = strtoll(p, &after, 10);
+            values[count] = strtod(after, 0);
+            if (codes[count] + 1 > max_code) max_code = codes[count] + 1;
+            count++;
+        }
+        if (!end) break;
+        line = end + 1;
+    }
+    free(text);
+    int64_t n = max_code + 1;
+    double *dense = xmalloc(sizeof(double) * (size_t)n);
+    unsigned char *present = xmalloc((size_t)n);
+    memset(dense, 0, sizeof(double) * (size_t)n);
+    memset(present, 0, (size_t)n);
+    for (int i = 0; i < count; i++) {
+        if (codes[i] < 0) die("negative constant code", 0);
+        dense[codes[i]] = values[i];
+        present[codes[i]] = 1;
+        if (codes[i] >= 2 && codes[i] % 2 == 0) {
+            dense[codes[i] + 1] = -values[i];
+            present[codes[i] + 1] = 1;
+        }
+    }
+    section *s = add_section("const.values");
+    s->kind = BLOB_F64;
+    s->count = (uint64_t)n;
+    s->payload = (unsigned char *)dense;
+    s->bytes = sizeof(double) * (uint64_t)n;
+    s = add_section("const.present");
+    s->kind = BLOB_BOOL;
+    s->count = (uint64_t)n;
+    s->payload = present;
+    s->bytes = (uint64_t)n;
+}
+
+static void add_hashes(const char *dir, const char *const *files, int file_count)
+{
+    size_t total = 0;
+    char lines[16][256];
+    for (int i = 0; i < file_count; i++) {
+        char path[4096];
+        snprintf(path, sizeof path, "%s/%s", dir, files[i]);
+        size_t size;
+        char *data = read_file(path, &size);
+        char hex[65];
+        sha256_hex((unsigned char *)data, size, hex);
+        free(data);
+        snprintf(lines[i], sizeof lines[i], "%s=%s", files[i], hex);
+        total += strlen(lines[i]);
+    }
+    section *s = add_section("source.sha256");
+    uint64_t bytes = sizeof(int64_t) * (uint64_t)(file_count + 1) + total;
+    unsigned char *payload = xmalloc((size_t)bytes);
+    int64_t *offsets = (int64_t *)payload;
+    unsigned char *pool = payload + sizeof(int64_t) * (size_t)(file_count + 1);
+    size_t fill = 0;
+    for (int i = 0; i < file_count; i++) {
+        offsets[i] = (int64_t)fill;
+        memcpy(pool + fill, lines[i], strlen(lines[i]));
+        fill += strlen(lines[i]);
+    }
+    offsets[file_count] = (int64_t)fill;
+    s->kind = BLOB_STR;
+    s->count = (uint64_t)file_count;
+    s->payload = payload;
+    s->bytes = bytes;
+}
+
+static uint64_t align64(uint64_t value) { return (value + 63) & ~(uint64_t)63; }
+
+int main(int argc, char **argv)
+{
+    if (argc != 3) die("usage: source_blob_build <Source dir> <output file>", 0);
+    static const char *const tables[][2] = {
+        {"space", "data_space.txt"},     {"irreps", "data_irreps.txt"},   {"little", "data_little.txt"},
+        {"isotropy", "data_isotropy.txt"}, {"wyckoff", "data_wyckoff.txt"}, {"images", "data_images.txt"},
+        {"magnetic", "data_magnetic.txt"},
+    };
+    static const char *const files[] = {
+        "data_space.txt", "data_irreps.txt", "data_little.txt", "data_isotropy.txt",
+        "data_wyckoff.txt", "data_images.txt", "data_magnetic.txt", "const.dat",
+    };
+    add_hashes(argv[1], files, 8);
+    for (int i = 0; i < 7; i++) load_table(argv[1], tables[i][0], tables[i][1]);
+    load_constants(argv[1]);
+
+    uint64_t index_offset = align64(sizeof(blob_header));
+    uint64_t offset = align64(index_offset + sizeof(blob_section) * (uint64_t)section_count);
+    blob_section *index = xmalloc(sizeof *index * (size_t)section_count);
+    memset(index, 0, sizeof *index * (size_t)section_count);
+    for (int i = 0; i < section_count; i++) {
+        memcpy(index[i].name, sections[i].name, BLOB_NAME_SIZE);
+        index[i].kind = sections[i].kind;
+        index[i].count = sections[i].count;
+        index[i].offset = offset;
+        index[i].bytes = sections[i].bytes;
+        offset = align64(offset + sections[i].bytes);
+    }
+    blob_header header;
+    memset(&header, 0, sizeof header);
+    memcpy(header.magic, BLOB_MAGIC, 8);
+    header.version = BLOB_VERSION;
+    header.section_count = (uint32_t)section_count;
+    header.index_offset = index_offset;
+    header.file_size = offset;
+
+    char temp[4096];
+    snprintf(temp, sizeof temp, "%s.tmp", argv[2]);
+    FILE *out = fopen(temp, "wb");
+    if (!out) die("cannot write", temp);
+    unsigned char zero[64] = {0};
+    uint64_t at = 0;
+    fwrite(&header, sizeof header, 1, out);
+    at += sizeof header;
+    fwrite(zero, 1, (size_t)(index_offset - at), out);
+    at = index_offset;
+    fwrite(index, sizeof *index, (size_t)section_count, out);
+    at += sizeof *index * (uint64_t)section_count;
+    for (int i = 0; i < section_count; i++) {
+        fwrite(zero, 1, (size_t)(index[i].offset - at), out);
+        at = index[i].offset;
+        fwrite(sections[i].payload, 1, (size_t)sections[i].bytes, out);
+        at += sections[i].bytes;
+    }
+    fwrite(zero, 1, (size_t)(header.file_size - at), out);
+    if (fclose(out)) die("cannot write", temp);
+    if (rename(temp, argv[2])) die("cannot rename", argv[2]);
+    return 0;
+}

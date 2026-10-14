@@ -3,7 +3,7 @@
 [日本語](README_ja.md) | [CLI guide](CLI.md)
 
 **APOSTRUCT** is a local Python package for symmetry analysis of crystalline structures.
-It computes k vectors, irreducible representations, order-parameter directions, isotropy subgroups, invariant bases, symmetry-adapted modes, and Landau invariants from the bundled BYU ISOTROPY tables.
+It computes k vectors, irreducible representations, order-parameter directions, isotropy subgroups, and symmetry-adapted modes from the bundled BYU ISOTROPY tables.
 
 <p align="center">
   <img src="media/APOSTRUCT.png" alt="APOSTRUCT graphical interface" width="100%">
@@ -14,10 +14,9 @@ Where the iso- of ISODISTORT names the subgroup that leaves the order parameter 
 
 ## Interfaces And Scope
 
-- Parent input: a CIF, or a space group with ordered Wyckoff sites.
+- Parent input: a CIF.
 - Distortion input: displacive sites, magnetic sites, homogeneous strain, and one to four ordered k/irrep factors.
-- Forward pipeline: parent information, k points, active irreps, OPDs, subgroups, invariant bases, and atomic or strain mode definitions.
-- Embedding query: ordinary or time-odd OP directions compatible with a given parent/subgroup basis and origin.
+- Pipeline: parent information, k points, active irreps, OPDs, subgroups, and atomic or strain mode definitions.
 - Output: compact JSON, optional full pipeline state, text mode tables, and reusable saved JSON cases.
 - Interfaces: the `apo` command and a local browser interface.
 
@@ -26,15 +25,16 @@ They differ in workflow and presentation, not in the scientific calculation path
 
 ## Install
 
-Clone the repository and install the package:
+Clone the repository and build the executable with a C compiler (macOS or Linux; only libm and pthreads are needed):
 
 ```bash
-python -m pip install .
+sh APOSTRUCT/Backend/native/build.sh
+ln -s "$PWD/APOSTRUCT/Backend/native/apo" ~/.local/bin/apo
 ```
 
-For development, use `python -m pip install -e .` instead.
-Both forms install the `apo` command.
-The required group-theory tables are included in the package.
+The build writes `APOSTRUCT/Backend/native/apo` and the group-theory table blob next to it.
+Link the executable into any directory on `PATH`; it finds its tables and the browser interface through the link.
+Running `apo` needs no Python. `python -m pip install ".[verification]"` installs only the verification tools.
 
 ## Quick Start
 
@@ -54,8 +54,6 @@ For example, for a SrTiO3 parent written with Sr at 1a, Ti at 1b, and O at 3c, `
 ```bash
 apo run --case case.json --upto opds
 apo run --case case.json --upto modes
-apo run --case case.json --upto invariants \
-  --minimum-degree 2 --maximum-degree 6
 ```
 
 `run` avoids starting a new process and loading the bundled tables separately for every pipeline stage.
@@ -73,22 +71,7 @@ apo irreps structure.cif --k R --displacive O
 apo opds structure.cif --k R --irrep R5- --displacive O
 ```
 
-When no concrete structure is needed, use the space-group/Wyckoff route:
-
-```bash
-apo opds \
-  --sg 221 --wyckoff 1a 1b 3c \
-  --k R --irrep R5- --displacive c
-```
-
-This origin choice labels the antiphase octahedral rotation `R5-`.
-Translating the parent origin by `(1/2,1/2,1/2)` places Ti at 1a and O at 3d, and labels the same physical rotation by the commonly cited Howard-Stokes symbol `R4+`.
-
-Free Wyckoff coordinates may remain unspecified through OPD and invariant calculations.
-They are required only when atomic mode geometry must be realized.
-Site-free strain modes do not require Wyckoff sites.
-
-The [CLI guide](CLI.md) defines the complete command workflow, input conventions, coupled selections, parametric k points, saved cases, exact embedding reuse, secondary invariant factors, and machine-readable output.
+The [CLI guide](CLI.md) defines the complete command workflow, input conventions, coupled selections, parametric k points, saved cases, and machine-readable output.
 
 ## Graphical Interface
 
@@ -98,7 +81,7 @@ apo serve --host 127.0.0.1 --port 8300 --open-browser
 
 Load an existing case into that running interface with `apo show --case case.json`.
 
-The interface supports the ordinary CIF workflow and a direct space-group/Wyckoff workflow for symbolic calculations.
+The interface supports the CIF workflow.
 
 ## Output
 

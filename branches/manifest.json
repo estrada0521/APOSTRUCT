@@ -1,0 +1,21 @@
+{
+  "branch_count": 4139,
+  "files": {
+    "inputs.jsonl.gz": "b5f52c45fa056f2768c241fbbfdceebedc3d0a81d5193f0162539cd966c7aeee",
+    "results.jsonl.gz": "e2b3338853a511743ad874a65bf60fb48f503c0d08c1402160a06fa402ff066f"
+  },
+  "input_count": 4024,
+  "recorded_comparator_versions": [
+    "validation.v9+5dad794d3974"
+  ],
+  "recorded_mathematics_verifier_versions": [
+    "mathematics.v4+4c0463e3944a",
+    "mathematics.v4+7e6c9e27335b",
+    "mathematics.v4+af3a38c15c87"
+  ],
+  "schema": "apostruct.verification-branches.v1",
+  "shipped_tool_versions": {
+    "comparator": "validation.v9+b0c638141589",
+    "mathematics_verifier": "mathematics.v4+b42aaf1bd003"
+  }
+}
