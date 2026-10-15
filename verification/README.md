@@ -16,21 +16,21 @@ apostruct-compare \
   --input case.json --opd P1
 ```
 
-`verify_local_output.py` and `verify_web_text.py` apply the two independent necessary-condition checks under `Verification/mathematics/`:
+`verify_local_output.py` and `verify_web_text.py` apply the two independent necessary-condition checks under `verification/mathematics/`:
 
 - exact rational linear independence of the complete displayed mode basis;
 - invariance of displayed mode fields under the reported subgroup operations, allowing only the uncertainty implied by printed rounding cells.
 
 `verify_comparison.py` is the same comparator called by the private Validation harness.
 A Strict pass requires the displayed setting, structure, labels, normalizations, ordering, and vectors to agree.
-A Physical pass admits only the explicit crystallographic and mode-space equivalences implemented under `Verification/comparison/`.
+A Physical pass admits only the explicit crystallographic and mode-space equivalences implemented under `verification/comparison/`.
 A Physical fail means those checks did not prove equivalence; it is deliberately fail-closed.
 
 The verifier depends on the public APOSTRUCT and Source modules included in the same checkout.
 Install the optional comparison dependency with:
 
 ```bash
-python3 -m pip install -e '.[verification]'
+python3 -m pip install numpy sympy scipy spglib  # run the verifier from this checkout
 ```
 
 To reproduce the published population counts without rerunning a branch:

@@ -23,8 +23,8 @@ Validation母集団は、WebとLocalがともに計算済みで、Web出力が�
 
 ## 再現性
 
-公開checkoutの`Branches/`には、各branchのcanonical input、選択OPD、比較結果、数学検査statusを収録します。
-独立した`Verification/`には、private monorepo Validation運用と同じparser、数学検査、Strict/Physical comparator、result projectionを収録します。
+公開checkoutの`branches/`には、各branchのcanonical input、選択OPD、比較結果、数学検査statusを収録します。
+独立した`verification/`には、private monorepo Validation運用と同じparser、数学検査、Strict/Physical comparator、result projectionを収録します。
 第三者はbranchを選び、APOSTRUCTを実行し、同じ入力を公開ISODISTORT Webへ自分で投入することで、privateなsweep/store schemaに依存せず両出力を検査できます。
 
 ## 二つの検証母集団

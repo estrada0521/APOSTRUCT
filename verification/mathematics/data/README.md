@@ -14,13 +14,13 @@ The corrected entries and all input hashes are embedded in the compressed docume
 The tracked builder uses exact rational Hall parsing, converts spglib's sixth-rational setting translations back to `Fraction`, reconstructs every closure, selects generators deterministically, and reproduces the committed gzip byte-for-byte:
 
 ```bash
-python3 Verification/mathematics/build_magnetic_group_data.py
+python3 verification/mathematics/build_magnetic_group_data.py
 ```
 
 For the independent upstream audit, obtain ISO-MAG's computer-readable `magnetic_data.txt` with SHA-256 `2b11217ae10687b0836d8151846db2fad57b0d77211da90bb138ccd123a7b1fc` and run:
 
 ```bash
-python3 Verification/mathematics/build_magnetic_group_data.py \
+python3 verification/mathematics/build_magnetic_group_data.py \
   --official-iso-mag /path/to/magnetic_data.txt
 ```
 

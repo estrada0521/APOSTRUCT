@@ -196,11 +196,14 @@ static void cif_asset(const jvalue *v, const char *base, char *out)
         char root[PATH_MAX];
         resolve(starts[s], "/", root);
         for (;;) {
-            char candidate[PATH_MAX * 2];
-            snprintf(candidate, sizeof candidate, "%s/Assets/cif/%s.cif", strcmp(root, "/") ? root : "", id);
-            if (is_file(candidate)) {
-                resolve(candidate, "/", out);
-                return;
+            static const char *const homes[] = {"Assets/cif", "assets/cif", "Assets/magndata/cif", "assets/magndata/cif"};
+            for (int h = 0; h < 4; h++) {
+                char candidate[PATH_MAX * 2];
+                snprintf(candidate, sizeof candidate, "%s/%s/%s.cif", strcmp(root, "/") ? root : "", homes[h], id);
+                if (is_file(candidate)) {
+                    resolve(candidate, "/", out);
+                    return;
+                }
             }
             if (!strcmp(root, "/")) break;
             parent_of(root);

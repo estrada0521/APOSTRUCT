@@ -141,7 +141,7 @@ apo modes structure.cif \
 
 caseは順序付きの科学selectionを保存します。
 parent sourceは`structure`かrepository localな`cif` content IDのどちらか1つです。
-`cif`はdevelopment checkout内の既存`Assets/cif` content IDを解決する形式で、standalone利用では通常`structure`を使います。
+`cif`は12文字のcontent IDを、このcheckoutの`assets/cif/`か`assets/magndata/cif/`（公開branchのCIF）から解決します。それ以外では`structure`を使います。
 
 ```json
 {

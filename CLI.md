@@ -137,7 +137,7 @@ apo modes structure.cif \
 
 A case preserves the ordered scientific selection.
 It contains exactly one parent source: `structure` or a repository-local `cif` content ID.
-The `cif` form resolves an existing `Assets/cif` content ID in a development checkout; standalone users normally use `structure`.
+The `cif` form resolves a 12-character content ID to `assets/cif/` or `assets/magndata/cif/` in this checkout (the CIFs of the published branches); otherwise use `structure`.
 
 ```json
 {
