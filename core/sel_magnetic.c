@@ -10,6 +10,8 @@
 #include "sel.h"
 #include "tables.h"
 
+void exact_register_codes(int rows, int cols, const double *doubles, const int64_t *codes);
+
 int magnetic_records(int group, int setting, int capacity, int64_t *records_out);
 int magnetic_records_iso(int group, int capacity, int64_t *records_out);
 int orderparam_to_subgroup_rows(int gid, int param_count, const int64_t *kparam, const double *values, int64_t value_count, int row_count,
@@ -379,6 +381,23 @@ static int magnetic_row(jbuf *b, int64_t old_id, int64_t row_id, int canonical, 
             sel_fmt_display_value(&t, numeric[p][c]);
             matrix[p][c] = t.data;
         }
+    }
+    {
+        /* the exact numeric rows, for the coupled orbit */
+        int complete = fn > 0;
+        for (int p = 0; p < fn && complete; p++) complete = widths[p] == dim;
+        double *flat = complete ? malloc(sizeof(double) * ((size_t)fn * dim + 1)) : 0;
+        int64_t *codes = complete ? malloc(sizeof(int64_t) * ((size_t)fn * dim + 1)) : 0;
+        if (flat && codes) {
+            for (int p = 0; p < fn; p++)
+                for (int c = 0; c < dim; c++) {
+                    flat[(size_t)p * dim + c] = numeric[p][c];
+                    codes[(size_t)p * dim + c] = section_int(&T.iso_op, raw_start + p * dim + c);
+                }
+            exact_register_codes(fn, (int)dim, flat, codes);
+        }
+        free(flat);
+        free(codes);
     }
     jbuf opd = {0};
     jb_reset(&opd);

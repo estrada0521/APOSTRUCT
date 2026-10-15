@@ -7,7 +7,9 @@
  * stored flat as phi coefficients and a denominator (xs = phi + 1 words). */
 
 #include <stddef.h>
+#include <math.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -1315,6 +1317,63 @@ static uint64_t qmod(int64_t n, int64_t d)
     return d == 1 ? num : mm(num, minv(to_mont((uint64_t)(d % (int64_t)P))));
 }
 
+/* W(record) = P S in every embedding of the current field, transposed to
+ * [source_row][col] and negated for an antiunitary record (sign < 0). */
+static int embedded_record_matrix(int gid, int dim, int arms, const int64_t *k, int subtract, int element_count, const int *elements,
+                                  int position, const int *record, int sign, int64_t *words, xe *target)
+{
+    int64_t pn[48], pd[48], need;
+    int m = F->m;
+    size_t phi = (size_t)F->phi;
+    if (exact_record_phases(dim, arms, k, subtract, element_count, elements, record, pn, pd, &need) || m % need) return XT_ARITHMETIC;
+    const uint64_t *S = source_embedded(gid, dim, position, words);
+    if (!S) return XT_ARITHMETIC;
+    uint64_t half = qmod(1, 2);
+    int block = arms ? dim / arms : 0;
+    for (int i = 0; i < dim; i++) {
+        int cols[2], n = 0;
+        uint64_t vals[2][CY_MAX_PHI];
+        if (!arms) {
+            cols[n] = i;
+            for (size_t e = 0; e < phi; e++) vals[n][e] = MONE;
+            n++;
+        } else {
+            int arm = i / block, a = i % block, start = arm * block;
+            int64_t kk = pn[arm] * (m / pd[arm]) % m;
+            uint64_t c[CY_MAX_PHI], sn[CY_MAX_PHI];
+            int sine_zero = 1;
+            for (size_t e = 0; e < phi; e++) {
+                const uint64_t *xe_pow = XPOW + e * (size_t)m;
+                c[e] = mm(madd(xe_pow[kk], xe_pow[(m - kk) % m]), half);
+                sn[e] = mm(msub(xe_pow[(kk + 3 * m / 4) % m], xe_pow[(m - kk + 3 * m / 4) % m]), half);
+                sine_zero = sine_zero && !sn[e];
+            }
+            if (block == 1 || block % 2) {
+                if (!sine_zero) return XT_ARITHMETIC;
+                cols[n] = i;
+                memcpy(vals[n++], c, sizeof(uint64_t) * phi);
+            } else {
+                int halfb = block / 2, base = a < halfb ? a : a - halfb;
+                cols[n] = start + base;
+                for (size_t e = 0; e < phi; e++) vals[n][e] = a < halfb ? c[e] : msub(0, sn[e]);
+                n++;
+                cols[n] = start + halfb + base;
+                memcpy(vals[n++], a < halfb ? sn : c, sizeof(uint64_t) * phi);
+            }
+        }
+        for (int j = 0; j < dim; j++)
+            for (size_t e = 0; e < phi; e++) {
+                uint64_t v = 0;
+                for (int q = 0; q < n; q++) {
+                    uint64_t entry = S[((size_t)cols[q] * dim + j) * phi + e];
+                    if (entry) v = madd(v, mm(vals[q][e], entry));
+                }
+                target[((size_t)j * dim + i) * phi + e] = sign < 0 ? msub(0, v) : v;
+            }
+    }
+    return XT_OK;
+}
+
 /* The isotropy walk of a little irrep over its image: per distinct operation
  * record (with the antiunitary sign), W = P S transposed, built directly in
  * every embedding of Q(zeta_m) modulo the field's prime (no coefficient
@@ -1367,12 +1426,11 @@ int exact_image_walk(int gid, int dim, int arms, const int64_t *k, int subtract,
     free(XPOW);
     uint64_t *xpow = XPOW = malloc(sizeof(uint64_t) * phi * (size_t)m);
     xe *embedded = malloc(sizeof(xe) * (square * phi * ((size_t)distinct_count + 1)));
-    uint64_t *sval = malloc(sizeof(uint64_t) * square * phi + 1);
     int *matrix_of = malloc(sizeof(int) * ((size_t)distinct_count + 1)), *pair_matrix = malloc(sizeof(int) * (pairs + 1));
     size_t slot_count = 16;
     while (slot_count < 2 * (size_t)distinct_count + 2) slot_count *= 2;
     int *slots = malloc(sizeof(int) * slot_count);
-    if (!EMBED || !xpow || !embedded || !sval || !matrix_of || !pair_matrix || !slots) status = XT_NO_MEMORY;
+    if (!EMBED || !xpow || !embedded || !matrix_of || !pair_matrix || !slots) status = XT_NO_MEMORY;
     for (size_t e = 0; e < phi && !status; e++) {
         uint64_t x = to_mont(powmod(w, (uint64_t)units[e], P)), xp = MONE;
         for (int64_t i = 0; i < m; i++) {
@@ -1382,65 +1440,11 @@ int exact_image_walk(int gid, int dim, int arms, const int64_t *k, int subtract,
         }
     }
     for (size_t i = 0; i < slot_count && slots; i++) slots[i] = -1;
-    uint64_t half = status ? 0 : qmod(1, 2);
     int count = 0;
     for (int d = 0; d < distinct_count && !status; d++) {
-        exact_record_parts(gid, dim, arms, k, subtract, element_count, elements, positions[d], records + 5 * d, pn, pd, words, &need);
-        /* the Source entries in every embedding */
-        for (size_t e = 0; e < phi; e++) {
-            const uint64_t *xe_pow = xpow + e * (size_t)m;
-            uint64_t s2 = madd(xe_pow[m / 8], xe_pow[m - m / 8]), s3 = madd(xe_pow[m / 12], xe_pow[m - m / 12]), s6 = mm(s2, s3);
-            const uint64_t basis[4] = {MONE, s2, s3, s6};
-            for (size_t cell = 0; cell < square; cell++) {
-                const int64_t *q = words + 8 * cell;
-                uint64_t v = 0;
-                for (int j = 0; j < 4; j++)
-                    if (q[2 * j]) v = madd(v, mm(qmod(q[2 * j], q[2 * j + 1]), basis[j]));
-                sval[cell * phi + e] = v;
-            }
-        }
         xe *target = embedded + (size_t)count * square * phi;
-        int block = arms ? dim / arms : 0;
-        for (int i = 0; i < dim && !status; i++) {
-            /* row i of P: at most two (column, value) entries per embedding */
-            int cols[2], n = 0;
-            uint64_t vals[2][CY_MAX_PHI];
-            if (!arms) {
-                cols[n] = i;
-                for (size_t e = 0; e < phi; e++) vals[n][e] = MONE;
-                n++;
-            } else {
-                int arm = i / block, a = i % block, start = arm * block;
-                int64_t kk = pn[arm] * (m / pd[arm]) % m;
-                uint64_t c[CY_MAX_PHI], sn[CY_MAX_PHI];
-                int sine_zero = 1;
-                for (size_t e = 0; e < phi; e++) {
-                    const uint64_t *xe_pow = xpow + e * (size_t)m;
-                    c[e] = mm(madd(xe_pow[kk], xe_pow[(m - kk) % m]), half);
-                    sn[e] = mm(msub(xe_pow[(kk + 3 * m / 4) % m], xe_pow[(m - kk + 3 * m / 4) % m]), half);
-                    sine_zero = sine_zero && !sn[e];
-                }
-                if (block == 1 || block % 2) {
-                    if (!sine_zero) status = XT_ARITHMETIC;
-                    cols[n] = i;
-                    memcpy(vals[n++], c, sizeof(uint64_t) * phi);
-                } else {
-                    int halfb = block / 2, base = a < halfb ? a : a - halfb;
-                    cols[n] = start + base;
-                    for (size_t e = 0; e < phi; e++) vals[n][e] = a < halfb ? c[e] : msub(0, sn[e]);
-                    n++;
-                    cols[n] = start + halfb + base;
-                    memcpy(vals[n++], a < halfb ? sn : c, sizeof(uint64_t) * phi);
-                }
-            }
-            for (int j = 0; j < dim; j++)
-                for (size_t e = 0; e < phi; e++) {
-                    uint64_t v = 0;
-                    for (int q = 0; q < n; q++) v = madd(v, mm(vals[q][e], sval[((size_t)cols[q] * dim + j) * phi + e]));
-                    /* [source_row][col] = W[col][source_row], negated for an antiunitary record */
-                    target[((size_t)j * dim + i) * phi + e] = signs[d] < 0 ? msub(0, v) : v;
-                }
-        }
+        status = embedded_record_matrix(gid, dim, arms, k, subtract, element_count, elements, positions[d], records + 5 * d, signs[d], words,
+                                        target);
         if (status) break;
         size_t bytes = sizeof(xe) * square * phi;
         uint64_t h = mix64(words_hash(1469598103934665603ULL, target, square * phi));
@@ -1464,11 +1468,133 @@ int exact_image_walk(int gid, int dim, int arms, const int64_t *k, int subtract,
     free(positions);
     free(words);
     free(embedded);
-    free(sval);
     free(matrix_of);
     free(pair_matrix);
     free(slots);
     return status;
+}
+
+/* The orthogonal rows emitted by the walk, by their doubles (bitwise): the
+ * field and the exact coefficients (phi + 1 words per entry), so a later
+ * stage handed those doubles can recover the exact subspace. */
+static struct {
+    uint64_t *hash;
+    int *rows, *cols, *m;
+    double **doubles;
+    i128 **coeffs;
+    int count, capacity;
+    int *slots;
+    int slot_count;
+} ROWS;
+
+static int row_cache_find(uint64_t h, int rows, int cols, const double *d, int *slot_out)
+{
+    if (!ROWS.slot_count) return -1;
+    int slot = (int)(h & (uint64_t)(ROWS.slot_count - 1));
+    for (; ROWS.slots[slot] >= 0; slot = (slot + 1) & (ROWS.slot_count - 1)) {
+        int i = ROWS.slots[slot];
+        if (ROWS.hash[i] == h && ROWS.rows[i] == rows && ROWS.cols[i] == cols && !memcmp(ROWS.doubles[i], d, sizeof(double) * (size_t)rows * cols)) {
+            if (slot_out) *slot_out = slot;
+            return i;
+        }
+    }
+    if (slot_out) *slot_out = slot;
+    return -1;
+}
+
+static uint64_t doubles_hash(int rows, int cols, const double *d)
+{
+    uint64_t h = 1469598103934665603ULL ^ ((uint64_t)rows << 32 | (uint32_t)cols);
+    const uint64_t *w = (const uint64_t *)d;
+    for (size_t i = 0; i < (size_t)rows * cols; i++) h = (h ^ w[i]) * 1099511628211ULL;
+    return mix64(h);
+}
+
+static void row_cache_put(int rows, int cols, const double *d, const cy *values)
+{
+    uint64_t h = doubles_hash(rows, cols, d);
+    int existing = row_cache_find(h, rows, cols, d, 0);
+    if (existing >= 0) {
+        /* the same doubles for another exact subspace: no longer decidable */
+        size_t cells = (size_t)rows * cols, words = (size_t)F->phi + 1;
+        int same = ROWS.m[existing] == F->m;
+        for (size_t i = 0; i < cells && same; i++)
+            same = !memcmp(ROWS.coeffs[existing] + i * words, values[i].c, sizeof(i128) * (size_t)F->phi) &&
+                   ROWS.coeffs[existing][i * words + F->phi] == values[i].den;
+        if (!same) ROWS.m[existing] = -1;
+        return;
+    }
+    if ((ROWS.count + 1) * 2 > ROWS.slot_count) {
+        int slot_count = ROWS.slot_count ? ROWS.slot_count * 2 : 1024;
+        int *slots = malloc(sizeof(int) * (size_t)slot_count);
+        if (!slots) return;
+        for (int i = 0; i < slot_count; i++) slots[i] = -1;
+        for (int i = 0; i < ROWS.count; i++) {
+            int slot = (int)(ROWS.hash[i] & (uint64_t)(slot_count - 1));
+            while (slots[slot] >= 0) slot = (slot + 1) & (slot_count - 1);
+            slots[slot] = i;
+        }
+        free(ROWS.slots);
+        ROWS.slots = slots;
+        ROWS.slot_count = slot_count;
+    }
+    if (ROWS.count == ROWS.capacity) {
+        int capacity = ROWS.capacity ? 2 * ROWS.capacity : 256;
+        uint64_t *hash = realloc(ROWS.hash, sizeof(uint64_t) * capacity);
+        int *r = realloc(ROWS.rows, sizeof(int) * capacity), *c = realloc(ROWS.cols, sizeof(int) * capacity), *m = realloc(ROWS.m, sizeof(int) * capacity);
+        double **dd = realloc(ROWS.doubles, sizeof(double *) * capacity);
+        i128 **cc = realloc(ROWS.coeffs, sizeof(i128 *) * capacity);
+        if (hash) ROWS.hash = hash;
+        if (r) ROWS.rows = r;
+        if (c) ROWS.cols = c;
+        if (m) ROWS.m = m;
+        if (dd) ROWS.doubles = dd;
+        if (cc) ROWS.coeffs = cc;
+        if (!hash || !r || !c || !m || !dd || !cc) return;
+        ROWS.capacity = capacity;
+    }
+    size_t cells = (size_t)rows * cols, words = (size_t)F->phi + 1;
+    double *dcopy = malloc(sizeof(double) * cells + 8);
+    i128 *ccopy = malloc(sizeof(i128) * cells * words + 16);
+    if (!dcopy || !ccopy) {
+        free(dcopy);
+        free(ccopy);
+        return;
+    }
+    memcpy(dcopy, d, sizeof(double) * cells);
+    for (size_t i = 0; i < cells; i++) {
+        memcpy(ccopy + i * words, values[i].c, sizeof(i128) * (size_t)F->phi);
+        ccopy[i * words + F->phi] = values[i].den;
+    }
+    int i = ROWS.count++, slot;
+    row_cache_find(h, rows, cols, d, &slot);
+    ROWS.slots[slot] = i;
+    ROWS.hash[i] = h;
+    ROWS.rows[i] = rows;
+    ROWS.cols[i] = cols;
+    ROWS.m[i] = F->m;
+    ROWS.doubles[i] = dcopy;
+    ROWS.coeffs[i] = ccopy;
+}
+
+static int row_cache_get(int rows, int cols, const double *d, int *m, const i128 **coeffs)
+{
+    int i = row_cache_find(doubles_hash(rows, cols, d), rows, cols, d, 0);
+    if (i < 0 || ROWS.m[i] < 0) return 1;
+    *m = ROWS.m[i];
+    *coeffs = ROWS.coeffs[i];
+    return 0;
+}
+
+/* sel_dynamic's matrix_value read back: integers within 5e-7, else six decimals */
+static double display_value(double value)
+{
+    char text[64];
+    if (fabs(value) < 5e-7) value = 0.0;
+    double rounded = nearbyint(value);
+    if (fabs(value - rounded) < 5e-7) return rounded == 0.0 ? 0.0 : rounded;
+    snprintf(text, sizeof text, "%.6f", value);
+    return strtod(text, 0);
 }
 
 /* A node's representative as doubles, and its orthogonalized form
@@ -1519,10 +1645,21 @@ int exact_rows_to_doubles(const cy_field *f, int rows, int cols, const uint64_t 
                 }
             }
 #undef DOT
-    for (size_t i = 0; i < cells && !status; i++) {
-        cy x;
-        if (elift(cat(v, i), &x) || cy_to_double(F, &x, &orthogonal[i])) status = XT_ARITHMETIC;
+    cy *exact = status ? 0 : malloc(sizeof(cy) * (cells + 1));
+    if (!status && !exact) status = XT_NO_MEMORY;
+    for (size_t i = 0; i < cells && !status; i++)
+        if (elift(cat(v, i), &exact[i]) || cy_to_double(F, &exact[i], &orthogonal[i])) status = XT_ARITHMETIC;
+    if (!status) {
+        row_cache_put(rows, cols, orthogonal, exact);
+        /* the dynamic rows travel on as six-decimal text (sel_dynamic matrix_value) */
+        double *shown = malloc(sizeof(double) * (cells + 1));
+        if (shown) {
+            for (size_t i = 0; i < cells; i++) shown[i] = display_value(orthogonal[i]);
+            row_cache_put(rows, cols, shown, exact);
+            free(shown);
+        }
     }
+    free(exact);
     free(v);
     free(t);
     return status;
@@ -1594,4 +1731,371 @@ int xt_invariant(void *user, const int *record, int position, double sign, const
         }
     }
     return 0;
+}
+
+/* ------------------------------------------------------------ coupled domain orbit */
+
+int subgroup_rows_in_context(int dim, int arms, const int64_t *k, int subtract, int element_count, const int *elements, const double *sparse,
+                             const int *available, int identity_op, const double *values, int64_t value_count, int row_count,
+                             int candidate_count, const int64_t *candidates, const int *candidate_matrix_ops, const int *candidate_signs,
+                             int max_iter, int64_t *basis_out, int64_t *kept_out, int *kept_count);
+int same_subgroup(const int64_t *left_basis, int left_count, const int64_t *left, const int64_t *right_basis, int right_count,
+                  const int64_t *right);
+void op_translation_cache_begin(void);
+void op_translation_cache_end(void);
+extern int (*op_invariant_hook)(void *ctx, const int *record, int position, double sign, const double *row, int *result);
+extern void *op_invariant_ctx;
+
+enum { XO_DA_UNMATCHED = 20, XO_STACK = 1000, XO_SAME = 2000 };
+
+typedef struct {
+    Context ctx;
+    int dim, free_rows, cells;
+    const xe *source;
+    int *domain_of, *first_number, map_capacity;
+    xe *domains;
+    int *numbers;
+    size_t *subgroup_at;
+    int64_t *subgroups, *kept;
+    size_t subgroups_used, subgroups_capacity;
+    int domain_count, domain_capacity;
+    double *stride;
+    xt_invariance invariance;
+    /* subgroup_rows_in_context's irrep context and candidates */
+    int arms, subtract, element_count, identity_op, candidate_count;
+    const int64_t *k, *candidates;
+    const int *elements, *available, *candidate_ops, *candidate_signs;
+    const double *sparse;
+} xorbit;
+
+static int xorbit_key(xorbit *o, int matrix, const xe *subspace, xe *transformed, int *key)
+{
+    int eq_count;
+    TRY(transform(&o->ctx, o->free_rows, subspace, cat(o->ctx.matrices, (size_t)matrix * o->dim * o->dim), transformed));
+    TRY(equation_data(&o->ctx, o->free_rows, transformed, o->ctx.equations, &eq_count, key));
+    if (*key < o->map_capacity) return XT_OK;
+    int capacity = o->map_capacity ? o->map_capacity : 64;
+    while (capacity <= *key) capacity *= 2;
+    int *domain_of = realloc(o->domain_of, sizeof(int) * capacity), *first = domain_of ? realloc(o->first_number, sizeof(int) * capacity) : 0;
+    if (domain_of) o->domain_of = domain_of;
+    if (first) o->first_number = first;
+    if (!domain_of || !first) return XT_NO_MEMORY;
+    for (int i = o->map_capacity; i < capacity; i++) o->domain_of[i] = o->first_number[i] = -1;
+    o->map_capacity = capacity;
+    return XT_OK;
+}
+
+static int xorbit_keep(xorbit *o, const xe *transformed, int number, const int64_t *basis, int kept_count)
+{
+    size_t words = (size_t)o->cells * XS;
+    if (o->domain_count == o->domain_capacity) {
+        int capacity = o->domain_capacity ? o->domain_capacity * 2 : 16;
+        xe *domains = realloc(o->domains, sizeof(xe) * (words * capacity + 1));
+        int *numbers = realloc(o->numbers, sizeof(int) * capacity);
+        size_t *at_ = realloc(o->subgroup_at, sizeof(size_t) * capacity);
+        if (domains) o->domains = domains;
+        if (numbers) o->numbers = numbers;
+        if (at_) o->subgroup_at = at_;
+        if (!domains || !numbers || !at_) return XT_NO_MEMORY;
+        o->domain_capacity = capacity;
+    }
+    size_t need = o->subgroups_used + 10 + 5 * (size_t)kept_count;
+    if (need > o->subgroups_capacity) {
+        size_t capacity = o->subgroups_capacity ? o->subgroups_capacity : 1024;
+        while (capacity < need) capacity *= 2;
+        int64_t *grown = realloc(o->subgroups, sizeof(int64_t) * capacity);
+        if (!grown) return XT_NO_MEMORY;
+        o->subgroups = grown;
+        o->subgroups_capacity = capacity;
+    }
+    int d = o->domain_count++;
+    memcpy(o->domains + d * words, transformed, sizeof(xe) * words);
+    o->numbers[d] = number;
+    o->subgroup_at[d] = o->subgroups_used;
+    int64_t *at_ = o->subgroups + o->subgroups_used;
+    memcpy(at_, basis, sizeof(int64_t) * 9);
+    at_[9] = kept_count;
+    memcpy(at_ + 10, o->kept, sizeof(int64_t) * 5 * (size_t)kept_count);
+    o->subgroups_used = need;
+    return XT_OK;
+}
+
+/* _domain_orbit over matrices [first, first + count); prepass numbers the
+ * subspaces by the first of the numbered matrices reaching them */
+static int xorbit_pass(xorbit *o, int first, int count, int numbered_first, int numbered_count, int prepass)
+{
+    xe *transformed = o->ctx.transformed;
+    o->domain_count = 0;
+    o->subgroups_used = 0;
+    for (int i = 0; i < o->map_capacity; i++) o->domain_of[i] = o->first_number[i] = -1;
+    int key;
+    if (prepass)
+        for (int n = 0; n < numbered_count; n++) {
+            TRY(xorbit_key(o, numbered_first + n, o->source, transformed, &key));
+            if (o->first_number[key] < 0) o->first_number[key] = n + 1;
+        }
+    for (int n = 0; n < count; n++) {
+        TRY(xorbit_key(o, first + n, o->source, transformed, &key));
+        if (o->domain_of[key] >= 0) continue;
+        int64_t basis[9];
+        int kept_count = 0;
+        o->invariance.rows = transformed;
+        op_invariant_hook = xt_invariant;
+        op_invariant_ctx = &o->invariance;
+        int status = subgroup_rows_in_context(o->dim, o->arms, o->k, o->subtract, o->element_count, o->elements, o->sparse, o->available,
+                                              o->identity_op, o->stride, 48 * (int64_t)o->free_rows, o->free_rows, o->candidate_count,
+                                              o->candidates, o->candidate_ops, o->candidate_signs, 256, basis, o->kept, &kept_count);
+        op_invariant_hook = 0;
+        op_invariant_ctx = 0;
+        if (status) return status;
+        int equivalent = -1;
+        for (int d = 0; d < o->domain_count && equivalent < 0; d++) {
+            const int64_t *other = o->subgroups + o->subgroup_at[d];
+            int same = same_subgroup(basis, kept_count, o->kept, other, (int)other[9], other + 10);
+            if (same < 0) return XO_SAME - same;
+            if (same) equivalent = d;
+        }
+        if (equivalent >= 0) {
+            o->domain_of[key] = equivalent;
+            continue;
+        }
+        o->domain_of[key] = o->domain_count;
+        int number = o->first_number[key] > 0 ? o->first_number[key] : n + 1;
+        TRY(xorbit_keep(o, transformed, number, basis, kept_count));
+    }
+    return XT_OK;
+}
+
+/* _domain_actions and the emitted orbit: per generator, the domain each
+ * domain is carried to (by key: exact keys identify subspaces) */
+static int xorbit_emit(xorbit *o, int generator_first, int generator_count, int64_t **ints_out, size_t *nints, double **doubles_out,
+                       size_t *ndoubles)
+{
+    int dc = o->domain_count, dim = o->dim;
+    size_t words = (size_t)o->cells * XS, square_words = (size_t)dim * dim * XS;
+    int *actions = malloc(sizeof(int) * ((size_t)generator_count * dc + 1));
+    xe *image = malloc(sizeof(xe) * (words + 1));
+    int status = actions && image ? XT_OK : XT_NO_MEMORY;
+    for (int g = 0; g < generator_count && !status; g++) {
+        const xe *matrix = cat(o->ctx.matrices, (size_t)(generator_first + g) * dim * dim);
+        int repeated = -1;
+        for (int prev = 0; prev < g && repeated < 0; prev++)
+            if (!memcmp(cat(o->ctx.matrices, (size_t)(generator_first + prev) * dim * dim), matrix, sizeof(xe) * square_words)) repeated = prev;
+        if (repeated >= 0) {
+            memcpy(actions + (size_t)g * dc, actions + (size_t)repeated * dc, sizeof(int) * (size_t)dc);
+            continue;
+        }
+        for (int d = 0; d < dc && !status; d++) {
+            int key;
+            status = xorbit_key(o, generator_first + g, o->domains + (size_t)d * words, image, &key);
+            if (status) break;
+            int target = key < o->map_capacity ? o->domain_of[key] : -1;
+            if (target < 0) status = XO_DA_UNMATCHED;
+            else actions[(size_t)g * dc + d] = target;
+        }
+    }
+    if (!status) {
+        *nints = 2 + (size_t)dc * (1 + generator_count) + o->subgroups_used;
+        *ndoubles = (size_t)o->cells * dc;
+        int64_t *ints = *ints_out = malloc(sizeof(int64_t) * (*nints + 1));
+        double *doubles = *doubles_out = malloc(sizeof(double) * (*ndoubles + 1));
+        if (!ints || !doubles) status = XT_NO_MEMORY;
+        else {
+            *ints++ = dc;
+            *ints++ = generator_count;
+            for (int d = 0; d < dc; d++) *ints++ = o->numbers[d];
+            for (size_t i = 0; i < (size_t)generator_count * dc; i++) *ints++ = actions[i];
+            memcpy(ints, o->subgroups, sizeof(int64_t) * o->subgroups_used);
+            for (size_t i = 0; i < *ndoubles && !status; i++) {
+                cy x;
+                if (elift(cat(o->domains, i), &x) || cy_to_double(F, &x, &doubles[i])) status = XT_ARITHMETIC;
+            }
+        }
+    }
+    free(actions);
+    free(image);
+    return status;
+}
+
+/* coupled_domain_orbit over Q(zeta_m), for a source subspace the walk
+ * emitted (found by its doubles); -1 when the source is not one of them.
+ * Records come mapped to their point actions, with their signs. */
+int exact_coupled_orbit(int gid, int dim, int arms, const int64_t *k, int subtract, int element_count, const int *elements,
+                        const double *sparse, const int *available, int identity_op, int free_rows, const double *values,
+                        int candidate_count, const int64_t *candidates, const int *candidate_ops, const int *candidate_signs,
+                        int op_count, const int *op_records, const int *op_signs, int numbered_count, const int *numbered_records,
+                        const int *numbered_signs, int use_numbered, int generator_count, const int *generator_records,
+                        const int *generator_signs, int64_t **ints_out, size_t *nints, double **doubles_out, size_t *ndoubles)
+{
+    int m0;
+    const i128 *coeffs;
+    if (row_cache_get(free_rows, dim, values, &m0, &coeffs)) return -1;
+    int numbered = numbered_count > 0 ? numbered_count : 0, total = op_count + numbered + generator_count;
+    int *records = malloc(sizeof(int) * (5 * (size_t)total + 1)), *signs = malloc(sizeof(int) * ((size_t)total + 1));
+    int *positions = malloc(sizeof(int) * ((size_t)total + 1));
+    if (!records || !signs || !positions) {
+        free(records);
+        free(signs);
+        free(positions);
+        return XT_NO_MEMORY;
+    }
+    memcpy(records, op_records, sizeof(int) * 5 * (size_t)op_count);
+    memcpy(signs, op_signs, sizeof(int) * (size_t)op_count);
+    if (numbered) {
+        memcpy(records + 5 * op_count, numbered_records, sizeof(int) * 5 * (size_t)numbered);
+        memcpy(signs + op_count, numbered_signs, sizeof(int) * (size_t)numbered);
+    }
+    memcpy(records + 5 * (op_count + numbered), generator_records, sizeof(int) * 5 * (size_t)generator_count);
+    memcpy(signs + op_count + numbered, generator_signs, sizeof(int) * (size_t)generator_count);
+    int64_t m = m0, pn[48], pd[48], need;
+    int status = 0;
+    for (int r = 0; r < total && !status; r++) {
+        positions[r] = bw_find_position(element_count, elements, records + 5 * r);
+        if (!positions[r] || exact_record_phases(dim, arms, k, subtract, element_count, elements, records + 5 * r, pn, pd, &need))
+            status = XO_STACK + 1;
+        else {
+            int64_t a = m, b = need;
+            while (b) {
+                int64_t t = a % b;
+                a = b;
+                b = t;
+            }
+            m = m / a * need;
+        }
+    }
+    const cy_field *f = status ? 0 : cy_field_for((int)m);
+    const int *units;
+    uint64_t w;
+    if (!status && (!f || modp_field(f->m, f->phi, 0, &P, &w, &units, &VINV))) status = XT_ARITHMETIC;
+    xorbit o;
+    memset(&o, 0, sizeof o);
+    xe *embedded = 0, *embedded_one = 0, *source = 0;
+    int64_t *words = malloc(sizeof(int64_t) * 8 * (size_t)dim * dim + 8);
+    if (!status) {
+        F = f;
+        XS = f->phi;
+        inverse_cache_reset();
+        source_cache_reset();
+        mont_setup(P);
+        size_t phi = (size_t)f->phi, square = (size_t)dim * dim, cells = (size_t)free_rows * dim;
+        free(EMBED);
+        free(XPOW);
+        EMBED = malloc(sizeof(uint64_t) * phi * phi);
+        XPOW = malloc(sizeof(uint64_t) * phi * (size_t)m);
+        embedded = malloc(sizeof(xe) * (square * phi * (size_t)total + 1));
+        embedded_one = malloc(sizeof(xe) * (square * (size_t)total + 1));
+        source = malloc(sizeof(xe) * (cells * phi + 1));
+        o.stride = calloc(48 * (size_t)free_rows + 1, sizeof(double));
+        o.kept = malloc(sizeof(int64_t) * (5 * (size_t)candidate_count + 1));
+        if (!EMBED || !XPOW || !embedded || !embedded_one || !source || !o.stride || !o.kept || !words) status = XT_NO_MEMORY;
+        for (size_t e = 0; e < phi && !status; e++) {
+            uint64_t x = to_mont(powmod(w, (uint64_t)units[e], P)), xp = MONE;
+            for (int64_t i = 0; i < m; i++) {
+                if (i < (int64_t)phi) EMBED[e * phi + (size_t)i] = xp;
+                XPOW[e * (size_t)m + (size_t)i] = xp;
+                xp = mm(xp, x);
+            }
+        }
+        /* the source from Q(zeta_m0): z_m0 = z_m^(m / m0) */
+        const cy_field *g = cy_field_for(m0);
+        int64_t step = m / m0;
+        for (size_t cell = 0; cell < cells && !status && g; cell++) {
+            const i128 *c = coeffs + cell * ((size_t)g->phi + 1);
+            i128 den = c[g->phi] % (i128)P;
+            uint64_t dinv = minv(to_mont((uint64_t)(den < 0 ? den + (i128)P : den)));
+            for (size_t e = 0; e < phi; e++) {
+                uint64_t sum = 0;
+                for (int i = 0; i < g->phi; i++) {
+                    if (!c[i]) continue;
+                    i128 r = c[i] % (i128)P;
+                    sum = madd(sum, mm(to_mont((uint64_t)(r < 0 ? r + (i128)P : r)), XPOW[e * (size_t)m + (size_t)((i * step) % m)]));
+                }
+                source[cell * phi + e] = mm(sum, dinv);
+            }
+        }
+        if (!g) status = XT_ARITHMETIC;
+        for (int r = 0; r < total && !status; r++)
+            status = embedded_record_matrix(gid, dim, arms, k, subtract, element_count, elements, positions[r], records + 5 * r, signs[r], words,
+                                            embedded + (size_t)r * square * phi);
+        if (!status) first_embedding(embedded, embedded_one, square * (size_t)total);
+    }
+    if (!status) {
+        o.ctx.dim = dim;
+        o.ctx.matrix_count = total;
+        o.ctx.matrices_all = embedded;
+        o.ctx.matrices_one = embedded_one;
+        use_all(&o.ctx);
+        status = context_init(&o.ctx);
+        o.dim = dim;
+        o.free_rows = free_rows;
+        o.cells = free_rows * dim;
+        o.source = source;
+        o.arms = arms;
+        o.k = k;
+        o.subtract = subtract;
+        o.element_count = element_count;
+        o.elements = elements;
+        o.sparse = sparse;
+        o.available = available;
+        o.identity_op = identity_op;
+        o.candidate_count = candidate_count;
+        o.candidates = candidates;
+        o.candidate_ops = candidate_ops;
+        o.candidate_signs = candidate_signs;
+        o.invariance = (xt_invariance){o.stride, 0, gid, dim, arms, subtract, element_count, k, elements, words};
+    }
+    if (!status) {
+        int numbered_order = use_numbered && numbered_count >= 0;
+        op_translation_cache_begin();
+        status = numbered_order ? xorbit_pass(&o, op_count, numbered, op_count, numbered, 0)
+                                : xorbit_pass(&o, 0, op_count, op_count, numbered, numbered_count >= 0);
+        if (!status) status = xorbit_emit(&o, op_count + numbered, generator_count, ints_out, nints, doubles_out, ndoubles);
+        if (status == XO_DA_UNMATCHED && numbered_order) {
+            status = xorbit_pass(&o, 0, op_count, op_count, numbered, 1);
+            if (!status) status = xorbit_emit(&o, op_count + numbered, generator_count, ints_out, nints, doubles_out, ndoubles);
+        }
+        op_translation_cache_end();
+    }
+    free(records);
+    free(signs);
+    free(positions);
+    free(words);
+    free(embedded);
+    free(embedded_one);
+    free(source);
+    free(o.stride);
+    free(o.kept);
+    free(o.domain_of);
+    free(o.first_number);
+    free(o.domains);
+    free(o.numbers);
+    free(o.subgroup_at);
+    free(o.subgroups);
+    context_free(&o.ctx);
+    return status;
+}
+
+int exact_const_words(int64_t code, int64_t *words);
+
+/* Register rows read from Source constants (the doubles a later stage will
+ * hold, and their codes) so the coupled orbit can take them exactly. */
+void exact_register_codes(int rows, int cols, const double *doubles, const int64_t *codes)
+{
+    const cy_field *saved = F, *f = cy_field_for(24);
+    if (!f) return;
+    size_t cells = (size_t)rows * cols;
+    cy *values = malloc(sizeof(cy) * (cells + 1));
+    if (!values) return;
+    int ok = 1;
+    for (size_t i = 0; i < cells && ok; i++) {
+        int64_t words[8];
+        ok = !exact_const_words(codes[i], words);
+        if (ok) cy_from_sqrt23(f, words, &values[i]);
+    }
+    if (ok && !cy_overflow) {
+        F = f;
+        row_cache_put(rows, cols, doubles, values);
+        F = saved;
+    }
+    free(values);
 }

@@ -1738,7 +1738,84 @@ static int orbit_emit(orbit_state *s, int generator_count, const double *generat
 void op_translation_cache_begin(void);
 void op_translation_cache_end(void);
 
+int exact_coupled_orbit(int gid, int dim, int arms, const int64_t *k, int subtract, int element_count, const int *elements,
+                        const double *sparse, const int *available, int identity_op, int free_rows, const double *values,
+                        int candidate_count, const int64_t *candidates, const int *candidate_ops, const int *candidate_signs,
+                        int op_count, const int *op_records, const int *op_signs, int numbered_count, const int *numbered_records,
+                        const int *numbered_signs, int use_numbered, int generator_count, const int *generator_records,
+                        const int *generator_signs, int64_t **ints_out, size_t *nints, double **doubles_out, size_t *ndoubles);
+
+/* records mapped to their point actions, with their signs */
+static int mapped_records(int mode, int count, const int64_t *records, int **out, int **signs)
+{
+    *out = malloc(sizeof(int) * (5 * (size_t)count + 1));
+    *signs = malloc(sizeof(int) * ((size_t)count + 1));
+    if (!*out || !*signs) return ISO_NO_MEMORY;
+    for (int r = 0; r < count; r++) {
+        for (int j = 0; j < 4; j++) (*out)[5 * r + j] = (int)records[5 * r + j];
+        (*out)[5 * r + 4] = mag_point_action(mode, (int)records[5 * r + 4], *signs + r);
+    }
+    return mode && mag_take_error() ? DO_MAGNETIC : ISO_OK;
+}
+
+static int float_coupled_domain_orbit(int gid, int param_count, const int64_t *kparam, int mode, int free_rows,
+                         const double *values, int candidate_count, const int64_t *candidates, int op_count,
+                         const int64_t *op_records, int numbered_count, const int64_t *numbered_records,
+                         int use_numbered, int generator_count, const int64_t *generator_records);
+
+/* The domain orbit over Q(zeta_m) when the source is a row the exact walk or
+ * the Source tables gave exactly; otherwise the float orbit. */
 int coupled_domain_orbit(int gid, int param_count, const int64_t *kparam, int mode, int free_rows,
+                         const double *values, int candidate_count, const int64_t *candidates, int op_count,
+                         const int64_t *op_records, int numbered_count, const int64_t *numbered_records,
+                         int use_numbered, int generator_count, const int64_t *generator_records)
+{
+    irrep_context c;
+    if (mode && mag_tables()) return DO_MAGNETIC;
+    int status = irrep_context_for(gid, param_count, kparam, &c);
+    if (status) return status == IR_RANGE ? 103 : status == IR_NO_TABLES ? 106 : 105;
+    int *cops = 0, *csigns = 0, *ops = 0, *osigns = 0, *nums = 0, *nsigns = 0, *gens = 0, *gsigns = 0;
+    status = mapped_records(mode, candidate_count, candidates, &cops, &csigns);
+    for (int i = 0; i < candidate_count && !status; i++) cops[i] = cops[5 * i + 4]; /* the point actions alone */
+    if (!status) status = mapped_records(mode, op_count, op_records, &ops, &osigns);
+    if (!status) status = mapped_records(mode, numbered_count > 0 ? numbered_count : 0, numbered_records, &nums, &nsigns);
+    if (!status) status = mapped_records(mode, generator_count, generator_records, &gens, &gsigns);
+    int64_t *xints = 0;
+    double *xdoubles = 0;
+    size_t nx = 0, nxd = 0;
+    int xstatus = status ? status
+                         : exact_coupled_orbit(gid, c.dim, c.arms, c.k, c.subtract, c.element_count, c.elements, c.sparse, c.available,
+                                               c.identity_op, free_rows, values, candidate_count, candidates, cops, csigns, op_count, ops,
+                                               osigns, numbered_count, nums, nsigns, use_numbered, generator_count, gens, gsigns, &xints,
+                                               &nx, &xdoubles, &nxd);
+    if (xstatus == -1) {
+        xstatus = float_coupled_domain_orbit(gid, param_count, kparam, mode, free_rows, values, candidate_count, candidates, op_count,
+                                             op_records, numbered_count, numbered_records, use_numbered, generator_count, generator_records);
+    } else if (!xstatus) {
+        orbit_rows.ints_used = orbit_rows.doubles_used = 0;
+        int64_t *ints = row_ints(&orbit_rows, nx);
+        double *doubles = row_doubles(&orbit_rows, nxd + 1);
+        if (!ints || !doubles) xstatus = ISO_NO_MEMORY;
+        else {
+            memcpy(ints, xints, sizeof(int64_t) * nx);
+            memcpy(doubles, xdoubles, sizeof(double) * nxd);
+            orbit_rows.doubles_used = nxd;
+        }
+    }
+    free(cops);
+    free(csigns);
+    free(ops);
+    free(osigns);
+    free(nums);
+    free(nsigns);
+    free(gens);
+    free(gsigns);
+    free(xints);
+    free(xdoubles);
+    return xstatus;
+}
+
+static int float_coupled_domain_orbit(int gid, int param_count, const int64_t *kparam, int mode, int free_rows,
                          const double *values, int candidate_count, const int64_t *candidates, int op_count,
                          const int64_t *op_records, int numbered_count, const int64_t *numbered_records,
                          int use_numbered, int generator_count, const int64_t *generator_records)

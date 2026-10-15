@@ -76,6 +76,8 @@ int sel_tables(void)
     return 0;
 }
 
+void exact_register_codes(int rows, int cols, const double *doubles, const int64_t *codes);
+
 static double constant(int64_t code)
 {
     const double *values = (const double *)T.const_values.data;
@@ -990,6 +992,25 @@ static int isotropy_row(int64_t old_id, int64_t row_id, int parent_sg, int64_t f
             jb_reset(&t);
             sel_fmt_display_value(&t, numeric[r][c]);
             matrix[r][c] = t.data;
+        }
+    }
+    {
+        /* the exact numeric rows, for the coupled orbit (rows of full_dim entries) */
+        int complete = rn > 0;
+        for (int r = 0; r < rn && complete; r++) complete = pointer + r * full_dim + full_dim <= limit;
+        if (complete) {
+            double *flat = malloc(sizeof(double) * ((size_t)rn * full_dim + 1));
+            int64_t *codes = malloc(sizeof(int64_t) * ((size_t)rn * full_dim + 1));
+            if (flat && codes) {
+                for (int r = 0; r < rn; r++)
+                    for (int c = 0; c < full_dim; c++) {
+                        flat[(size_t)r * full_dim + c] = numeric[r][c];
+                        codes[(size_t)r * full_dim + c] = section_int(&T.iso_op, pointer + r * full_dim + c);
+                    }
+                for (int rows = 1; rows <= rn; rows++) exact_register_codes(rows, (int)full_dim, flat, codes);
+            }
+            free(flat);
+            free(codes);
         }
     }
     int display_n = (int)(free_count < rn ? free_count : rn);

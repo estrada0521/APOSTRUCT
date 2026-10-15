@@ -325,3 +325,21 @@ out:
     free(positions);
     return status ? status : kcount;
 }
+
+/* const.exact words (8) of a Source constant code; nonzero without an exact form */
+int exact_const_words(int64_t code, int64_t *words)
+{
+    static section_view exact;
+    static int ready;
+    if (!ready) {
+        if (section_find("const.exact", &exact) || !section_is_int(&exact)) return 1;
+        ready = 1;
+    }
+    if (code < 0 || code >= (int64_t)exact.entry->count / 8) return 1;
+    for (int j = 0; j < 8; j++) words[j] = section_int(&exact, 8 * code + j);
+    if (!words[1]) {
+        if (code > 1) return 1;
+        for (int j = 0; j < 8; j++) words[j] = j % 2;
+    }
+    return 0;
+}
