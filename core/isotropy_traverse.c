@@ -1030,6 +1030,22 @@ static double *row_doubles(row_builder *b, size_t count)
 
 #define SELECTION_CAPACITY 8192
 
+extern int (*op_invariant_hook)(void *ctx, const int *record, int position, double sign, const double *row, int *result);
+extern void *op_invariant_ctx;
+int xt_invariant(void *user, const int *record, int position, double sign, const double *row, int *result);
+
+typedef struct {
+    const double *base;
+    const uint64_t *rows;
+    int gid, dim, arms, subtract, element_count;
+    const int64_t *k;
+    const int *elements;
+    int64_t *words;
+} xt_invariance;
+
+static const uint64_t *exact_rows; /* the current node's rows in every embedding */
+static int exact_gid;
+
 static int build_row(void *user, int free_rows, const double *row_orderparam, const double *orthogonal)
 {
     row_builder *b = user;
@@ -1048,10 +1064,21 @@ static int build_row(void *user, int free_rows, const double *row_orderparam, co
     }
     for (int row = 0; row < free_rows; row++)
         for (int col = 0; col < dim; col++) values[row * 48 + col] = row_orderparam[row * dim + col];
+    int64_t *words = malloc(sizeof(int64_t) * 8 * (size_t)dim * dim + 8);
+    xt_invariance invariance = {values, exact_rows, exact_gid, dim, b->arms, b->subtract, b->element_count, b->k, b->elements, words};
+    if (!words) {
+        status = NODE_FAILED | ISO_NO_MEMORY;
+        goto done;
+    }
+    op_invariant_hook = xt_invariant;
+    op_invariant_ctx = &invariance;
     status = subgroup_rows_in_context(dim, b->arms, b->k, b->subtract, b->element_count, b->elements, b->sparse,
                                          b->available, b->identity_op, values, (int64_t)stride_values, free_rows,
                                          b->candidate_count, b->candidates, b->candidate_ops, b->candidate_signs, 256,
                                          basis, kept, &kept_count);
+    op_invariant_hook = 0;
+    op_invariant_ctx = 0;
+    free(words);
     if (status) {
         status |= NODE_FAILED;
         goto done;
@@ -1111,7 +1138,9 @@ static int exact_build_row(void *user, int free_rows, const uint64_t *row)
     int status = plain && orthogonal ? exact_rows_to_doubles(rows_field, free_rows, dim, row, plain, orthogonal) : ISO_NO_MEMORY;
     if (status) status = 400 + status;
     else {
+        exact_rows = row;
         status = build_row(user, free_rows, plain, orthogonal);
+        exact_rows = 0;
         if (status & NODE_FAILED) status = status & ~NODE_FAILED;
         else if (status > 0) status = -1;
     }
@@ -1153,6 +1182,7 @@ static int isotropy_rows(int dim, int space_count, int fraction_count, int disti
     rows.occurrence = occurrence;
     memset(rows.counts, 0, sizeof rows.counts);
     rows.ints_used = rows.doubles_used = 0;
+    exact_gid = gid;
     return exact_image_walk(gid, dim, c.arms, c.k, c.subtract, c.element_count, c.elements, distinct_count, distinct_records, distinct_signs,
                             operation_distinct, pairs, space_count, fraction_count, space_product, space_fraction, fraction_residue,
                             residue_modulus, exact_build_row, &rows);

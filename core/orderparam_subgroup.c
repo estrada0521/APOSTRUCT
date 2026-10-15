@@ -121,6 +121,12 @@ static int record_phases(const op_context *c, const int *record, int *position, 
     return status;
 }
 
+/* While set, the invariance test of a record is decided by this hook (an
+ * exact one for rows known over a cyclotomic field) after the position and
+ * phase checks. */
+int (*op_invariant_hook)(void *ctx, const int *record, int position, double sign, const double *row, int *result);
+void *op_invariant_ctx;
+
 /* op_matrix then op_invariant, building W one row at a time and stopping at
  * the first row that fails (the rows it builds are op_matrix's bit for bit). */
 static int op_record_invariant(const op_context *c, const int *record, double sign, const double *row, int *result)
@@ -130,6 +136,7 @@ static int op_record_invariant(const op_context *c, const int *record, double si
     const double *coefficients;
     int status = record_phases(c, record, &position, &coefficients, scratch);
     if (status) return status;
+    if (op_invariant_hook) return op_invariant_hook(op_invariant_ctx, record, position, sign, row, result);
     int dim = c->dim;
     const double *sparse = c->sparse + (size_t)(position - 1) * dim * dim;
     for (int col = 0; col < dim; col++) {

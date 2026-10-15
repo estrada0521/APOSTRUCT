@@ -41,6 +41,7 @@ static int XS; /* words per element: its value in each of the phi embeddings mod
 static uint64_t P;
 static const uint64_t *VINV; /* Montgomery V^{-1}[i][e] */
 static uint64_t *EMBED;      /* phi x phi: x_e^i in Montgomery form */
+static uint64_t *XPOW;       /* phi x m: x_e^k in Montgomery form */
 
 typedef uint64_t xe;
 
@@ -1304,7 +1305,8 @@ int exact_image_walk(int gid, int dim, int arms, const int64_t *k, int subtract,
     size_t phi = (size_t)f->phi, square = (size_t)dim * dim;
     free(EMBED);
     EMBED = malloc(sizeof(uint64_t) * phi * phi);
-    uint64_t *xpow = malloc(sizeof(uint64_t) * phi * (size_t)m);
+    free(XPOW);
+    uint64_t *xpow = XPOW = malloc(sizeof(uint64_t) * phi * (size_t)m);
     xe *embedded = malloc(sizeof(xe) * (square * phi * ((size_t)distinct_count + 1)));
     uint64_t *sval = malloc(sizeof(uint64_t) * square * phi + 1);
     int *matrix_of = malloc(sizeof(int) * ((size_t)distinct_count + 1)), *pair_matrix = malloc(sizeof(int) * (pairs + 1));
@@ -1402,7 +1404,6 @@ int exact_image_walk(int gid, int dim, int arms, const int64_t *k, int subtract,
                       residue_modulus, on_node, user);
     free(positions);
     free(words);
-    free(xpow);
     free(embedded);
     free(sval);
     free(matrix_of);
@@ -1466,4 +1467,80 @@ int exact_rows_to_doubles(const cy_field *f, int rows, int cols, const uint64_t 
     free(v);
     free(t);
     return status;
+}
+
+/* Exact invariance of a node's row under an operation record, for
+ * orderparam_subgroup's hook: rows are the node's rows in every embedding,
+ * base the doubles subgroup_rows_in_context reads (stride 48). W = P S:
+ * S v in the field; per arm, a phase whose denominator divides m rotates
+ * exactly, any other phase is outside Q(zeta_m), so only zero blocks
+ * (S v and v both 0 on that arm) can be preserved. */
+typedef struct {
+    const double *base;
+    const uint64_t *rows;
+    int gid, dim, arms, subtract, element_count;
+    const int64_t *k;
+    const int *elements;
+    int64_t *words;
+} xt_invariance;
+
+int xt_invariant(void *user, const int *record, int position, double sign, const double *row, int *result)
+{
+    xt_invariance *x = user;
+    int dim = x->dim, phi = F->phi, m = F->m, r = (int)((row - x->base) / 48);
+    const uint64_t *v = x->rows + (size_t)r * dim * phi;
+    int64_t pn[48], pd[48], need;
+    int status = exact_record_parts(x->gid, dim, x->arms, x->k, x->subtract, x->element_count, x->elements, position, record, pn, pd,
+                                    x->words, &need);
+    if (status) return status == 1 ? 105 : 102;
+    uint64_t sv[48 * CY_MAX_PHI];
+    for (int e = 0; e < phi; e++) {
+        const uint64_t *xe_pow = XPOW + (size_t)e * m;
+        uint64_t s2 = madd(xe_pow[m / 8], xe_pow[m - m / 8]), s3 = madd(xe_pow[m / 12], xe_pow[m - m / 12]), s6 = mm(s2, s3);
+        const uint64_t basis[4] = {MONE, s2, s3, s6};
+        for (int i = 0; i < dim; i++) {
+            uint64_t total = 0;
+            for (int j = 0; j < dim; j++) {
+                const int64_t *q = x->words + 8 * ((size_t)i * dim + j);
+                uint64_t value = v[(size_t)j * phi + e], entry = 0;
+                if (!value) continue;
+                for (int t = 0; t < 4; t++)
+                    if (q[2 * t]) entry = madd(entry, mm(qmod(q[2 * t], q[2 * t + 1]), basis[t]));
+                total = madd(total, mm(entry, value));
+            }
+            sv[(size_t)i * phi + e] = total;
+        }
+    }
+    uint64_t half = qmod(1, 2);
+    int block = x->arms ? dim / x->arms : 0;
+    *result = 1;
+    for (int i = 0; i < dim && *result; i++) {
+        int arm = x->arms ? i / block : 0, a = x->arms ? i % block : 0, start = arm * block;
+        if (x->arms && m % pd[arm]) {
+            for (int e = 0; e < phi && *result; e++) *result = !sv[(size_t)i * phi + e] && !v[(size_t)i * phi + e];
+            continue;
+        }
+        int64_t kk = x->arms ? pn[arm] * (m / pd[arm]) % m : 0;
+        for (int e = 0; e < phi && *result; e++) {
+            const uint64_t *xe_pow = XPOW + (size_t)e * m;
+            uint64_t out;
+            if (!x->arms) {
+                out = sv[(size_t)i * phi + e];
+            } else {
+                uint64_t c = mm(madd(xe_pow[kk], xe_pow[(m - kk) % m]), half);
+                uint64_t sn = mm(msub(xe_pow[(kk + 3 * m / 4) % m], xe_pow[(m - kk + 3 * m / 4) % m]), half);
+                if (block == 1 || block % 2) {
+                    if (sn) return 102;
+                    out = mm(c, sv[(size_t)i * phi + e]);
+                } else {
+                    int halfb = block / 2, base = a < halfb ? a : a - halfb;
+                    uint64_t first = sv[((size_t)start + base) * phi + e], second = sv[((size_t)start + halfb + base) * phi + e];
+                    out = a < halfb ? madd(mm(c, first), mm(sn, second)) : madd(mm(msub(0, sn), first), mm(c, second));
+                }
+            }
+            if (sign < 0) out = msub(0, out);
+            *result = out == v[(size_t)i * phi + e];
+        }
+    }
+    return 0;
 }
