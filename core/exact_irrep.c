@@ -59,6 +59,66 @@ static int64_t gcd64(int64_t a, int64_t b)
 }
 
 /* 0 ok, 1 tables, 2 no exact constant, 3 field too large or overflow, 4 shape */
+/* The arm phases k_arm . delta of a record (pn / pd per arm, 0 <= pn < pd) and
+ * the least m = lcm(24, pd); 0, or 3 (range) or 4 (shape). */
+static int record_phases(int dim, int arms, const int64_t *k, int subtract_generated, int element_count, const int *elements,
+                         const int *record, int64_t *pn, int64_t *pd, int64_t *m_out)
+{
+    if (dim <= 0 || dim > 48 || arms < 0 || (arms && dim % arms)) return 4;
+    i128 dn[3], dd[3];
+    int generated = -1;
+    if (subtract_generated)
+        for (int i = 0; i < element_count && generated < 0; i++)
+            if (elements[5 * i + 4] == record[4]) generated = i;
+    if (subtract_generated && generated < 0) return 4;
+    for (int axis = 0; axis < 3; axis++) {
+        if (generated < 0) {
+            dn[axis] = record[axis];
+            dd[axis] = record[3];
+        } else {
+            const int *e = elements + 5 * generated;
+            dn[axis] = (i128)record[axis] * e[3] - (i128)e[axis] * record[3];
+            dd[axis] = (i128)record[3] * e[3];
+        }
+    }
+    int64_t m = 24;
+    for (int arm = 0; arm < arms; arm++) {
+        i128 num = 0, den = 1;
+        for (int axis = 0; axis < 3; axis++) {
+            i128 tn = (i128)k[6 * arm + 2 * axis] * dn[axis], td = (i128)k[6 * arm + 2 * axis + 1] * dd[axis];
+            num = num * td + tn * den;
+            den = den * td;
+            i128 g = gcd_i128(num, den);
+            if (g > 1) {
+                num /= g;
+                den /= g;
+            }
+        }
+        if (den < 0) {
+            num = -num;
+            den = -den;
+        }
+        if (den > 1000000) return 3;
+        pd[arm] = (int64_t)den;
+        pn[arm] = (int64_t)(((num % den) + den) % den);
+        m = m / gcd64(m, pd[arm]) * pd[arm];
+        if (m > 100000) return 3;
+    }
+    *m_out = m;
+    return 0;
+}
+
+/* The pieces of W(record) = P S: the arm phases, the Source entries as
+ * const.exact words (8 per entry), and the least field m. */
+int exact_record_parts(int gid, int dim, int arms, const int64_t *k, int subtract_generated, int element_count, const int *elements,
+                       int position, const int *record, int64_t *pn, int64_t *pd, int64_t *words, int64_t *m_out)
+{
+    int status = record_phases(dim, arms, k, subtract_generated, element_count, elements, record, pn, pd, m_out);
+    if (status) return status;
+    status = little_exact_words(gid, dim, position, words);
+    return status == 1 ? 1 : status ? 2 : 0;
+}
+
 int exact_record_matrix(int gid, int dim, int arms, const int64_t *k, int subtract_generated, int element_count,
                         const int *elements, int position, const int *record, int want_m, const cy_field **field_out, cy *w)
 {

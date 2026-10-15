@@ -1095,19 +1095,16 @@ static row_builder rows;
 
 #include "cyclo.h"
 
-int exact_traverse(const cy_field *f, int dim, int space_count, int fraction_count, const i128 *matrices, int matrix_count,
-                   const int *pair_matrix, const int *space_product, const int *space_fraction, const int *fraction_residue,
-                   int residue_modulus, int (*on_node)(void *, int, const i128 *), void *user);
-int exact_rows_to_doubles(const cy_field *f, int rows, int cols, const i128 *in, double *plain, double *orthogonal);
-int exact_record_matrix(int gid, int dim, int arms, const int64_t *k, int subtract_generated, int element_count,
-                        const int *elements, int position, const int *record, int want_m, const cy_field **field_out, cy *w);
-int bw_find_position(int element_count, const int *elements, const int *record);
-
+int exact_image_walk(int gid, int dim, int arms, const int64_t *k, int subtract, int element_count, const int *elements, int distinct_count,
+                     const int *records, const int *signs, const int *operation_distinct, size_t pairs, int space_count,
+                     int fraction_count, const int *space_product, const int *space_fraction, const int *fraction_residue,
+                     int residue_modulus, int (*on_node)(void *, int, const uint64_t *), void *user);
+int exact_rows_to_doubles(const cy_field *f, int rows, int cols, const uint64_t *in, double *plain, double *orthogonal);
 static const cy_field *rows_field;
 
 /* exact_traverse's node callback: the representative and its orthogonal
  * form as correctly rounded doubles, then build_row. */
-static int exact_build_row(void *user, int free_rows, const i128 *row)
+static int exact_build_row(void *user, int free_rows, const uint64_t *row)
 {
     int dim = ((row_builder *)user)->dim;
     double *plain = malloc(sizeof(double) * ((size_t)free_rows * dim + 1)), *orthogonal = malloc(sizeof(double) * ((size_t)free_rows * dim + 1));
@@ -1129,11 +1126,11 @@ static int exact_build_row(void *user, int free_rows, const i128 *row)
  * record), and for magnetic rows the kept operation records; the
  * orthogonalized free x dim matrices follow in isotropy_rows_doubles.
  * occurrence > 0 stops at the occurrence-th one-parameter row. */
-static int isotropy_rows(int dim, int space_count, int fraction_count, const cy_field *field, const i128 *matrices, int matrix_count,
-                  const int *pair_matrix, const int *space_product, const int *space_fraction,
-                  const int *fraction_residue, int residue_modulus, int gid, int param_count, const int64_t *kparam,
-                  int candidate_count, const int64_t *candidates, const int *candidate_ops,
-                  const int *candidate_signs, int magnetic, int parent, int occurrence)
+static int isotropy_rows(int dim, int space_count, int fraction_count, int distinct_count, const int *distinct_records,
+                         const int *distinct_signs, const int *operation_distinct, size_t pairs, const int *space_product,
+                         const int *space_fraction, const int *fraction_residue, int residue_modulus, int gid, int param_count,
+                         const int64_t *kparam, int candidate_count, const int64_t *candidates, const int *candidate_ops,
+                         const int *candidate_signs, int magnetic, int parent, int occurrence)
 {
     irrep_context c;
     int context_status = irrep_context_for(gid, param_count, kparam, &c);
@@ -1156,9 +1153,9 @@ static int isotropy_rows(int dim, int space_count, int fraction_count, const cy_
     rows.occurrence = occurrence;
     memset(rows.counts, 0, sizeof rows.counts);
     rows.ints_used = rows.doubles_used = 0;
-    rows_field = field;
-    return exact_traverse(field, dim, space_count, fraction_count, matrices, matrix_count, pair_matrix, space_product, space_fraction,
-                          fraction_residue, residue_modulus, exact_build_row, &rows);
+    return exact_image_walk(gid, dim, c.arms, c.k, c.subtract, c.element_count, c.elements, distinct_count, distinct_records, distinct_signs,
+                            operation_distinct, pairs, space_count, fraction_count, space_product, space_fraction, fraction_residue,
+                            residue_modulus, exact_build_row, &rows);
 }
 
 enum {
@@ -1256,16 +1253,14 @@ int isotropy_rows_for(int gid, int param_count, const int64_t *kparam, int magne
     int64_t *operations = malloc(sizeof(int64_t) * 5 * (pairs + 1));
     int *distinct = malloc(sizeof(int) * 5 * (pairs + 1)), *distinct_signs = malloc(sizeof(int) * (pairs + 1));
     int *operation_distinct = malloc(sizeof(int) * (pairs + 1));
-    i128 *exact_matrices = 0;
-    int *matrix_of_distinct = malloc(sizeof(int) * (pairs + 1)), *pair_matrix = malloc(sizeof(int) * (pairs + 1));
     int *space_product = malloc(sizeof(int) * 2 * ((size_t)space_count * space_count + 1));
     int *space_fraction = malloc(sizeof(int) * (pairs + 1)), *residues32 = malloc(sizeof(int) * 3 * ((size_t)fraction_count + 1));
     int64_t *residues = malloc(sizeof(int64_t) * 3 * ((size_t)fraction_count + 1));
     status = !operations || !distinct || !distinct_signs || !operation_distinct ||
-                     !matrix_of_distinct || !pair_matrix || !space_product || !space_fraction || !residues32 || !residues
+                     !space_product || !space_fraction || !residues32 || !residues
                  ? ISO_NO_MEMORY
                  : 0;
-    int distinct_count = 0, matrix_count = 0;
+    int distinct_count = 0;
     size_t slot_count = 16;
     while (slot_count < 2 * pairs + 2) slot_count *= 2;
     int *slots = malloc(sizeof(int) * slot_count);
@@ -1296,62 +1291,6 @@ int isotropy_rows_for(int gid, int param_count, const int64_t *kparam, int magne
         stack_records[5 * d + 4] = mag_point_action(magnetic, (int)op[4], distinct_signs + d);
     }
     if (!status && magnetic && mag_take_error()) status = IF_MAGNETIC;
-    /* the image matrices over Q(zeta_m): one field for all operations, then
-     * transposed with the antiunitary sign and numbered by first appearance */
-    int field_m = 24;
-    int *positions = malloc(sizeof(int) * ((size_t)distinct_count + 1));
-    if (!status && !positions) status = ISO_NO_MEMORY;
-    for (int d = 0; d < distinct_count && !status; d++) {
-        const cy_field *g;
-        positions[d] = bw_find_position(c.element_count, c.elements, stack_records + 5 * d);
-        int need = positions[d] ? exact_record_matrix(gid, dim, c.arms, c.k, c.subtract, c.element_count, c.elements, positions[d],
-                                                      stack_records + 5 * d, -1, &g, 0)
-                                : 0;
-        if (need >= 0) {
-            status = IF_STACK + (positions[d] ? 2 : 1);
-            break;
-        }
-        int a = field_m, bb = -need;
-        while (bb) {
-            int t = a % bb;
-            a = bb;
-            bb = t;
-        }
-        field_m = field_m / a * -need;
-    }
-    const cy_field *field = status ? 0 : cy_field_for(field_m);
-    if (!status && !field) status = IF_STACK + 3;
-    size_t xs = field ? (size_t)field->phi + 1 : 1;
-    exact_matrices = field ? malloc(sizeof(i128) * xs * square * ((size_t)distinct_count + 1)) : 0;
-    cy *w = malloc(sizeof(cy) * square);
-    if (!status && (!exact_matrices || !w)) status = ISO_NO_MEMORY;
-    for (int d = 0; d < distinct_count && !status; d++) {
-        const cy_field *g;
-        if (exact_record_matrix(gid, dim, c.arms, c.k, c.subtract, c.element_count, c.elements, positions[d], stack_records + 5 * d,
-                                field_m, &g, w)) {
-            status = IF_STACK + 4;
-            break;
-        }
-        i128 *target = exact_matrices + (size_t)matrix_count * square * xs;
-        for (int i = 0; i < dim; i++)
-            for (int j = 0; j < dim; j++) {
-                cy v;
-                cy_copy(field, &v, &w[i * dim + j]);
-                if (distinct_signs[d] < 0) cy_sub(field, &(cy){{0}, 1}, &w[i * dim + j], &v);
-                memcpy(target + ((size_t)j * dim + i) * xs, v.c, sizeof(i128) * (size_t)field->phi);
-                target[((size_t)j * dim + i) * xs + field->phi] = v.den;
-            }
-        int found;
-        size_t slot = hashed_slot(slots, slot_count - 1, (const unsigned char *)exact_matrices, sizeof(i128) * xs * square, target, &found);
-        if (found < 0) {
-            found = matrix_count++;
-            slots[slot] = found;
-        }
-        matrix_of_distinct[d] = found;
-    }
-    free(positions);
-    free(w);
-    for (size_t p = 0; p < pairs && !status; p++) pair_matrix[p] = matrix_of_distinct[operation_distinct[p]];
     int64_t setting[36], translations[192][4], rotations[192][9], point_matrices[192][9];
     int ops[192];
     int64_t rotation_den = 0;
@@ -1401,7 +1340,8 @@ int isotropy_rows_for(int gid, int param_count, const int64_t *kparam, int magne
     }
     for (int i = 0; i < 3 * fraction_count && !status; i++) residues32[i] = (int)residues[i];
     if (!status)
-        status = isotropy_rows(dim, space_count, fraction_count, field, exact_matrices, matrix_count, pair_matrix, space_product,
+        status = isotropy_rows(dim, space_count, fraction_count, distinct_count, stack_records, distinct_signs, operation_distinct, pairs,
+                               space_product,
                                space_fraction, residues32, (int)modulus, gid, param_count, kparam, space_count,
                                &records[0][0], candidate_ops, candidate_signs, magnetic, sg, occurrence);
     free(fractions);
@@ -1409,9 +1349,6 @@ int isotropy_rows_for(int gid, int param_count, const int64_t *kparam, int magne
     free(distinct);
     free(distinct_signs);
     free(operation_distinct);
-    free(exact_matrices);
-    free(matrix_of_distinct);
-    free(pair_matrix);
     free(space_product);
     free(space_fraction);
     free(residues32);

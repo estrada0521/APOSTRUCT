@@ -10,60 +10,7 @@
 #include "cyclo.h"
 
 
-typedef unsigned __int128 u128;
-
-static uint64_t mulmod(uint64_t a, uint64_t b, uint64_t p) { return (uint64_t)((u128)a * b % p); }
-
-static uint64_t powmod(uint64_t a, uint64_t e, uint64_t p)
-{
-    uint64_t r = 1;
-    a %= p;
-    while (e) {
-        if (e & 1) r = mulmod(r, a, p);
-        a = mulmod(a, a, p);
-        e >>= 1;
-    }
-    return r;
-}
-
-
-/* Montgomery arithmetic modulo the current prime: values are kept as x R mod p, R = 2^64 */
-static uint64_t MP, MPINV, MR2, MONE;
-
-static uint64_t mm(uint64_t a, uint64_t b)
-{
-    u128 t = (u128)a * b;
-    uint64_t m = (uint64_t)t * MPINV;
-    u128 u = (t + (u128)m * MP) >> 64;
-    return u >= MP ? (uint64_t)(u - MP) : (uint64_t)u;
-}
-
-static void mont_setup(uint64_t p)
-{
-    uint64_t inv = p; /* Newton for p^-1 mod 2^64 */
-    for (int i = 0; i < 6; i++) inv *= 2 - p * inv;
-    MP = p;
-    MPINV = -inv;
-    uint64_t r = (uint64_t)(((u128)1 << 64) % p);
-    MR2 = mulmod(r, r, p);
-    MONE = r;
-}
-
-static uint64_t to_mont(uint64_t x) { return mm(x, MR2); }
-static uint64_t from_mont(uint64_t x) { return mm(x, 1); }
-static uint64_t madd(uint64_t a, uint64_t b) { uint64_t s = a + b; return s >= MP ? s - MP : s; }
-static uint64_t msub(uint64_t a, uint64_t b) { return a >= b ? a - b : a + MP - b; }
-
-static uint64_t minv(uint64_t a)
-{
-    uint64_t r = MONE, e = MP - 2;
-    while (e) {
-        if (e & 1) r = mm(r, a);
-        a = mm(a, a);
-        e >>= 1;
-    }
-    return r;
-}
+#include "modp.h"
 
 static int is_prime(uint64_t n)
 {
@@ -535,4 +482,50 @@ done:
     free(work);
     free(vinv);
     return status;
+}
+
+int modp_reconstruct(uint64_t a, uint64_t p, i128 *num, i128 *den) { return reconstruct(a, p, num, den); }
+
+int modp_field(int m, int phi, int attempt, uint64_t *p_out, uint64_t *w_out, const int **units_out, const uint64_t **vinv_out)
+{
+    static struct {
+        int m, attempt;
+        uint64_t p, w;
+        int *units;
+        uint64_t *vinv;
+    } cache[16];
+    static int count;
+    for (int i = 0; i < count; i++)
+        if (cache[i].m == m && cache[i].attempt == attempt) {
+            *p_out = cache[i].p;
+            *w_out = cache[i].w;
+            *units_out = cache[i].units;
+            *vinv_out = cache[i].vinv;
+            return 0;
+        }
+    uint64_t p, w;
+    if (prime_for(m, attempt, &p, &w)) return 1;
+    int *units = malloc(sizeof(int) * (size_t)(m + 1));
+    uint64_t *vinv = malloc(sizeof(uint64_t) * (size_t)phi * phi + 1), *work = malloc(sizeof(uint64_t) * (size_t)phi * 2 * phi + 1);
+    int status = !units || !vinv || !work || units_of(m, units) != phi;
+    if (!status) {
+        mont_setup(p);
+        status = vander_inverse(phi, w, units, p, work, vinv);
+    }
+    free(work);
+    if (status || count >= 16) {
+        free(units);
+        free(vinv);
+        return 1;
+    }
+    cache[count].m = m;
+    cache[count].attempt = attempt;
+    cache[count].p = *p_out = p;
+    cache[count].w = *w_out = w;
+    cache[count].units = units;
+    cache[count].vinv = vinv;
+    *units_out = units;
+    *vinv_out = vinv;
+    count++;
+    return 0;
 }
