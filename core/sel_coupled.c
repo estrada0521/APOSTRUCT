@@ -269,6 +269,8 @@ static int kernel_records(const int64_t *basis, int group, rec **out, int *count
     return 0;
 }
 
+int exact_refine_rows(int rows, int cols, double *values);
+
 /* coupled._orderparam */
 static int row_orderparam(const cslot_t *s, srow_t *r)
 {
@@ -286,6 +288,17 @@ static int row_orderparam(const cslot_t *s, srow_t *r)
         const jvalue *values = jat(vectors, row);
         int64_t n = jis(values, J_ARRAY) ? values->count : 0;
         for (int64_t c = 0; c < n && c < s->full_dim; c++) MD_TRY(number_of(jat(values, c), r->values + row * 48 + c));
+    }
+    /* six-decimal dynamic rows: their exact values */
+    int dim = s->full_dim;
+    if (free > 0 && dim > 0 && dim <= 48) {
+        double *compact;
+        TAKE(compact, free * dim + 1);
+        for (int row = 0; row < free; row++)
+            for (int c = 0; c < dim; c++) compact[row * dim + c] = r->values[row * 48 + c];
+        if (exact_refine_rows(free, dim, compact))
+            for (int row = 0; row < free; row++)
+                for (int c = 0; c < dim; c++) r->values[row * 48 + c] = compact[row * dim + c];
     }
     return 0;
 }
