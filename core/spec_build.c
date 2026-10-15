@@ -326,6 +326,11 @@ static int duplicates_sibling(builder *b, const sp_row *row, int index, int *out
         SP_TRY(sp_matrix_rank(stacked, b->sel_dim, width, 1e-10, &rank));
         if (rank == selected_rank) {
             *out = 1;
+            if (row->dim != b->sel_dim || row->count != other->count) return 0;
+            for (int r = 0; r < b->sel_dim; r++)
+                for (int c = 0; c < other->count; c++) stacked[r * width + b->sel_count + c] = row->dir[r * row->count + c];
+            SP_TRY(sp_matrix_rank(stacked, b->sel_dim, width, 1e-10, &rank));
+            *out = rank == selected_rank;
             return 0;
         }
     }
