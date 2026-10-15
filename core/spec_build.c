@@ -1580,6 +1580,7 @@ static int primary_slot_for_row(struct cpl *c, const sp_row *row, int magnetic, 
             if (slot->magnetic != magnetic || slot->gid != row->gid || c->listed_mag[i]) continue;
             int projects;
             SP_TRY(projects_case(slot->gid, row, slot->case_k, slot->ncase, &projects));
+            if (projects && !sp_kp_periodic_eq(row->kp, slot->kp)) projects = 0;
             if (projects) {
                 *out = slot;
                 return 0;
