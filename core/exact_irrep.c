@@ -108,6 +108,18 @@ static int record_phases(int dim, int arms, const int64_t *k, int subtract_gener
     return 0;
 }
 
+int exact_record_phases(int dim, int arms, const int64_t *k, int subtract_generated, int element_count, const int *elements,
+                        const int *record, int64_t *pn, int64_t *pd, int64_t *m_out)
+{
+    return record_phases(dim, arms, k, subtract_generated, element_count, elements, record, pn, pd, m_out);
+}
+
+int exact_source_words(int gid, int dim, int position, int64_t *words)
+{
+    int status = little_exact_words(gid, dim, position, words);
+    return status == 1 ? 1 : status ? 2 : 0;
+}
+
 /* The pieces of W(record) = P S: the arm phases, the Source entries as
  * const.exact words (8 per entry), and the least field m. */
 int exact_record_parts(int gid, int dim, int arms, const int64_t *k, int subtract_generated, int element_count, const int *elements,

@@ -1249,6 +1249,64 @@ done:
 int bw_find_position(int element_count, const int *elements, const int *record);
 int exact_record_parts(int gid, int dim, int arms, const int64_t *k, int subtract_generated, int element_count, const int *elements,
                        int position, const int *record, int64_t *pn, int64_t *pd, int64_t *words, int64_t *m_out);
+int exact_record_phases(int dim, int arms, const int64_t *k, int subtract_generated, int element_count, const int *elements,
+                        const int *record, int64_t *pn, int64_t *pd, int64_t *m_out);
+int exact_source_words(int gid, int dim, int position, int64_t *words);
+
+static uint64_t qmod(int64_t n, int64_t d);
+
+/* The Source matrices S of one little irrep in every embedding, by
+ * generated position; built on first use, cleared with the field. */
+static struct {
+    int gid, dim, m, capacity;
+    uint64_t **matrix;
+} SCACHE;
+
+static void source_cache_reset(void)
+{
+    for (int i = 0; i < SCACHE.capacity; i++) free(SCACHE.matrix[i]);
+    free(SCACHE.matrix);
+    memset(&SCACHE, 0, sizeof SCACHE);
+}
+
+static const uint64_t *source_embedded(int gid, int dim, int position, int64_t *words)
+{
+    if (SCACHE.gid != gid || SCACHE.dim != dim || SCACHE.m != F->m) {
+        source_cache_reset();
+        SCACHE.gid = gid;
+        SCACHE.dim = dim;
+        SCACHE.m = F->m;
+    }
+    if (position >= SCACHE.capacity) {
+        int capacity = SCACHE.capacity ? SCACHE.capacity : 64;
+        while (capacity <= position) capacity *= 2;
+        uint64_t **grown = realloc(SCACHE.matrix, sizeof(uint64_t *) * (size_t)capacity);
+        if (!grown) return 0;
+        for (int i = SCACHE.capacity; i < capacity; i++) grown[i] = 0;
+        SCACHE.matrix = grown;
+        SCACHE.capacity = capacity;
+    }
+    if (SCACHE.matrix[position]) return SCACHE.matrix[position];
+    if (exact_source_words(gid, dim, position, words)) return 0;
+    int phi = F->phi, m = F->m;
+    size_t square = (size_t)dim * dim;
+    uint64_t *out = malloc(sizeof(uint64_t) * square * phi + 1);
+    if (!out) return 0;
+    for (int e = 0; e < phi; e++) {
+        const uint64_t *xe_pow = XPOW + (size_t)e * m;
+        uint64_t s2 = madd(xe_pow[m / 8], xe_pow[m - m / 8]), s3 = madd(xe_pow[m / 12], xe_pow[m - m / 12]), s6 = mm(s2, s3);
+        const uint64_t basis[4] = {MONE, s2, s3, s6};
+        for (size_t cell = 0; cell < square; cell++) {
+            const int64_t *q = words + 8 * cell;
+            uint64_t v = 0;
+            for (int j = 0; j < 4; j++)
+                if (q[2 * j]) v = madd(v, mm(qmod(q[2 * j], q[2 * j + 1]), basis[j]));
+            out[cell * phi + e] = v;
+        }
+    }
+    SCACHE.matrix[position] = out;
+    return out;
+}
 
 static uint64_t qmod(int64_t n, int64_t d)
 {
@@ -1301,6 +1359,7 @@ int exact_image_walk(int gid, int dim, int arms, const int64_t *k, int subtract,
     F = f;
     XS = f->phi;
     inverse_cache_reset();
+    source_cache_reset();
     mont_setup(P);
     size_t phi = (size_t)f->phi, square = (size_t)dim * dim;
     free(EMBED);
@@ -1490,27 +1549,19 @@ int xt_invariant(void *user, const int *record, int position, double sign, const
     int dim = x->dim, phi = F->phi, m = F->m, r = (int)((row - x->base) / 48);
     const uint64_t *v = x->rows + (size_t)r * dim * phi;
     int64_t pn[48], pd[48], need;
-    int status = exact_record_parts(x->gid, dim, x->arms, x->k, x->subtract, x->element_count, x->elements, position, record, pn, pd,
-                                    x->words, &need);
-    if (status) return status == 1 ? 105 : 102;
+    if (exact_record_phases(dim, x->arms, x->k, x->subtract, x->element_count, x->elements, record, pn, pd, &need)) return 102;
+    const uint64_t *S = source_embedded(x->gid, dim, position, x->words);
+    if (!S) return 105;
     uint64_t sv[48 * CY_MAX_PHI];
-    for (int e = 0; e < phi; e++) {
-        const uint64_t *xe_pow = XPOW + (size_t)e * m;
-        uint64_t s2 = madd(xe_pow[m / 8], xe_pow[m - m / 8]), s3 = madd(xe_pow[m / 12], xe_pow[m - m / 12]), s6 = mm(s2, s3);
-        const uint64_t basis[4] = {MONE, s2, s3, s6};
-        for (int i = 0; i < dim; i++) {
+    for (int i = 0; i < dim; i++)
+        for (int e = 0; e < phi; e++) {
             uint64_t total = 0;
             for (int j = 0; j < dim; j++) {
-                const int64_t *q = x->words + 8 * ((size_t)i * dim + j);
-                uint64_t value = v[(size_t)j * phi + e], entry = 0;
-                if (!value) continue;
-                for (int t = 0; t < 4; t++)
-                    if (q[2 * t]) entry = madd(entry, mm(qmod(q[2 * t], q[2 * t + 1]), basis[t]));
-                total = madd(total, mm(entry, value));
+                uint64_t value = v[(size_t)j * phi + e], entry = S[((size_t)i * dim + j) * phi + e];
+                if (value && entry) total = madd(total, mm(entry, value));
             }
             sv[(size_t)i * phi + e] = total;
         }
-    }
     uint64_t half = qmod(1, 2);
     int block = x->arms ? dim / x->arms : 0;
     *result = 1;
