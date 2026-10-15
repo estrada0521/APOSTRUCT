@@ -18,20 +18,16 @@ Local implementation of ISODISTORT
 
 From a parent CIF, a choice of displacive, magnetic and strain degrees of freedom, and k points with irreps, it computes the OPD list and, for a selected OPD, the subgroup, child structure and mode details.
 
-## Setup
+## How to use
 
-Requires a C compiler (macOS, Linux).
+Requires a C compiler (macOS, Linux). The build writes `bin/apo` and `bin/source.blob`, which holds the tables.
 
 ```sh
 sh build.sh
 ln -s "$PWD/bin/apo" ~/.local/bin/apo
 ```
 
-This builds `bin/apo` and `bin/source.blob`, which holds the tables.
-
-## CLI
-
-Example for SrTiO3 (Sr(1a), Ti(1b), O(3c)).
+CLI example (SrTiO3, Sr(1a), Ti(1b), O(3c)). See the [CLI Guide](CLI.md) for details.
 
 ```sh
 apo info structure.cif
@@ -41,19 +37,11 @@ apo opds structure.cif --k R --irrep R5- --displacive O
 apo modes structure.cif --k R --irrep R5- --displacive O --opd P1
 ```
 
-See the [CLI Guide](CLI.md) for details.
-
-## GUI
+The GUI opens at `http://127.0.0.1:8300`.
 
 ```sh
 apo serve --open-browser
 ```
-
-Opens at `http://127.0.0.1:8300`.
-
-## Validation
-
-Checked against the output of the ISODISTORT Web application and by mathematical checks independent of the Web. See [Validation.md](Validation.md).
 
 ## Layout
 
@@ -63,7 +51,7 @@ Checked against the output of the ISODISTORT Web application and by mathematical
 | `cli/` | Command line |
 | `gui/` | `apo serve` and the browser interface |
 | `source/` | BYU ISOTROPY tables and the blob generator |
-| `verification/` | Verifier (Python) |
+| `verification/` | Verifier (Python): comparison with the ISODISTORT Web application and mathematical checks independent of the Web. Results in [Validation.md](Validation.md) |
 | `branches/` `assets/` | Judgement records and their CIFs |
 
 ## Notice

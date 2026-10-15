@@ -18,20 +18,16 @@ Local implementation of ISODISTORT
 
 親構造のCIFと、変位・磁気・strainの選択、k点と既約表現から、OPD一覧と、選択OPDの部分群・子構造・mode詳細を計算する。
 
-## Setup
+## How to use
 
-C compilerが必要（macOS・Linux）。
+C compilerが必要（macOS・Linux）。buildすると `bin/apo` と、tableをまとめた `bin/source.blob` が作られる。
 
 ```sh
 sh build.sh
 ln -s "$PWD/bin/apo" ~/.local/bin/apo
 ```
 
-`bin/apo` と、tableをまとめた `bin/source.blob` が作られる。
-
-## CLI
-
-SrTiO3（Sr(1a), Ti(1b), O(3c)）の例。
+CLIの例（SrTiO3、Sr(1a), Ti(1b), O(3c)）。詳細は[CLIガイド](CLI_ja.md)。
 
 ```sh
 apo info structure.cif
@@ -41,19 +37,11 @@ apo opds structure.cif --k R --irrep R5- --displacive O
 apo modes structure.cif --k R --irrep R5- --displacive O --opd P1
 ```
 
-詳細は[CLIガイド](CLI_ja.md)。
-
-## GUI
+GUIは `http://127.0.0.1:8300` で開く。
 
 ```sh
 apo serve --open-browser
 ```
-
-`http://127.0.0.1:8300` で開く。
-
-## Validation
-
-Web版ISODISTORTの出力との比較と、Webから独立した数学検査で検証。詳細は[Validation.ja.md](Validation.ja.md)。
 
 ## Layout
 
@@ -63,7 +51,7 @@ Web版ISODISTORTの出力との比較と、Webから独立した数学検査で�
 | `cli/` | command line |
 | `gui/` | `apo serve` とbrowser画面 |
 | `source/` | BYU ISOTROPYのtableと、blob生成器 |
-| `verification/` | 検証器（Python） |
+| `verification/` | 検証器（Python）。Web版ISODISTORTの出力との比較と、Webから独立した数学検査。結果は[Validation.ja.md](Validation.ja.md) |
 | `branches/` `assets/` | 判定記録とそのCIF |
 
 ## Notice
