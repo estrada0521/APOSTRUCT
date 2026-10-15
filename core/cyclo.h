@@ -13,6 +13,7 @@
 typedef struct {
     int m, phi;
     int64_t poly[CY_MAX_PHI + 1]; /* monic Phi_M, poly[phi] = 1 */
+    int64_t *powers;              /* m x phi: z^e reduced, built on first use */
 } cy_field;
 
 typedef struct {
@@ -26,6 +27,7 @@ extern int cy_overflow;
 const cy_field *cy_field_for(int m);
 
 void cy_zero(const cy_field *f, cy *out);
+void cy_copy(const cy_field *f, cy *out, const cy *a);
 void cy_rat(const cy_field *f, i128 n, i128 d, cy *out);
 /* z^e for any integer e. */
 void cy_root(const cy_field *f, int64_t e, cy *out);

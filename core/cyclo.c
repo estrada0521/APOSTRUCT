@@ -122,6 +122,13 @@ const cy_field *cy_field_for(int m)
     return f;
 }
 
+void cy_copy(const cy_field *f, cy *out, const cy *a)
+{
+    if (out == a) return;
+    memcpy(out->c, a->c, sizeof(i128) * (size_t)f->phi);
+    out->den = a->den;
+}
+
 static void normalize(const cy_field *f, cy *a)
 {
     if (a->den < 0) {
@@ -171,16 +178,26 @@ void cy_root(const cy_field *f, int64_t e, cy *out)
     int64_t m = f->m;
     e %= m;
     if (e < 0) e += m;
-    i128 *r = calloc((size_t)m, sizeof *r);
     cy_zero(f, out);
-    if (!r) {
-        cy_overflow = 1;
-        return;
+    if (!f->powers) {
+        /* z^(e+1) = z * z^e: shift and reduce the one overflowing term */
+        int64_t *table = calloc((size_t)m * f->phi, sizeof *table);
+        if (!table) {
+            cy_overflow = 1;
+            return;
+        }
+        table[0] = 1;
+        for (int64_t k = 1; k < m; k++) {
+            const int64_t *prev = table + (k - 1) * f->phi;
+            int64_t *next = table + k * f->phi, top = prev[f->phi - 1];
+            for (int i = f->phi - 1; i > 0; i--) next[i] = prev[i - 1];
+            next[0] = 0;
+            for (int i = 0; i < f->phi; i++) next[i] -= top * f->poly[i];
+        }
+        ((cy_field *)f)->powers = table;
     }
-    r[e] = 1;
-    reduce(f, r, (int)m);
-    memcpy(out->c, r, sizeof(i128) * (size_t)f->phi);
-    free(r);
+    const int64_t *row = f->powers + e * f->phi;
+    for (int i = 0; i < f->phi; i++) out->c[i] = row[i];
 }
 
 void cy_add(const cy_field *f, const cy *a, const cy *b, cy *out)
@@ -190,13 +207,14 @@ void cy_add(const cy_field *f, const cy *a, const cy *b, cy *out)
     r.den = ck_mul(a->den, la);
     for (int i = 0; i < f->phi; i++) r.c[i] = ck_add(ck_mul(a->c[i], la), ck_mul(b->c[i], lb));
     normalize(f, &r);
-    *out = r;
+    cy_copy(f, out, &r);
 }
 
 void cy_sub(const cy_field *f, const cy *a, const cy *b, cy *out)
 {
-    cy nb = *b;
-    for (int i = 0; i < f->phi; i++) nb.c[i] = -nb.c[i];
+    cy nb;
+    for (int i = 0; i < f->phi; i++) nb.c[i] = -b->c[i];
+    nb.den = b->den;
     cy_add(f, a, &nb, out);
 }
 
@@ -214,7 +232,7 @@ void cy_mul(const cy_field *f, const cy *a, const cy *b, cy *out)
     memcpy(o.c, r, sizeof(i128) * (size_t)f->phi);
     o.den = ck_mul(a->den, b->den);
     normalize(f, &o);
-    *out = o;
+    cy_copy(f, out, &o);
 }
 
 int cy_is_zero(const cy_field *f, const cy *a)

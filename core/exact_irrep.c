@@ -60,7 +60,7 @@ static int64_t gcd64(int64_t a, int64_t b)
 
 /* 0 ok, 1 tables, 2 no exact constant, 3 field too large or overflow, 4 shape */
 int exact_record_matrix(int gid, int dim, int arms, const int64_t *k, int subtract_generated, int element_count,
-                        const int *elements, int position, const int *record, const cy_field **field_out, cy *w)
+                        const int *elements, int position, const int *record, int want_m, const cy_field **field_out, cy *w)
 {
     if (dim <= 0 || dim > 48 || arms < 0 || (arms && dim % arms)) return 4;
     i128 dn[3], dd[3];
@@ -102,9 +102,18 @@ int exact_record_matrix(int gid, int dim, int arms, const int64_t *k, int subtra
         m = m / gcd64(m, pd[arm]) * pd[arm];
         if (m > 100000) return 3;
     }
+    if (want_m < 0) {
+        *field_out = 0;
+        return -(int)m;
+    }
+    if (want_m) {
+        if (want_m % m) return 3;
+        m = want_m;
+    }
     const cy_field *f = cy_field_for((int)m);
     if (!f) return 3;
     *field_out = f;
+    if (!w) return 0;
     int64_t *words = malloc(sizeof(int64_t) * 8 * (size_t)dim * dim);
     cy *s = malloc(sizeof(cy) * (size_t)dim * dim);
     if (!words || !s) {
@@ -130,26 +139,31 @@ int exact_record_matrix(int gid, int dim, int arms, const int64_t *k, int subtra
             if (block == 1 || block % 2) {
                 if (!cy_is_zero(f, &sn)) status = 4;
                 cols[n] = i;
-                vals[n++] = c;
+                cy_copy(f, &vals[n++], &c);
             } else {
                 int half = block / 2, base = a < half ? a : a - half;
                 cols[n] = start + base;
                 if (a < half)
-                    vals[n++] = c;
+                    cy_copy(f, &vals[n++], &c);
                 else
                     cy_sub(f, &(cy){{0}, 1}, &sn, &vals[n++]);
                 cols[n] = start + half + base;
-                vals[n++] = a < half ? sn : c;
+                cy_copy(f, &vals[n++], a < half ? &sn : &c);
             }
         }
         for (int j = 0; j < dim && !status; j++) {
             cy acc, t;
             cy_zero(f, &acc);
             for (int q = 0; q < n; q++) {
-                cy_mul(f, &vals[q], &s[cols[q] * dim + j], &t);
-                cy_add(f, &acc, &t, &acc);
+                const cy *entry = &s[cols[q] * dim + j];
+                if (cy_is_zero(f, entry) || cy_is_zero(f, &vals[q])) continue;
+                cy_mul(f, &vals[q], entry, &t);
+                if (cy_is_zero(f, &acc))
+                    cy_copy(f, &acc, &t);
+                else
+                    cy_add(f, &acc, &t, &acc);
             }
-            w[i * dim + j] = acc;
+            cy_copy(f, &w[i * dim + j], &acc);
         }
     }
     if (!status && cy_overflow) status = 3;
@@ -187,17 +201,19 @@ int exact_subduction_directions(int gid, int param_count, const int64_t *params,
     for (int r = 0; r < record_count && !status; r++) {
         const cy_field *g;
         positions[r] = bw_find_position(c.element_count, c.elements, mapped + 5 * r);
+        int need = positions[r] ? exact_record_matrix(gid, dim, c.arms, c.k, c.subtract, c.element_count, c.elements, positions[r],
+                                                      mapped + 5 * r, -1, &g, 0)
+                                : 0;
         if (!positions[r]) status = -1;
-        else if (exact_record_matrix(gid, dim, c.arms, c.k, c.subtract, c.element_count, c.elements, positions[r], mapped + 5 * r, &g, w))
-            status = -2;
+        else if (need >= 0) status = -2;
         else {
-            int a = m, b = g->m;
+            int a = m, b = -need;
             while (b) {
                 int t = a % b;
                 a = b;
                 b = t;
             }
-            m = m / a * g->m;
+            m = m / a * -need;
         }
     }
     const cy_field *f = status ? 0 : cy_field_for(m);
@@ -205,25 +221,15 @@ int exact_subduction_directions(int gid, int param_count, const int64_t *params,
     cy_overflow = 0;
     for (int r = 0; r < record_count && !status; r++) {
         const cy_field *g;
-        exact_record_matrix(gid, dim, c.arms, c.k, c.subtract, c.element_count, c.elements, positions[r], mapped + 5 * r, &g, w);
-        int step = m / g->m;
+        if (exact_record_matrix(gid, dim, c.arms, c.k, c.subtract, c.element_count, c.elements, positions[r], mapped + 5 * r, m, &g, w)) {
+            status = -2;
+            break;
+        }
         for (int i = 0; i < dim; i++)
             for (int j = 0; j < dim; j++) {
-                const cy *src = &w[i * dim + (dim - 1 - j)];
                 cy *dst = &mat[((size_t)r * dim + i) * dim + j];
-                cy_zero(f, dst);
-                if (!cy_is_zero(g, src)) {
-                    /* z_g = z_f^step: spread the coefficients and reduce */
-                    cy term, root, q;
-                    for (int e = 0; e < g->phi; e++) {
-                        if (!src->c[e]) continue;
-                        cy_root(f, (int64_t)e * step, &root);
-                        cy_rat(f, src->c[e], src->den, &q);
-                        cy_mul(f, &q, &root, &term);
-                        cy_add(f, dst, &term, dst);
-                    }
-                    if (signs[r] < 0) cy_sub(f, &(cy){{0}, 1}, dst, dst);
-                }
+                cy_copy(f, dst, &w[i * dim + (dim - 1 - j)]);
+                if (signs[r] < 0 && !cy_is_zero(f, dst)) cy_sub(f, &(cy){{0}, 1}, dst, dst);
                 if (dim - 1 - j == i) {
                     cy one;
                     cy_rat(f, 1, 1, &one);
