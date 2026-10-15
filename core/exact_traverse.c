@@ -1482,6 +1482,7 @@ static struct {
     int *rows, *cols, *m;
     double **doubles;
     i128 **coeffs;
+    double **rounded; /* the correctly rounded doubles of a display key, else 0 */
     int count, capacity;
     int *slots;
     int slot_count;
@@ -1510,7 +1511,7 @@ static uint64_t doubles_hash(int rows, int cols, const double *d)
     return mix64(h);
 }
 
-static void row_cache_put(int rows, int cols, const double *d, const cy *values)
+static void row_cache_put(int rows, int cols, const double *d, const cy *values, const double *rounded)
 {
     uint64_t h = doubles_hash(rows, cols, d);
     int existing = row_cache_find(h, rows, cols, d, 0);
@@ -1544,6 +1545,9 @@ static void row_cache_put(int rows, int cols, const double *d, const cy *values)
         int *r = realloc(ROWS.rows, sizeof(int) * capacity), *c = realloc(ROWS.cols, sizeof(int) * capacity), *m = realloc(ROWS.m, sizeof(int) * capacity);
         double **dd = realloc(ROWS.doubles, sizeof(double *) * capacity);
         i128 **cc = realloc(ROWS.coeffs, sizeof(i128 *) * capacity);
+        double **rr = realloc(ROWS.rounded, sizeof(double *) * capacity);
+        if (rr) ROWS.rounded = rr;
+        if (!rr) return;
         if (hash) ROWS.hash = hash;
         if (r) ROWS.rows = r;
         if (c) ROWS.cols = c;
@@ -1575,6 +1579,18 @@ static void row_cache_put(int rows, int cols, const double *d, const cy *values)
     ROWS.m[i] = F->m;
     ROWS.doubles[i] = dcopy;
     ROWS.coeffs[i] = ccopy;
+    ROWS.rounded[i] = 0;
+    if (rounded && (ROWS.rounded[i] = malloc(sizeof(double) * cells + 8))) memcpy(ROWS.rounded[i], rounded, sizeof(double) * cells);
+}
+
+/* Rows read back from six-decimal text: the correctly rounded doubles of the
+ * exact rows they show, in place; 1 when replaced. */
+int exact_refine_rows(int rows, int cols, double *values)
+{
+    int i = row_cache_find(doubles_hash(rows, cols, values), rows, cols, values, 0);
+    if (i < 0 || ROWS.m[i] < 0 || !ROWS.rounded[i]) return 0;
+    memcpy(values, ROWS.rounded[i], sizeof(double) * (size_t)rows * cols);
+    return 1;
 }
 
 static int row_cache_get(int rows, int cols, const double *d, int *m, const i128 **coeffs)
@@ -1650,12 +1666,13 @@ int exact_rows_to_doubles(const cy_field *f, int rows, int cols, const uint64_t 
     for (size_t i = 0; i < cells && !status; i++)
         if (elift(cat(v, i), &exact[i]) || cy_to_double(F, &exact[i], &orthogonal[i])) status = XT_ARITHMETIC;
     if (!status) {
-        row_cache_put(rows, cols, orthogonal, exact);
+        row_cache_put(rows, cols, orthogonal, exact, 0);
         /* the dynamic rows travel on as six-decimal text (sel_dynamic matrix_value) */
         double *shown = malloc(sizeof(double) * (cells + 1));
         if (shown) {
-            for (size_t i = 0; i < cells; i++) shown[i] = display_value(orthogonal[i]);
-            row_cache_put(rows, cols, shown, exact);
+            int differs = 0;
+            for (size_t i = 0; i < cells; i++) differs |= (shown[i] = display_value(orthogonal[i])) != orthogonal[i];
+            if (differs) row_cache_put(rows, cols, shown, exact, orthogonal);
             free(shown);
         }
     }
@@ -2094,7 +2111,7 @@ void exact_register_codes(int rows, int cols, const double *doubles, const int64
     }
     if (ok && !cy_overflow) {
         F = f;
-        row_cache_put(rows, cols, doubles, values);
+        row_cache_put(rows, cols, doubles, values, 0);
         F = saved;
     }
     free(values);

@@ -77,6 +77,8 @@ static int matrix_transpose(md_matrix *out, const md_matrix *in)
 
 /* np.asarray(rows, dtype=float) of a JSON list: *ndim 1 for a flat or
  * empty list, 2 for a rectangular list of lists. */
+int exact_refine_rows(int rows, int cols, double *values);
+
 int md_float_rows(const jvalue *rows, md_matrix *out, int *ndim)
 {
     memset(out, 0, sizeof *out);
@@ -104,6 +106,7 @@ int md_float_rows(const jvalue *rows, md_matrix *out, int *ndim)
         for (int64_t j = 0; j < width; j++)
             if (py_float_of(jat(jat(rows, i), j), &out->values[i * width + j]))
                 return md_fail(MDE_VALUE, "could not convert Source rows to float");
+    exact_refine_rows(out->rows, out->cols, out->values);
     *ndim = 2;
     return 0;
 }
@@ -622,6 +625,18 @@ static int build_magnetic_frame(md_request *r, int require_gid_first, magnetic_f
                 return md_fail(MDE_VALUE, "could not convert Source rows to float");
             }
             if (j < full_dim && j < 48) orderparam[48 * i + j] = value;
+        }
+    }
+    {
+        /* six-decimal dynamic rows: their exact values */
+        double *compact = full_dim <= 48 ? malloc(sizeof(double) * ((size_t)row_count * full_dim + 1)) : 0;
+        if (compact) {
+            for (int64_t i = 0; i < row_count; i++)
+                for (int j = 0; j < full_dim; j++) compact[i * full_dim + j] = orderparam[48 * i + j];
+            if (exact_refine_rows((int)row_count, full_dim, compact))
+                for (int64_t i = 0; i < row_count; i++)
+                    for (int j = 0; j < full_dim; j++) orderparam[48 * i + j] = compact[i * full_dim + j];
+            free(compact);
         }
     }
     if (!G.ready) {
