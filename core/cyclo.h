@@ -14,6 +14,7 @@ typedef struct {
     int m, phi;
     int64_t poly[CY_MAX_PHI + 1]; /* monic Phi_M, poly[phi] = 1 */
     int64_t *powers;              /* m x phi: z^e reduced, built on first use */
+    double *cosines;              /* phi x (hi, lo): cos(2 pi i / m) in double-double, built on first use */
 } cy_field;
 
 typedef struct {
@@ -40,6 +41,10 @@ int cy_inv(const cy_field *f, const cy *a, cy *out);
 /* The correctly rounded double of a real element; nonzero when not real or
  * undecidable at double-double precision. */
 int cy_to_double(const cy_field *f, const cy *a, double *out);
+/* The sign of a real element; nonzero when undecidable. */
+int cy_sign(const cy_field *f, const cy *a, int *sign);
+/* a^{-1} certified by exact multiplication (exact_kernel.c); nonzero for 0 or failure. */
+int exact_inverse(const cy_field *f, const cy *a, cy *out);
 /* The value under z -> exp(2 pi i / m). */
 void cy_value(const cy_field *f, const cy *a, double *re, double *im);
 

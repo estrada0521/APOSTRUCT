@@ -175,6 +175,37 @@ static int reconstruct(uint64_t a, uint64_t p, i128 *num, i128 *den)
     return 0;
 }
 
+/* x / y = a mod q (q < 2^126) with |x|, y < sqrt(q / 2) */
+static int reconstruct128(u128 a, u128 q, i128 *num, i128 *den)
+{
+    i128 r0 = (i128)q, r1 = (i128)a, t0 = 0, t1 = 1;
+    u128 bound = 1;
+    while ((bound << 1) * (bound << 1) < q / 2) bound <<= 1;
+    while ((u128)(r1 < 0 ? -r1 : r1) >= bound) {
+        i128 quotient = r0 / r1, r2 = r0 - quotient * r1, t2 = t0 - quotient * t1;
+        r0 = r1;
+        r1 = r2;
+        t0 = t1;
+        t1 = t2;
+    }
+    if (!t1 || (u128)(t1 < 0 ? -t1 : t1) >= bound) return 1;
+    if (t1 < 0) {
+        t1 = -t1;
+        r1 = -r1;
+    }
+    *num = r1;
+    *den = t1;
+    return 0;
+}
+
+/* the residue mod p1 p2 of (r1 mod p1, r2 mod p2) */
+static u128 crt2(uint64_t r1, uint64_t p1, uint64_t r2, uint64_t p2)
+{
+    uint64_t inv = powmod(p1 % p2, p2 - 2, p2);
+    uint64_t t = mulmod((r2 + p2 - r1 % p2) % p2, inv, p2);
+    return (u128)r1 + (u128)p1 * t;
+}
+
 static int units_of(int m, int *units)
 {
     int n = 0;
@@ -189,6 +220,78 @@ static int units_of(int m, int *units)
     }
     if (m == 1) units[n++] = 0;
     return n;
+}
+
+
+/* V^{-1} (Montgomery form, vinv[i][e]) of V[e][i] = x_e^i, x_e = w^units[e];
+ * work: phi x 2 phi. */
+static int vander_inverse_uncached(int phi, uint64_t w, const int *units, uint64_t p, uint64_t *work, uint64_t *vinv);
+
+/* cached per (phi, prime); work is only used on a miss */
+static int vander_inverse(int phi, uint64_t w, const int *units, uint64_t p, uint64_t *work, uint64_t *vinv)
+{
+    static struct {
+        int phi;
+        uint64_t p, w;
+        uint64_t *vinv;
+    } cache[32];
+    static int count;
+    for (int i = 0; i < count; i++)
+        if (cache[i].phi == phi && cache[i].p == p && cache[i].w == w) {
+            memcpy(vinv, cache[i].vinv, sizeof(uint64_t) * (size_t)phi * phi);
+            return 0;
+        }
+    if (vander_inverse_uncached(phi, w, units, p, work, vinv)) return 1;
+    if (count < 32) {
+        cache[count].vinv = malloc(sizeof(uint64_t) * (size_t)phi * phi);
+        if (cache[count].vinv) {
+            memcpy(cache[count].vinv, vinv, sizeof(uint64_t) * (size_t)phi * phi);
+            cache[count].phi = phi;
+            cache[count].p = p;
+            cache[count++].w = w;
+        }
+    }
+    return 0;
+}
+
+static int vander_inverse_uncached(int phi, uint64_t w, const int *units, uint64_t p, uint64_t *work, uint64_t *vinv)
+{
+    int good = 1;
+    /* inverse of the Vandermonde matrix V[e][i] = x_e^i */
+    for (int e = 0; e < phi; e++) {
+        uint64_t x = to_mont(powmod(w, (uint64_t)units[e], p)), xp = MONE;
+        for (int i = 0; i < phi; i++) {
+            work[(size_t)e * 2 * phi + i] = xp;
+            work[(size_t)e * 2 * phi + phi + i] = e == i ? MONE : 0;
+            xp = mm(xp, x);
+        }
+    }
+    for (int c = 0; c < phi && good; c++) {
+        int pr = -1;
+        for (int r = c; r < phi && pr < 0; r++)
+            if (work[(size_t)r * 2 * phi + c]) pr = r;
+        if (pr < 0) {
+            good = 0;
+            break;
+        }
+        for (int k = 0; k < 2 * phi; k++) {
+            uint64_t tmp = work[(size_t)pr * 2 * phi + k];
+            work[(size_t)pr * 2 * phi + k] = work[(size_t)c * 2 * phi + k];
+            work[(size_t)c * 2 * phi + k] = tmp;
+        }
+        uint64_t inv = minv(work[(size_t)c * 2 * phi + c]);
+        for (int k = 0; k < 2 * phi; k++) work[(size_t)c * 2 * phi + k] = mm(work[(size_t)c * 2 * phi + k], inv);
+        for (int r = 0; r < phi; r++) {
+            uint64_t factor = work[(size_t)r * 2 * phi + c];
+            if (r == c || !factor) continue;
+            for (int k = 0; k < 2 * phi; k++)
+                work[(size_t)r * 2 * phi + k] = msub(work[(size_t)r * 2 * phi + k], mm(factor, work[(size_t)c * 2 * phi + k]));
+        }
+    }
+    if (!good) return 1;
+    for (int e = 0; e < phi; e++)
+        for (int i = 0; i < phi; i++) vinv[(size_t)i * phi + e] = work[(size_t)i * 2 * phi + phi + e];
+    return 0;
 }
 
 /* rows x cols matrix a (row-major) over f. On success *count kernel vectors
@@ -286,40 +389,7 @@ int exact_kernel(const cy_field *f, int rows, int cols, const cy *a, int *count,
         }
         if (!good) continue;
         int kcount = cols - rank;
-        /* inverse of the Vandermonde matrix V[e][i] = x_e^i */
-        for (int e = 0; e < phi; e++) {
-            uint64_t x = to_mont(powmod(w, (uint64_t)units[e], p)), xp = MONE;
-            for (int i = 0; i < phi; i++) {
-                work[(size_t)e * 2 * phi + i] = xp;
-                work[(size_t)e * 2 * phi + phi + i] = e == i ? MONE : 0;
-                xp = mm(xp, x);
-            }
-        }
-        for (int c = 0; c < phi && good; c++) {
-            int pr = -1;
-            for (int r = c; r < phi && pr < 0; r++)
-                if (work[(size_t)r * 2 * phi + c]) pr = r;
-            if (pr < 0) {
-                good = 0;
-                break;
-            }
-            for (int k = 0; k < 2 * phi; k++) {
-                uint64_t tmp = work[(size_t)pr * 2 * phi + k];
-                work[(size_t)pr * 2 * phi + k] = work[(size_t)c * 2 * phi + k];
-                work[(size_t)c * 2 * phi + k] = tmp;
-            }
-            uint64_t inv = minv(work[(size_t)c * 2 * phi + c]);
-            for (int k = 0; k < 2 * phi; k++) work[(size_t)c * 2 * phi + k] = mm(work[(size_t)c * 2 * phi + k], inv);
-            for (int r = 0; r < phi; r++) {
-                uint64_t factor = work[(size_t)r * 2 * phi + c];
-                if (r == c || !factor) continue;
-                for (int k = 0; k < 2 * phi; k++)
-                    work[(size_t)r * 2 * phi + k] = msub(work[(size_t)r * 2 * phi + k], mm(factor, work[(size_t)c * 2 * phi + k]));
-            }
-        }
-        if (!good) continue;
-        for (int e = 0; e < phi; e++)
-            for (int i = 0; i < phi; i++) vinv[(size_t)i * phi + e] = work[(size_t)i * 2 * phi + phi + e];
+        if (vander_inverse(phi, w, units, p, work, vinv)) continue;
         /* lift: coefficients c = V^{-1} values, then rational reconstruction */
         cy_overflow = 0;
         for (int t = 0; t < kcount && good; t++)
@@ -378,5 +448,91 @@ done:
     free(coef_index);
     free(start);
     free(is_pivot);
+    return status;
+}
+
+/* a^{-1} over f, from its inverse in every embedding modulo a prime, lifted
+ * and verified by exact multiplication; nonzero for a = 0 or when no prime
+ * certified it. */
+int exact_inverse(const cy_field *f, const cy *a, cy *out)
+{
+    int phi = f->phi, m = f->m;
+    if (cy_is_zero(f, a)) return 1;
+    int rational = 1;
+    for (int i = 1; i < phi && rational; i++) rational = !a->c[i];
+    if (rational) {
+        cy_rat(f, a->den, a->c[0], out);
+        return cy_overflow;
+    }
+    int *units = malloc(sizeof(int) * (size_t)(m + 1));
+    uint64_t *work = malloc(sizeof(uint64_t) * (size_t)phi * 2 * phi + 1), *vinv = malloc(sizeof(uint64_t) * (size_t)phi * phi + 1);
+    uint64_t vals[CY_MAX_PHI], previous[CY_MAX_PHI], previous_p = 0;
+    int status = 1, have_previous = 0;
+    if (!units || !work || !vinv || units_of(m, units) != phi) goto done;
+    for (int attempt = 0; attempt < 4 && status; attempt++) {
+        uint64_t p, w;
+        if (prime_for(m, attempt, &p, &w)) break;
+        mont_setup(p);
+        uint64_t d = to_mod(a->den, p);
+        if (!d) continue;
+        uint64_t dinv = minv(to_mont(d));
+        int good = 1;
+        for (int e = 0; e < phi && good; e++) {
+            uint64_t x = to_mont(powmod(w, (uint64_t)units[e], p)), xp = MONE, sum = 0;
+            for (int i = 0; i < phi; i++) {
+                if (a->c[i]) sum = madd(sum, mm(to_mont(to_mod(a->c[i], p)), xp));
+                xp = mm(xp, x);
+            }
+            sum = mm(sum, dinv);
+            if (!sum) good = 0;
+            else vals[e] = minv(sum);
+        }
+        if (!good || vander_inverse(phi, w, units, p, work, vinv)) continue;
+        i128 nums[CY_MAX_PHI], dens[CY_MAX_PHI], l = 1;
+        uint64_t residues[CY_MAX_PHI];
+        for (int i = 0; i < phi; i++) {
+            uint64_t s = 0;
+            for (int e = 0; e < phi; e++) s = madd(s, mm(vinv[(size_t)i * phi + e], vals[e]));
+            residues[i] = from_mont(s);
+        }
+        int wide = 0;
+        for (int i = 0; i < phi && good; i++) {
+            nums[i] = 0;
+            dens[i] = 1;
+            if (residues[i] && reconstruct(residues[i], p, &nums[i], &dens[i])) good = 0;
+        }
+        if (!good && have_previous) {
+            good = wide = 1;
+            for (int i = 0; i < phi && good; i++) {
+                nums[i] = 0;
+                dens[i] = 1;
+                u128 r = crt2(previous[i], previous_p, residues[i], p);
+                if (r && reconstruct128(r, (u128)previous_p * p, &nums[i], &dens[i])) good = 0;
+            }
+        }
+        if (!wide) {
+            memcpy(previous, residues, sizeof(uint64_t) * (size_t)phi);
+            previous_p = p;
+            have_previous = 1;
+        }
+        for (int i = 0; i < phi && good; i++) l = l / gcd_i128(l, dens[i]) * dens[i];
+        if (!good) continue;
+        cy x, one, check;
+        x.den = l;
+        for (int i = 0; i < phi; i++) x.c[i] = nums[i] * (l / dens[i]);
+        cy_rat(f, 1, 1, &one);
+        cy_mul(f, &x, &one, &x);
+        cy_overflow = 0;
+        cy_mul(f, a, &x, &check);
+        cy_sub(f, &check, &one, &check);
+        if (cy_is_zero(f, &check) && !cy_overflow) {
+            cy_copy(f, out, &x);
+            status = 0;
+        }
+    }
+done:
+    free(units);
+    free(work);
+    free(vinv);
     return status;
 }

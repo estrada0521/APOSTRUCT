@@ -200,8 +200,33 @@ void cy_root(const cy_field *f, int64_t e, cy *out)
     for (int i = 0; i < f->phi; i++) out->c[i] = row[i];
 }
 
+/* every coefficient and the denominator below 2^40: products and sums of a
+ * few hundred of them stay far inside int128, so no overflow checks */
+static int small(const cy_field *f, const cy *a)
+{
+    const i128 limit = (i128)1 << 40;
+    if (a->den >= limit) return 0;
+    for (int i = 0; i < f->phi; i++)
+        if (a->c[i] >= limit || a->c[i] <= -limit) return 0;
+    return 1;
+}
+
 void cy_add(const cy_field *f, const cy *a, const cy *b, cy *out)
 {
+    if (small(f, a) && small(f, b)) {
+        cy r;
+        if (a->den == b->den) {
+            r.den = a->den;
+            for (int i = 0; i < f->phi; i++) r.c[i] = a->c[i] + b->c[i];
+        } else {
+            i128 g = gcd_i128(a->den, b->den), la = b->den / g, lb = a->den / g;
+            r.den = a->den * la;
+            for (int i = 0; i < f->phi; i++) r.c[i] = a->c[i] * la + b->c[i] * lb;
+        }
+        normalize(f, &r);
+        cy_copy(f, out, &r);
+        return;
+    }
     i128 g = ck_gcd(a->den, b->den), la = b->den / g, lb = a->den / g;
     cy r;
     r.den = ck_mul(a->den, la);
@@ -222,6 +247,25 @@ void cy_mul(const cy_field *f, const cy *a, const cy *b, cy *out)
 {
     i128 r[2 * CY_MAX_PHI];
     memset(r, 0, sizeof(i128) * (size_t)(2 * f->phi));
+    if (small(f, a) && small(f, b)) {
+        for (int i = 0; i < f->phi; i++) {
+            if (!a->c[i]) continue;
+            for (int j = 0; j < f->phi; j++) r[i + j] += a->c[i] * b->c[j];
+        }
+        for (int k = 2 * f->phi - 1; k >= f->phi; k--) {
+            i128 t = r[k];
+            if (!t) continue;
+            r[k] = 0;
+            for (int j = 0; j < f->phi; j++)
+                if (f->poly[j]) r[k - f->phi + j] -= t * f->poly[j];
+        }
+        cy o;
+        memcpy(o.c, r, sizeof(i128) * (size_t)f->phi);
+        o.den = a->den * b->den;
+        normalize(f, &o);
+        cy_copy(f, out, &o);
+        return;
+    }
     for (int i = 0; i < f->phi; i++) {
         if (!a->c[i]) continue;
         for (int j = 0; j < f->phi; j++)
@@ -480,6 +524,26 @@ static void dd_sincos(int64_t n, int64_t d, dd *s, dd *c)
     *s = q == 0 ? su : q == 1 ? cu : q == 2 ? ns : nc;
 }
 
+static dd field_cos(const cy_field *f, int i)
+{
+    if (!f->cosines) {
+        double *table = malloc(sizeof(double) * 2 * (size_t)f->phi);
+        if (!table) {
+            dd s, c;
+            dd_sincos(i, f->m, &s, &c);
+            return c;
+        }
+        for (int k = 0; k < f->phi; k++) {
+            dd s, c;
+            dd_sincos(k, f->m, &s, &c);
+            table[2 * k] = c.hi;
+            table[2 * k + 1] = c.lo;
+        }
+        ((cy_field *)f)->cosines = table;
+    }
+    return (dd){f->cosines[2 * i], f->cosines[2 * i + 1]};
+}
+
 /* The correctly rounded double of a real element; nonzero when it is not
  * real or lies too close to a rounding boundary to decide. */
 int cy_to_double(const cy_field *f, const cy *a, double *out)
@@ -506,9 +570,7 @@ int cy_to_double(const cy_field *f, const cy *a, double *out)
     double magnitude = 0.0;
     for (int i = 0; i < f->phi; i++) {
         if (!a->c[i]) continue;
-        dd s, c;
-        dd_sincos(i, f->m, &s, &c);
-        sum = dd_add(sum, dd_mul(dd_from_i128(a->c[i]), c));
+        sum = dd_add(sum, dd_mul(dd_from_i128(a->c[i]), field_cos(f, i)));
         magnitude += fabs((double)a->c[i]);
     }
     sum = dd_div(sum, dd_from_i128(a->den));
@@ -518,5 +580,25 @@ int cy_to_double(const cy_field *f, const cy *a, double *out)
     if (fabs(fabs(lo) - ulp / 2) <= err || fabs(lo) > ulp / 2 + err) return 2;
     if (hi == 0.0 && fabs(lo) > err) return 2;
     *out = hi;
+    return 0;
+}
+
+/* The sign of a real element: -1, 0 or 1; nonzero return when it cannot be
+ * decided at double-double precision. */
+int cy_sign(const cy_field *f, const cy *a, int *sign)
+{
+    if (cy_is_zero(f, a)) {
+        *sign = 0;
+        return 0;
+    }
+    dd sum = {0.0, 0.0};
+    double magnitude = 0.0;
+    for (int i = 0; i < f->phi; i++) {
+        if (!a->c[i]) continue;
+        sum = dd_add(sum, dd_mul(dd_from_i128(a->c[i]), field_cos(f, i)));
+        magnitude += fabs((double)a->c[i]);
+    }
+    if (fabs(sum.hi) <= magnitude * 0x1p-96) return 1;
+    *sign = sum.hi > 0 ? 1 : -1;
     return 0;
 }

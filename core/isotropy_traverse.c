@@ -1028,31 +1028,9 @@ static double *row_doubles(row_builder *b, size_t count)
     return at;
 }
 
-/* orthogonal_orderparam_: rows are kept when already orthogonal, else one
- * reverse Gram-Schmidt pass. */
-static void orthogonal_orderparam(int rows, int cols, double *v, double *terms)
-{
-    int orthogonal = 1;
-    for (int row = 1; row < rows && orthogonal; row++)
-        for (int prior = 0; prior < row && orthogonal; prior++) {
-            for (int col = 0; col < cols; col++) terms[col] = v[row * cols + col] * v[prior * cols + col];
-            if (nonzero(py_sum(terms, cols))) orthogonal = 0;
-        }
-    if (orthogonal) return;
-    for (int row = rows - 2; row >= 0; row--)
-        for (int other = row + 1; other < rows; other++) {
-            for (int col = 0; col < cols; col++) terms[col] = v[other * cols + col] * v[row * cols + col];
-            double dot = py_sum(terms, cols);
-            for (int col = 0; col < cols; col++) terms[col] = v[other * cols + col] * v[other * cols + col];
-            double norm = py_sum(terms, cols);
-            if (nonzero(norm))
-                for (int col = 0; col < cols; col++) v[row * cols + col] -= (dot / norm) * v[other * cols + col];
-        }
-}
-
 #define SELECTION_CAPACITY 8192
 
-static int build_row(void *user, int free_rows, const double *row_orderparam)
+static int build_row(void *user, int free_rows, const double *row_orderparam, const double *orthogonal)
 {
     row_builder *b = user;
     if (b->occurrence && free_rows != 1) return 0;
@@ -1090,9 +1068,7 @@ static int build_row(void *user, int free_rows, const double *row_orderparam)
     size_t extra = b->magnetic ? 1 + 5 * (size_t)kept_count + (size_t)found : 0;
     int64_t *out = row_ints(b, 2 + (b->magnetic ? extra : 14));
     double *matrix = row_doubles(b, (size_t)free_rows * dim);
-    double *terms = malloc(sizeof(double) * (size_t)(dim + 1));
-    if (!out || !matrix || !terms) {
-        free(terms);
+    if (!out || !matrix) {
         status = NODE_FAILED | ISO_NO_MEMORY;
         goto done;
     }
@@ -1107,9 +1083,7 @@ static int build_row(void *user, int free_rows, const double *row_orderparam)
         *out++ = 14;
         memcpy(out, ordinary, sizeof ordinary);
     }
-    memcpy(matrix, row_orderparam, sizeof(double) * (size_t)free_rows * dim);
-    orthogonal_orderparam(free_rows, dim, matrix, terms);
-    free(terms);
+    memcpy(matrix, orthogonal, sizeof(double) * (size_t)free_rows * dim);
     if (b->occurrence && b->counts[1] == b->occurrence) status = 1;
 done:
     free(values);
@@ -1119,12 +1093,43 @@ done:
 }
 static row_builder rows;
 
+#include "cyclo.h"
+
+int exact_traverse(const cy_field *f, int dim, int space_count, int fraction_count, const i128 *matrices, int matrix_count,
+                   const int *pair_matrix, const int *space_product, const int *space_fraction, const int *fraction_residue,
+                   int residue_modulus, int (*on_node)(void *, int, const i128 *), void *user);
+int exact_rows_to_doubles(const cy_field *f, int rows, int cols, const i128 *in, double *plain, double *orthogonal);
+int exact_record_matrix(int gid, int dim, int arms, const int64_t *k, int subtract_generated, int element_count,
+                        const int *elements, int position, const int *record, int want_m, const cy_field **field_out, cy *w);
+int bw_find_position(int element_count, const int *elements, const int *record);
+
+static const cy_field *rows_field;
+
+/* exact_traverse's node callback: the representative and its orthogonal
+ * form as correctly rounded doubles, then build_row. */
+static int exact_build_row(void *user, int free_rows, const i128 *row)
+{
+    int dim = ((row_builder *)user)->dim;
+    double *plain = malloc(sizeof(double) * ((size_t)free_rows * dim + 1)), *orthogonal = malloc(sizeof(double) * ((size_t)free_rows * dim + 1));
+    int status = plain && orthogonal ? exact_rows_to_doubles(rows_field, free_rows, dim, row, plain, orthogonal) : ISO_NO_MEMORY;
+    if (status) status = 400 + status;
+    else {
+        status = build_row(user, free_rows, plain, orthogonal);
+        if (status & NODE_FAILED) status = status & ~NODE_FAILED;
+        else if (status > 0) status = -1;
+    }
+    free(plain);
+    free(orthogonal);
+    /* exact_traverse: negative stops with that status, positive stops cleanly */
+    return status == -1 ? 1 : -status;
+}
+
 /* The dynamic rows of one irrep: per row, the free count, the payload length
  * n and payload (subgroup, basis, origin; or the magnetic identification
  * record), and for magnetic rows the kept operation records; the
  * orthogonalized free x dim matrices follow in isotropy_rows_doubles.
  * occurrence > 0 stops at the occurrence-th one-parameter row. */
-static int isotropy_rows(int dim, int space_count, int fraction_count, const double *matrices, int matrix_count,
+static int isotropy_rows(int dim, int space_count, int fraction_count, const cy_field *field, const i128 *matrices, int matrix_count,
                   const int *pair_matrix, const int *space_product, const int *space_fraction,
                   const int *fraction_residue, int residue_modulus, int gid, int param_count, const int64_t *kparam,
                   int candidate_count, const int64_t *candidates, const int *candidate_ops,
@@ -1151,8 +1156,9 @@ static int isotropy_rows(int dim, int space_count, int fraction_count, const dou
     rows.occurrence = occurrence;
     memset(rows.counts, 0, sizeof rows.counts);
     rows.ints_used = rows.doubles_used = 0;
-    return isotropy_traverse(dim, space_count, fraction_count, matrices, matrix_count, pair_matrix, space_product,
-                             space_fraction, fraction_residue, residue_modulus, build_row, &rows);
+    rows_field = field;
+    return exact_traverse(field, dim, space_count, fraction_count, matrices, matrix_count, pair_matrix, space_product, space_fraction,
+                          fraction_residue, residue_modulus, exact_build_row, &rows);
 }
 
 enum {
@@ -1250,12 +1256,12 @@ int isotropy_rows_for(int gid, int param_count, const int64_t *kparam, int magne
     int64_t *operations = malloc(sizeof(int64_t) * 5 * (pairs + 1));
     int *distinct = malloc(sizeof(int) * 5 * (pairs + 1)), *distinct_signs = malloc(sizeof(int) * (pairs + 1));
     int *operation_distinct = malloc(sizeof(int) * (pairs + 1));
-    double *stack = malloc(sizeof(double) * (pairs * square + 1)), *dense = malloc(sizeof(double) * (pairs * square + 1));
+    i128 *exact_matrices = 0;
     int *matrix_of_distinct = malloc(sizeof(int) * (pairs + 1)), *pair_matrix = malloc(sizeof(int) * (pairs + 1));
     int *space_product = malloc(sizeof(int) * 2 * ((size_t)space_count * space_count + 1));
     int *space_fraction = malloc(sizeof(int) * (pairs + 1)), *residues32 = malloc(sizeof(int) * 3 * ((size_t)fraction_count + 1));
     int64_t *residues = malloc(sizeof(int64_t) * 3 * ((size_t)fraction_count + 1));
-    status = !operations || !distinct || !distinct_signs || !operation_distinct || !stack || !dense ||
+    status = !operations || !distinct || !distinct_signs || !operation_distinct ||
                      !matrix_of_distinct || !pair_matrix || !space_product || !space_fraction || !residues32 || !residues
                  ? ISO_NO_MEMORY
                  : 0;
@@ -1264,8 +1270,7 @@ int isotropy_rows_for(int gid, int param_count, const int64_t *kparam, int magne
     while (slot_count < 2 * pairs + 2) slot_count *= 2;
     int *slots = malloc(sizeof(int) * slot_count);
     int64_t *distinct_keys = malloc(sizeof(int64_t) * 5 * (pairs + 1));
-    double *matrix_keys = malloc(sizeof(double) * (pairs * square + 1));
-    if (!status && (!slots || !distinct_keys || !matrix_keys)) status = ISO_NO_MEMORY;
+    if (!status && (!slots || !distinct_keys)) status = ISO_NO_MEMORY;
     for (size_t i = 0; i < slot_count && slots; i++) slots[i] = -1;
     for (size_t p = 0; p < pairs && !status; p++) {
         int64_t *op = operations + 5 * p;
@@ -1291,29 +1296,61 @@ int isotropy_rows_for(int gid, int param_count, const int64_t *kparam, int magne
         stack_records[5 * d + 4] = mag_point_action(magnetic, (int)op[4], distinct_signs + d);
     }
     if (!status && magnetic && mag_take_error()) status = IF_MAGNETIC;
-    if (!status) {
-        int stacked = irrep_matrix_stack(gid, param_count, kparam, distinct_count, stack_records,
-                                         (int)(distinct_count * square), stack);
-        if (stacked) status = IF_STACK + stacked;
-    }
+    /* the image matrices over Q(zeta_m): one field for all operations, then
+     * transposed with the antiunitary sign and numbered by first appearance */
+    int field_m = 24;
+    int *positions = malloc(sizeof(int) * ((size_t)distinct_count + 1));
+    if (!status && !positions) status = ISO_NO_MEMORY;
     for (int d = 0; d < distinct_count && !status; d++) {
-        double *target = dense + (size_t)matrix_count * square;
+        const cy_field *g;
+        positions[d] = bw_find_position(c.element_count, c.elements, stack_records + 5 * d);
+        int need = positions[d] ? exact_record_matrix(gid, dim, c.arms, c.k, c.subtract, c.element_count, c.elements, positions[d],
+                                                      stack_records + 5 * d, -1, &g, 0)
+                                : 0;
+        if (need >= 0) {
+            status = IF_STACK + (positions[d] ? 2 : 1);
+            break;
+        }
+        int a = field_m, bb = -need;
+        while (bb) {
+            int t = a % bb;
+            a = bb;
+            bb = t;
+        }
+        field_m = field_m / a * -need;
+    }
+    const cy_field *field = status ? 0 : cy_field_for(field_m);
+    if (!status && !field) status = IF_STACK + 3;
+    size_t xs = field ? (size_t)field->phi + 1 : 1;
+    exact_matrices = field ? malloc(sizeof(i128) * xs * square * ((size_t)distinct_count + 1)) : 0;
+    cy *w = malloc(sizeof(cy) * square);
+    if (!status && (!exact_matrices || !w)) status = ISO_NO_MEMORY;
+    for (int d = 0; d < distinct_count && !status; d++) {
+        const cy_field *g;
+        if (exact_record_matrix(gid, dim, c.arms, c.k, c.subtract, c.element_count, c.elements, positions[d], stack_records + 5 * d,
+                                field_m, &g, w)) {
+            status = IF_STACK + 4;
+            break;
+        }
+        i128 *target = exact_matrices + (size_t)matrix_count * square * xs;
         for (int i = 0; i < dim; i++)
             for (int j = 0; j < dim; j++) {
-                double value = stack[(size_t)d * square + (size_t)i * dim + j];
-                target[(size_t)j * dim + i] = distinct_signs[d] < 0 ? -value : value;
+                cy v;
+                cy_copy(field, &v, &w[i * dim + j]);
+                if (distinct_signs[d] < 0) cy_sub(field, &(cy){{0}, 1}, &w[i * dim + j], &v);
+                memcpy(target + ((size_t)j * dim + i) * xs, v.c, sizeof(i128) * (size_t)field->phi);
+                target[((size_t)j * dim + i) * xs + field->phi] = v.den;
             }
-        double *key = matrix_keys + (size_t)matrix_count * square;
-        for (size_t k = 0; k < square; k++) key[k] = target[k] + 0.0;
         int found;
-        size_t slot = hashed_slot(slots, slot_count - 1, (const unsigned char *)matrix_keys, sizeof(double) * square, key,
-                                  &found);
+        size_t slot = hashed_slot(slots, slot_count - 1, (const unsigned char *)exact_matrices, sizeof(i128) * xs * square, target, &found);
         if (found < 0) {
             found = matrix_count++;
             slots[slot] = found;
         }
         matrix_of_distinct[d] = found;
     }
+    free(positions);
+    free(w);
     for (size_t p = 0; p < pairs && !status; p++) pair_matrix[p] = matrix_of_distinct[operation_distinct[p]];
     int64_t setting[36], translations[192][4], rotations[192][9], point_matrices[192][9];
     int ops[192];
@@ -1364,7 +1401,7 @@ int isotropy_rows_for(int gid, int param_count, const int64_t *kparam, int magne
     }
     for (int i = 0; i < 3 * fraction_count && !status; i++) residues32[i] = (int)residues[i];
     if (!status)
-        status = isotropy_rows(dim, space_count, fraction_count, dense, matrix_count, pair_matrix, space_product,
+        status = isotropy_rows(dim, space_count, fraction_count, field, exact_matrices, matrix_count, pair_matrix, space_product,
                                space_fraction, residues32, (int)modulus, gid, param_count, kparam, space_count,
                                &records[0][0], candidate_ops, candidate_signs, magnetic, sg, occurrence);
     free(fractions);
@@ -1372,8 +1409,7 @@ int isotropy_rows_for(int gid, int param_count, const int64_t *kparam, int magne
     free(distinct);
     free(distinct_signs);
     free(operation_distinct);
-    free(stack);
-    free(dense);
+    free(exact_matrices);
     free(matrix_of_distinct);
     free(pair_matrix);
     free(space_product);
@@ -1383,7 +1419,6 @@ int isotropy_rows_for(int gid, int param_count, const int64_t *kparam, int magne
     free(stack_records);
     free(slots);
     free(distinct_keys);
-    free(matrix_keys);
     return status;
 }
 
