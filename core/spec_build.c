@@ -245,6 +245,7 @@ struct builder {
     /* coupled */
     struct cpl *cpl;
     int mode_kind;
+    int dropped; /* 1 + index of a sibling row the magnetic primary replaces, 0 for none */
 };
 
 static void spec_from_row(sp_spec *spec, const sp_row *row)
@@ -331,6 +332,7 @@ static int duplicates_sibling(builder *b, const sp_row *row, int index, int *out
                 for (int c = 0; c < other->count; c++) stacked[r * width + b->sel_count + c] = row->dir[r * row->count + c];
             SP_TRY(sp_matrix_rank(stacked, b->sel_dim, width, 1e-10, &rank));
             *out = rank == selected_rank;
+            if (!*out) b->dropped = i + 1;
             return 0;
         }
     }
@@ -1525,6 +1527,10 @@ int spec_magnetic(int sg, const int64_t *basis, int nops, const int64_t *ops, in
     for (int r = 0; r < rows.count; r++) {
         sp_spec *spec;
         if (mag_spec(&b, &rows.items[r], r, &spec) || specs_push(&specs, spec)) return finish(1);
+    }
+    if (b.dropped) {
+        for (int i = b.dropped; i < specs.count; i++) specs.items[i - 1] = specs.items[i];
+        specs.count--;
     }
     alias_mode mode = {&frame, 0};
     if (stored_alias_specs(&mode, &raw, &rows, &b, &aliases)) return finish(1);
