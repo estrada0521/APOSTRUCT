@@ -6,12 +6,12 @@ It does not fetch ISODISTORT Web output, run validation sweeps, or read private 
 The public `branches/` bundle contains the canonical input and OPD for each published result.
 To inspect a branch, use its CIF and canonical input to run APOSTRUCT locally, submit the same request to the public ISODISTORT Web application yourself, and save the Web `Complete Mode Details` text.
 
-The standalone entry points then operate on those explicit files:
+Run the entry points from the root of this checkout on those explicit files:
 
 ```bash
-apostruct-verify-local local.json
-apostruct-verify-web complete-mode-details.txt
-apostruct-compare \
+python3 -m verification.verify_local_output local.json
+python3 -m verification.verify_web_text complete-mode-details.txt
+python3 -m verification.verify_comparison \
   local.json complete-mode-details.txt \
   --input case.json --opd P1
 ```
@@ -26,15 +26,14 @@ A Strict pass requires the displayed setting, structure, labels, normalizations,
 A Physical pass admits only the explicit crystallographic and mode-space equivalences implemented under `verification/comparison/`.
 A Physical fail means those checks did not prove equivalence; it is deliberately fail-closed.
 
-The verifier depends on the public APOSTRUCT and Source modules included in the same checkout.
-Install the optional comparison dependency with:
+The verifier needs these Python packages:
 
 ```bash
-python3 -m pip install numpy sympy scipy spglib  # run the verifier from this checkout
+python3 -m pip install numpy sympy scipy spglib gemmi
 ```
 
 To reproduce the published population counts without rerunning a branch:
 
 ```bash
-apostruct-validation-summary
+python3 -m verification.reproduce
 ```

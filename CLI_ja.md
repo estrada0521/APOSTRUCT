@@ -1,225 +1,121 @@
-# APOSTRUCT CLIガイド
+# CLI
 
-[English](CLI.md) | [README](README_ja.md)
+[English](CLI.md) · [README](README_ja.md)
 
-CLIはlocal GUIと同じ計算serviceを公開します。
-各commandはstatelessです。
-前段の JSONからlabelやselectorを選び、それを次のcommandへ渡します。
+各commandはstateless。前段のJSONが返すlabelを、次段に渡す。
 
 ```text
-parent -> k points -> irreps -> OPDs -> modes
+info -> kpoints -> irreps -> opds -> modes
 ```
 
-`apo --version`はinstall済みversionを表示し、Git checkout内ではcommitも併記します。
-全optionは`apo COMMAND --help`で確認できます。
-この文書では各commandに共通する科学的・machine-readable契約を説明します。
-
-## Command一覧
+## Commands
 
 | Command | 結果 |
-|---|---|
-| `info` | 正規化されたparent cellと選択可能なcrystallographic site |
-| `kpoints` | k-point label、式、star、parameter名 |
-| `irreps` | 選択したmode kindで発現するordinary/magnetic irrep |
-| `opds` | OPD、subgroup、basis、origin、domain、ferroic metadata |
-| `modes` | 1つのOPDに対するatomic/strain mode definition |
-| `run` | 保存したJSON caseを指定段まで実行 |
-| `serve` | local GUIを起動 |
-| `show` | 保存JSON caseを稼働中のGUIへ読み込む |
+| --- | --- |
+| `info` | 正規化したparent cellと、選択できるsite |
+| `kpoints` | k点のlabel、kvector、star、parameter名 |
+| `irreps` | 選んだsiteとstrainで発現するirrep |
+| `opds` | OPD一覧と、各OPDの部分群・basis・origin・domain |
+| `modes` | 1つのOPDのmode詳細 |
+| `run` | JSONのcaseを指定段まで実行 |
+| `serve` | browser画面を起動 |
+| `show` | 起動中の画面にcaseを読み込む |
 
-## Parent入力
+## Parent
 
-CIF pathを位置引数へ渡します。
+CIFのpathを位置引数で渡す。setting、site、占有率、座標はCIFに従う。
+座標は小数、誤差付き表記（`0.1234(5)`）、`1/2` のような有理数で書ける。
+Wyckoff位置を決められないsiteは `info.sites[].wyckoff_mapping_error` に理由が入り、そのsiteを選ぶと停止する。
 
-```bash
-apo info structure.cif
-apo kpoints structure.cif
-```
+## Sites
 
-parent setting、site、occupancy、座標はCIFをauthorityとします。
-数値座標には通常の decimal、estimated-standard-deviation付き表記、`1/2`のようなrational表記を使えます。
-Wyckoff位置を解決できないsiteは`info.sites[].wyckoff_mapping_error`に理由を保持します。
-そのsiteをdisplaciveまたはmagnetic計算に選ぶと、label、座標、理由を示して停止します。
+`--displacive` と `--magnetic` は `info.sites` の `label` か `type` を取る。`label` は1つのsite、`type` はその種類の全siteを選ぶ。
+`--strain` はhomogeneous strainを加える。strainだけの `irreps` では `--k` を省略でき、`GM` とみなす。
 
-## SiteとModeの選択
-
-利用可能なselectorは`info.sites`から取得します。
-固有の`label`は1つの crystallographic siteを選び、`type`は同じtypeのsiteを全て選びます。
-
-```bash
-apo info structure.cif | jq '.sites[] | {label, type, wyckoff}'
+```sh
 apo irreps structure.cif --k GM --displacive O --magnetic Fe
 ```
 
-`--strain`はhomogeneous strainを追加します。
-strain-onlyの`irreps`は`GM`を推論します。
-atomic modeを含む通常のselectionではsiteとk pointを明示します。
+## k points
 
-## K pointとParameter
+labelとparameter名は `kpoints` の `label` と `parameter_names` に従う。parameterは順に並べるか、名前で指定する。
 
-選択可能なlabelとparameter名のauthorityは`kpoints`です。
-
-```bash
-apo kpoints structure.cif | \
-  jq '.kpoints[] | {label, kvector, parameter_names, miller_love_kvector}'
-```
-
-CLI入力はGUIと同じ`kvector`と`parameter_names`の規約を使います。
-parameterはその順序で位置指定するか、名前付きで指定します。
-
-```bash
+```sh
 apo irreps structure.cif --k DT 1/3 --displacive O
 apo irreps structure.cif --k DT b=1/3 --displacive O
 ```
 
-`miller_love_kvector`と解決後の`miller_love_parameters`は対応するMiller-Love形式を示します。
-CLI入力には常に`kvector`と`parameter_names`の規約を使います。
-parametric kが special k pointへ一致する値は拒否されます。
-その場合は対応するfixed-point labelを選びます。
+`miller_love_kvector` は出力の表示用で、入力には使わない。
+parametric kがspecial pointに一致する値は拒否する。その場合はfixed pointのlabelを使う。
 
-1から4個のk/irrep factorをcoupleできます。
-繰り返した`--k`と`--irrep`は指定順で対応します。
+`--k` と `--irrep` は1から4組まで並べられ、書いた順に対応する。
 
-```bash
-apo opds structure.cif \
-  --k R --irrep R4- \
-  --k M --irrep M3+ \
-  --displacive O
+```sh
+apo opds structure.cif --k R --irrep R4- --k M --irrep M3+ --displacive O
 ```
 
-## OPDとDomain
+## OPDs
 
-`opds`が返すlabelが後段で受理されるexact labelです。
-表示されたdirectionから labelを再構成しないでください。
+`--opd` には `opds` が返した `label` をそのまま渡す。directionから組み立て直さない。
+複数のkでは、labelにslotごとのdomain番号が付く（`P1(1)P1(2)`）。shellではquoteする。
 
-```bash
-apo opds structure.cif \
-  --k R --irrep R4- --displacive O \
-  -o opds.json
-
-jq '.opds[] | {label, opd, subgroup, basis, origin, index, cell_index}' \
-  opds.json
+```sh
+apo modes structure.cif --k R --irrep R4- --k M --irrep M3+ --displacive O --opd 'P1(1)P1(2)'
 ```
 
-coupled selectionのlabelにはfactorごとのdomain番号が含まれます。
-例えば `P1(1)P1(2)`です。
-丸括弧を含むlabelはshell quoteしてください。
+`index` は群の指数、`cell_index` はsupercellの倍率。`ferroic_classified` が `false` のときは、`ferroic_properties` が空でも未分類を意味する。
 
-```bash
-apo modes structure.cif \
-  --k R --irrep R4- \
-  --k M --irrep M3+ \
-  --displacive O --opd 'P1(1)P1(2)'
-```
+## Modes
 
-`index`はgroup index、`cell_index`はsupercell factorです。
-分類済みだが空の `ferroic_properties`と、未分類の結果は`ferroic_classified`で区別できます。
+各modeは `definition_id`（そのpayload内でのID）と、kind・k点・irrep・direction・site・Wyckoff位置・site irrepからなるidentityを持つ。`role` はprimaryと誘起されたsecondaryを分ける。
+`--format text` はmode表を出す（`modes` と `run --upto modes` のみ）。
 
-## Mode Details
+## Case
 
-`modes`は既定でcompact JSONを返します。
-
-```bash
-apo modes structure.cif \
-  --k R --irrep R4- --displacive O --opd P1 \
-  -o modes.json
-```
-
-atomic definitionはpayload-localな`definition_id`と構造化されたmode identityを持ちます。
-identityにはkind、k point、k vector、irrep、gid、direction、site、Wyckoff position、site irrepが含まれます。
-`role`はprimaryと誘起secondaryを区別します。
-
-人間向けmode tableが必要な場合:
-
-```bash
-apo modes structure.cif \
-  --k R --irrep R4- --displacive O --opd P1 \
-  --format text
-```
-
-## 保存JSON Case
-
-caseは順序付きの科学selectionを保存します。
-parent sourceは`structure`かrepository localな`cif` content IDのどちらか1つです。
-`cif`は12文字のcontent IDを、このcheckoutの`assets/cif/`か`assets/magndata/cif/`（公開branchのCIF）から解決します。それ以外では`structure`を使います。
+選択をJSONにまとめたもの。
 
 ```json
 {
   "structure": "structure.cif",
-  "sites": {
-    "O": {"displacive": true, "magnetic": false}
-  },
+  "sites": {"O": {"displacive": true, "magnetic": false}},
   "strain": false,
-  "k": [
-    {"label": "R", "ir": "R4-"}
-  ],
+  "k": [{"label": "R", "ir": "R4-"}],
   "opd": "P1"
 }
 ```
 
-指定段まで実行できます。
+- fieldは `structure`・`cif`・`sites`・`strain`・`k`・`opd` のみ。`structure` と `cif` はどちらか一方。
+- `structure` の相対pathは、case fileのdirectoryから解決する。
+- `cif` は12文字のcontent IDで、このcheckoutの `assets/cif/` か `assets/magndata/cif/` から探す。
+- `k` の各要素は `label`、`params`（名前と値のobject）、`ir` を持つ。`ir` はOPD段から必要。
+- fileは拡張子 `.json` が必要。`--case -` で標準入力から読む。
 
-```bash
-apo run --case case.json --upto kpoints
-apo run --case case.json --upto irreps
+```sh
 apo run --case case.json --upto opds
-apo run --case case.json --upto modes
+apo modes --case case.json
 ```
 
-保存caseや自動処理では、stageごとに別processでtableを読み直さない`run`を使います。
-個別commandはcaseへ入れるidentifierの探索・確認に使います。
+`run` は一つのprocessで全段を計算する。自動処理ではこちらを使う。`--case` は個別の選択optionと併用できない。
 
-標準入力には`--case -`を使います。
-相対structure pathはcase fileのdirectoryから解決します。
-k itemは`label`、optionalなexact `params`、OPD段以降で必要な`ir`を持ちます。
-保存caseの形式はJSONのみです。
+## Output
 
-## JSONとOutput Control
+出力はJSONで、`schema`（`APOSTRUCT.cli.info` など）で段を示す。
 
-compact resultはunversioned schema名でshapeを示します。
-consumerはoptional keyから stageを推測せず、このfieldを使います。
+| Option | 内容 |
+| --- | --- |
+| `-o PATH` | 標準出力の代わりにfileへ書く |
+| `--indent N` | JSONの字下げ |
+| `--full-state` | 計算stateをすべて出す |
 
-```text
-APOSTRUCT.cli.info
-APOSTRUCT.cli.kpoints
-APOSTRUCT.cli.irreps
-APOSTRUCT.cli.opds
-APOSTRUCT.cli.modes
-```
+errorは標準errorに出て、status 2で終わる。見つからないk、irrep、OPDを別のものに置き換えて続けることはない。
 
-共通option:
+## GUI
 
-```bash
---indent N       JSON indentation
--o, --output     stdoutの代わりにpathへ保存
---full-state     対応commandで完全な計算stateを出力
-```
-
-errorはstderrへ出力され、status 2で終了します。
-未知のk、irrep、OPDから別結果へsilent fallbackしません。
-
-## Local Interface
-
-```bash
+```sh
 apo serve --host 127.0.0.1 --port 8300 --open-browser
-```
-
-GUIはCIFのworkflowを同じ計算経路で提供します。
-
-すでに開いているGUIへcaseを送れます。
-
-```bash
 apo show --case case.json --server http://127.0.0.1:8300
 ```
 
-case内で最も深いselectionまで表示します。
-Kだけならirrep選択、irrepまでならOPD選択、`opd`まであればmode detailsとstructure viewerを開きます。
-mode sliderの初期値は payload-localなdefinition順で指定します。
-
-```bash
-apo show --case case.json \
-  --amplitude magnetic-1=1 --amplitude magnetic-2=19/20
-```
-
-相対structure pathは送信側commandが解決し、CIF本文をserverへ渡します。
-caseと計算stateは稼働中serverのmemoryにだけ保持されます。
+`show` はcaseの最も深い段まで開く。kだけならirrep選択、irrepまでならOPD選択、`opd` まであればmode詳細と構造表示。
+`--amplitude DEFINITION_ID=VALUE` でmode sliderの初期値を指定する（`--amplitude magnetic-1=1`）。
+CIFの本文は `show` 側で読んでserverに送る。caseと計算結果はserverのmemoryにだけ残る。

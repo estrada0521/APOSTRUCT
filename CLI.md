@@ -1,220 +1,121 @@
-# APOSTRUCT CLI Guide
+# CLI
 
-[日本語](CLI_ja.md) | [README](README.md)
+[日本語](CLI_ja.md) · [README](README.md)
 
-The command-line interface exposes the same calculation services as the local graphical interface.
-It is designed as a stateless pipeline: inspect one JSON result, choose identifiers from it, and pass those identifiers to the next command.
+Each command is stateless. Pass a label returned in one stage's JSON to the next stage.
 
 ```text
-parent -> k points -> irreps -> OPDs -> modes
+info -> kpoints -> irreps -> opds -> modes
 ```
-
-Run `apo --version` to report the installed version and, in a Git checkout, its commit.
-Run `apo COMMAND --help` for the complete option list.
-This guide describes the scientific and machine-facing contracts shared by the commands.
 
 ## Commands
 
 | Command | Result |
-|---|---|
-| `info` | normalized parent cell and selectable crystallographic sites |
-| `kpoints` | k-point labels, expressions, stars, and parameter names |
-| `irreps` | active ordinary or magnetic irreps for selected mode kinds |
-| `opds` | OPD labels, subgroups, bases, origins, domains, and ferroic metadata |
-| `modes` | atomic/strain mode definitions for one selected OPD |
-| `run` | execute a saved JSON case to a requested stage |
-| `serve` | start the local graphical interface |
-| `show` | load a saved JSON case into a running graphical interface |
+| --- | --- |
+| `info` | Normalized parent cell and selectable sites |
+| `kpoints` | k-point labels, kvectors, stars and parameter names |
+| `irreps` | Irreps active for the selected sites and strain |
+| `opds` | OPD list, with the subgroup, basis, origin and domains of each OPD |
+| `modes` | Mode details for one OPD |
+| `run` | Runs a JSON case up to a given stage |
+| `serve` | Starts the browser interface |
+| `show` | Loads a case into a running interface |
 
-## Parent Input
+## Parent
 
-Pass a CIF path as the positional argument:
+Pass the CIF path as the positional argument. Setting, sites, occupancies and coordinates follow the CIF.
+Coordinates may be decimals, values with uncertainties (`0.1234(5)`) or rationals such as `1/2`.
+A site whose Wyckoff position cannot be determined carries the reason in `info.sites[].wyckoff_mapping_error`; selecting it stops the calculation.
 
-```bash
-apo info structure.cif
-apo kpoints structure.cif
-```
+## Sites
 
-The parent setting, sites, occupancies, and coordinates come from that file.
-Ordinary decimal, estimated-standard-deviation, and rational values such as `1/2` are accepted for numeric coordinates.
-If a site cannot be assigned to a Wyckoff position, `info.sites[].wyckoff_mapping_error` retains the reason.
-Selecting that site for a displacive or magnetic calculation is an error that names its label, coordinates, and reason.
+`--displacive` and `--magnetic` take a `label` or `type` from `info.sites`. A `label` selects one site, a `type` all sites of that type.
+`--strain` adds homogeneous strain. For strain-only `irreps`, `--k` may be omitted and is taken as `GM`.
 
-## Site and Mode Selection
-
-Read the available selectors from `info.sites`.
-A unique `label` selects one crystallographic site.
-A `type` selects every site carrying that type:
-
-```bash
-apo info structure.cif | jq '.sites[] | {label, type, wyckoff}'
+```sh
 apo irreps structure.cif --k GM --displacive O --magnetic Fe
 ```
 
-`--strain` adds homogeneous strain.
-Strain-only `irreps` infers `GM`; other atomic mode selections require explicit sites and k points.
+## k points
 
-## K Points and Parameters
+Labels and parameter names follow `label` and `parameter_names` in `kpoints`. Give parameters in order or by name.
 
-`kpoints` is the authority for selectable labels and parameter names:
-
-```bash
-apo kpoints structure.cif | \
-  jq '.kpoints[] | {label, kvector, parameter_names, miller_love_kvector}'
-```
-
-CLI input follows `kvector` and `parameter_names`, matching the graphical interface.
-Values can be positional in that order or named:
-
-```bash
+```sh
 apo irreps structure.cif --k DT 1/3 --displacive O
 apo irreps structure.cif --k DT b=1/3 --displacive O
 ```
 
-`miller_love_kvector` and resolved `miller_love_parameters` show the corresponding Miller-Love form.
-CLI input always follows `kvector` and `parameter_names`.
-Parametric values that collapse onto a special k point are rejected; select the corresponding fixed-point label instead.
+`miller_love_kvector` is for display in the output and is not accepted as input.
+Parameter values at which a parametric k coincides with a special point are rejected; use the fixed-point label instead.
 
-One to four k/irrep factors can be coupled.
-Repeated `--k` and `--irrep` options are paired by order:
+`--k` and `--irrep` can be given one to four times and pair in the order written.
 
-```bash
-apo opds structure.cif \
-  --k R --irrep R4- \
-  --k M --irrep M3+ \
-  --displacive O
+```sh
+apo opds structure.cif --k R --irrep R4- --k M --irrep M3+ --displacive O
 ```
 
-## OPDs and Domains
+## OPDs
 
-`opds` returns the exact labels accepted downstream.
-Do not reconstruct a label from the displayed direction:
+Pass a `label` returned by `opds` to `--opd` as is. Do not rebuild it from the direction.
+With several k points the label carries a domain number per slot (`P1(1)P1(2)`); quote it in the shell.
 
-```bash
-apo opds structure.cif \
-  --k R --irrep R4- --displacive O \
-  -o opds.json
-
-jq '.opds[] | {label, opd, subgroup, basis, origin, index, cell_index}' \
-  opds.json
+```sh
+apo modes structure.cif --k R --irrep R4- --k M --irrep M3+ --displacive O --opd 'P1(1)P1(2)'
 ```
 
-For coupled selections, labels include one domain number per factor, for example `P1(1)P1(2)`.
-Shell-quote labels containing parentheses:
+`index` is the group index and `cell_index` the supercell factor. When `ferroic_classified` is `false`, an empty `ferroic_properties` means unclassified.
 
-```bash
-apo modes structure.cif \
-  --k R --irrep R4- \
-  --k M --irrep M3+ \
-  --displacive O --opd 'P1(1)P1(2)'
-```
+## Modes
 
-`index` is the group index and `cell_index` is the supercell factor.
-A classified empty `ferroic_properties` list is distinguished from an unclassified result by `ferroic_classified`.
+Each mode has a `definition_id` (an ID within that payload) and an identity made of kind, k point, irrep, direction, site, Wyckoff position and site irrep. `role` separates primary modes from induced secondary ones.
+`--format text` prints the mode table (`modes` and `run --upto modes` only).
 
-## Mode Details
+## Case
 
-`modes` emits compact JSON by default:
-
-```bash
-apo modes structure.cif \
-  --k R --irrep R4- --displacive O --opd P1 \
-  -o modes.json
-```
-
-Atomic definitions carry payload-local `definition_id` values and structured mode identity: kind, k point, k vector, irrep, gid, direction, site, Wyckoff position, and site irrep.
-`role` distinguishes primary from induced secondary definitions.
-
-Use human-readable mode tables when needed:
-
-```bash
-apo modes structure.cif \
-  --k R --irrep R4- --displacive O --opd P1 \
-  --format text
-```
-
-## Saved JSON Cases
-
-A case preserves the ordered scientific selection.
-It contains exactly one parent source: `structure` or a repository-local `cif` content ID.
-The `cif` form resolves a 12-character content ID to `assets/cif/` or `assets/magndata/cif/` in this checkout (the CIFs of the published branches); otherwise use `structure`.
+A selection collected in JSON.
 
 ```json
 {
   "structure": "structure.cif",
-  "sites": {
-    "O": {"displacive": true, "magnetic": false}
-  },
+  "sites": {"O": {"displacive": true, "magnetic": false}},
   "strain": false,
-  "k": [
-    {"label": "R", "ir": "R4-"}
-  ],
+  "k": [{"label": "R", "ir": "R4-"}],
   "opd": "P1"
 }
 ```
 
-Run it to one stage:
+- Fields are limited to `structure`, `cif`, `sites`, `strain`, `k` and `opd`. Exactly one of `structure` and `cif`.
+- A relative `structure` path is resolved from the case file's directory.
+- `cif` is a 12-character content ID looked up in `assets/cif/` or `assets/magndata/cif/` of this checkout.
+- Each `k` item has `label`, `params` (an object of names and values) and `ir`. `ir` is required from the OPD stage on.
+- The file needs the `.json` extension. `--case -` reads from standard input.
 
-```bash
-apo run --case case.json --upto kpoints
-apo run --case case.json --upto irreps
+```sh
 apo run --case case.json --upto opds
-apo run --case case.json --upto modes
+apo modes --case case.json
 ```
 
-For saved or automated work, prefer `run` so that one process advances the pipeline without reloading the bundled tables for separate stage commands.
-Use the individual commands when discovering or inspecting the identifiers to put in a case.
+`run` computes all stages in one process; use it for automated work. `--case` cannot be combined with the individual selection options.
 
-Use `--case -` for standard input.
-Relative structure paths resolve from the case file's directory.
-A k item uses `label`, optional exact `params`, and `ir` from the OPD stage onward.
-JSON is the only saved-case format.
+## Output
 
-## JSON and Output Control
+Output is JSON, and `schema` (`APOSTRUCT.cli.info` and so on) names the stage.
 
-Compact results identify their shape with an unversioned schema name.
-Consumers should branch on this field rather than infer the stage from optional keys:
+| Option | Effect |
+| --- | --- |
+| `-o PATH` | Writes to a file instead of standard output |
+| `--indent N` | JSON indentation |
+| `--full-state` | Prints the complete calculation state |
 
-```text
-APOSTRUCT.cli.info
-APOSTRUCT.cli.kpoints
-APOSTRUCT.cli.irreps
-APOSTRUCT.cli.opds
-APOSTRUCT.cli.modes
-```
+Errors go to standard error with exit status 2. An unknown k, irrep or OPD is never replaced by another one.
 
-Common controls:
+## GUI
 
-```bash
---indent N       JSON indentation
--o, --output     write to a path instead of stdout
---full-state     complete calculation state, where supported
-```
-
-Errors are written to stderr and exit with status 2. Unknown k, irrep, and OPD selections fail rather than falling back to a different result.
-
-## Local Interface
-
-```bash
+```sh
 apo serve --host 127.0.0.1 --port 8300 --open-browser
-```
-
-The GUI provides the CIF workflow over the same calculations.
-
-Send a case to an interface that is already open:
-
-```bash
 apo show --case case.json --server http://127.0.0.1:8300
 ```
 
-The deepest selection in the case determines the displayed stage.
-A case with K but no irrep opens the irrep step; selected irreps without `opd` open the OPD step; `opd` opens mode details and the structure viewer.
-Initial mode-slider amplitudes use the payload-local definition order:
-
-```bash
-apo show --case case.json \
-  --amplitude magnetic-1=1 --amplitude magnetic-2=19/20
-```
-
-Relative structure paths are resolved by the sending command, which transfers the CIF contents to the server.
-The case and calculated state are held only in the running server's memory.
+`show` opens the deepest stage in the case: irrep selection for k only, OPD selection up to irreps, and mode details with the structure view when `opd` is present.
+`--amplitude DEFINITION_ID=VALUE` sets an initial mode slider value (`--amplitude magnetic-1=1`).
+`show` reads the CIF itself and sends its text to the server. The case and results live only in the server's memory.
