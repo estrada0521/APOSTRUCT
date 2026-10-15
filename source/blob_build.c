@@ -10,6 +10,7 @@
  * otherwise its quoted strings (possibly none). */
 
 #include <ctype.h>
+#include <math.h>
 #include <errno.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -366,6 +367,267 @@ static void load_table(const char *dir, const char *table, const char *file)
     free(text);
 }
 
+
+/* Exact constants: a + b sqrt2 + c sqrt3 + d sqrt6 with rational parts, parsed
+ * from the symbolic column of const.dat. Forms outside that field (nested
+ * radicals, 22.5 degrees) parse as absent. */
+typedef struct {
+    int64_t n, d;
+} q64;
+
+typedef struct {
+    q64 x[4];
+    int ok;
+} q23;
+
+static int64_t g64(int64_t a, int64_t b)
+{
+    if (a < 0) a = -a;
+    if (b < 0) b = -b;
+    while (b) {
+        int64_t t = a % b;
+        a = b;
+        b = t;
+    }
+    return a;
+}
+
+static q64 qn(__int128 n, __int128 d, int *ok)
+{
+    if (d < 0) {
+        n = -n;
+        d = -d;
+    }
+    __int128 a = n < 0 ? -n : n, b = d;
+    while (b) {
+        __int128 t = a % b;
+        a = b;
+        b = t;
+    }
+    if (a > 1) {
+        n /= a;
+        d /= a;
+    }
+    if (!d || n > INT64_MAX || n < -INT64_MAX || d > INT64_MAX) *ok = 0;
+    return (q64){(int64_t)n, (int64_t)d};
+}
+
+static q64 qadd(q64 a, q64 b, int *ok) { return qn((__int128)a.n * b.d + (__int128)b.n * a.d, (__int128)a.d * b.d, ok); }
+static q64 qmul(q64 a, q64 b, int *ok) { return qn((__int128)a.n * b.n, (__int128)a.d * b.d, ok); }
+
+static q23 q23_rat(q64 r)
+{
+    q23 v = {{{0, 1}, {0, 1}, {0, 1}, {0, 1}}, 1};
+    v.x[0] = r;
+    return v;
+}
+
+static q23 q23_add(q23 a, q23 b, int sign)
+{
+    q23 v = a;
+    v.ok = a.ok && b.ok;
+    for (int i = 0; i < 4; i++) v.x[i] = qadd(a.x[i], (q64){sign * b.x[i].n, b.x[i].d}, &v.ok);
+    return v;
+}
+
+/* basis e0=1, e1=sqrt2, e2=sqrt3, e3=sqrt6: e_i e_j = m * e_k */
+static q23 q23_mul(q23 a, q23 b)
+{
+    static const int K[4][4] = {{0, 1, 2, 3}, {1, 0, 3, 2}, {2, 3, 0, 1}, {3, 2, 1, 0}};
+    static const int F[4][4] = {{1, 1, 1, 1}, {1, 2, 1, 2}, {1, 1, 3, 3}, {1, 2, 3, 6}};
+    q23 v = q23_rat((q64){0, 1});
+    v.ok = a.ok && b.ok;
+    for (int i = 0; i < 4; i++)
+        for (int j = 0; j < 4; j++) {
+            q64 t = qmul(a.x[i], b.x[j], &v.ok);
+            v.x[K[i][j]] = qadd(v.x[K[i][j]], qmul(t, (q64){F[i][j], 1}, &v.ok), &v.ok);
+        }
+    return v;
+}
+
+static q23 q23_conj(q23 a, int which)
+{
+    /* which 1: sqrt2 -> -sqrt2, which 2: sqrt3 -> -sqrt3 */
+    q23 v = a;
+    if (which == 1) {
+        v.x[1].n = -v.x[1].n;
+        v.x[3].n = -v.x[3].n;
+    } else {
+        v.x[2].n = -v.x[2].n;
+        v.x[3].n = -v.x[3].n;
+    }
+    return v;
+}
+
+static q23 q23_div(q23 a, q23 b)
+{
+    q23 num = q23_mul(a, q23_conj(b, 1)), den = q23_mul(b, q23_conj(b, 1));
+    num = q23_mul(num, q23_conj(den, 2));
+    den = q23_mul(den, q23_conj(den, 2));
+    q23 v = num;
+    v.ok = num.ok && den.ok && den.x[0].n && !den.x[1].n && !den.x[2].n && !den.x[3].n;
+    if (!v.ok) return v;
+    q64 inv = {den.x[0].d, den.x[0].n};
+    for (int i = 0; i < 4; i++) v.x[i] = qmul(v.x[i], inv, &v.ok);
+    return v;
+}
+
+static q23 q23_sqrt(q23 a)
+{
+    q23 bad = q23_rat((q64){0, 1});
+    bad.ok = 0;
+    if (!a.ok || a.x[1].n || a.x[2].n || a.x[3].n || a.x[0].n < 0) return bad;
+    /* sqrt(n/d) = sqrt(n d) / d with n d = s^2 * f, f squarefree in {1,2,3,6} */
+    __int128 m = (__int128)a.x[0].n * a.x[0].d;
+    if (!m) return a;
+    int64_t f = 1;
+    for (int64_t p = 2; p <= 3; p++)
+        while (m % ((__int128)p * p) == 0) m /= (__int128)p * p;
+    for (int64_t p = 2; p <= 3; p++)
+        if (m % p == 0) {
+            f *= p;
+            m /= p;
+        }
+    int64_t root = (int64_t)sqrt((double)m);
+    while ((__int128)root * root < m) root++;
+    while ((__int128)root * root > m) root--;
+    if ((__int128)root * root != m) return bad;
+    __int128 nd = (__int128)a.x[0].n * a.x[0].d, s2 = nd / f;
+    int64_t s = (int64_t)sqrt((double)s2);
+    while ((__int128)s * s < s2) s++;
+    while ((__int128)s * s > s2) s--;
+    if ((__int128)s * s != s2) return bad;
+    q23 v = q23_rat((q64){0, 1});
+    int slot = f == 1 ? 0 : f == 2 ? 1 : f == 3 ? 2 : 3;
+    v.x[slot] = qn(s, a.x[0].d, &v.ok);
+    return v;
+}
+
+/* cos and sin of a multiple of 15 degrees */
+static q23 q23_trig(q64 degrees, int sine)
+{
+    q23 bad = q23_rat((q64){0, 1});
+    bad.ok = 0;
+    if (degrees.d != 1 || degrees.n % 15) return bad;
+    int64_t step = ((degrees.n / 15) % 24 + 24) % 24;
+    if (sine) step = (step + 18) % 24;
+    /* cos(15 j) for j = 0..6 over e0..e3 in quarters */
+    static const int C[7][4] = {{4, 0, 0, 0}, {0, 1, 0, 1}, {0, 0, 2, 0}, {0, 2, 0, 0}, {2, 0, 0, 0}, {0, -1, 0, 1}, {0, 0, 0, 0}};
+    int sign = 1, j = (int)step;
+    if (j > 12) j = 24 - j;
+    if (j > 6) {
+        j = 12 - j;
+        sign = -1;
+    }
+    q23 v = q23_rat((q64){0, 1});
+    for (int i = 0; i < 4; i++) v.x[i] = qn(sign * C[j][i], 4, &v.ok);
+    return v;
+}
+
+typedef struct {
+    const char *p;
+} q23_parser;
+
+static q23 q23_expr(q23_parser *s);
+
+static void q23_skip(q23_parser *s)
+{
+    while (*s->p == ' ' || *s->p == '\t') s->p++;
+}
+
+static q23 q23_factor(q23_parser *s)
+{
+    q23 bad = q23_rat((q64){0, 1});
+    bad.ok = 0;
+    q23_skip(s);
+    if (*s->p == '-') {
+        s->p++;
+        q23 v = q23_factor(s);
+        return q23_add(q23_rat((q64){0, 1}), v, -1);
+    }
+    if (*s->p == '(') {
+        s->p++;
+        q23 v = q23_expr(s);
+        q23_skip(s);
+        if (*s->p != ')') return bad;
+        s->p++;
+        return v;
+    }
+    if (isdigit((unsigned char)*s->p)) {
+        int64_t n = 0, d = 1;
+        while (isdigit((unsigned char)*s->p)) n = n * 10 + (*s->p++ - '0');
+        if (*s->p == '.') {
+            s->p++;
+            while (isdigit((unsigned char)*s->p)) {
+                n = n * 10 + (*s->p++ - '0');
+                d *= 10;
+            }
+        }
+        int ok = 1;
+        q23 v = q23_rat(qn(n, d, &ok));
+        v.ok = ok;
+        return v;
+    }
+    static const char *const names[] = {"sqrt", "cos", "sin", "tan"};
+    for (int f = 0; f < 4; f++) {
+        size_t len = strlen(names[f]);
+        if (strncmp(s->p, names[f], len) || s->p[len] != '(') continue;
+        s->p += len + 1;
+        q23 arg = q23_expr(s);
+        q23_skip(s);
+        if (*s->p != ')') return bad;
+        s->p++;
+        if (f == 0) return q23_sqrt(arg);
+        if (!arg.ok || arg.x[1].n || arg.x[2].n || arg.x[3].n) return bad;
+        if (f == 3) return q23_div(q23_trig(arg.x[0], 1), q23_trig(arg.x[0], 0));
+        return q23_trig(arg.x[0], f == 2);
+    }
+    return bad;
+}
+
+static q23 q23_term(q23_parser *s)
+{
+    q23 v = q23_factor(s);
+    for (;;) {
+        q23_skip(s);
+        char op = *s->p;
+        if (op != '*' && op != '/') return v;
+        s->p++;
+        q23 r = q23_factor(s);
+        v = op == '*' ? q23_mul(v, r) : q23_div(v, r);
+    }
+}
+
+static q23 q23_expr(q23_parser *s)
+{
+    q23 v = q23_term(s);
+    for (;;) {
+        q23_skip(s);
+        char op = *s->p;
+        if (op != '+' && op != '-') return v;
+        s->p++;
+        q23 r = q23_term(s);
+        v = q23_add(v, r, op == '+' ? 1 : -1);
+    }
+}
+
+static q23 q23_parse(const char *text)
+{
+    q23_parser s = {text};
+    q23 v = q23_expr(&s);
+    q23_skip(&s);
+    if (*s.p) v.ok = 0;
+    return v;
+}
+
+static double q23_value(q23 v)
+{
+    const double e[4] = {1.0, sqrt(2.0), sqrt(3.0), sqrt(6.0)};
+    double sum = 0.0;
+    for (int i = 0; i < 4; i++) sum += (double)v.x[i].n / (double)v.x[i].d * e[i];
+    return sum;
+}
+
 static void load_constants(const char *dir)
 {
     char path[4096];
@@ -375,6 +637,7 @@ static void load_constants(const char *dir)
     int64_t max_code = -1;
     int64_t codes[4096];
     double values[4096];
+    static q23 exact[4096];
     int count = 0;
     char *line = text;
     while (*line) {
@@ -386,7 +649,12 @@ static void load_constants(const char *dir)
             if (count >= 4096) die("too many constants", 0);
             char *after;
             codes[count] = strtoll(p, &after, 10);
-            values[count] = strtod(after, 0);
+            char *symbol;
+            values[count] = strtod(after, &symbol);
+            while (isspace((unsigned char)*symbol)) symbol++;
+            exact[count] = q23_parse(symbol);
+            if (exact[count].ok && fabs(q23_value(exact[count]) - values[count]) > 1e-13 * (1.0 + fabs(values[count])))
+                die("constant symbol does not match its value", symbol);
             if (codes[count] + 1 > max_code) max_code = codes[count] + 1;
             count++;
         }
@@ -408,7 +676,22 @@ static void load_constants(const char *dir)
             present[codes[i] + 1] = 1;
         }
     }
-    section *s = add_section("const.values");
+    int64_t *exact_words = xmalloc(sizeof(int64_t) * 8 * (size_t)n);
+    memset(exact_words, 0, sizeof(int64_t) * 8 * (size_t)n);
+    for (int i = 0; i < count; i++) {
+        if (!exact[i].ok) continue;
+        for (int sign = 0; sign < (codes[i] >= 2 && codes[i] % 2 == 0 ? 2 : 1); sign++)
+            for (int j = 0; j < 4; j++) {
+                exact_words[8 * (codes[i] + sign) + 2 * j] = sign ? -exact[i].x[j].n : exact[i].x[j].n;
+                exact_words[8 * (codes[i] + sign) + 2 * j + 1] = exact[i].x[j].d;
+            }
+    }
+    section *s = add_section("const.exact");
+    s->kind = BLOB_I64;
+    s->count = (uint64_t)n * 8;
+    s->payload = (unsigned char *)exact_words;
+    s->bytes = sizeof(int64_t) * 8 * (uint64_t)n;
+    s = add_section("const.values");
     s->kind = BLOB_F64;
     s->count = (uint64_t)n;
     s->payload = (unsigned char *)dense;
