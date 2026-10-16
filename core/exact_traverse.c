@@ -1701,6 +1701,56 @@ typedef struct {
     int64_t *words;
 } xt_invariance;
 
+int exact_record_matrix(int gid, int dim, int arms, const int64_t *k, int subtract_generated, int element_count,
+                        const int *elements, int position, const int *record, int want_m, const cy_field **field_out, cy *w);
+
+/* --certify: every invariance the residues found, rechecked over Q(zeta_m) */
+int exact_certify;
+long exact_certified[4]; /* checked, failed, outside the field, overflow */
+
+static void certify_invariant(const xt_invariance *x, const int *record, int position, double sign, const uint64_t *v)
+{
+    int dim = x->dim, phi = F->phi;
+    const cy_field *g;
+    cy *w = malloc(sizeof(cy) * ((size_t)dim * dim + 2 * (size_t)dim));
+    if (!w) {
+        exact_certified[3]++;
+        return;
+    }
+    cy *exact = w + (size_t)dim * dim, *t = exact + dim;
+    int status = exact_record_matrix(x->gid, dim, x->arms, x->k, x->subtract, x->element_count, x->elements, position, record, F->m, &g, w);
+    if (status == 3) {
+        int own = -exact_record_matrix(x->gid, dim, x->arms, x->k, x->subtract, x->element_count, x->elements, position, record, -1, &g, 0);
+        if (own > 0 && F->m % own) {
+            exact_certified[2]++;
+            free(w);
+            return;
+        }
+    }
+    for (int j = 0; j < dim && !status; j++)
+        if (elift(v + (size_t)j * phi, &exact[j])) status = XT_ARITHMETIC;
+    cy_overflow = 0;
+    int same = 1;
+    for (int i = 0; i < dim && !status && same; i++) {
+        cy acc, term;
+        cy_zero(F, &acc);
+        for (int j = 0; j < dim; j++) {
+            if (cy_is_zero(F, &w[(size_t)i * dim + j]) || cy_is_zero(F, &exact[j])) continue;
+            cy_mul(F, &w[(size_t)i * dim + j], &exact[j], &term);
+            cy_add(F, &acc, &term, &acc);
+        }
+        if (sign < 0) cy_sub(F, &(cy){{0}, 1}, &acc, &acc);
+        cy_sub(F, &acc, &exact[i], t);
+        same = cy_is_zero(F, t);
+    }
+    if (status || cy_overflow) exact_certified[3]++;
+    else {
+        exact_certified[0]++;
+        if (!same) exact_certified[1]++;
+    }
+    free(w);
+}
+
 int xt_invariant(void *user, const int *record, int position, double sign, const double *row, int *result)
 {
     xt_invariance *x = user;
@@ -1751,6 +1801,7 @@ int xt_invariant(void *user, const int *record, int position, double sign, const
             *result = out == v[(size_t)i * phi + e];
         }
     }
+    if (*result && exact_certify) certify_invariant(x, record, position, sign, v);
     return 0;
 }
 

@@ -440,9 +440,12 @@ static void load_case(const char *raw, apo_case *c)
 
 /* ------------------------------------------------------------ arguments */
 
+extern int exact_certify;
+extern long exact_certified[4];
+
 typedef struct {
     const char *structure, *case_path, *opd, *output, *format, *upto, *host, *server;
-    int strain, full_state, indent, port, open_browser;
+    int strain, full_state, indent, port, open_browser, certify;
     char **amplitudes;
     int namplitudes;
     int nk;
@@ -525,6 +528,8 @@ static void parse_args(int argc, char **argv, int start, args_t *a)
             long n = strtol(value, &end, 10);
             if (*end || !*value) usage_errorf("argument --indent: invalid int value: '%s'", value, 0);
             a->indent = (int)n;
+        } else if (!strcmp(arg, "--certify") && !show && !serve) {
+            a->certify = 1;
         } else if (!strcmp(arg, "--full-state") && !show && !serve) {
             a->full_state = 1;
             a->has_full_state = 1;
@@ -1062,7 +1067,11 @@ int main(int argc, char **argv)
     char indent[48];
     snprintf(indent, sizeof indent, ", \"indent\": %d}", a.indent);
     jb_lit(&request, indent);
+    exact_certify = a.certify;
     int status = run_request(&request, a.output);
     jb_free(&request);
+    if (a.certify)
+        fprintf(stderr, "{\"certify\": {\"checked\": %ld, \"failed\": %ld, \"outside_field\": %ld, \"undecided\": %ld}}\n", exact_certified[0],
+                exact_certified[1], exact_certified[2], exact_certified[3]);
     return status;
 }
