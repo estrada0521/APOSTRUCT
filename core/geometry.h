@@ -61,5 +61,10 @@ int64_t geo_kernel_fractions(const int64_t *basis, int64_t **out);
 int geo_centering(int sg, rat (*out)[3]);
 const int64_t *geo_point_op_codes(int64_t *count);
 const int64_t *geo_point_group_codes(int64_t *count);
+/* cos, sin of an angle in degrees and acos in degrees, exact at the angles
+ * lattice symmetry fixes (0, 60, 90, 120, 180), libm elsewhere */
+double geo_cos_deg(double degrees);
+double geo_sin_deg(double degrees);
+double geo_acos_deg(double cosine);
 
 #endif

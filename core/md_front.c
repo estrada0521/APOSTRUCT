@@ -17,7 +17,6 @@ int mode_text_status(void);
 const char *opd_direction_text(const char *text, int64_t length, int little_dim);
 int little_star_arm_width(int64_t gid);
 
-static const double DEG_TO_RAD = M_PI / 180.0, RAD_TO_DEG = 180.0 / M_PI;
 
 static struct {
     section_view inter_choice, label_short, freeparam;
@@ -152,7 +151,7 @@ static void cell_from_basis(const double *params, int has_basis, const double (*
         return;
     }
     double a = params[0], b = params[1], c = params[2];
-    double ca = cos(params[3] * DEG_TO_RAD), cb = cos(params[4] * DEG_TO_RAD), cg = cos(params[5] * DEG_TO_RAD);
+    double ca = geo_cos_deg(params[3]), cb = geo_cos_deg(params[4]), cg = geo_cos_deg(params[5]);
     double metric[3][3] = {{a * a, a * b * cg, a * c * cb}, {a * b * cg, b * b, b * c * ca}, {a * c * cb, b * c * ca, c * c}};
     double lengths[3];
     for (int i = 0; i < 3; i++) {
@@ -173,7 +172,7 @@ static void cell_from_basis(const double *params, int has_basis, const double (*
         double value = dot_metric(basis[i], basis[j], (const double (*)[3])metric) / denom;
         if (!(value < 1.0)) value = 1.0;
         if (!(value > -1.0)) value = -1.0;
-        out[3 + k] = acos(value) * RAD_TO_DEG;
+        out[3 + k] = geo_acos_deg(value);
     }
 }
 
@@ -189,10 +188,10 @@ static void row_multiply(const double *row, const double (*matrix)[3], double *o
 static void child_lattice_cartesian(const double *lattice, double (*out)[3])
 {
     double a = lattice[0], b = lattice[1], c = lattice[2];
-    double ar = lattice[3] * DEG_TO_RAD, br = lattice[4] * DEG_TO_RAD, gr = lattice[5] * DEG_TO_RAD;
-    double t = c * (cos(ar) - cos(br) * cos(gr)) / sin(gr);
-    double inner = 1.0 - py_pow(cos(br), 2.0) - py_pow((cos(ar) - cos(br) * cos(gr)) / sin(gr), 2.0);
-    double parent[3][3] = {{a, 0.0, 0.0}, {b * cos(gr), b * sin(gr), 0.0}, {c * cos(br), t, c * sqrt(inner > 0.0 ? inner : 0.0)}};
+    double ca = geo_cos_deg(lattice[3]), cb = geo_cos_deg(lattice[4]), cg = geo_cos_deg(lattice[5]), sg = geo_sin_deg(lattice[5]);
+    double t = c * (ca - cb * cg) / sg;
+    double inner = 1.0 - py_pow(cb, 2.0) - py_pow((ca - cb * cg) / sg, 2.0);
+    double parent[3][3] = {{a, 0.0, 0.0}, {b * cg, b * sg, 0.0}, {c * cb, t, c * sqrt(inner > 0.0 ? inner : 0.0)}};
     double identity[3][3] = {{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}};
     for (int i = 0; i < 3; i++) row_multiply(identity[i], (const double (*)[3])parent, out[i]);
 }

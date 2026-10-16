@@ -23,8 +23,6 @@ enum {
 #define OB_NCMP 1e-6
 #define OB_SNAP 1.7e-5
 
-static double radians(double x) { return x * (M_PI / 180.0); }
-static double degrees(double x) { return x * (180.0 / M_PI); }
 static double clamp_unit(double x) { return (x < 1.0 ? x : 1.0) > -1.0 ? (x < 1.0 ? x : 1.0) : -1.0; }
 static int ncmp(double x) { return fabs(x) > OB_NCMP; }
 static int64_t nint(double x) { return x >= 0.0 ? (int64_t)floor(x + 0.5) : (int64_t)ceil(x - 0.5); }
@@ -33,13 +31,13 @@ static void get_gmat(const double *cell, double g[3][3])
 {
     double a = cell[0], b = cell[1], c = cell[2];
     g[0][0] = a * a;
-    g[0][1] = a * b * cos(radians(cell[5]));
-    g[0][2] = a * c * cos(radians(cell[4]));
-    g[1][0] = a * b * cos(radians(cell[5]));
+    g[0][1] = a * b * geo_cos_deg(cell[5]);
+    g[0][2] = a * c * geo_cos_deg(cell[4]);
+    g[1][0] = a * b * geo_cos_deg(cell[5]);
     g[1][1] = b * b;
-    g[1][2] = b * c * cos(radians(cell[3]));
-    g[2][0] = a * c * cos(radians(cell[4]));
-    g[2][1] = b * c * cos(radians(cell[3]));
+    g[1][2] = b * c * geo_cos_deg(cell[3]);
+    g[2][0] = a * c * geo_cos_deg(cell[4]);
+    g[2][1] = b * c * geo_cos_deg(cell[3]);
     g[2][2] = c * c;
 }
 
@@ -73,19 +71,19 @@ static void gram_lattparam(double g[3][3], double *p)
     p[0] = a;
     p[1] = b;
     p[2] = c;
-    p[3] = degrees(acos(clamp_unit(g[1][2] / b / c)));
-    p[4] = degrees(acos(clamp_unit(g[0][2] / a / c)));
-    p[5] = degrees(acos(clamp_unit(g[0][1] / a / b)));
+    p[3] = geo_acos_deg(clamp_unit(g[1][2] / b / c));
+    p[4] = geo_acos_deg(clamp_unit(g[0][2] / a / c));
+    p[5] = geo_acos_deg(clamp_unit(g[0][1] / a / b));
 }
 
 static void cell_cartesian(const double *cell, double v[3][3])
 {
     double a = cell[0], b = cell[1], c = cell[2];
-    double ar = radians(cell[3]), br = radians(cell[4]), gr = radians(cell[5]);
-    double cx = c * cos(br), cy = c * (cos(ar) - cos(br) * cos(gr)) / sin(gr);
+    double ca = geo_cos_deg(cell[3]), cb = geo_cos_deg(cell[4]), cg = geo_cos_deg(cell[5]), sg = geo_sin_deg(cell[5]);
+    double cx = c * cb, cy = c * (ca - cb * cg) / sg;
     double rest = c * c - cx * cx - cy * cy;
     double cz = sqrt(0.0 < rest ? rest : 0.0);
-    double rows[3][3] = {{a, 0.0, 0.0}, {b * cos(gr), b * sin(gr), 0.0}, {cx, cy, cz}};
+    double rows[3][3] = {{a, 0.0, 0.0}, {b * cg, b * sg, 0.0}, {cx, cy, cz}};
     memcpy(v, rows, sizeof rows);
 }
 
@@ -583,7 +581,7 @@ static double angle3(const double *a, const double *b)
     double denom = norm3(a) * norm3(b);
     if (denom <= 0) return 90.0;
     double terms[3] = {a[0] * b[0], a[1] * b[1], a[2] * b[2]};
-    return degrees(acos(clamp_unit(py_sum(terms, 3) / denom)));
+    return geo_acos_deg(clamp_unit(py_sum(terms, 3) / denom));
 }
 
 static int monoclinic_candidate(int subgroup, rat rows[3][3], const double *cell, int group, rat out[3][3])

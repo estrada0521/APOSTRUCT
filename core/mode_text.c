@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "geometry.h"
 #include "md.h"
 
 static const jvalue *member(const jvalue *object, const char *key) { return jis(object, J_OBJECT) ? jget(object, key) : 0; }
@@ -79,12 +80,11 @@ static int supercell(const jvalue *parent, const jvalue *basis, double *out)
         if (!v || jis(v, J_NULL) || py_float_of(v, p + i)) return 1;
     }
     double a = p[0], b = p[1], c = p[2];
-    const double rad = 3.141592653589793 / 180.0, deg = 180.0 / 3.141592653589793;
-    double al = p[3] * rad, be = p[4] * rad, ga = p[5] * rad;
-    double cx = c * cos(be), cy = c * (cos(al) - cos(be) * cos(ga)) / sin(ga);
+    double cal = geo_cos_deg(p[3]), cbe = geo_cos_deg(p[4]), cga = geo_cos_deg(p[5]), sga = geo_sin_deg(p[5]);
+    double cx = c * cbe, cy = c * (cal - cbe * cga) / sga;
     double square = c * c - cx * cx - cy * cy;
     double cz = sqrt(square > 0.0 ? square : 0.0);
-    double P[3][3] = {{a, 0.0, 0.0}, {b * cos(ga), b * sin(ga), 0.0}, {cx, cy, cz}};
+    double P[3][3] = {{a, 0.0, 0.0}, {b * cga, b * sga, 0.0}, {cx, cy, cz}};
     double rows[3][3];
     for (int r = 0; r < 3; r++) {
         const jvalue *row = jat(basis, r);
@@ -118,7 +118,7 @@ static int supercell(const jvalue *parent, const jvalue *basis, double *out)
         double d = py_sum(products, 3) / (length[u] * length[w]);
         d = d < 1.0 ? d : 1.0;
         d = -1.0 > d ? -1.0 : d;
-        out[3 + i] = acos(d) * deg;
+        out[3 + i] = geo_acos_deg(d);
     }
     return 0;
 }
