@@ -1023,6 +1023,19 @@ static void context_free(Context *ctx)
 
 static xe *elements(size_t count) { return malloc((count + 2) * (size_t)XS * sizeof(xe)); }
 
+static void context_nonzeros(Context *ctx, int matrix)
+{
+    size_t dim = (size_t)ctx->dim, square = dim * dim + 1;
+    int *start = ctx->nz_start + (size_t)matrix * (dim + 1), *rows = ctx->nz_row + (size_t)matrix * square, n = 0;
+    const xe *m = cat(ctx->matrices, (size_t)matrix * dim * dim);
+    for (size_t col = 0; col < dim; col++) {
+        start[col] = (int)((size_t)matrix * square) + n;
+        for (size_t source = 0; source < dim; source++)
+            if (!ez(cat(m, source * dim + col))) rows[n++] = (int)source;
+    }
+    start[dim] = (int)((size_t)matrix * square) + n;
+}
+
 static int context_init(Context *ctx)
 {
     size_t dim = (size_t)ctx->dim, square = dim * dim + 1, assign = dim * (2 * dim + 1) + dim + 1;
@@ -1069,16 +1082,7 @@ static int context_init(Context *ctx)
         while (ctx->residue_slots[slot] >= 0) slot = (slot + 1) & (slot_count - 1);
         ctx->residue_slots[slot] = fraction;
     }
-    for (int matrix = 0; matrix < ctx->matrix_count; matrix++) {
-        int *start = ctx->nz_start + (size_t)matrix * (dim + 1), *rows = ctx->nz_row + (size_t)matrix * square, n = 0;
-        const xe *m = cat(ctx->matrices, (size_t)matrix * dim * dim);
-        for (size_t col = 0; col < dim; col++) {
-            start[col] = (int)((size_t)matrix * square) + n;
-            for (size_t source = 0; source < dim; source++)
-                if (!ez(cat(m, source * dim + col))) rows[n++] = (int)source;
-        }
-        start[dim] = (int)((size_t)matrix * square) + n;
-    }
+    for (int matrix = 0; matrix < ctx->matrix_count; matrix++) context_nonzeros(ctx, matrix);
     return XT_OK;
 }
 
@@ -1783,12 +1787,31 @@ typedef struct {
     const int64_t *k, *candidates;
     const int *elements, *available, *candidate_ops, *candidate_signs;
     const double *sparse;
+    /* one matrix embedded at a time, from its record */
+    int gid, loaded;
+    const int *records, *signs, *positions;
+    int64_t *words;
+    xe *embedded, *embedded_one;
 } xorbit;
+
+static int xorbit_load(xorbit *o, int matrix)
+{
+    if (o->loaded == matrix) return XT_OK;
+    o->loaded = -1;
+    size_t square = (size_t)o->dim * o->dim;
+    TRY(embedded_record_matrix(o->gid, o->dim, o->arms, o->k, o->subtract, o->element_count, o->elements, o->positions[matrix],
+                               o->records + 5 * matrix, o->signs[matrix], o->words, o->embedded));
+    first_embedding(o->embedded, o->embedded_one, square);
+    context_nonzeros(&o->ctx, 0);
+    o->loaded = matrix;
+    return XT_OK;
+}
 
 static int xorbit_key(xorbit *o, int matrix, const xe *subspace, xe *transformed, int *key)
 {
     int eq_count;
-    TRY(transform(&o->ctx, o->free_rows, subspace, cat(o->ctx.matrices, (size_t)matrix * o->dim * o->dim), transformed));
+    TRY(xorbit_load(o, matrix));
+    TRY(transform(&o->ctx, o->free_rows, subspace, o->ctx.matrices, transformed));
     TRY(equation_data(&o->ctx, o->free_rows, transformed, o->ctx.equations, &eq_count, key));
     if (*key < o->map_capacity) return XT_OK;
     int capacity = o->map_capacity ? o->map_capacity : 64;
@@ -1890,18 +1913,32 @@ static int xorbit_emit(xorbit *o, int generator_first, int generator_count, int6
 {
     int dc = o->domain_count, dim = o->dim;
     size_t words = (size_t)o->cells * XS, square_words = (size_t)dim * dim * XS;
-    int *actions = malloc(sizeof(int) * ((size_t)generator_count * dc + 1));
-    xe *image = malloc(sizeof(xe) * (words + 1));
-    int status = actions && image ? XT_OK : XT_NO_MEMORY;
+    int *actions = malloc(sizeof(int) * ((size_t)generator_count * dc + 1)), *first_of = malloc(sizeof(int) * ((size_t)generator_count + 1));
+    xe *image = malloc(sizeof(xe) * (words + 1)), *distinct = 0;
+    int distinct_count = 0, distinct_capacity = 0;
+    int status = actions && first_of && image ? XT_OK : XT_NO_MEMORY;
     for (int g = 0; g < generator_count && !status; g++) {
-        const xe *matrix = cat(o->ctx.matrices, (size_t)(generator_first + g) * dim * dim);
+        status = xorbit_load(o, generator_first + g);
+        if (status) break;
         int repeated = -1;
-        for (int prev = 0; prev < g && repeated < 0; prev++)
-            if (!memcmp(cat(o->ctx.matrices, (size_t)(generator_first + prev) * dim * dim), matrix, sizeof(xe) * square_words)) repeated = prev;
+        for (int prev = 0; prev < distinct_count && repeated < 0; prev++)
+            if (!memcmp(distinct + (size_t)prev * square_words, o->ctx.matrices, sizeof(xe) * square_words)) repeated = first_of[prev];
         if (repeated >= 0) {
             memcpy(actions + (size_t)g * dc, actions + (size_t)repeated * dc, sizeof(int) * (size_t)dc);
             continue;
         }
+        if (distinct_count == distinct_capacity) {
+            int capacity = distinct_capacity ? 2 * distinct_capacity : 16;
+            xe *grown = realloc(distinct, sizeof(xe) * square_words * (size_t)capacity);
+            if (!grown) {
+                status = XT_NO_MEMORY;
+                break;
+            }
+            distinct = grown;
+            distinct_capacity = capacity;
+        }
+        memcpy(distinct + (size_t)distinct_count * square_words, o->ctx.matrices, sizeof(xe) * square_words);
+        first_of[distinct_count++] = g;
         for (int d = 0; d < dc && !status; d++) {
             int key;
             status = xorbit_key(o, generator_first + g, o->domains + (size_t)d * words, image, &key);
@@ -1930,6 +1967,8 @@ static int xorbit_emit(xorbit *o, int generator_first, int generator_count, int6
         }
     }
     free(actions);
+    free(first_of);
+    free(distinct);
     free(image);
     return status;
 }
@@ -1999,8 +2038,8 @@ int exact_coupled_orbit(int gid, int dim, int arms, const int64_t *k, int subtra
         free(XPOW);
         EMBED = malloc(sizeof(uint64_t) * phi * phi);
         XPOW = malloc(sizeof(uint64_t) * phi * (size_t)m);
-        embedded = malloc(sizeof(xe) * (square * phi * (size_t)total + 1));
-        embedded_one = malloc(sizeof(xe) * (square * (size_t)total + 1));
+        embedded = malloc(sizeof(xe) * (square * phi + 1));
+        embedded_one = malloc(sizeof(xe) * (square + 1));
         source = malloc(sizeof(xe) * (cells * phi + 1));
         o.stride = calloc(48 * (size_t)free_rows + 1, sizeof(double));
         o.kept = malloc(sizeof(int64_t) * (5 * (size_t)candidate_count + 1));
@@ -2031,14 +2070,12 @@ int exact_coupled_orbit(int gid, int dim, int arms, const int64_t *k, int subtra
             }
         }
         if (!g) status = XT_ARITHMETIC;
-        for (int r = 0; r < total && !status; r++)
-            status = embedded_record_matrix(gid, dim, arms, k, subtract, element_count, elements, positions[r], records + 5 * r, signs[r], words,
-                                            embedded + (size_t)r * square * phi);
-        if (!status) first_embedding(embedded, embedded_one, square * (size_t)total);
+        memset(embedded, 0, sizeof(xe) * square * phi);
+        memset(embedded_one, 0, sizeof(xe) * square);
     }
     if (!status) {
         o.ctx.dim = dim;
-        o.ctx.matrix_count = total;
+        o.ctx.matrix_count = 1;
         o.ctx.matrices_all = embedded;
         o.ctx.matrices_one = embedded_one;
         use_all(&o.ctx);
@@ -2060,6 +2097,15 @@ int exact_coupled_orbit(int gid, int dim, int arms, const int64_t *k, int subtra
         o.candidate_ops = candidate_ops;
         o.candidate_signs = candidate_signs;
         o.invariance = (xt_invariance){o.stride, 0, gid, dim, arms, subtract, element_count, k, elements, words};
+        o.gid = gid;
+        o.loaded = -1;
+        o.records = records;
+        o.signs = signs;
+        o.positions = positions;
+        o.embedded = embedded;
+        o.embedded_one = embedded_one;
+        o.words = malloc(sizeof(int64_t) * 8 * (size_t)dim * dim + 8);
+        if (!status && !o.words) status = XT_NO_MEMORY;
     }
     if (!status) {
         int numbered_order = use_numbered && numbered_count >= 0;
@@ -2077,6 +2123,7 @@ int exact_coupled_orbit(int gid, int dim, int arms, const int64_t *k, int subtra
     free(signs);
     free(positions);
     free(words);
+    free(o.words);
     free(embedded);
     free(embedded_one);
     free(source);
