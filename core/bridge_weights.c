@@ -9,6 +9,7 @@
 #include <math.h>
 #include <stdint.h>
 
+#include "cyclo.h"
 #include "intmath.h"
 #include <string.h>
 
@@ -68,9 +69,9 @@ static int first_with_op(int element_count, const int *elements, int op)
     return -1;
 }
 
-/* phase = sum_i (kn_i / kd_i) * (dn_i / dd_i) exactly, then as a correctly
- * rounded double (both parts are kept below 2^53). */
-static int arm_phase(const int64_t *k, const i128 *dn, const i128 *dd, double *out)
+/* phase = sum_i (kn_i / kd_i) * (dn_i / dd_i) exactly, reduced mod 1 to
+ * (num, den) (both kept below 2^53). */
+static int arm_phase(const int64_t *k, const i128 *dn, const i128 *dd, int64_t *out)
 {
     i128 num = 0, den = 1;
     for (int axis = 0; axis < 3; axis++) {
@@ -95,11 +96,46 @@ static int arm_phase(const int64_t *k, const i128 *dn, const i128 *dd, double *o
     }
     const i128 limit = (i128)1 << 53;
     if (den > limit || num > limit || num < -limit) return BW_OVERFLOW;
-    *out = (double)(int64_t)num / (double)(int64_t)den;
+    num %= den;
+    if (num < 0) num += den;
+    out[0] = (int64_t)num;
+    out[1] = (int64_t)den;
     return BW_OK;
 }
 
-static int phase_operator(int dim, int arms, const double *phases, double *p)
+/* cos and sin of 2 pi n / d, correctly rounded from Q(zeta_d); libm only when
+ * that field is out of reach */
+static void phase_cos_sin(const int64_t *phase, double *c, double *s)
+{
+    typedef struct {
+        int64_t n, d;
+        double c, s;
+    } entry;
+    static entry memo[512];
+    static int used;
+    for (int i = 0; i < used; i++)
+        if (memo[i].n == phase[0] && memo[i].d == phase[1]) {
+            *c = memo[i].c;
+            *s = memo[i].s;
+            return;
+        }
+    const cy_field *f = phase[1] <= 100000 ? cy_field_for((int)phase[1]) : 0;
+    cy exact_c, exact_s;
+    cy_overflow = 0;
+    if (!f || cy_cos_sin(f, phase[0], phase[1], &exact_c, &exact_s) || cy_overflow || cy_to_double(f, &exact_c, c) ||
+        cy_to_double(f, &exact_s, s)) {
+        double angle = 2.0 * M_PI * ((double)phase[0] / (double)phase[1]);
+        *c = cos(angle);
+        *s = sin(angle);
+        if (fabs(*c) < 1e-12) *c = 0.0;
+        if (fabs(*s) < 1e-12) *s = 0.0;
+    }
+    if (*c == 0.0) *c = 0.0;
+    if (*s == 0.0) *s = 0.0;
+    if (used < 512) memo[used++] = (entry){phase[0], phase[1], *c, *s};
+}
+
+static int phase_operator(int dim, int arms, const int64_t *phases, double *p)
 {
     for (int i = 0; i < dim * dim; i++) p[i] = 0.0;
     if (arms == 0) {
@@ -110,17 +146,15 @@ static int phase_operator(int dim, int arms, const double *phases, double *p)
     int block = dim / arms;
     for (int arm = 0; arm < arms; arm++) {
         int start = arm * block;
-        double angle = 2.0 * M_PI * phases[arm];
-        double c = cos(angle), s = sin(angle);
-        if (fabs(c) < 1e-12) c = 0.0;
-        if (fabs(s) < 1e-12) s = 0.0;
+        double c, s;
+        phase_cos_sin(phases + 2 * arm, &c, &s);
         if (block == 1) {
-            if (fabs(s) > 1e-10) return BW_SCALAR_PHASE;
+            if (s != 0.0) return BW_SCALAR_PHASE;
             p[start * dim + start] = c;
             continue;
         }
         if (block % 2) {
-            if (fabs(s) > 1e-10) return BW_ODD_BLOCK_PHASE;
+            if (s != 0.0) return BW_ODD_BLOCK_PHASE;
             for (int a = 0; a < block; a++)
                 for (int b = 0; b < block; b++)
                     p[(start + a) * dim + start + b] = a == b ? c : c * 0.0;
@@ -144,7 +178,7 @@ int bw_record_matrix(int dim, int arms, const int64_t *k, int subtract_generated
                      int element_count, const int *elements, int position,
                      const double *sparse, const int *record, double *w)
 {
-    double phases[48];
+    int64_t phases[96];
     double p[48 * 48];
     if (dim <= 0 || dim > 48 || arms < 0 || arms > 48) return BW_ARM_COUNT;
     i128 dn[3], dd[3];
@@ -168,7 +202,7 @@ int bw_record_matrix(int dim, int arms, const int64_t *k, int subtract_generated
         }
     }
     for (int arm = 0; arm < arms; arm++) {
-        int status = arm_phase(k + 6 * arm, dn, dd, &phases[arm]);
+        int status = arm_phase(k + 6 * arm, dn, dd, phases + 2 * arm);
         if (status) return status;
     }
     int status = phase_operator(dim, arms, phases, p);
@@ -196,7 +230,7 @@ int bw_record_matrix(int dim, int arms, const int64_t *k, int subtract_generated
 int bw_record_phase_coefficients(int dim, int arms, const int64_t *k, int subtract_generated, int element_count,
                                  const int *elements, const int *record, double *coefficients)
 {
-    double phases[48];
+    int64_t phases[96];
     if (dim <= 0 || dim > 48 || arms < 0 || arms > 48) return BW_ARM_COUNT;
     i128 dn[3], dd[3];
     int generated = -1;
@@ -219,19 +253,17 @@ int bw_record_phase_coefficients(int dim, int arms, const int64_t *k, int subtra
         }
     }
     for (int arm = 0; arm < arms; arm++) {
-        int status = arm_phase(k + 6 * arm, dn, dd, &phases[arm]);
+        int status = arm_phase(k + 6 * arm, dn, dd, phases + 2 * arm);
         if (status) return status;
     }
     if (arms == 0) return BW_OK;
     if (dim % arms) return BW_ARM_COUNT;
     int block = dim / arms;
     for (int arm = 0; arm < arms; arm++) {
-        double angle = 2.0 * M_PI * phases[arm];
-        double c = cos(angle), sn = sin(angle);
-        if (fabs(c) < 1e-12) c = 0.0;
-        if (fabs(sn) < 1e-12) sn = 0.0;
-        if (block == 1 && fabs(sn) > 1e-10) return BW_SCALAR_PHASE;
-        if (block > 1 && block % 2 && fabs(sn) > 1e-10) return BW_ODD_BLOCK_PHASE;
+        double c, sn;
+        phase_cos_sin(phases + 2 * arm, &c, &sn);
+        if (block == 1 && sn != 0.0) return BW_SCALAR_PHASE;
+        if (block > 1 && block % 2 && sn != 0.0) return BW_ODD_BLOCK_PHASE;
         coefficients[2 * arm] = c;
         coefficients[2 * arm + 1] = sn;
     }
