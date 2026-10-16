@@ -71,9 +71,9 @@ static void gram_lattparam(double g[3][3], double *p)
     p[0] = a;
     p[1] = b;
     p[2] = c;
-    p[3] = geo_acos_deg(clamp_unit(g[1][2] / b / c));
-    p[4] = geo_acos_deg(clamp_unit(g[0][2] / a / c));
-    p[5] = geo_acos_deg(clamp_unit(g[0][1] / a / b));
+    p[3] = geo_acos_upstream(clamp_unit(g[1][2] / b / c));
+    p[4] = geo_acos_upstream(clamp_unit(g[0][2] / a / c));
+    p[5] = geo_acos_upstream(clamp_unit(g[0][1] / a / b));
 }
 
 static void cell_cartesian(const double *cell, double v[3][3])
@@ -581,7 +581,7 @@ static double angle3(const double *a, const double *b)
     double denom = norm3(a) * norm3(b);
     if (denom <= 0) return 90.0;
     double terms[3] = {a[0] * b[0], a[1] * b[1], a[2] * b[2]};
-    return geo_acos_deg(clamp_unit(py_sum(terms, 3) / denom));
+    return geo_acos_upstream(clamp_unit(py_sum(terms, 3) / denom));
 }
 
 static int monoclinic_candidate(int subgroup, rat rows[3][3], const double *cell, int group, rat out[3][3])

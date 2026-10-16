@@ -61,11 +61,13 @@ int64_t geo_kernel_fractions(const int64_t *basis, int64_t **out);
 int geo_centering(int sg, rat (*out)[3]);
 const int64_t *geo_point_op_codes(int64_t *count);
 const int64_t *geo_point_group_codes(int64_t *count);
-/* cos, sin of an angle in degrees and acos in degrees (degrees.c): exact at the
- * angles lattice symmetry fixes (0, 60, 90, 120, 180), elsewhere the same bits
- * on every platform (no libm) */
+/* Degree trigonometry without libm (degrees.c): cos and sin as gfortran's
+ * cosd and sind (exact at multiples of 30); acos in degrees as upstream's
+ * acos(x) * 57.29577951308232, and geo_acos_deg also exact at 0, 60, 90,
+ * 120 and 180 for displayed angles. */
 double geo_cos_deg(double degrees);
 double geo_sin_deg(double degrees);
+double geo_acos_upstream(double cosine);
 double geo_acos_deg(double cosine);
 
 #endif
