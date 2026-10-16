@@ -103,8 +103,8 @@ static int arm_phase(const int64_t *k, const i128 *dn, const i128 *dd, int64_t *
     return BW_OK;
 }
 
-/* cos and sin of 2 pi n / d, correctly rounded from Q(zeta_d); libm only when
- * that field is out of reach */
+/* cos and sin of 2 pi n / d, correctly rounded from Q(zeta_m), m = lcm(d, 4)
+ * (sin needs i); libm only when that field is out of reach */
 static void phase_cos_sin(const int64_t *phase, double *c, double *s)
 {
     typedef struct {
@@ -119,7 +119,8 @@ static void phase_cos_sin(const int64_t *phase, double *c, double *s)
             *s = memo[i].s;
             return;
         }
-    const cy_field *f = phase[1] <= 100000 ? cy_field_for((int)phase[1]) : 0;
+    int64_t m = phase[1] % 4 ? phase[1] * (phase[1] % 2 ? 4 : 2) : phase[1];
+    const cy_field *f = m <= 100000 ? cy_field_for((int)m) : 0;
     cy exact_c, exact_s;
     cy_overflow = 0;
     if (!f || cy_cos_sin(f, phase[0], phase[1], &exact_c, &exact_s) || cy_overflow || cy_to_double(f, &exact_c, c) ||
