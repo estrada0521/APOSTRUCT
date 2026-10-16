@@ -568,9 +568,3 @@ void py_repr_of(jbuf *b, const jvalue *v)
 }
 
 void py_repr_text(jbuf *b, const char *text, int64_t length) { repr_string(b, text, length); }
-
-double py_pow(double x, double y)
-{
-    static double (*volatile libm_pow)(double, double) = pow;
-    return libm_pow(x, y);
-}

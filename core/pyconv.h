@@ -30,8 +30,6 @@ void py_str_of(jbuf *b, const jvalue *value);
 /* cif_numbers.float_cif_number: 0 with *out, 1 for None. */
 int float_cif_number(const jvalue *value, double *out);
 
-/* x ** y of floats: libm pow at run time (the compiler would fold pow(x, 2) into x * x). */
-double py_pow(double x, double y);
 /* sum() of floats (Neumaier compensation, started from int 0). */
 double py_sum(const double *values, int count);
 /* repr(value) of a decoded JSON value / of a str. */

@@ -1,7 +1,6 @@
 /* Space-group, setting and Wyckoff geometry decoded from the Source blob
  * (data_space, data_wyckoff). */
 
-#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -546,32 +545,4 @@ int geo_centering(int sg, rat (*out)[3])
         return 3;
     default: return 1;
     }
-}
-
-double geo_cos_deg(double degrees)
-{
-    if (degrees == 0.0) return 1.0;
-    if (degrees == 60.0) return 0.5;
-    if (degrees == 90.0) return 0.0;
-    if (degrees == 120.0) return -0.5;
-    if (degrees == 180.0) return -1.0;
-    return cos(degrees * (M_PI / 180.0));
-}
-
-double geo_sin_deg(double degrees)
-{
-    if (degrees == 0.0 || degrees == 180.0) return 0.0;
-    if (degrees == 60.0 || degrees == 120.0) return sqrt(3.0) * 0.5;
-    if (degrees == 90.0) return 1.0;
-    return sin(degrees * (M_PI / 180.0));
-}
-
-double geo_acos_deg(double cosine)
-{
-    if (cosine == 1.0) return 0.0;
-    if (cosine == 0.5) return 60.0;
-    if (cosine == 0.0) return 90.0;
-    if (cosine == -0.5) return 120.0;
-    if (cosine == -1.0) return 180.0;
-    return acos(cosine) * (180.0 / M_PI);
 }

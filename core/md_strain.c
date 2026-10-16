@@ -202,9 +202,7 @@ static int irrep_matrix(int64_t gid, int position, int dim, nd *out)
         int block = dim / (int)nmod;
         for (int arm = 0; arm < nmod; arm++) {
             int s0 = arm * block;
-            double c = cos(2.0 * M_PI * 0.0), s = sin(2.0 * M_PI * 0.0);
-            if (fabs(c) < 1e-12) c = 0.0;
-            if (fabs(s) < 1e-12) s = 0.0;
+            double c = 1.0, s = 0.0;
             if (block == 1) {
                 phase.v[s0 * dim + s0] = c;
                 continue;

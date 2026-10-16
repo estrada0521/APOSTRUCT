@@ -190,7 +190,7 @@ static void child_lattice_cartesian(const double *lattice, double (*out)[3])
     double a = lattice[0], b = lattice[1], c = lattice[2];
     double ca = geo_cos_deg(lattice[3]), cb = geo_cos_deg(lattice[4]), cg = geo_cos_deg(lattice[5]), sg = geo_sin_deg(lattice[5]);
     double t = c * (ca - cb * cg) / sg;
-    double inner = 1.0 - py_pow(cb, 2.0) - py_pow((ca - cb * cg) / sg, 2.0);
+    double u = (ca - cb * cg) / sg, inner = 1.0 - cb * cb - u * u;
     double parent[3][3] = {{a, 0.0, 0.0}, {b * cg, b * sg, 0.0}, {c * cb, t, c * sqrt(inner > 0.0 ? inner : 0.0)}};
     double identity[3][3] = {{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}};
     for (int i = 0; i < 3; i++) row_multiply(identity[i], (const double (*)[3])parent, out[i]);
@@ -305,7 +305,7 @@ static int parent_cell_placement(md_request *r, const double (*basis)[3], const 
                     for (int axis = 0; axis < 3; axis++) {
                         candidate[axis] = base[axis] + centerings[k][axis] + (double)shift[axis];
                         center[axis] = candidate[axis] + offset[axis];
-                        squares[axis] = py_pow(center[axis] - 0.5, 2.0);
+                        squares[axis] = (center[axis] - 0.5) * (center[axis] - 0.5);
                     }
                     double score = round12(py_sum(squares, 3));
                     int better = !have;
