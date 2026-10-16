@@ -14,6 +14,7 @@ int sel_stage(const jvalue *state, const jvalue *opts, jbuf *b);
 int md_render_text(const jvalue *state, const double *vectors, int64_t nvectors, jbuf *b);
 int64_t mode_details_vectors(const double **data);
 int md_details(const jvalue *request, jbuf *b);
+void exact_rows_reset(void);
 
 static jbuf out;
 
@@ -142,6 +143,7 @@ static int add_mode_text(jbuf *b)
 
 int st_state(const jvalue *request, jbuf *b)
 {
+    exact_rows_reset();
     const jvalue *options = jget(request, "options");
     jbuf parent = {0}, selection = {0};
     jb_reset(&parent);

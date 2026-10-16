@@ -1587,6 +1587,26 @@ static void row_cache_put(int rows, int cols, const double *d, const cy *values,
     if (rounded && (ROWS.rounded[i] = malloc(sizeof(double) * cells + 8))) memcpy(ROWS.rounded[i], rounded, sizeof(double) * cells);
 }
 
+/* Each request starts empty, so a long-lived server reads rows as a fresh
+ * process would. */
+void exact_rows_reset(void)
+{
+    for (int i = 0; i < ROWS.count; i++) {
+        free(ROWS.doubles[i]);
+        free(ROWS.coeffs[i]);
+        free(ROWS.rounded[i]);
+    }
+    free(ROWS.hash);
+    free(ROWS.rows);
+    free(ROWS.cols);
+    free(ROWS.m);
+    free(ROWS.doubles);
+    free(ROWS.coeffs);
+    free(ROWS.rounded);
+    free(ROWS.slots);
+    memset(&ROWS, 0, sizeof ROWS);
+}
+
 /* Rows read back from six-decimal text: the correctly rounded doubles of the
  * exact rows they show, in place; 1 when replaced. */
 int exact_refine_rows(int rows, int cols, double *values)
