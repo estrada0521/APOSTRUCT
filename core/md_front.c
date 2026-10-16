@@ -332,6 +332,75 @@ static int parent_cell_placement(md_request *r, const double (*basis)[3], const 
     return 0;
 }
 
+static i128 rat_floor(rat a) { return a.n >= 0 ? a.n / a.d : -((-a.n + a.d - 1) / a.d); }
+
+static int to_doubles(const rat *in, int n, double *out)
+{
+    for (int i = 0; i < n; i++)
+        if (py_float_of_fraction(in[i], &out[i])) return 1;
+    return 0;
+}
+
+/* parent_cell_placement over the rationals: no rounded scores, exact ties */
+static int exact_cell_placement(md_request *r, const rat (*basis)[3], const rat *origin, char letter)
+{
+    rat parent[3][3], projected[3], base[3], offset[3], half = rat_make(1, 2);
+    rat_overflow = 0;
+    if (rat_inverse3(basis, parent)) return md_fail(MDE_VALUE, "viewer basis is singular");
+    rat_row_mul(origin, (const rat (*)[3])parent, projected);
+    for (int axis = 0; axis < 3; axis++) {
+        base[axis] = rat_neg(projected[axis]);
+        offset[axis] = rat_mul(half, rat_add(rat_add(parent[0][axis], parent[1][axis]), parent[2][axis]));
+    }
+    double translations[4][3];
+    int ncentering = centering_translations(letter, translations);
+    rat centerings[4][3];
+    for (int k = 0; k < ncentering; k++)
+        for (int axis = 0; axis < 3; axis++) centerings[k][axis] = rat_make((i128)nearbyint(translations[k][axis] * 6.0), 6);
+    int have = 0, best_index = 0;
+    rat best_score = rat_int(0), best_center[3], best_origin[3];
+    i128 best_shift[3] = {0};
+    for (int k = 0; k < ncentering; k++) {
+        i128 low[3], high[3];
+        for (int axis = 0; axis < 3; axis++) {
+            rat value = rat_sub(half, rat_add(rat_add(base[axis], centerings[k][axis]), offset[axis]));
+            low[axis] = rat_floor(value);
+            high[axis] = low[axis] + (value.d != 1);
+        }
+        for (i128 x = low[0]; x <= high[0]; x++)
+            for (i128 y = low[1]; y <= high[1]; y++)
+                for (i128 z = low[2]; z <= high[2]; z++) {
+                    i128 shift[3] = {x, y, z};
+                    rat candidate[3], center[3], score = rat_int(0);
+                    for (int axis = 0; axis < 3; axis++) {
+                        candidate[axis] = rat_add(rat_add(base[axis], centerings[k][axis]), rat_int(shift[axis]));
+                        center[axis] = rat_add(candidate[axis], offset[axis]);
+                        rat d = rat_sub(center[axis], half);
+                        score = rat_add(score, rat_mul(d, d));
+                    }
+                    int better = !have;
+                    if (have) {
+                        int c = rat_cmp(score, best_score);
+                        for (int axis = 0; axis < 3 && !c; axis++) c = rat_cmp(center[axis], best_center[axis]);
+                        if (!c) c = (k > best_index) - (k < best_index);
+                        for (int axis = 0; axis < 3 && !c; axis++) c = (shift[axis] > best_shift[axis]) - (shift[axis] < best_shift[axis]);
+                        better = c < 0;
+                    }
+                    if (better) {
+                        have = 1;
+                        best_score = score;
+                        memcpy(best_center, center, sizeof center);
+                        best_index = k;
+                        memcpy(best_shift, shift, sizeof shift);
+                        memcpy(best_origin, candidate, sizeof candidate);
+                    }
+                }
+    }
+    if (rat_overflow || to_doubles(&parent[0][0], 9, &r->viewer_basis[0][0]) || to_doubles(best_origin, 3, r->viewer_origin))
+        return md_fail(MDE_ARITH, "viewer placement out of range");
+    return 0;
+}
+
 /* common._origin_vector of the selected origin (as structure_runtime reads it) */
 void md_origin_vector(const md_request *r, double *out);
 
@@ -373,8 +442,15 @@ int md_front(md_request *r)
         r->has_centering = 1;
         r->centering_factor = sqrt((double)centering_translations(centering_letter(r->child_sg), translations));
     }
-    r->has_presentation_inverse =
-        r->has_display_basis && !float_inverse((const double (*)[3])r->display_basis, r->presentation_inverse);
+    rat exact_inverse[3][3];
+    if (r->has_exact_basis) {
+        rat_overflow = 0;
+        r->has_presentation_inverse = !rat_inverse3((const rat (*)[3])r->exact_basis, exact_inverse) && !rat_overflow &&
+                                      !to_doubles(&exact_inverse[0][0], 9, &r->presentation_inverse[0][0]);
+    } else {
+        r->has_presentation_inverse =
+            r->has_display_basis && !float_inverse((const double (*)[3])r->display_basis, r->presentation_inverse);
+    }
     r->freeparam = source_freeparam(r, &r->has_freeparam);
     r->full_parameter_opd = 0;
     if (jis(r->opd, J_OBJECT) && r->has_freeparam) {
@@ -387,6 +463,8 @@ int md_front(md_request *r)
     double origin[3];
     md_origin_vector(r, origin);
     char letter = r->has_child_sg ? centering_letter(r->child_sg) : 'P';
+    rat exact_origin[3];
+    if (r->has_exact_basis && md_origin_rational(r, exact_origin)) return exact_cell_placement(r, (const rat (*)[3])r->exact_basis, exact_origin, letter);
     MD_TRY(parent_cell_placement(r, r->has_display_basis ? (const double (*)[3])r->display_basis : (const double (*)[3])identity, origin,
                                  letter));
     return 0;

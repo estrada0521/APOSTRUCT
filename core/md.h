@@ -162,6 +162,8 @@ typedef struct {
     /* selected presentation */
     int has_display_basis;
     double display_basis[3][3];
+    int has_exact_basis;
+    rat exact_basis[3][3];
     int presentation_identity;
     int origin_kind; /* 0 none, 1 text, 2 record */
     md_str origin_text;
@@ -233,6 +235,7 @@ int md_integer_source_basis(const md_request *r, int64_t *out);
 int md_float_rows(const jvalue *rows, md_matrix *out, int *ndim);
 char *md_default_symbol(int sg);
 void md_origin_vector(const md_request *r, double *out);
+int md_origin_rational(const md_request *r, rat *out);
 void md_spec_free(md_spec *spec);
 void md_child_structure_json(const md_request *r, jbuf *b);
 void md_release(md_request *r);

@@ -218,6 +218,24 @@ static void selected_subgroup_number(md_request *r)
     }
 }
 
+/* "(a,b,c),(d,e,f),(g,h,i)" of rationals; nonzero when it does not read */
+static int exact_basis_text(const jvalue *text, rat (*out)[3])
+{
+    if (!jis(text, J_STRING)) return 1;
+    const char *c = text->u.s, *e = c + text->count;
+    for (int row = 0; row < 3; row++) {
+        if (row && (c >= e || *c++ != ',')) return 1;
+        if (c >= e || *c++ != '(') return 1;
+        for (int col = 0; col < 3; col++) {
+            const char *start = c;
+            while (c < e && *c != ',' && *c != ')') c++;
+            if (c >= e || *c != (col < 2 ? ',' : ')') || py_fraction_of_text(start, c - start, &out[row][col])) return 1;
+            c++;
+        }
+    }
+    return c != e;
+}
+
 /* structure_runtime._basis_from_opd_row */
 static void display_basis(md_request *r)
 {
@@ -230,6 +248,10 @@ static void display_basis(md_request *r)
         for (int col = 0; col < 3; col++)
             if (py_float_of(jat(jat(basis, row), col), &r->display_basis[row][col])) return;
     r->has_display_basis = 1;
+    r->has_exact_basis = !exact_basis_text(r->iso ? jget(r->iso, "basis_text") : 0, r->exact_basis);
+    for (int row = 0; row < 3 && r->has_exact_basis; row++)
+        for (int col = 0; col < 3; col++)
+            if (py_float_of_fraction(r->exact_basis[row][col], &r->display_basis[row][col])) r->has_exact_basis = 0;
     int identity = 1;
     for (int row = 0; row < 3; row++)
         for (int col = 0; col < 3; col++) identity &= fabs(r->display_basis[row][col] - (row == col ? 1.0 : 0.0)) <= 1e-12;
@@ -265,6 +287,10 @@ static int basis_cinter_to_pml(md_request *r)
     for (int row = 0; row < 3; row++)
         for (int col = 0; col < 3; col++) {
             rat raw, snapped;
+            if (r->has_exact_basis) {
+                rows[row][col] = r->exact_basis[row][col];
+                continue;
+            }
             if (py_fraction_of_float(r->display_basis[row][col], &raw))
                 return md_fail(MDE_ARITH, "presentation basis value out of range");
             snapped = py_limit_denominator(raw, 384);
@@ -378,6 +404,30 @@ static int exact_presentation_origin(const md_request *r, rat *out)
 }
 
 /* common._origin_vector of the selected origin */
+int md_origin_rational(const md_request *r, rat *out)
+{
+    for (int i = 0; i < 3; i++) out[i] = rat_int(0);
+    if (r->origin_kind == 2) {
+        if (!r->origin_record[3]) return 0;
+        rat_overflow = 0;
+        for (int i = 0; i < 3; i++) out[i] = rat_make(r->origin_record[i], r->origin_record[3]);
+        return !rat_overflow;
+    }
+    if (r->origin_kind != 1) return 1;
+    const char *s = r->origin_text.data, *e = s + r->origin_text.length;
+    while (s < e && (*s == ' ' || (*s >= '\t' && *s <= '\r'))) s++;
+    while (e > s && (e[-1] == ' ' || (e[-1] >= '\t' && e[-1] <= '\r'))) e--;
+    if (!(e - s >= 2 && *s == '(' && e[-1] == ')')) return 1;
+    const char *c = s + 1;
+    for (int i = 0; i < 3; i++) {
+        const char *start = c;
+        while (c < e - 1 && *c != ',') c++;
+        if ((i < 2) != (c < e - 1) || py_fraction_of_text(start, c - start, &out[i])) return 0;
+        c++;
+    }
+    return 1;
+}
+
 void md_origin_vector(const md_request *r, double *out)
 {
     out[0] = out[1] = out[2] = 0.0;
