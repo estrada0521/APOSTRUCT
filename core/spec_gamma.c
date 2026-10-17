@@ -1567,10 +1567,12 @@ static int meet_fixed(uint64_t *x, int r, const uint64_t *mat, int D)
 }
 
 /* the number of data_isotropy rows of a tabulated irrep (0 when untabulated) */
-static int table_rows(int gid)
+static int table_rows(int gid, int magnetic)
 {
     section_view old, pointer;
-    if (section_find("little.little_irr_old", &old) || section_find("isotropy.isotropy_irrep_pointer", &pointer)) return 0;
+    if (section_find("little.little_irr_old", &old) ||
+        section_find(magnetic ? "magnetic.mag_iso_irrep_pointer" : "isotropy.isotropy_irrep_pointer", &pointer))
+        return 0;
     int64_t old_id = section_int(&old, gid - 1);
     if (old_id <= 0) return 0;
     return (int)(section_int(&pointer, old_id) - section_int(&pointer, old_id - 1));
@@ -1661,18 +1663,23 @@ static int table_labels(const sp_induced *c, int gid, const pset *seen, const in
 /* the walk's candidate order (the order rule of the dynamic labels): Source records in table order, each with the
  * translation classes modulo the irrep's kernel lattice in op_new_fractionals order; distinct Gamma matrices kept
  * in first-seen order */
-static int walk_order(const sp_induced *c, int gid, const int64_t *kparam, pset *out)
+int magnetic_records_iso(int group, int capacity, int64_t *records_out);
+int mag_point_action(int mode, int op, int *sign);
+int mag_orderparam_group(int sg);
+int mag_tables(void);
+
+static int walk_order(const sp_induced *c, int gid, const int64_t *kparam, int magnetic, pset *out)
 {
     irrep_context ctx;
     if (irrep_context_for(gid, 4, kparam, &ctx)) return spfail("irrep context for the walk order");
-    int64_t records[GEO_MAX_OPS][5];
-    int nrec = geo_sg_records(SP_SG, records), cops[GEO_MAX_OPS], csigns[GEO_MAX_OPS];
-    for (int i = 0; i < nrec; i++) {
-        cops[i] = (int)records[i][4];
-        csigns[i] = 1;
-    }
+    if (magnetic && mag_tables()) return spfail("magnetic tables are missing");
+    int64_t records[192][5];
+    int nrec = magnetic ? magnetic_records_iso(mag_orderparam_group(SP_SG), 192, &records[0][0]) : geo_sg_records(SP_SG, records);
+    int cops[192], csigns[192];
+    if (nrec <= 0) return spfail("records for the walk order");
+    for (int i = 0; i < nrec; i++) cops[i] = mag_point_action(magnetic, (int)records[i][4], &csigns[i]);
     double *full = calloc((size_t)ctx.dim * 48 + 1, sizeof(double));
-    int64_t basis[9], kept[5 * GEO_MAX_OPS + 5];
+    int64_t basis[9], kept[5 * 192 + 5];
     int kept_count = 0;
     for (int row = 0; row < ctx.dim; row++) full[row * 48 + row] = 1.0;
     int status = subgroup_rows_in_context(ctx.dim, ctx.arms, ctx.k, ctx.subtract, ctx.element_count, ctx.elements, ctx.sparse, ctx.available,
@@ -1696,14 +1703,117 @@ static int walk_order(const sp_induced *c, int gid, const int64_t *kparam, pset 
         for (int f = 0; f < nf; f++) {
             int64_t op[5];
             sp_aff a;
-            if (op_vadd(fractions + 4 * f, records[sp], op) || record_to_aff(op, &a) || gamma_of(c, &a, gm)) {
+            if (op_vadd(fractions + 4 * f, records[sp], op)) return spfail("walk-order element");
+            op[4] = cops[sp];
+            if (record_to_aff(op, &a) || gamma_of(c, &a, gm)) {
                 free(fractions), free(gm);
                 return spfail("walk-order element");
             }
+            if (csigns[sp] < 0)
+                for (int i = 0; i < c->D * c->D; i++) gm[i] = psub(0, gm[i]);
             if (pset_put(out, gm, &added) < 0) return spfail("out of memory");
         }
     free(fractions);
     free(gm);
+    return 0;
+}
+
+int orderparam_to_subgroup_rows(int gid, int param_count, const int64_t *kparam, const double *values, int64_t value_count, int row_count,
+                                int candidate_count, const int64_t *candidates, const int *candidate_matrix_ops, const int *candidate_signs,
+                                int max_iter, int64_t *basis_out, int64_t *kept_out, int *kept_count);
+
+/* labels from the magnetic isotropy rows of a tabulated irrep: each row's direction gives its magnetic subgroup (records
+ * with time reversal, and a lattice) as the table path derives it; its fixed space on Gamma names one of our orbits */
+static int mag_table_labels(const sp_induced *c, int gid, const pset *seen, const int *orbit_of, char (*labels)[16], size_t nreps)
+{
+    static section_view old, pointer, dimv, freev, opptr, ops, label, consts;
+    static int ready;
+    if (!ready) {
+        if (mag_tables() || section_find("little.little_irr_old", &old) || section_find("magnetic.mag_iso_irrep_pointer", &pointer) ||
+            section_find("magnetic.mag_iso_orderparam_dim", &dimv) || section_find("magnetic.mag_iso_orderparam_freeparam", &freev) ||
+            section_find("magnetic.mag_iso_orderparam_pointer", &opptr) || section_find("magnetic.mag_iso_orderparam", &ops) ||
+            section_find("magnetic.mag_iso_orderparam_label", &label) || section_find("const.values", &consts))
+            return spfail("magnetic isotropy tables are missing");
+        ready = 1;
+    }
+    int64_t old_id = section_int(&old, gid - 1);
+    if (old_id <= 0) return 0;
+    int64_t start = section_int(&pointer, old_id - 1), end = section_int(&pointer, old_id);
+    const double *constants = (const double *)consts.data;
+    int64_t cand[192][5];
+    int ncand = magnetic_records_iso(mag_orderparam_group(SP_SG), 192, &cand[0][0]), cops[192], csigns[192];
+    if (ncand <= 0) return spfail("magnetic records");
+    for (int i = 0; i < ncand; i++) cops[i] = mag_point_action(1, (int)cand[i][4], &csigns[i]);
+    int D = c->D;
+    uint64_t *x = malloc(sizeof(uint64_t) * ((size_t)D * D + 1)), *gm = malloc(sizeof(uint64_t) * (size_t)D * D), *key = malloc(sizeof(uint64_t) * (1 + (size_t)D * D));
+    for (int64_t row = start; row < end; row++) {
+        int64_t idx = row - 1, dim = section_int(&dimv, idx), fn = section_int(&freev, idx), ptr = section_int(&opptr, idx) - 1;
+        if (fn <= 0 || dim <= 0 || dim > 48) continue;
+        double *values = calloc((size_t)fn * 48 + 1, sizeof(double));
+        for (int64_t p = 0; p < fn; p++)
+            for (int64_t q = 0; q < dim; q++) values[p * 48 + q] = constants[section_int(&ops, ptr + p * dim + q)];
+        int64_t sub_basis[9], kept[192][5], none = 0;
+        int kept_count = 0;
+        int code = orderparam_to_subgroup_rows(gid, 0, &none, values, fn * 48, (int)fn, ncand, &cand[0][0], cops, csigns, 256, sub_basis,
+                                               &kept[0][0], &kept_count);
+        free(values);
+        if (code) continue;
+        memset(x, 0, sizeof(uint64_t) * (size_t)D * D);
+        for (int i = 0; i < D; i++) x[i * D + i] = 1;
+        int r = D;
+        for (int q = 0; q < kept_count + 3 && r; q++) {
+            sp_aff a;
+            int sign = 1;
+            int64_t rec[5];
+            if (q < kept_count) {
+                memcpy(rec, kept[q], sizeof rec);
+                rec[4] = mag_point_action(1, (int)kept[q][4], &sign);
+            } else {
+                int64_t src[GEO_MAX_OPS][5];
+                int nsrc = geo_sg_records(SP_SG, src);
+                rec[0] = sub_basis[3 * (q - kept_count)];
+                rec[1] = sub_basis[3 * (q - kept_count) + 1];
+                rec[2] = sub_basis[3 * (q - kept_count) + 2];
+                rec[3] = 1;
+                rec[4] = 0;
+                for (int z = 0; z < nsrc && !rec[4]; z++) {
+                    int ident = 1;
+                    for (int i = 0; i < 3; i++) {
+                        rat e[3] = {rat_int(i == 0), rat_int(i == 1), rat_int(i == 2)}, unit[3];
+                        geo_vrot(SP_SG, (int)src[z][4], e, unit);
+                        for (int j = 0; j < 3; j++) ident &= rat_eq(unit[j], rat_int(i == j));
+                    }
+                    if (ident) rec[4] = src[z][4];
+                }
+            }
+            if (record_to_aff(rec, &a) || gamma_of(c, &a, gm)) return 1;
+            if (sign < 0)
+                for (int i = 0; i < D * D; i++) gm[i] = psub(0, gm[i]);
+            r = meet_fixed(x, r, gm, D);
+        }
+        if (!r) continue;
+        memset(key, 0, sizeof(uint64_t) * (1 + (size_t)D * D));
+        key[0] = (uint64_t)r;
+        memcpy(key + 1, x, sizeof(uint64_t) * (size_t)r * D);
+        size_t slot = phash(key, seen->width) & (seen->slots - 1);
+        int64_t found = -1;
+        for (; seen->table[slot] >= 0; slot = (slot + 1) & (seen->slots - 1))
+            if (!memcmp(seen->items + (size_t)seen->table[slot] * seen->width, key, sizeof(uint64_t) * (size_t)seen->width)) {
+                found = seen->table[slot];
+                break;
+            }
+        if (found < 0) continue;
+        int rep = orbit_of[found];
+        const char *text;
+        int64_t length;
+        if (rep < 0 || (size_t)rep >= nreps || section_string(&label, idx, &text, &length)) continue;
+        while (length && (*text == ' ')) text++, length--;
+        while (length && text[length - 1] == ' ') length--;
+        if (length > 15) length = 15;
+        memcpy(labels[rep], text, (size_t)length);
+        labels[rep][length] = 0;
+    }
+    free(x), free(gm), free(key);
     return 0;
 }
 
@@ -2032,8 +2142,8 @@ static int k_opds(const sp_group *g, const sp_little *L, const rat *k, const cy_
     /* candidate order: the walk's for an untabulated ordinary irrep (its labels count in that order), else the image's */
     pset cand = {D * D, 0, 0, 0, 0, 0};
     const pset *candidates = &image;
-    if (named_gid > 0 && !magnetic && !table_rows(named_gid)) {
-        if (walk_order(&ind, named_gid, SP_NAMES->kparam, &cand)) return MDE_VALUE;
+    if (named_gid > 0 && !table_rows(named_gid, magnetic)) {
+        if (walk_order(&ind, named_gid, SP_NAMES->kparam, magnetic, &cand)) return MDE_VALUE;
         if (cand.count != order) return spfail("walk order and image differ"), MDE_VALUE;
         candidates = &cand;
     }
@@ -2092,7 +2202,9 @@ static int k_opds(const sp_group *g, const sp_little *L, const rat *k, const cy_
 #undef MARK
     /* names of the OPDs: the table rows of the named irrep, each located by the fixed space of its subgroup */
     char (*labels)[16] = calloc(nreps, sizeof *labels);
-    if (named_gid > 0 && table_labels(&ind, named_gid, &seen, orbit_of, labels, nreps)) return MDE_VALUE;
+    if (named_gid > 0 && (magnetic ? mag_table_labels(&ind, named_gid, &seen, orbit_of, labels, nreps)
+                                   : table_labels(&ind, named_gid, &seen, orbit_of, labels, nreps)))
+        return MDE_VALUE;
     {
         /* untabulated irreps: P, C, S or nD by real dimension, numbered in discovery order */
         int any = 0, counts[100] = {0};
