@@ -110,7 +110,7 @@ static int star_vectors(int gid, int param_count, const int64_t *kparam, gid_con
     return 0;
 }
 
-int irrep_context_for(int gid, int param_count, const int64_t *kparam, irrep_context *out)
+static int context(int gid, int param_count, const int64_t *kparam, int matrices, irrep_context *out)
 {
     if (load()) return IR_TABLES;
     if (gid < 1 || gid > L.count) return IR_NO_TABLES;
@@ -143,7 +143,7 @@ int irrep_context_for(int gid, int param_count, const int64_t *kparam, irrep_con
         g->key_count = count;
     }
     /* the matrices last: deriving them reads this context (irrep_context_current) */
-    if (!g->sparse_ready) {
+    if (matrices && !g->sparse_ready) {
         g->sparse_ready = 1;
         little_sparse_context(gid, g->dim, g->element_count, g->sparse, g->available);
     }
@@ -157,6 +157,17 @@ int irrep_context_for(int gid, int param_count, const int64_t *kparam, irrep_con
     out->available = g->available;
     out->identity_op = g->elements[4];
     return 0;
+}
+
+int irrep_context_for(int gid, int param_count, const int64_t *kparam, irrep_context *out)
+{
+    return context(gid, param_count, kparam, 1, out);
+}
+
+/* irrep_context_for without the matrices, for their derivation */
+int irrep_context_k(int gid, int param_count, const int64_t *kparam, irrep_context *out)
+{
+    return context(gid, param_count, kparam, 0, out);
 }
 
 /* the context of gid as it stands (its last k parameters), without changing them; nonzero when none is ready */

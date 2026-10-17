@@ -320,6 +320,7 @@ int exact_record_matrix(int gid, int dim, int arms, const int64_t *k, int subtra
 
 #include "irreps.h"
 int irrep_context_current(int gid, irrep_context *out);
+int irrep_context_k(int gid, int param_count, const int64_t *kparam, irrep_context *out);
 
 int exact_kernel(const cy_field *f, int rows, int cols, const cy *a, int *count, cy *kernel, unsigned char *pivots_out);
 
@@ -446,7 +447,7 @@ static int derive_positions(int gid, const int64_t *kparam, derived_t *out, int 
     memset(counts, 0, sizeof(int) * 5);
     memset(out, 0, sizeof *out);
     irrep_context c;
-    if (irrep_context_current(gid, &c) && irrep_context_for(gid, 4, kparam, &c)) return 1;
+    if (irrep_context_current(gid, &c) && irrep_context_k(gid, 4, kparam, &c)) return 1;
     int sg = irrep_space_group(gid), n = c.element_count, dim = c.dim;
     rat (*rot)[3][3] = malloc(sizeof(rat[3][3]) * (size_t)n);
     for (int p = 0; p < n; p++) position_rotation(sg, c.elements[5 * p + 4], rot[p]);
@@ -655,7 +656,7 @@ static uint64_t cy_residue(const cy_field *f, const cy *x, uint64_t w, uint64_t 
 static int derive_codes(int gid, const int64_t *kparam, int **codes_out, unsigned char **seed_out, int *n_out, int *dim_out)
 {
     irrep_context c;
-    if (irrep_context_current(gid, &c) && irrep_context_for(gid, 4, kparam, &c)) return 1;
+    if (irrep_context_current(gid, &c) && irrep_context_k(gid, 4, kparam, &c)) return 1;
     int sg = irrep_space_group(gid), n = c.element_count, dim = c.dim;
     rat (*rot)[3][3] = malloc(sizeof(rat[3][3]) * (size_t)n);
     for (int q = 0; q < n; q++) position_rotation(sg, c.elements[5 * q + 4], rot[q]);

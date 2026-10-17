@@ -17,6 +17,7 @@ int mode_block(int sg, int row_id, int site_pg, int gid, int irrep_type, int ful
                int has_rows, int source_row_id, int freeparam, int flags, int direction_rows, const double *direction,
                int candidate_lanes, const int *candidate_records, int baseline_lanes, const int *baseline_records,
                int transform_count, const double *transforms, int negate);
+int row_site_irreps(int gid, int row_id, int *out);
 int64_t site_atom_table(int sg, int row_id, int site_pg, const int64_t *param_words, const int64_t *basis,
                         const int64_t *representative_words, int64_t capacity, int64_t *points, int64_t *records,
                         int64_t *order);
@@ -51,8 +52,7 @@ static int fail(int kind, const char *message)
 
 static struct {
     section_view w_pointer, w_count, w_label, w_pg, vector_reps, irr_sg, irr_old, full_label, full_dim, irr_type, irr_k, k_label,
-        irr_count, w_irrep_pointer, w_sub_pointer, w_sub_count, w_sub_irrep, l_sub_irr_pointer, l_sub_pointer, l_sub_count,
-        l_sub_irrep, iso_irrep_pointer, iso_subgroup, iso_arms, iso_direction, iso_basis, iso_origin, iso_freeparam,
+        irr_count, iso_irrep_pointer, iso_subgroup, iso_arms, iso_direction, iso_basis, iso_origin, iso_freeparam,
         iso_op_dim, iso_op_pointer, iso_op, const_values, sg_point_group, pg_order, pg_gen_count, pg_gen, lattice;
     int ready;
 } T;
@@ -67,13 +67,6 @@ static int load(void)
         section_find("little.little_irr_full_label", &T.full_label) || section_find("little.little_irr_full_dim", &T.full_dim) ||
         section_find("little.little_irr_type", &T.irr_type) || section_find("little.little_irr_k", &T.irr_k) ||
         section_find("little.little_k_label", &T.k_label) || section_find("little.little_irr_count", &T.irr_count) ||
-        section_find("wyckoff.iwyckoff_irrep_pointer", &T.w_irrep_pointer) ||
-        section_find("wyckoff.iwyckoff_subduce_pointer", &T.w_sub_pointer) ||
-        section_find("wyckoff.iwyckoff_subduce_count", &T.w_sub_count) ||
-        section_find("wyckoff.iwyckoff_subduce_pg_irrep", &T.w_sub_irrep) ||
-        section_find("little.little_subduce_irr_pointer", &T.l_sub_irr_pointer) ||
-        section_find("little.little_subduce_pointer", &T.l_sub_pointer) || section_find("little.little_subduce_count", &T.l_sub_count) ||
-        section_find("little.little_subduce_pg_irrep", &T.l_sub_irrep) ||
         section_find("isotropy.isotropy_irrep_pointer", &T.iso_irrep_pointer) ||
         section_find("isotropy.isotropy_subgroup", &T.iso_subgroup) || section_find("isotropy.isotropy_arms", &T.iso_arms) ||
         section_find("isotropy.isotropy_direction", &T.iso_direction) || section_find("isotropy.isotropy_basis", &T.iso_basis) ||
@@ -599,24 +592,14 @@ int mode_frame(int sg, const char *wyckoff, int64_t wyckoff_length, const char *
         return fail(PY_MEMORY, "mode frame ran out of memory"), fail_kind;
     }
     {
-        int64_t entry, pointer, count;
-        if (old_id > 0) {
-            entry = section_int(&T.w_irrep_pointer, old_id - 1) + offset0;
-            pointer = section_int(&T.w_sub_pointer, entry - 1);
-            count = section_int(&T.w_sub_count, entry - 1);
-        } else {
-            int64_t base = section_int(&T.l_sub_irr_pointer, gid - 1);
-            if (base <= 0) {
-                        free(entries);
-                snprintf(message, sizeof message, "missing little_subduce pointer for gid=%d", gid);
-                return fail(PY_KEY, message), fail_kind;
-            }
-            entry = base + offset0;
-            pointer = section_int(&T.l_sub_pointer, entry - 1);
-            count = section_int(&T.l_sub_count, entry - 1);
+        int present[12], count = row_site_irreps(gid, row_id, present);
+        if (count < 0) {
+            free(entries);
+            snprintf(message, sizeof message, "no subduction for gid=%d", gid);
+            return fail(PY_KEY, message), fail_kind;
         }
-        for (int64_t j = 0; j < count && nentries < 64; j++) {
-            int pg_irrep = (int)(old_id > 0 ? section_int(&T.w_sub_irrep, pointer - 1 + j) : section_int(&T.l_sub_irrep, pointer - 1 + j));
+        for (int j = 0; j < count && nentries < 64; j++) {
+            int pg_irrep = present[j];
             int in = 0;
             for (int i = 0; i < 3; i++) in |= vector_slots[i] == pg_irrep;
             if (!in) continue;

@@ -14,6 +14,7 @@ int project_selection(int type, int pd, int sd, int record_count, const double *
                       const double *inverse, int block_count, int project_count, int basis_length, int capacity,
                       int *selected, int64_t *active_index, double *active_value, int *active_count);
 int little_sparse_matrix(int gid, int dim, int position, double *out);
+static int row_frequencies(int gid, int row_id, int64_t *frequency, int *site_irreps);
 
 enum {
     PE_TABLES = 1,
@@ -25,8 +26,7 @@ enum {
 enum { FAMILY_STRIDE = 144, SOURCE_LENGTH = 768 };
 
 static struct {
-    section_view sg, dim, type, old, kslot, star_count, sub_irr_pointer, sub_pointer, sub_count, sub_pg, sub_freq,
-        w_irrep_pointer, w_sub_pointer, w_sub_count, w_sub_pg, w_sub_freq, pg_irrep, irrep_image, image_type,
+    section_view sg, dim, type, old, kslot, star_count, pg_irrep, irrep_image, image_type,
         image_dimension, vector_reps;
     int ready;
 } T;
@@ -45,16 +45,6 @@ static int load(void)
         {"little.little_irr_old", &T.old},
         {"little.little_irr_k", &T.kslot},
         {"little.little_k_star_count", &T.star_count},
-        {"little.little_subduce_irr_pointer", &T.sub_irr_pointer},
-        {"little.little_subduce_pointer", &T.sub_pointer},
-        {"little.little_subduce_count", &T.sub_count},
-        {"little.little_subduce_pg_irrep", &T.sub_pg},
-        {"little.little_subduce_frequency", &T.sub_freq},
-        {"wyckoff.iwyckoff_irrep_pointer", &T.w_irrep_pointer},
-        {"wyckoff.iwyckoff_subduce_pointer", &T.w_sub_pointer},
-        {"wyckoff.iwyckoff_subduce_count", &T.w_sub_count},
-        {"wyckoff.iwyckoff_subduce_pg_irrep", &T.w_sub_pg},
-        {"wyckoff.iwyckoff_subduce_frequency", &T.w_sub_freq},
         {"wyckoff.iwyckoff_pg_irrep", &T.pg_irrep},
         {"irreps.irrep_image", &T.irrep_image},
         {"images.image_type", &T.image_type},
@@ -88,37 +78,22 @@ static int64_t image_of(int old_id) { return at(&T.irrep_image, old_id - 1); }
 
 /* project_counts_for_little: the count of pg_irrep, after checking every
  * pair of the row's subduction. */
-static int project_count_of(int gid, int row_offset, int site_pg, int pg_irrep, int64_t *count)
+static int project_count_of(int gid, int row_id, int site_pg, int pg_irrep, int64_t *count)
 {
-    int old = (int)at(&T.old, gid - 1), type = (int)at(&T.type, gid - 1);
-    int64_t pointer, pairs;
-    const section_view *pgs, *freqs;
-    if (old > 0) {
-        int64_t entry = at(&T.w_irrep_pointer, old - 1) + row_offset;
-        pointer = at(&T.w_sub_pointer, entry - 1);
-        pairs = at(&T.w_sub_count, entry - 1);
-        pgs = &T.w_sub_pg;
-        freqs = &T.w_sub_freq;
-    } else {
-        int64_t base = at(&T.sub_irr_pointer, gid - 1);
-        if (base <= 0) return PE_KEY;
-        int64_t entry = base + row_offset;
-        pointer = at(&T.sub_pointer, entry - 1);
-        pairs = at(&T.sub_count, entry - 1);
-        pgs = &T.sub_pg;
-        freqs = &T.sub_freq;
-    }
+    int type = (int)at(&T.type, gid - 1), n = 0;
+    int64_t frequency[12];
+    int status = row_frequencies(gid, row_id, frequency, &n);
+    if (status) return status;
     int divisor = type == 1 ? 1 : type == 2 ? 4 : type == 3 ? 2 : 0;
     if (!divisor) return PE_KEY;
     int found = 0;
-    for (int64_t j = 0; j < pairs; j++) {
-        int pg = (int)at(pgs, pointer - 1 + j);
-        int64_t frequency = at(freqs, pointer - 1 + j);
+    for (int pg = 1; pg <= n; pg++) {
+        if (!frequency[pg - 1]) continue;
         int site_old = site_old_id(site_pg, pg);
         if (!site_old) return PE_KEY;
         int64_t image = image_of(site_old);
         int64_t factor = (image - 1 < section_count(&T.image_type) && at(&T.image_type, image - 1) == 1) ? 1 : 2;
-        int64_t numerator = frequency * factor;
+        int64_t numerator = frequency[pg - 1] * factor;
         if (numerator % divisor) return PE_VALUE;
         if (pg == pg_irrep) {
             *count = numerator / divisor;
@@ -208,6 +183,99 @@ static int little_gid_for_old(int old_id)
     return gid_by_old[old_id] > 0 ? gid_by_old[old_id] : 0;
 }
 
+/* the subduction of a little irrep to a Wyckoff row's site group by characters: frequency[j - 1] of site irrep j is
+ * sum_k tr W(k) tr S_j(k) / sum_k tr S_j(k)^2 over the site records k */
+static int row_frequencies_uncached(int gid, int row_id, int64_t *frequency, int *site_irreps)
+{
+    int sg = (int)at(&T.sg, gid - 1), dim = (int)at(&T.dim, gid - 1), old = (int)at(&T.old, gid - 1);
+    int site_pg = geo_wyckoff_site_pg(row_id);
+    int64_t records[GEO_MAX_OPS][5];
+    int record_count = geo_site_records(sg, row_id, site_pg, records);
+    if (geo_take_error() || record_count <= 0 || dim <= 0 || dim > 48) return PE_TABLES;
+    int records32[GEO_MAX_OPS * 5], site_ops[GEO_MAX_OPS], site_count = 0;
+    for (int i = 0; i < record_count; i++)
+        for (int j = 0; j < 5; j++) records32[5 * i + j] = (int)records[i][j];
+    if (site_ops_for(site_pg, (const int64_t (*)[5])records, record_count, site_ops, &site_count) || site_count != record_count)
+        return PE_VALUE;
+    double *parent = malloc(sizeof(double) * (size_t)record_count * dim * dim), trace[GEO_MAX_OPS];
+    const int64_t generic[6] = {1, 5, 2, 5, 3, 5};
+    if (!parent) return PE_TABLES;
+    if (case_irrep_stack(gid, old > 0 ? 0 : 3, generic, record_count, records32, (int64_t)record_count * dim * dim, parent)) {
+        free(parent);
+        return PE_VALUE;
+    }
+    for (int i = 0; i < record_count; i++) {
+        trace[i] = 0;
+        for (int a = 0; a < dim; a++) trace[i] += parent[(size_t)i * dim * dim + a * dim + a];
+    }
+    free(parent);
+    int n = 0;
+    for (int j = 1; j <= 12; j++) {
+        int site_old = site_old_id(site_pg, j), sgid = site_old ? little_gid_for_old(site_old) : 0;
+        if (!sgid) break;
+        int sdim = (int)at(&T.dim, sgid - 1), ssg = (int)at(&T.sg, sgid - 1);
+        int64_t generated[GEO_MAX_OPS][5];
+        int generated_count = geo_sg_records(ssg, generated);
+        double *m = malloc(sizeof(double) * (size_t)sdim * sdim + 1), sum = 0, norm = 0;
+        if (!m) return PE_TABLES;
+        for (int i = 0; i < record_count; i++) {
+            int position = 0;
+            for (int g = 0; g < generated_count; g++)
+                if (generated[g][4] == site_ops[i]) position = g + 1;
+            if (!position || little_sparse_matrix(sgid, sdim, position, m)) {
+                free(m);
+                return PE_KEY;
+            }
+            double ts = 0;
+            for (int a = 0; a < sdim; a++) ts += m[a * sdim + a];
+            sum += trace[i] * ts;
+            norm += ts * ts;
+        }
+        free(m);
+        double value = norm > 0 ? sum / norm : -1;
+        if (value < -1e-6 || fabs(value - nearbyint(value)) > 1e-6) return PE_VALUE;
+        frequency[n++] = (int64_t)nearbyint(value);
+    }
+    *site_irreps = n;
+    return n ? 0 : PE_KEY;
+}
+
+static int row_frequencies(int gid, int row_id, int64_t *frequency, int *site_irreps)
+{
+    enum { SLOTS = 64 };
+    static struct {
+        int gid, row, n, status;
+        int64_t frequency[12];
+    } cache[SLOTS];
+    static int next;
+    for (int i = 0; i < SLOTS; i++)
+        if (cache[i].gid == gid && cache[i].row == row_id) {
+            memcpy(frequency, cache[i].frequency, sizeof cache[i].frequency);
+            *site_irreps = cache[i].n;
+            return cache[i].status;
+        }
+    int slot = next++ % SLOTS;
+    cache[slot].n = 0;
+    cache[slot].status = row_frequencies_uncached(gid, row_id, cache[slot].frequency, &cache[slot].n);
+    cache[slot].gid = gid;
+    cache[slot].row = row_id;
+    memcpy(frequency, cache[slot].frequency, sizeof cache[slot].frequency);
+    *site_irreps = cache[slot].n;
+    return cache[slot].status;
+}
+
+/* the site irreps of a Wyckoff row present in the subduction of a little irrep, ascending; their count, or < 0 */
+int row_site_irreps(int gid, int row_id, int *out)
+{
+    if (load()) return -PE_TABLES;
+    int64_t frequency[12];
+    int n = 0, count = 0, status = row_frequencies(gid, row_id, frequency, &n);
+    if (status) return -status;
+    for (int j = 0; j < n; j++)
+        if (frequency[j]) out[count++] = j + 1;
+    return count;
+}
+
 /* Row 0 of the site irrep's Source matrix for each site op. */
 static int site_rows_for(int site_old, const int *ops, int op_count, double *rows, int *dim_out)
 {
@@ -251,7 +319,7 @@ int projection_entry(int sg, int row_id, int site_pg, int gid, int pg_irrep, int
     int start, row_count;
     geo_wyckoff_row_range(sg, &start, &row_count);
     int64_t project_count = 0;
-    int status = project_count_of(gid, row_id - start, site_pg, pg_irrep, &project_count);
+    int status = project_count_of(gid, row_id, site_pg, pg_irrep, &project_count);
     if (status) return status;
     int site_old = site_old_id(site_pg, pg_irrep);
     if (!site_old) return PE_KEY;
@@ -400,34 +468,19 @@ int vector_mode_total(int sg, int gid, int row_count, const int *row_ids, int ax
         if (offset < 0 || offset >= count) return PE_KEY;
         if (!divisor) continue;
         int site_pg = geo_wyckoff_site_pg(row_ids[r]);
-        int64_t pointer = 0, pairs = 0;
-        const section_view *pgs = &T.w_sub_pg, *freqs = &T.w_sub_freq;
-        if (old > 0) {
-            int64_t entry = at(&T.w_irrep_pointer, old - 1) + offset;
-            pointer = at(&T.w_sub_pointer, entry - 1);
-            pairs = at(&T.w_sub_count, entry - 1);
-        } else {
-            int64_t base = at(&T.sub_irr_pointer, gid - 1);
-            if (base > 0) {
-                pointer = at(&T.sub_pointer, base + offset - 1);
-                pairs = at(&T.sub_count, base + offset - 1);
-            }
-            pgs = &T.sub_pg;
-            freqs = &T.sub_freq;
-        }
-        if (pointer <= 0 || pairs <= 0) continue;
+        int64_t frequency[12];
+        int pairs = 0;
+        if (row_frequencies(gid, row_ids[r], frequency, &pairs)) continue;
         int64_t counts[13] = {0}, dims[13] = {0};
         int present[13] = {0}, whole = 1;
-        for (int64_t j = 0; j < pairs && whole; j++) {
-            int pg = (int)at(pgs, pointer - 1 + j);
-            int64_t frequency = at(freqs, pointer - 1 + j);
-            if (pg < 1 || pg > 12) return PE_KEY;
+        for (int pg = 1; pg <= pairs && whole; pg++) {
+            if (!frequency[pg - 1]) continue;
             int site_old = site_old_id(site_pg, pg);
             if (!site_old) return PE_KEY;
             int64_t image = image_of(site_old);
             dims[pg] = at(&T.image_dimension, image - 1);
             int64_t image_type = image - 1 < section_count(&T.image_type) ? at(&T.image_type, image - 1) : 0;
-            int64_t numerator = frequency * (image_type == 1 || image_type == 0 ? 1 : 2);
+            int64_t numerator = frequency[pg - 1] * (image_type == 1 || image_type == 0 ? 1 : 2);
             if (numerator % divisor) whole = 0;
             counts[pg] = numerator / divisor;
             present[pg] = 1;
