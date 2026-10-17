@@ -1515,6 +1515,198 @@ static int name_irrep(const sp_induced *c, const cy_field *f, const cy *sigma, i
 }
 
 /* site >= 0: the Bloch displacements (axial: moments, times det R) of one site; site < 0: the strain (k = 0) */
+#include "tables.h"
+int parent_operation_records(int parent_sg, int child_sg, const int64_t *basis, const int64_t *origin, int64_t (*out)[5]);
+
+/* a Source record (pml frame) as an affine map of G in the CIF frame */
+static int record_to_aff(const int64_t *rec, sp_aff *a)
+{
+    rat m[3][3], origin[3], minv[3][3];
+    if (geo_setting_to_cinter(SP_SG, 1, SP_SETTING, m, origin) || rat_inverse3((const rat (*)[3])m, minv))
+        return spfail("parent setting tables are inconsistent");
+    rat point[3][3], tmp[3][3], rt[3][3], tp[3], tc[3], o1[3];
+    for (int i = 0; i < 3; i++) {
+        rat unit[3] = {rat_int(i == 0), rat_int(i == 1), rat_int(i == 2)};
+        geo_vrot(SP_SG, (int)rec[4], unit, point[i]);
+    }
+    for (int i = 0; i < 3; i++) rat_row_mul(minv[i], (const rat (*)[3])point, tmp[i]);
+    for (int i = 0; i < 3; i++) rat_row_mul(tmp[i], (const rat (*)[3])m, rt[i]);
+    for (int z = 0; z < 3; z++) tp[z] = rat_make(rec[z], rec[3]);
+    rat_row_mul(tp, (const rat (*)[3])m, tc);
+    rat_row_mul(origin, (const rat (*)[3])rt, o1);
+    for (int i = 0; i < 3; i++)
+        for (int j = 0; j < 3; j++) {
+            if (rt[j][i].d != 1) return spfail("record rotation is not integral in the CIF frame");
+            a->r[i][j] = (int)rt[j][i].n;
+        }
+    for (int z = 0; z < 3; z++) {
+        rat v = rat_mul(rat_sub(rat_add(tc[z], origin[z]), o1[z]), rat_int(24));
+        if (v.d != 1) return spfail("record translation off the 1/24 grid");
+        a->t[z] = (int)v.n;
+    }
+    return rat_overflow ? spfail("rational overflow in the naming bridge") : 0;
+}
+
+/* intersect canonical rows x (r of them) with the fixed space of mat; returns the new rank */
+static int meet_fixed(uint64_t *x, int r, const uint64_t *mat, int D)
+{
+    uint64_t *img = malloc(sizeof(uint64_t) * (size_t)r * D + 1), *tr = malloc(sizeof(uint64_t) * (size_t)D * r + 1);
+    uint64_t *cs = malloc(sizeof(uint64_t) * (size_t)r * r + 1), *rows = calloc((size_t)r * D + 1, sizeof(uint64_t));
+    prow_image(x, r, mat, D, img);
+    for (int i = 0; i < r; i++)
+        for (int a = 0; a < D; a++) tr[a * r + i] = psub(img[i * D + a], x[i * D + a]);
+    int cnt = pnull(tr, D, r, cs);
+    for (int v2 = 0; v2 < cnt; v2++)
+        for (int i = 0; i < r; i++)
+            if (cs[v2 * r + i])
+                for (int a = 0; a < D; a++) rows[v2 * D + a] = padd(rows[v2 * D + a], pmul(cs[v2 * r + i], x[i * D + a]));
+    int rr = cnt ? pcanon(rows, cnt, D) : 0;
+    memcpy(x, rows, sizeof(uint64_t) * (size_t)rr * D);
+    free(img), free(tr), free(cs), free(rows);
+    return rr;
+}
+
+/* the number of data_isotropy rows of a tabulated irrep (0 when untabulated) */
+static int table_rows(int gid)
+{
+    section_view old, pointer;
+    if (section_find("little.little_irr_old", &old) || section_find("isotropy.isotropy_irrep_pointer", &pointer)) return 0;
+    int64_t old_id = section_int(&old, gid - 1);
+    if (old_id <= 0) return 0;
+    return (int)(section_int(&pointer, old_id) - section_int(&pointer, old_id - 1));
+}
+
+/* labels from the data_isotropy rows of a tabulated irrep: each row's subgroup (number, basis, origin) acts on
+ * Gamma, its fixed space is an isotropy subspace, and its orbit is one of ours */
+static int table_labels(const sp_induced *c, int gid, const pset *seen, const int *orbit_of, char (*labels)[16], size_t nreps)
+{
+    static section_view old, pointer, subgroup, basis, origin, label;
+    static int ready;
+    if (!ready) {
+        if (section_find("little.little_irr_old", &old) || section_find("isotropy.isotropy_irrep_pointer", &pointer) ||
+            section_find("isotropy.isotropy_subgroup", &subgroup) || section_find("isotropy.isotropy_basis", &basis) ||
+            section_find("isotropy.isotropy_origin", &origin) || section_find("isotropy.isotropy_orderparam_label", &label))
+            return spfail("isotropy tables are missing");
+        ready = 1;
+    }
+    int64_t old_id = section_int(&old, gid - 1);
+    if (old_id <= 0) return 0;
+    int64_t start = section_int(&pointer, old_id - 1), end = section_int(&pointer, old_id);
+    int D = c->D;
+    uint64_t *x = malloc(sizeof(uint64_t) * ((size_t)D * D + 1)), *gm = malloc(sizeof(uint64_t) * (size_t)D * D), *key = malloc(sizeof(uint64_t) * (1 + (size_t)D * D));
+    for (int64_t row = start; row < end; row++) {
+        int64_t idx = row - 1, b9[9], o4[4], records[GEO_MAX_OPS][5];
+        for (int i = 0; i < 9; i++) b9[i] = section_int(&basis, idx * 9 + i);
+        for (int i = 0; i < 4; i++) o4[i] = section_int(&origin, idx * 4 + i);
+        int n = parent_operation_records(SP_SG, (int)section_int(&subgroup, idx), b9, o4, records);
+        if (n <= 0) return spfail("table subgroup does not map into the parent");
+        memset(x, 0, sizeof(uint64_t) * (size_t)D * D);
+        for (int i = 0; i < D; i++) x[i * D + i] = 1;
+        int r = D;
+        for (int q = 0; q < n + 3 && r; q++) {
+            sp_aff a;
+            if (q < n) {
+                if (record_to_aff(records[q], &a)) return 1;
+            } else {
+                /* a lattice vector of the subgroup: a pml basis row */
+                int64_t rec[5] = {b9[3 * (q - n)], b9[3 * (q - n) + 1], b9[3 * (q - n) + 2], 1, 0};
+                int64_t src[GEO_MAX_OPS][5];
+                int nsrc = geo_sg_records(SP_SG, src);
+                for (int z = 0; z < nsrc; z++) {
+                    int ident = 1;
+                    rat unit[3][3];
+                    for (int i = 0; i < 3; i++) {
+                        rat e[3] = {rat_int(i == 0), rat_int(i == 1), rat_int(i == 2)};
+                        geo_vrot(SP_SG, (int)src[z][4], e, unit[i]);
+                        for (int j = 0; j < 3; j++) ident &= rat_eq(unit[i][j], rat_int(i == j));
+                    }
+                    if (ident) {
+                        rec[4] = src[z][4];
+                        break;
+                    }
+                }
+                if (record_to_aff(rec, &a)) return 1;
+            }
+            if (gamma_of(c, &a, gm)) return 1;
+            r = meet_fixed(x, r, gm, D);
+        }
+        if (!r) continue;
+        memset(key, 0, sizeof(uint64_t) * (1 + (size_t)D * D));
+        key[0] = (uint64_t)r;
+        memcpy(key + 1, x, sizeof(uint64_t) * (size_t)r * D);
+        size_t slot = phash(key, seen->width) & (seen->slots - 1);
+        int64_t found = -1;
+        for (; seen->table[slot] >= 0; slot = (slot + 1) & (seen->slots - 1))
+            if (!memcmp(seen->items + (size_t)seen->table[slot] * seen->width, key, sizeof(uint64_t) * (size_t)seen->width)) {
+                found = seen->table[slot];
+                break;
+            }
+        if (found < 0) continue;
+        int rep = orbit_of[found];
+        const char *text;
+        int64_t length;
+        if (rep < 0 || (size_t)rep >= nreps || section_string(&label, idx, &text, &length)) continue;
+        while (length && (*text == ' ')) text++, length--;
+        while (length && text[length - 1] == ' ') length--;
+        if (length > 15) length = 15;
+        memcpy(labels[rep], text, (size_t)length);
+        labels[rep][length] = 0;
+    }
+    free(x), free(gm), free(key);
+    return 0;
+}
+
+#include "kernels.h"
+
+/* the walk's candidate order (the order rule of the dynamic labels): Source records in table order, each with the
+ * translation classes modulo the irrep's kernel lattice in op_new_fractionals order; distinct Gamma matrices kept
+ * in first-seen order */
+static int walk_order(const sp_induced *c, int gid, const int64_t *kparam, pset *out)
+{
+    irrep_context ctx;
+    if (irrep_context_for(gid, 4, kparam, &ctx)) return spfail("irrep context for the walk order");
+    int64_t records[GEO_MAX_OPS][5];
+    int nrec = geo_sg_records(SP_SG, records), cops[GEO_MAX_OPS], csigns[GEO_MAX_OPS];
+    for (int i = 0; i < nrec; i++) {
+        cops[i] = (int)records[i][4];
+        csigns[i] = 1;
+    }
+    double *full = calloc((size_t)ctx.dim * 48 + 1, sizeof(double));
+    int64_t basis[9], kept[5 * GEO_MAX_OPS + 5];
+    int kept_count = 0;
+    for (int row = 0; row < ctx.dim; row++) full[row * 48 + row] = 1.0;
+    int status = subgroup_rows_in_context(ctx.dim, ctx.arms, ctx.k, ctx.subtract, ctx.element_count, ctx.elements, ctx.sparse, ctx.available,
+                                          ctx.identity_op, full, (int64_t)ctx.dim * 48, ctx.dim, nrec, &records[0][0], cops, csigns, 256, basis,
+                                          kept, &kept_count);
+    free(full);
+    if (status) return spfail("kernel lattice for the walk order");
+    i128 det = (i128)basis[0] * (basis[4] * basis[8] - basis[5] * basis[7]) - (i128)basis[1] * (basis[3] * basis[8] - basis[5] * basis[6]) +
+               (i128)basis[2] * (basis[3] * basis[7] - basis[4] * basis[6]);
+    if (det < 0) det = -det;
+    if (!det || det > (1 << 20)) return spfail("kernel lattice out of range");
+    int64_t *fractions = malloc(sizeof(int64_t) * 4 * (size_t)(det + 1));
+    int nf = 0;
+    if (op_new_fractionals(basis, fractions, (int)det + 1, &nf)) {
+        free(fractions);
+        return spfail("translation classes for the walk order");
+    }
+    uint64_t *gm = malloc(sizeof(uint64_t) * (size_t)c->D * c->D);
+    int added;
+    for (int sp = 0; sp < nrec; sp++)
+        for (int f = 0; f < nf; f++) {
+            int64_t op[5];
+            sp_aff a;
+            if (op_vadd(fractions + 4 * f, records[sp], op) || record_to_aff(op, &a) || gamma_of(c, &a, gm)) {
+                free(fractions), free(gm);
+                return spfail("walk-order element");
+            }
+            if (pset_put(out, gm, &added) < 0) return spfail("out of memory");
+        }
+    free(fractions);
+    free(gm);
+    return 0;
+}
+
 static const sp_names *SP_NAMES;
 
 static int k_opds(const sp_group *g, const sp_little *L, const rat *k, const cy_field *f, uint64_t w, const cy *sigma, int dim, int site,
@@ -1768,11 +1960,13 @@ static int k_opds(const sp_group *g, const sp_little *L, const rat *k, const cy_
         }
     }
     sp_induced ind = {g, L, k, s, dim, D, (const rat (*)[3])arms, raff, rinv, smat};
+    int named_gid = 0;
     if (SP_NAMES && SP_NAMES->count) {
         char why[96] = "";
         int q = name_irrep(&ind, f, sigma, nu, nu == 1 ? D : 2 * D, SP_NAMES, why);
         if (fail_status) return MDE_VALUE;
         jb_lit(b, ", \"symbol\": ");
+        if (q >= 0) named_gid = SP_NAMES->gid[q];
         if (q >= 0) {
             char sym[32];
             snprintf(sym, sizeof sym, "%s%s", magnetic ? "m" : "", SP_NAMES->symbol[q]);
@@ -1823,12 +2017,31 @@ static int k_opds(const sp_group *g, const sp_little *L, const rat *k, const cy_
     memcpy(key + 1, rows, sizeof(uint64_t) * (size_t)D * D);
     memcpy(reps, key, sizeof(uint64_t) * (size_t)(1 + D * D));
     nreps = 1;
-    pset_put(&seen, key, &added);
+    size_t ocap = 1024;
+    int *orbit_of = malloc(sizeof(int) * ocap);
+    int64_t at0 = pset_put(&seen, key, &added);
+    orbit_of[at0] = 0;
+#define MARK(index, rep)                                                   \
+    do {                                                                   \
+        if ((size_t)(index) >= ocap) {                                     \
+            while ((size_t)(index) >= ocap) ocap *= 2;                     \
+            orbit_of = realloc(orbit_of, sizeof(int) * ocap);              \
+        }                                                                  \
+        orbit_of[index] = (rep);                                           \
+    } while (0)
+    /* candidate order: the walk's for an untabulated ordinary irrep (its labels count in that order), else the image's */
+    pset cand = {D * D, 0, 0, 0, 0, 0};
+    const pset *candidates = &image;
+    if (named_gid > 0 && !magnetic && !table_rows(named_gid)) {
+        if (walk_order(&ind, named_gid, SP_NAMES->kparam, &cand)) return MDE_VALUE;
+        if (cand.count != order) return spfail("walk order and image differ"), MDE_VALUE;
+        candidates = &cand;
+    }
     for (size_t head = 0; head < nreps; head++) {
         int r = (int)reps[head * (1 + D * D)];
         const uint64_t *x = reps + head * (1 + D * D) + 1;
-        for (size_t q = 0; q < order; q++) {
-            const uint64_t *mat = image.items + q * image.width;
+        for (size_t q = 0; q < candidates->count; q++) {
+            const uint64_t *mat = candidates->items + q * candidates->width;
             /* D' = X M^T - X; coefficients c with c D' = 0 */
             prow_image(x, r, mat, D, img);
             for (int i = 0; i < r * D; i++) diff[i] = psub(img[i], x[i]);
@@ -1851,8 +2064,9 @@ static int k_opds(const sp_group *g, const sp_little *L, const rat *k, const cy_
             memset(key, 0, sizeof(uint64_t) * (size_t)(1 + D * D));
             key[0] = (uint64_t)rr;
             memcpy(key + 1, rows, sizeof(uint64_t) * (size_t)rr * D);
-            pset_put(&seen, key, &added);
+            int64_t at = pset_put(&seen, key, &added);
             if (!added) continue;
+            MARK(at, (int)nreps);
             if (seen.count * (size_t)seen.width > ((size_t)40 << 20)) return spfail("isotropy orbits above the reference limit"), MDE_VALUE;
             if (nreps == rcap) {
                 rcap *= 2;
@@ -1869,13 +2083,32 @@ static int k_opds(const sp_group *g, const sp_little *L, const rat *k, const cy_
                 memset(orbit, 0, sizeof(uint64_t) * (size_t)(1 + D * D));
                 orbit[0] = (uint64_t)r2;
                 memcpy(orbit + 1, img, sizeof(uint64_t) * (size_t)r2 * D);
-                pset_put(&seen, orbit, &added);
+                int64_t at2 = pset_put(&seen, orbit, &added);
+                if (added) MARK(at2, (int)nreps - 1);
             }
             free(orbit);
         }
     }
+#undef MARK
+    /* names of the OPDs: the table rows of the named irrep, each located by the fixed space of its subgroup */
+    char (*labels)[16] = calloc(nreps, sizeof *labels);
+    if (named_gid > 0 && table_labels(&ind, named_gid, &seen, orbit_of, labels, nreps)) return MDE_VALUE;
+    {
+        /* untabulated irreps: P, C, S or nD by real dimension, numbered in discovery order */
+        int any = 0, counts[100] = {0};
+        for (size_t q = 0; q < nreps; q++) any |= labels[q][0] != 0;
+        for (size_t q = 0; q < nreps && !any; q++) {
+            int rd = (int)reps[q * (1 + D * D)] * (nu == 1 ? 1 : 2);
+            if (rd < 1 || rd > 99) continue;
+            int i = ++counts[rd];
+            if (rd == 1) snprintf(labels[q], 16, "P%d", i);
+            else if (rd == 2) snprintf(labels[q], 16, "C%d", i);
+            else if (rd == 3) snprintf(labels[q], 16, "S%d", i);
+            else snprintf(labels[q], 16, "%dD%d", rd, i);
+        }
+    }
     jb_lit(b, ", \"image\": ");
-    char t[96];
+    char t[160];
     snprintf(t, sizeof t, "%zu, \"opds\": [", order);
     jb_lit(b, t);
     for (size_t q = 0; q < nreps; q++) {
@@ -1889,11 +2122,17 @@ static int k_opds(const sp_group *g, const sp_little *L, const rat *k, const cy_
         int64_t ident14[14] = {0};
         int found = magnetic ? 0 : identify_opd(&ind, x, r, ident14);
         if (found < 0 || fail_status) return MDE_VALUE;
-        snprintf(t, sizeof t, q ? ", {\"dim\": %d, \"index\": %zu, \"subgroup\": %lld}" : "{\"dim\": %d, \"index\": %zu, \"subgroup\": %lld}",
-                 r * (nu == 1 ? 1 : 2), order / stab, found > 0 ? (long long)ident14[0] : -1LL);
+        snprintf(t, sizeof t, "%s{\"dim\": %d, \"index\": %zu, \"subgroup\": %lld, \"label\": ", q ? ", " : "", r * (nu == 1 ? 1 : 2), order / stab,
+                 found > 0 ? (long long)ident14[0] : -1LL);
         jb_lit(b, t);
+        if (labels[q][0]) jb_cstring(b, labels[q]);
+        else jb_lit(b, "null");
+        jb_lit(b, "}");
     }
     jb_lit(b, "]");
+    free(labels);
+    free(orbit_of);
+    pset_free(&cand);
     pset_free(&image);
     pset_free(&seen);
     free(key), free(rows), free(img), free(diff), free(reps), free(ident), free(prod), free(gmat), free(raff), free(rinv), free(rep), free(arms);
