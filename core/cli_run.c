@@ -13,6 +13,7 @@
 
 const char *cif_summary_json(const char *data, int64_t length, int from_file);
 const char *k_catalog_json(int sg);
+int k_source_kparam_of_visible(int sg, int kslot, const int64_t *visible_words, int64_t *out);
 int st_state(const jvalue *request, jbuf *b);
 int sel_k_points(const jvalue *state, const jvalue *opts, jbuf *out);
 int64_t mode_details_vectors(const double **data);
@@ -912,7 +913,9 @@ static int request_of(const jvalue *request, jbuf *b)
 }
 
 int spec_gamma(const jvalue *cif_info, const int *sites, const int *kinds, int nsites, int strain, const rat *kvec, int sg, int setting,
-               jbuf *b);
+               const void *names, jbuf *b);
+void *spec_names_new(int count, const int *gids, const char *const *symbols, const int64_t *kparam);
+const char *k_catalog_json(int sg);
 int k_coordinate_map_words(int sg, int kslot, int64_t *out);
 
 static int run(const jvalue *request, jbuf *b)
@@ -960,6 +963,7 @@ static int run(const jvalue *request, jbuf *b)
         free(flags);
         rat kvec[3] = {rat_int(0), rat_int(0), rat_int(0)};
         int64_t spec_setting = 0, spec_sg = 0;
+        void *spec_names = 0;
         py_int_of(member(member(cif_info, "parent"), "number"), &spec_sg);
         if (!status && odoc) {
             /* the selected k point's coordinates: the catalog map origin + parameters . columns */
@@ -991,14 +995,47 @@ static int run(const jvalue *request, jbuf *b)
                     kvec[axis] = rat_add(kvec[axis], rat_mul(v, rat_make(words[11 + 6 * i + 2 * axis], words[12 + 6 * i + 2 * axis])));
             }
             if (rat_overflow) status = md_fail(MDE_ARITH, "spec: k out of range");
+            /* naming candidates: the catalog irreps of this k point, and its parameters as (p1, p2, p3, den) */
+            if (!status) {
+                int64_t kparam[4] = {0, 0, 0, 1}, visible[6];
+                for (int axis = 0; axis < 3; axis++) {
+                    visible[2 * axis] = (int64_t)kvec[axis].n;
+                    visible[2 * axis + 1] = (int64_t)kvec[axis].d;
+                }
+                if (k_source_kparam_of_visible((int)sg, (int)kslot, visible, kparam) < 0) status = md_fail(MDE_VALUE, "spec: k parameters");
+                const char *catalog = k_catalog_json((int)sg);
+                jdoc *cdoc = catalog ? jdoc_parse(catalog, strlen(catalog)) : 0;
+                const jvalue *kps = cdoc ? member(jdoc_root(cdoc), "kpoints") : 0;
+                int gids[64], count = 0;
+                const char *symbols[64];
+                char held[64][24];
+                for (int64_t q = 0; jis(kps, J_ARRAY) && q < kps->count; q++) {
+                    int64_t slot = 0;
+                    py_int_of(member(jat(kps, q), "kslot"), &slot);
+                    if (slot != kslot) continue;
+                    const jvalue *list = member(jat(kps, q), "irreps");
+                    for (int64_t r = 0; jis(list, J_ARRAY) && r < list->count && count < 64; r++) {
+                        int64_t gid = 0;
+                        const jvalue *sym = member(jat(list, r), "symbol");
+                        py_int_of(member(jat(list, r), "gid"), &gid);
+                        if (!jis(sym, J_STRING)) continue;
+                        snprintf(held[count], sizeof held[count], "%.*s", (int)sym->count, sym->u.s);
+                        symbols[count] = held[count];
+                        gids[count++] = (int)gid;
+                    }
+                }
+                spec_names = spec_names_new(count, gids, symbols, kparam);
+                jdoc_free(cdoc);
+            }
             jdoc_free(kdoc);
             jdoc_free(pdoc);
             jb_free(&parent);
             jb_free(&kstate);
         }
-        if (!status) status = odoc ? spec_gamma(cif_info, sites, kinds, nsites, strain, kvec, (int)spec_sg, (int)spec_setting, b) : md_fail(MDE_MEMORY, "out of memory");
+        if (!status) status = odoc ? spec_gamma(cif_info, sites, kinds, nsites, strain, kvec, (int)spec_sg, (int)spec_setting, spec_names, b) : md_fail(MDE_MEMORY, "out of memory");
         free(sites);
         free(kinds);
+        free(spec_names);
         jdoc_free(odoc);
         jb_free(&options);
         jdoc_free(summary);

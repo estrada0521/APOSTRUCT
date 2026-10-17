@@ -15,6 +15,7 @@
 
 #include "cyclo.h"
 #include "geometry.h"
+#include "irreps.h"
 #include "json.h"
 #include "md.h"
 #include "modp.h"
@@ -1322,7 +1323,200 @@ static int identify_opd(const sp_induced *c, const uint64_t *x, int r, int64_t *
     return found;
 }
 
+/* ---- naming bridge: irrep symbols from characters ---- */
+
+typedef struct {
+    int count;
+    int gid[64];
+    char symbol[64][24];
+    int64_t kparam[4];
+} sp_names;
+
+int exact_record_matrix(int gid, int dim, int arms, const int64_t *k, int subtract_generated, int element_count, const int *elements,
+                        int position, const int *record, int want_m, const cy_field **field_out, cy *w);
+int bw_find_position(int element_count, const int *elements, const int *record);
+
+/* x in Q(zeta_m) as an element of Q(zeta_M), m | M */
+static void cy_lift(const cy_field *from, const cy *x, const cy_field *to, cy *out)
+{
+    cy acc, term, root;
+    cy_zero(to, &acc);
+    for (int i = 0; i < from->phi; i++) {
+        if (!x->c[i]) continue;
+        cy_root(to, (int64_t)i * (to->m / from->m), &root);
+        cy_rat(to, x->c[i], 1, &term);
+        cy_mul(to, &term, &root, &term);
+        cy_add(to, &acc, &term, &acc);
+    }
+    cy scale;
+    cy_rat(to, 1, x->den, &scale);
+    cy_mul(to, &acc, &scale, out);
+}
+
+static void cy_conj(const cy_field *f, const cy *x, cy *out)
+{
+    cy acc, term, root;
+    cy_zero(f, &acc);
+    for (int i = 0; i < f->phi; i++) {
+        if (!x->c[i]) continue;
+        cy_root(f, -(int64_t)i, &root);
+        cy_rat(f, x->c[i], 1, &term);
+        cy_mul(f, &term, &root, &term);
+        cy_add(f, &acc, &term, &acc);
+    }
+    cy scale;
+    cy_rat(f, 1, x->den, &scale);
+    cy_mul(f, &acc, &scale, out);
+}
+
+/* an affine map of G (CIF frame) as a Source record (pml frame) */
+static int aff_to_record(const sp_group *g, const sp_aff *a, int64_t *rec)
+{
+    rat m[3][3], origin[3], minv[3][3];
+    if (geo_setting_to_cinter(SP_SG, 1, SP_SETTING, m, origin) || rat_inverse3((const rat (*)[3])m, minv))
+        return spfail("parent setting tables are inconsistent");
+    rat rt[3][3], tmp[3][3], point[3][3], tc[3], o1[3], tp[3];
+    for (int i = 0; i < 3; i++)
+        for (int j = 0; j < 3; j++) rt[i][j] = rat_int(a->r[j][i]);
+    for (int i = 0; i < 3; i++) rat_row_mul(m[i], (const rat (*)[3])rt, tmp[i]);
+    for (int i = 0; i < 3; i++) rat_row_mul(tmp[i], (const rat (*)[3])minv, point[i]);
+    rat_row_mul(origin, (const rat (*)[3])rt, o1);
+    for (int z = 0; z < 3; z++) tc[z] = rat_add(rat_sub(rat_make(a->t[z], 24), origin[z]), o1[z]);
+    rat_row_mul(tc, (const rat (*)[3])minv, tp);
+    int64_t src[GEO_MAX_OPS][5];
+    int nsrc = geo_sg_records(SP_SG, src), op = -1;
+    for (int q = 0; q < nsrc && op < 0; q++) {
+        int same = 1;
+        for (int i = 0; i < 3 && same; i++) {
+            rat unit[3] = {rat_int(i == 0), rat_int(i == 1), rat_int(i == 2)}, row[3];
+            geo_vrot(SP_SG, (int)src[q][4], unit, row);
+            for (int j = 0; j < 3; j++) same &= rat_eq(row[j], point[i][j]);
+        }
+        if (same) op = (int)src[q][4];
+    }
+    if (op < 0) return spfail("rotation without a Source point operation");
+    int64_t den = 1;
+    for (int z = 0; z < 3; z++) den = den / igcd(den, (int64_t)tp[z].d) * (int64_t)tp[z].d;
+    for (int z = 0; z < 3; z++) rec[z] = (int64_t)(tp[z].n * (den / tp[z].d));
+    rec[3] = den;
+    rec[4] = op;
+    (void)g;
+    return rat_overflow ? spfail("rational overflow in the naming bridge") : 0;
+}
+
+/* the exact character of Gamma = Ind sigma at x: sum over fixed arms of sigma(r_i^-1 x r_i) */
+static int chi_exact(const sp_induced *c, const cy_field *f, const cy *sigma, const sp_aff *x, cy *out)
+{
+    cy_zero(f, out);
+    for (int i = 0; i < c->s; i++) {
+        sp_aff y, hh;
+        aff_mul(x, &c->raff[i], &y);
+        rat a[3];
+        int ey = p_of_rot(c->g, (const int (*)[3])y.r);
+        k_times(c->k, (const int (*)[3])c->g->ops[c->g->inv[ey]].rot, a);
+        if (!k_same(c->g, c->arms[i], a)) continue;
+        aff_mul(&c->rinv[i], &y, &hh);
+        int h;
+        if (aff_to_h(c->g, c->L, c->k, &hh, &h)) return 1;
+        cy_add(f, out, &sigma[c->L->h.cls[h]], out);
+    }
+    return 0;
+}
+
+/* the candidate whose Source matrices have the physically irreducible character of Gamma, or -1 */
+static int name_irrep(const sp_induced *c, const cy_field *f, const cy *sigma, int nu, int real_dim, const sp_names *names, char *why)
+{
+    const sp_group *g = c->g;
+    int found = -1, matches = 0, alive[64];
+    for (int q = 0; q < names->count; q++) alive[q] = 1;
+    /* translations from {0, 1}^3 first; a wider box only when several candidates remain */
+    for (int pass = 0; pass < 2; pass++) {
+    int side = pass ? (c->L->N < 6 ? c->L->N : 6) : 2;
+    if (side < 2) side = 2;
+    found = -1;
+    matches = 0;
+    for (int q = 0; q < names->count; q++) {
+        if (!alive[q]) continue;
+        irrep_context ctx;
+        if (irrep_context_for(names->gid[q], 4, names->kparam, &ctx) || ctx.dim != real_dim) {
+            alive[q] = 0;
+            continue;
+        }
+        int ok = 1;
+        cy *w = malloc(sizeof(cy) * (size_t)ctx.dim * ctx.dim);
+        for (int e = 0; e < g->n && ok; e++)
+            for (int tcode = 0; tcode < side * side * side && ok; tcode++)
+                for (int cc = 0; cc < g->ncent && ok; cc++) {
+                    sp_aff x;
+                    int tv[3] = {tcode % side, (tcode / side) % side, tcode / (side * side)};
+                    memcpy(x.r, g->ops[e].rot, sizeof x.r);
+                    for (int z = 0; z < 3; z++) x.t[z] = g->ops[e].tran[z] + 24 * tv[z] + g->cent[cc][z];
+                    int64_t rec64[5];
+                    int rec[5];
+                    if (aff_to_record(g, &x, rec64)) {
+                        free(w);
+                        return -1;
+                    }
+                    for (int z = 0; z < 5; z++) rec[z] = (int)rec64[z];
+                    int position = bw_find_position(ctx.element_count, ctx.elements, rec);
+                    const cy_field *fs;
+                    int need = -exact_record_matrix(names->gid[q], ctx.dim, ctx.arms, ctx.k, ctx.subtract, ctx.element_count, ctx.elements,
+                                                    position, rec, -1, &fs, 0);
+                    if (!position || need <= 0) {
+                        ok = 0;
+                        break;
+                    }
+                    int M = need;
+                    {
+                        int a = M, b2 = f->m;
+                        while (b2) {
+                            int t = a % b2;
+                            a = b2;
+                            b2 = t;
+                        }
+                        M = M / a * f->m;
+                    }
+                    const cy_field *fm = cy_field_for(M);
+                    if (!fm || exact_record_matrix(names->gid[q], ctx.dim, ctx.arms, ctx.k, ctx.subtract, ctx.element_count, ctx.elements,
+                                                   position, rec, M, &fs, w)) {
+                        snprintf(why, 96, "no common field for %s", names->symbol[q]);
+                        free(w);
+                        return -1;
+                    }
+                    cy trace, ours, mine, cj;
+                    cy_zero(fm, &trace);
+                    for (int i = 0; i < ctx.dim; i++) cy_add(fm, &trace, &w[i * ctx.dim + i], &trace);
+                    if (chi_exact(c, f, sigma, &x, &ours)) {
+                        free(w);
+                        return -1;
+                    }
+                    if (nu != 1) {
+                        cy_conj(f, &ours, &cj);
+                        cy_add(f, &ours, &cj, &ours);
+                    }
+                    cy_lift(f, &ours, fm, &mine);
+                    cy_sub(fm, &mine, &trace, &mine);
+                    ok = cy_is_zero(fm, &mine);
+                }
+        free(w);
+        if (ok) {
+            matches++;
+            found = q;
+        } else
+            alive[q] = 0;
+    }
+    if (matches <= 1) break;
+    }
+    if (matches != 1) {
+        snprintf(why, 96, "%d candidates match", matches);
+        return -1;
+    }
+    return found;
+}
+
 /* site >= 0: the Bloch displacements (axial: moments, times det R) of one site; site < 0: the strain (k = 0) */
+static const sp_names *SP_NAMES;
+
 static int k_opds(const sp_group *g, const sp_little *L, const rat *k, const cy_field *f, uint64_t w, const cy *sigma, int dim, int site,
                   int axial, int magnetic, int nu, jbuf *b)
 {
@@ -1574,6 +1768,20 @@ static int k_opds(const sp_group *g, const sp_little *L, const rat *k, const cy_
         }
     }
     sp_induced ind = {g, L, k, s, dim, D, (const rat (*)[3])arms, raff, rinv, smat};
+    if (SP_NAMES && SP_NAMES->count) {
+        char why[96] = "";
+        int q = name_irrep(&ind, f, sigma, nu, nu == 1 ? D : 2 * D, SP_NAMES, why);
+        if (fail_status) return MDE_VALUE;
+        jb_lit(b, ", \"symbol\": ");
+        if (q >= 0) {
+            char sym[32];
+            snprintf(sym, sizeof sym, "%s%s", magnetic ? "m" : "", SP_NAMES->symbol[q]);
+            jb_cstring(b, sym);
+        } else {
+            jb_lit(b, "null, \"symbol_error\": ");
+            jb_cstring(b, why);
+        }
+    }
     uint64_t *gmat = calloc((size_t)(ngens + 1) * D * D, sizeof(uint64_t));
     for (int q = 0; q < ngens; q++)
         if (gamma_of(&ind, &gens[q], gmat + (size_t)q * D * D)) return MDE_VALUE;
@@ -1865,9 +2073,10 @@ static int spec_k(const sp_group *g, const rat *k, int nsites, const int *kinds,
 }
 
 int spec_gamma(const jvalue *cif_info, const int *sites, const int *kinds, int nsites, int strain, const rat *kvec, int sg, int setting,
-               jbuf *b)
+               const void *names, jbuf *b)
 {
     fail_status = 0;
+    SP_NAMES = names;
     SP_SG = sg;
     SP_SETTING = setting;
     if (geo_load()) return spfail("Source tables are inconsistent"), MDE_VALUE;
@@ -1875,4 +2084,18 @@ int spec_gamma(const jvalue *cif_info, const int *sites, const int *kinds, int n
     memset(&g, 0, sizeof g);
     if (build_group(cif_info, sites, nsites, &g)) return MDE_VALUE;
     return spec_k(&g, kvec, nsites, kinds, strain, b);
+}
+
+/* the naming candidates of the selected k point: its catalog irreps and the k parameters */
+void *spec_names_new(int count, const int *gids, const char *const *symbols, const int64_t *kparam)
+{
+    sp_names *n = calloc(1, sizeof *n);
+    if (!n) return 0;
+    n->count = count < 64 ? count : 64;
+    for (int i = 0; i < n->count; i++) {
+        n->gid[i] = gids[i];
+        snprintf(n->symbol[i], sizeof n->symbol[i], "%s", symbols[i]);
+    }
+    memcpy(n->kparam, kparam, sizeof n->kparam);
+    return n;
 }
