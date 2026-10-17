@@ -21,8 +21,8 @@ class MagneticData:
     """Minimal decoder for ``Source/data_magnetic.txt``.
 
     The table stores magnetic isotropy rows as CSR arrays keyed by nonmagnetic
-    ``data_irreps`` old-id.  Row ids are 1-based positions in
-    ``mag_iso_irrep`` and match the leading id printed by magnetic OPD rows
+    ``data_irreps`` old-id.  Row ids are 1-based magnetic isotropy rows and
+    match the leading id printed by magnetic OPD rows
     for magnetic irreps.
     """
 

@@ -242,27 +242,6 @@ class ISOData:
                 return int(self.little["little_irr_full_dim"][i])
         raise KeyError(f"dimension for old irrep id {old_id} not found")
 
-    def irrep_matrices(self, sg: int, label: str) -> List[np.ndarray]:
-        old_id = self.old_irrep_id(sg, label)
-        dim = self.irrep_dim(old_id)
-        ptr_start = self.irreps["irrep_elements_pointer"][old_id - 1]
-        if old_id < len(self.irreps["irrep_elements_pointer"]):
-            ptr_end = self.irreps["irrep_elements_pointer"][old_id]
-        else:
-            # The final irrep has no `irrep_elements_pointer` sentinel.  The
-            # corresponding matrix-pointer table is zero padded, so use the
-            # first zero matrix pointer as the exclusive end.
-            matrix_pointer_table = self.irreps["irrep_matrices_pointer"]
-            ptr_end = ptr_start
-            while ptr_end <= len(matrix_pointer_table) and int(matrix_pointer_table[ptr_end - 1]) > 0:
-                ptr_end += 1
-        matrix_ptrs = self.irreps["irrep_matrices_pointer"][ptr_start - 1:ptr_end - 1]
-        mats = []
-        for p in matrix_ptrs:
-            raw = self.irreps["irrep_matrices"][p - 1:p - 1 + dim * dim]
-            mats.append(np.array([self.const[x] for x in raw], dtype=complex).reshape(dim, dim))
-        return mats
-
     # ------------------------------------------------------------------
     # data_space: generate finite coset representatives {R|tau}
     # ------------------------------------------------------------------

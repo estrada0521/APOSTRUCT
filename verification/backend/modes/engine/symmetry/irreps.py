@@ -110,8 +110,7 @@ class IrrepMixin:
     def little_k_vectors_by_gid(self, gid: int) -> LittleKVectorRecord:
         """Return the k-vector records copied by ``get_irrep4_``.
 
-        For fixed special-k rows, the relevant static table is ``little_k_star_special``, not the later
-        ``little_kvec`` section.  ``read_little`` loads it as 2100 records of
+        For fixed special-k rows, the relevant static table is ``little_k_star_special``.  ``read_little`` loads it as 2100 records of
         four integers ``(h, k, l, denominator)``.  ``get_irrep4_`` addresses it
         with the 1-based ``little_k_star_ml_pointer`` and copies ``nmod``
         consecutive records into the first column of the runtime ``kvec.1``
