@@ -93,35 +93,30 @@ int section_string(const section_view *view, int64_t index, const char **text, i
 
 /* One Source little-irrep sparse matrix (data_little little_irr_full_*)
  * into out (dim x dim).  Returns nonzero when the tables do not hold it. */
+int little_codes(int gid, int dim, int position, int *codes);
+
 int little_sparse_matrix(int gid, int dim, int position, double *out)
 {
-    static section_view irr_pointer, pointer, matrices, values, present;
+    static section_view values, present;
     static int ready;
     if (!ready) {
-        if (!blob || section_find("little.little_irr_full_matrices_irr_pointer", &irr_pointer)
-            || section_find("little.little_irr_full_matrices_pointer", &pointer)
-            || section_find("little.little_irr_full_matrices", &matrices)
-            || section_find("const.values", &values) || section_find("const.present", &present)
-            || !section_is_int(&irr_pointer) || !section_is_int(&pointer) || !section_is_int(&matrices)
-            || values.entry->kind != BLOB_F64)
+        if (!blob || section_find("const.values", &values) || section_find("const.present", &present) || values.entry->kind != BLOB_F64)
             return 1;
         ready = 1;
     }
-    int64_t irr_length = (int64_t)irr_pointer.entry->count, pointer_length = (int64_t)pointer.entry->count;
-    int64_t matrices_length = (int64_t)matrices.entry->count, constant_count = (int64_t)values.entry->count;
-    if (gid < 1 || gid > irr_length || position < 1 || dim <= 0) return 1;
-    int64_t matrix_index = section_int(&irr_pointer, gid - 1) + position - 1;
-    if (matrix_index < 1 || matrix_index >= pointer_length) return 1;
-    int64_t start = section_int(&pointer, matrix_index - 1), end = section_int(&pointer, matrix_index);
-    if (start < 1 || end < start || (end - 1) * 3 > matrices_length) return 1;
+    if (dim <= 0 || dim > 48) return 1;
+    int codes[48 * 48];
+    if (little_codes(gid, dim, position, codes)) return 1;
+    int64_t constant_count = (int64_t)values.entry->count;
     const double *constants = (const double *)values.data;
-    for (int i = 0; i < dim * dim; i++) out[i] = 0.0;
-    for (int64_t offset = (start - 1) * 3; offset < (end - 1) * 3; offset += 3) {
-        int64_t row = section_int(&matrices, offset), col = section_int(&matrices, offset + 1);
-        int64_t code = section_int(&matrices, offset + 2);
-        if (row < 1 || row > dim || col < 1 || col > dim) return 1;
+    for (int i = 0; i < dim * dim; i++) {
+        int code = codes[i];
+        if (code == 1) {
+            out[i] = 0.0;
+            continue;
+        }
         if (code < 0 || code >= constant_count || !present.data[code]) return 1;
-        out[(row - 1) * dim + col - 1] = constants[code];
+        out[i] = constants[code];
     }
     return 0;
 }

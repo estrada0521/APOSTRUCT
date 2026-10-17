@@ -155,6 +155,24 @@ int irrep_context_for(int gid, int param_count, const int64_t *kparam, irrep_con
     return 0;
 }
 
+/* the context of gid as it stands (its last k parameters), without changing them; nonzero when none is ready */
+int irrep_context_current(int gid, irrep_context *out)
+{
+    if (load() || gid < 1 || gid > L.count) return 1;
+    gid_context *g = &L.contexts[gid];
+    if (!g->ready || g->key_count < 0) return 1;
+    out->dim = g->dim;
+    out->arms = g->arms;
+    out->k = g->k;
+    out->subtract = g->subtract;
+    out->element_count = g->element_count;
+    out->elements = g->elements;
+    out->sparse = g->sparse;
+    out->available = g->available;
+    out->identity_op = g->elements[4];
+    return 0;
+}
+
 int bridge_weight_matrices(int dim, int arms, const int64_t *k, int subtract_generated, int element_count,
                            const int *elements, int op_limit, const int *canonical_position, const double *sparse,
                            const int *available, int record_count, const int *records, double *out);
