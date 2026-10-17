@@ -57,19 +57,6 @@ class WyckoffRow:
     site_pg: int
 
 
-@dataclass(frozen=True)
-class IsotropySubduction:
-    """One entry in data_isotropy:isotropy_subduce_* for an isotropy row."""
-
-    irrep_old_id: int
-    irrep_label: str
-    sg: int
-    frequency: int
-    subgroup_row_id: int
-    domain: int
-    domain_old: int
-
-
 class SourceTables:
     """Local reader for the Source records shared by every backend domain.
 
@@ -533,43 +520,6 @@ class SourceTables:
             int(self.iso.irreps["irrep_space_group"][old_id - 1]),
             str(self.iso.irreps["irrep_label"][old_id - 1]).strip(),
         )
-
-    def isotropy_subductions_for_row(self, row_id: int) -> tuple[IsotropySubduction, ...]:
-        """Return secondary/primary irreps allowed by one isotropy subgroup row.
-
-        In complete mode details, selecting an OPD fixes an
-        isotropy subgroup.  The native ``isotropy_subduce_*`` CSR tables map
-        that subgroup row back to the parent irreps/OPD rows that are allowed
-        under the same subgroup, which is the Source-level hook for secondary
-        mode blocks.
-        """
-
-        row_id = int(row_id)
-        pointers = self.iso.isotropy["isotropy_subduce_pointer"]
-        if row_id < 1 or row_id > len(pointers):
-            return ()
-        start = int(pointers[row_id - 1])
-        end = (
-            int(pointers[row_id])
-            if row_id < len(pointers)
-            else len(self.iso.isotropy["isotropy_subduce_irrep"]) + 1
-        )
-        out: list[IsotropySubduction] = []
-        for index in range(start - 1, end - 1):
-            old_id = int(self.iso.isotropy["isotropy_subduce_irrep"][index])
-            sg, label = self.irrep_label_for_old_id(old_id)
-            out.append(
-                IsotropySubduction(
-                    irrep_old_id=old_id,
-                    irrep_label=label,
-                    sg=sg,
-                    frequency=int(self.iso.isotropy["isotropy_subduce_frequency"][index]),
-                    subgroup_row_id=int(self.iso.isotropy["isotropy_subduce_subgroup"][index]),
-                    domain=int(self.iso.isotropy["isotropy_subduce_domain"][index]),
-                    domain_old=int(self.iso.isotropy["isotropy_subduce_domain_old"][index]),
-                )
-            )
-        return tuple(out)
 
     def wyckoff_rows(self, sg: int) -> list[WyckoffRow]:
         sg = int(sg)

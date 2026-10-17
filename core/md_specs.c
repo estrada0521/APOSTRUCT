@@ -300,7 +300,7 @@ static int take_matrix(stream *s, md_matrix *out)
 enum {
     H_KIND, H_MODE_KIND, H_OLD_ID, H_GID, H_LITTLE_TYPE, H_MAGNETIC, H_PRIMARY, H_HAS_KP, H_HAS_CARRIER, H_HAS_PML, H_HAS_REQ,
     H_REQ_NONE, H_HAS_OCC, H_HAS_DIR, H_HAS_FREE, H_FREE_COUNT, H_OBS, H_HAS_ANCHOR, H_ANCHOR_GID, H_HAS_CAND, H_HAS_HEADING,
-    H_HEADING_GID, H_STOKES, H_CASE_NONE, H_DCASE_NONE, H_SLOT_ORDER, H_REPLACED, H_ROW_ID, H_DOMAIN, H_DOMAIN_OLD, H_FREQUENCY,
+    H_HEADING_GID, H_STOKES, H_CASE_NONE, H_DCASE_NONE, H_SLOT_ORDER, H_REPLACED, H_ROW_ID, H_DOMAIN,
     H_USE_SELECTED_ROWS, H_STATIC_UPDATED, H_COUNT
 };
 
@@ -417,7 +417,6 @@ static int decode_specs(md_request *r, const spec_context *ctx)
         spec->k_label = k_label;
         spec->heading_label = heading;
         spec->opd = 0;
-        spec->frequency = 1;
         spec->primary = h[H_PRIMARY] != 0;
         spec->row_id_state = MD_NONE;
         spec->occ_state = MD_SET;
@@ -474,8 +473,6 @@ static int decode_specs(md_request *r, const spec_context *ctx)
             spec->opd = opd;
             opd = 0;
             spec->domain = h[H_DOMAIN];
-            spec->domain_old = h[H_DOMAIN_OLD];
-            spec->frequency = h[H_FREQUENCY];
             has_dir_rows = 0;
             if (h[H_USE_SELECTED_ROWS]) {
                 spec->rows_state = MD_SET;
@@ -1051,7 +1048,6 @@ static int fallback_spec(md_request *r, md_spec *fallback, md_matrix *selected_r
     MD_TRY(md_dynamic_gid(r, &has_gid, &fallback->gid));
     fallback->gid_state = has_gid ? MD_SET : MD_NONE;
     isotropy_row_id(r, &fallback->row_id_state, &fallback->row_id);
-    fallback->frequency = 1;
     fallback->primary = 1;
     int has_kp;
     MD_TRY(source_kparam_record(r, &has_kp, fallback->kp));

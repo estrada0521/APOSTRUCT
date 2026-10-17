@@ -41,7 +41,6 @@ class ModeSourceCatalogMixin:
         return self.tables.little_record_by_gid(gid)
 
     irrep_label_for_old_id = SourceTables.irrep_label_for_old_id
-    isotropy_subductions_for_row = SourceTables.isotropy_subductions_for_row
     generate_space_group_records = SourceTables.generate_space_group_records
     wyckoff_fraction_vectors = SourceTables.wyckoff_fraction_vectors
     vrot_fraction = SourceTables.vrot_fraction
