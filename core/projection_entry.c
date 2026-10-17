@@ -183,6 +183,30 @@ static int little_gid_for_old(int old_id)
     return gid_by_old[old_id] > 0 ? gid_by_old[old_id] : 0;
 }
 
+static int little_trace(int gid, int dim, int position, double *out)
+{
+    static double **traces;
+    if (!traces && !(traces = calloc((size_t)section_count(&T.dim) + 1, sizeof *traces))) return PE_TABLES;
+    if (gid < 1 || gid > section_count(&T.dim) || position < 1 || position > GEO_MAX_OPS) return PE_KEY;
+    if (!traces[gid]) {
+        if (!(traces[gid] = malloc(sizeof(double) * GEO_MAX_OPS))) return PE_TABLES;
+        for (int i = 0; i < GEO_MAX_OPS; i++) traces[gid][i] = NAN;
+    }
+    double *t = &traces[gid][position - 1];
+    if (isnan(*t)) {
+        double *m = malloc(sizeof(double) * (size_t)dim * dim);
+        if (!m) return PE_TABLES;
+        int status = little_sparse_matrix(gid, dim, position, m);
+        double sum = 0;
+        for (int a = 0; a < dim && !status; a++) sum += m[a * dim + a];
+        free(m);
+        if (status) return PE_KEY;
+        *t = sum;
+    }
+    *out = *t;
+    return 0;
+}
+
 /* the subduction of a little irrep to a Wyckoff row's site group by characters: frequency[j - 1] of site irrep j is
  * sum_k tr W(k) tr S_j(k) / sum_k tr S_j(k)^2 over the site records k */
 static int row_frequencies_uncached(int gid, int row_id, int64_t *frequency, int *site_irreps)
@@ -216,22 +240,16 @@ static int row_frequencies_uncached(int gid, int row_id, int64_t *frequency, int
         int sdim = (int)at(&T.dim, sgid - 1), ssg = (int)at(&T.sg, sgid - 1);
         int64_t generated[GEO_MAX_OPS][5];
         int generated_count = geo_sg_records(ssg, generated);
-        double *m = malloc(sizeof(double) * (size_t)sdim * sdim + 1), sum = 0, norm = 0;
-        if (!m) return PE_TABLES;
+        double sum = 0, norm = 0;
         for (int i = 0; i < record_count; i++) {
             int position = 0;
+            double ts;
             for (int g = 0; g < generated_count; g++)
                 if (generated[g][4] == site_ops[i]) position = g + 1;
-            if (!position || little_sparse_matrix(sgid, sdim, position, m)) {
-                free(m);
-                return PE_KEY;
-            }
-            double ts = 0;
-            for (int a = 0; a < sdim; a++) ts += m[a * sdim + a];
+            if (!position || little_trace(sgid, sdim, position, &ts)) return PE_KEY;
             sum += trace[i] * ts;
             norm += ts * ts;
         }
-        free(m);
         double value = norm > 0 ? sum / norm : -1;
         if (value < -1e-6 || fabs(value - nearbyint(value)) > 1e-6) return PE_VALUE;
         frequency[n++] = (int64_t)nearbyint(value);
@@ -242,26 +260,38 @@ static int row_frequencies_uncached(int gid, int row_id, int64_t *frequency, int
 
 static int row_frequencies(int gid, int row_id, int64_t *frequency, int *site_irreps)
 {
-    enum { SLOTS = 64 };
-    static struct {
+    typedef struct {
         int gid, row, n, status;
         int64_t frequency[12];
-    } cache[SLOTS];
-    static int next;
-    for (int i = 0; i < SLOTS; i++)
-        if (cache[i].gid == gid && cache[i].row == row_id) {
-            memcpy(frequency, cache[i].frequency, sizeof cache[i].frequency);
-            *site_irreps = cache[i].n;
-            return cache[i].status;
-        }
-    int slot = next++ % SLOTS;
-    cache[slot].n = 0;
-    cache[slot].status = row_frequencies_uncached(gid, row_id, cache[slot].frequency, &cache[slot].n);
-    cache[slot].gid = gid;
-    cache[slot].row = row_id;
-    memcpy(frequency, cache[slot].frequency, sizeof cache[slot].frequency);
-    *site_irreps = cache[slot].n;
-    return cache[slot].status;
+    } entry;
+    static entry *table;
+    static size_t size, used;
+    if (used * 2 >= size) {
+        size_t grown = size ? size * 2 : 1024;
+        entry *next = calloc(grown, sizeof *next);
+        if (!next) return PE_TABLES;
+        for (size_t i = 0; i < size; i++)
+            if (table[i].gid) {
+                size_t h = ((size_t)table[i].gid * 7919u + (size_t)table[i].row) & (grown - 1);
+                while (next[h].gid) h = (h + 1) & (grown - 1);
+                next[h] = table[i];
+            }
+        free(table);
+        table = next;
+        size = grown;
+    }
+    size_t h = ((size_t)gid * 7919u + (size_t)row_id) & (size - 1);
+    while (table[h].gid && (table[h].gid != gid || table[h].row != row_id)) h = (h + 1) & (size - 1);
+    entry *e = &table[h];
+    if (!e->gid) {
+        e->status = row_frequencies_uncached(gid, row_id, e->frequency, &e->n);
+        e->gid = gid;
+        e->row = row_id;
+        used++;
+    }
+    memcpy(frequency, e->frequency, sizeof e->frequency);
+    *site_irreps = e->n;
+    return e->status;
 }
 
 /* the site irreps of a Wyckoff row present in the subduction of a little irrep, ascending; their count, or < 0 */

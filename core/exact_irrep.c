@@ -588,6 +588,7 @@ static int derive_positions(int gid, const int64_t *kparam, derived_t *out, int 
         }
     }
 #undef WOF
+#undef MAC
     for (int p = 0; p < n; p++)
         if (!have[p]) status = status ? status : 8;
     if (cy_overflow) status = 6;
@@ -640,15 +641,21 @@ int little_matrices_from_generators(int gid, const int64_t *kparam, int *counts)
 static uint64_t cy_residue(const cy_field *f, const cy *x, uint64_t w, uint64_t p)
 {
     uint64_t v = 0, z = 1;
+    int zero = 1;
+    for (int i = 0; i < f->phi && zero; i++) zero = !x->c[i];
+    if (zero) return 0;
     for (int i = 0; i < f->phi; i++) {
         i128 c = x->c[i] % (i128)p;
         if (c < 0) c += p;
         v = (v + mulmod((uint64_t)c, z, p)) % p;
         z = mulmod(z, w, p);
     }
+    if (x->den == 1) return v;
+    static uint64_t last_p, last_d, last_inverse;
     i128 d = x->den % (i128)p;
     if (d < 0) d += p;
-    return mulmod(v, powmod((uint64_t)d, p - 2, p), p);
+    if (p != last_p || (uint64_t)d != last_d) last_p = p, last_d = (uint64_t)d, last_inverse = powmod((uint64_t)d, p - 2, p);
+    return mulmod(v, last_inverse, p);
 }
 
 /* the derivation of derive_positions modulo one prime of the field, each entry matched to a constant code by its
@@ -722,15 +729,22 @@ static int derive_codes(int gid, const int64_t *kparam, int **codes_out, unsigne
         if (record_phase(dim, c.arms, c.k, c.subtract, n, c.elements, (rec), m, &f, pc)) status = 5;       \
         for (size_t i_ = 0; i_ < sq && !status; i_++) P[i_] = cy_residue(f, &pc[i_], w, p);                \
     } while (0)
+/* p < 2^62: fifteen products fit in 128 bits before a reduction */
+#define MAC(acc, terms, a, b)                                                                              \
+    do {                                                                                                   \
+        (acc) += (u128)(a) * (b);                                                                          \
+        if (++(terms) == 15) (acc) %= p, (terms) = 0;                                                      \
+    } while (0)
 #define WOF(q)                                                                                             \
     do {                                                                                                   \
         PHASE(c.elements + 5 * (q));                                                                       \
         for (size_t i_ = 0; i_ < (size_t)dim && !status; i_++)                                             \
             for (size_t j_ = 0; j_ < (size_t)dim; j_++) {                                                  \
-                uint64_t acc_ = 0;                                                                         \
+                u128 acc_ = 0;                                                                             \
+                int terms_ = 0;                                                                            \
                 for (size_t l_ = 0; l_ < (size_t)dim; l_++)                                                \
-                    if (P[i_ * dim + l_]) acc_ = (acc_ + mulmod(P[i_ * dim + l_], S[(size_t)(q) * sq + l_ * dim + j_], p)) % p; \
-                W[(size_t)(q) * sq + i_ * dim + j_] = acc_;                                                \
+                    if (P[i_ * dim + l_]) MAC(acc_, terms_, P[i_ * dim + l_], S[(size_t)(q) * sq + l_ * dim + j_]); \
+                W[(size_t)(q) * sq + i_ * dim + j_] = (uint64_t)(acc_ % p);                                \
             }                                                                                              \
     } while (0)
     for (int q = 0; q < n && !status; q++) {
@@ -765,19 +779,21 @@ static int derive_codes(int gid, const int64_t *kparam, int **codes_out, unsigne
             PHASE(rec);
             for (size_t i = 0; i < (size_t)dim && !status; i++)
                 for (size_t j = 0; j < (size_t)dim; j++) {
-                    uint64_t acc = 0;
+                    u128 acc = 0;
+                    int terms = 0;
                     for (size_t l = 0; l < (size_t)dim; l++) {
                         uint64_t u = W[(size_t)a * sq + i * dim + l];
-                        if (u) acc = (acc + mulmod(u, W[(size_t)g * sq + l * dim + j], p)) % p;
+                        if (u) MAC(acc, terms, u, W[(size_t)g * sq + l * dim + j]);
                     }
-                    prod[i * dim + j] = acc;
+                    prod[i * dim + j] = (uint64_t)(acc % p);
                 }
             for (size_t i = 0; i < (size_t)dim && !status; i++)
                 for (size_t j = 0; j < (size_t)dim; j++) {
-                    uint64_t acc = 0;
+                    u128 acc = 0;
+                    int terms = 0;
                     for (size_t l = 0; l < (size_t)dim; l++)
-                        if (P[l * dim + i]) acc = (acc + mulmod(P[l * dim + i], prod[l * dim + j], p)) % p;
-                    S[(size_t)pos * sq + i * dim + j] = acc;
+                        if (P[l * dim + i]) MAC(acc, terms, P[l * dim + i], prod[l * dim + j]);
+                    S[(size_t)pos * sq + i * dim + j] = (uint64_t)(acc % p);
                 }
             have[pos] = 1;
             WOF(pos);
