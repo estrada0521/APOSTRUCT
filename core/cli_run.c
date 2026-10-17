@@ -911,7 +911,8 @@ static int request_of(const jvalue *request, jbuf *b)
     return status ? status : b->failed ? md_fail(MDE_MEMORY, "out of memory") : 0;
 }
 
-int spec_gamma(const jvalue *cif_info, const int *sites, int nsites, jbuf *b);
+int spec_gamma(const jvalue *cif_info, const int *sites, int nsites, const rat *kvec, jbuf *b);
+int k_coordinate_map_words(int sg, int kslot, int64_t *out);
 
 static int run(const jvalue *request, jbuf *b)
 {
@@ -944,7 +945,42 @@ static int run(const jvalue *request, jbuf *b)
             py_int_of(jat(list, i), &v);
             sites[i] = (int)v;
         }
-        if (!status) status = odoc ? spec_gamma(cif_info, sites, nsites, b) : md_fail(MDE_MEMORY, "out of memory");
+        rat kvec[3] = {rat_int(0), rat_int(0), rat_int(0)};
+        if (!status && odoc) {
+            /* the selected k point's coordinates: the catalog map origin + parameters . columns */
+            jbuf parent = {0}, kstate = {0};
+            jb_reset(&parent);
+            jb_reset(&kstate);
+            status = par_parent_state(cif_info, &parent);
+            jdoc *pdoc = status ? 0 : jdoc_parse(parent.data, parent.used);
+            if (!status && pdoc) status = sel_k_points(jdoc_root(pdoc), jdoc_root(odoc), &kstate);
+            jdoc *kdoc = status ? 0 : jdoc_parse(kstate.data, kstate.used);
+            const jvalue *kp = kdoc ? member(member(jdoc_root(kdoc), "selected"), "kpoint") : 0;
+            int64_t kslot = 0, sg = 0, words[29];
+            py_int_of(member(member(cif_info, "parent"), "number"), &sg);
+            if (!status && (!kp || py_int_of(member(kp, "kslot"), &kslot) || k_coordinate_map_words((int)sg, (int)kslot, words)))
+                status = md_fail(MDE_VALUE, "spec: selected k point has no coordinate map");
+            const jvalue *params = kp ? member(kp, "parameters") : 0;
+            rat_overflow = 0;
+            for (int axis = 0; axis < 3 && !status; axis++) kvec[axis] = rat_make(words[5 + 2 * axis], words[6 + 2 * axis]);
+            for (int i = 0; i < (int)words[1] && !status; i++) {
+                char key[2] = {(char)words[2 + i], 0};
+                const jvalue *value = member(params, key);
+                rat v;
+                if (!jis(value, J_STRING) || py_fraction_of_text(value->u.s, value->count, &v)) {
+                    status = md_fail(MDE_VALUE, "spec: k parameter %s is missing", key);
+                    break;
+                }
+                for (int axis = 0; axis < 3; axis++)
+                    kvec[axis] = rat_add(kvec[axis], rat_mul(v, rat_make(words[11 + 6 * i + 2 * axis], words[12 + 6 * i + 2 * axis])));
+            }
+            if (rat_overflow) status = md_fail(MDE_ARITH, "spec: k out of range");
+            jdoc_free(kdoc);
+            jdoc_free(pdoc);
+            jb_free(&parent);
+            jb_free(&kstate);
+        }
+        if (!status) status = odoc ? spec_gamma(cif_info, sites, nsites, kvec, b) : md_fail(MDE_MEMORY, "out of memory");
         free(sites);
         jdoc_free(odoc);
         jb_free(&options);

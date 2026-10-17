@@ -34,6 +34,8 @@ typedef struct {
     int *mult, *inv; /* n x n, n */
     int *perm;       /* n x nclasses: atom class images */
     int *class_site; /* site index of each atom class */
+    int *shift;      /* n x nclasses x 3: g x_a - x_{g a} in 1/24 units (a lattice vector) */
+    int cent[8][3];
     int ncls, *cls, *cls_size, *cls_rep, *cls_inv, *order;
 } sp_group;
 
@@ -123,6 +125,56 @@ static int read_text_double(const jvalue *v, double *out)
     return end == buf;
 }
 
+/* identity, inverses, conjugacy classes and element orders from the multiplication table */
+static int finish_group(sp_group *g)
+{
+    int n = g->n, identity = -1;
+    for (int e = 0; e < n && identity < 0; e++) {
+        int ok = 1;
+        for (int b = 0; b < n; b++) ok &= g->mult[e * n + b] == b;
+        if (ok) identity = e;
+    }
+    if (identity < 0) return spfail("no identity");
+    if (!g->inv) g->inv = malloc(sizeof(int) * (size_t)n);
+    if (!g->inv) return spfail("out of memory");
+    for (int a = 0; a < n; a++) {
+        g->inv[a] = -1;
+        for (int b = 0; b < n; b++)
+            if (g->mult[a * n + b] == identity) g->inv[a] = b;
+        if (g->inv[a] < 0) return spfail("not a group");
+    }
+    /* conjugacy classes and element orders */
+    g->cls = malloc(sizeof(int) * (size_t)n);
+    g->cls_size = calloc((size_t)n, sizeof(int));
+    g->cls_rep = malloc(sizeof(int) * (size_t)n);
+    g->cls_inv = malloc(sizeof(int) * (size_t)n);
+    g->order = malloc(sizeof(int) * (size_t)n);
+    if (!g->cls || !g->cls_size || !g->cls_rep || !g->cls_inv || !g->order) return spfail("out of memory");
+    for (int a = 0; a < n; a++) g->cls[a] = -1;
+    g->ncls = 0;
+    for (int a = 0; a < n; a++) {
+        if (g->cls[a] >= 0) continue;
+        for (int h = 0; h < n; h++) {
+            int c = g->mult[g->mult[h * n + a] * n + g->inv[h]];
+            if (g->cls[c] < 0) {
+                g->cls[c] = g->ncls;
+                g->cls_size[g->ncls]++;
+            }
+        }
+        g->cls_rep[g->ncls++] = a;
+    }
+    for (int k = 0; k < g->ncls; k++) g->cls_inv[k] = g->cls[g->inv[g->cls_rep[k]]];
+    for (int a = 0; a < n; a++) {
+        int x = a, o = 1;
+        while (x != identity) {
+            x = g->mult[x * n + a];
+            o++;
+        }
+        g->order[a] = o;
+    }
+    return 0;
+}
+
 /* ---- stage 0: the group, its closure, the atoms ---- */
 
 static int build_group(const jvalue *cif_info, const int *sites, int nsites, sp_group *g)
@@ -152,6 +204,8 @@ static int build_group(const jvalue *cif_info, const int *sites, int nsites, sp_
         if (ident) memcpy(cent[ncent++], all[o].tran, sizeof cent[0]);
     }
     if (!ncent) return spfail("symmetry operations lack the identity");
+    if (ncent > 8) return spfail("too many centering translations");
+    memcpy(g->cent, cent, sizeof(int[3]) * (size_t)ncent);
     /* P: the operations modulo the centering translations, closed under products */
     g->ops = calloc((size_t)nops, sizeof *g->ops);
     if (!g->ops) return spfail("out of memory");
@@ -179,18 +233,6 @@ static int build_group(const jvalue *cif_info, const int *sites, int nsites, sp_
             if (found < 0) return spfail("symmetry operations are not closed under composition");
             g->mult[a * n + b] = found;
         }
-    int identity = -1;
-    for (int e = 0; e < n && identity < 0; e++) {
-        int ok = 1;
-        for (int b = 0; b < n; b++) ok &= g->mult[e * n + b] == b;
-        if (ok) identity = e;
-    }
-    for (int a = 0; a < n; a++) {
-        g->inv[a] = -1;
-        for (int b = 0; b < n; b++)
-            if (g->mult[a * n + b] == identity) g->inv[a] = b;
-        if (g->inv[a] < 0) return spfail("symmetry operations are not a group");
-    }
     /* atoms of the selected sites, every image, and their classes modulo centering */
     int cap = nsites * nops + 1, natoms = 0;
     double (*atoms)[3] = malloc(sizeof *atoms * (size_t)cap);
@@ -235,7 +277,10 @@ static int build_group(const jvalue *cif_info, const int *sites, int nsites, sp_
     g->natoms = natoms;
     g->nclasses = nclasses;
     g->perm = malloc(sizeof(int) * (size_t)n * nclasses);
-    if (!g->perm) return spfail("out of memory");
+    g->shift = malloc(sizeof(int) * 3 * (size_t)n * nclasses);
+    int *rep_atom = malloc(sizeof(int) * (size_t)nclasses);
+    if (!g->perm || !g->shift || !rep_atom) return spfail("out of memory");
+    for (int a = natoms - 1; a >= 0; a--) rep_atom[class_of[a]] = a;
     for (int e = 0; e < n; e++)
         for (int a = 0; a < natoms; a++) {
             double y[3];
@@ -243,36 +288,18 @@ static int build_group(const jvalue *cif_info, const int *sites, int nsites, sp_
             int b = find_atom((const double (*)[3])atoms, natoms, y);
             if (b < 0) return spfail("a symmetry operation does not map the structure onto itself");
             g->perm[e * nclasses + class_of[a]] = class_of[b];
-        }
-    /* conjugacy classes and element orders */
-    g->cls = malloc(sizeof(int) * (size_t)n);
-    g->cls_size = calloc((size_t)n, sizeof(int));
-    g->cls_rep = malloc(sizeof(int) * (size_t)n);
-    g->cls_inv = malloc(sizeof(int) * (size_t)n);
-    g->order = malloc(sizeof(int) * (size_t)n);
-    if (!g->cls || !g->cls_size || !g->cls_rep || !g->cls_inv || !g->order) return spfail("out of memory");
-    for (int a = 0; a < n; a++) g->cls[a] = -1;
-    g->ncls = 0;
-    for (int a = 0; a < n; a++) {
-        if (g->cls[a] >= 0) continue;
-        for (int h = 0; h < n; h++) {
-            int c = g->mult[g->mult[h * n + a] * n + g->inv[h]];
-            if (g->cls[c] < 0) {
-                g->cls[c] = g->ncls;
-                g->cls_size[g->ncls]++;
+            if (a != rep_atom[class_of[a]]) continue;
+            const double *x = atoms[a], *xb = atoms[rep_atom[class_of[b]]];
+            for (int i = 0; i < 3; i++) {
+                double v = g->ops[e].tran[i] / 24.0 - xb[i];
+                for (int k2 = 0; k2 < 3; k2++) v += g->ops[e].rot[i][k2] * x[k2];
+                double q = nearbyint(v * 24.0);
+                if (fabs(v * 24.0 - q) > 24.0 * SP_TOL) return spfail("an atom image is off the lattice");
+                g->shift[(e * nclasses + class_of[a]) * 3 + i] = (int)q;
             }
         }
-        g->cls_rep[g->ncls++] = a;
-    }
-    for (int k = 0; k < g->ncls; k++) g->cls_inv[k] = g->cls[g->inv[g->cls_rep[k]]];
-    for (int a = 0; a < n; a++) {
-        int x = a, o = 1;
-        while (x != identity) {
-            x = g->mult[x * n + a];
-            o++;
-        }
-        g->order[a] = o;
-    }
+    free(rep_atom);
+    if (finish_group(g)) return 1;
     free(all);
     free(cent);
     free(atoms);
@@ -341,7 +368,7 @@ static int pnull(const uint64_t *m, int rows, int cols, uint64_t *out)
 
 typedef struct {
     int deg;
-    uint64_t c[64];
+    uint64_t c[512];
 } poly;
 
 static void ptrim(poly *a)
@@ -459,7 +486,7 @@ typedef struct {
 static int characters(const sp_group *g, const cy_field *f, uint64_t w, sp_chars *out)
 {
     int n = g->n, k = g->ncls, m = f->m;
-    if (k > 63) return spfail("too many conjugacy classes");
+    if (k > 255) return spfail("too many conjugacy classes");
     /* a[(i * k + j) * k + l]: pairs (x, y) in K_i x K_j with x y = rep of K_l */
     int *a = calloc((size_t)k * k * k, sizeof(int));
     uint64_t *space = malloc(sizeof(uint64_t) * (size_t)k * k * 2), *b = malloc(sizeof(uint64_t) * (size_t)k * k);
@@ -520,7 +547,7 @@ static int characters(const sp_group *g, const cy_field *f, uint64_t w, sp_chars
                 part.c[q] = c;
                 for (int i = 0; i <= sq.deg; i++) num.c[q + i] = psub(num.c[q + i], pmul(c, sq.c[i]));
             }
-            uint64_t roots[64];
+            uint64_t roots[256];
             int nr = proots(part, roots, 0x9e3779b97f4a7c15ULL + (uint64_t)j);
             if (nr != part.deg) return spfail("class matrix eigenvalues outside the field");
             for (int r = 0; r < nr; r++) {
@@ -801,12 +828,340 @@ static void put_int_list(jbuf *b, const int *v, int n)
     jb_lit(b, "]");
 }
 
-int spec_gamma(const jvalue *cif_info, const int *sites, int nsites, jbuf *b)
+/* ---- k != 0: the little group modulo the kernel of the arm character ---- */
+
+/* k . t for t in 1/24 units */
+static rat kdot(const rat *k, const int *t24)
+{
+    rat s = rat_int(0);
+    for (int i = 0; i < 3; i++)
+        if (t24[i]) s = rat_add(s, rat_mul(k[i], rat_make(t24[i], 24)));
+    return s;
+}
+
+/* a == b as characters of the lattice: (a - b) . t integral on Z^3 and the centering vectors */
+static int k_same(const sp_group *g, const rat *a, const rat *b)
+{
+    rat d[3];
+    for (int i = 0; i < 3; i++) {
+        d[i] = rat_sub(a[i], b[i]);
+        if (d[i].d != 1) return 0;
+    }
+    for (int c = 0; c < g->ncent; c++)
+        if (kdot(d, g->cent[c]).d != 1) return 0;
+    return 1;
+}
+
+/* (k R)_j = sum_i k_i R_ij: the arm moved by the inverse of R */
+static void k_times(const rat *k, const int (*rot)[3], rat *out)
+{
+    for (int j = 0; j < 3; j++) {
+        out[j] = rat_int(0);
+        for (int i = 0; i < 3; i++)
+            if (rot[i][j]) out[j] = rat_add(out[j], rat_mul(k[i], rat_int(rot[i][j])));
+    }
+}
+
+typedef struct {
+    sp_group h;      /* H = G_k / ker chi: elements (little index, j) at little * N + j */
+    int nlittle, N, star;
+    int *little;     /* P indices of the little co-group elements */
+    int *little_of;  /* P index -> little index or -1 */
+} sp_little;
+
+/* c(g1, g2) = N k . (tau1 + R1 tau2 - tau12) */
+static int cocycle(const sp_group *g, const rat *k, int N, int a, int b, int *out)
+{
+    int ab = g->mult[a * g->n + b], t[3];
+    for (int i = 0; i < 3; i++) {
+        t[i] = g->ops[a].tran[i] - g->ops[ab].tran[i];
+        for (int q = 0; q < 3; q++) t[i] += g->ops[a].rot[i][q] * g->ops[b].tran[q];
+    }
+    rat c = rat_mul(rat_int(N), kdot(k, t));
+    if (c.d != 1) return spfail("translation part outside the lattice");
+    *out = (int)(((c.n % N) + N) % N);
+    return 0;
+}
+
+static int build_little(const sp_group *g, const rat *k, sp_little *L)
+{
+    int n = g->n;
+    memset(L, 0, sizeof *L);
+    L->little = malloc(sizeof(int) * (size_t)n);
+    L->little_of = malloc(sizeof(int) * (size_t)n);
+    if (!L->little || !L->little_of) return spfail("out of memory");
+    for (int e = 0; e < n; e++) {
+        rat kr[3];
+        k_times(k, (const int (*)[3])g->ops[e].rot, kr);
+        L->little_of[e] = -1;
+        if (k_same(g, kr, k)) {
+            L->little_of[e] = L->nlittle;
+            L->little[L->nlittle++] = e;
+        }
+    }
+    L->star = n / L->nlittle;
+    /* N: the order of chi on the lattice */
+    int64_t N = 1;
+    int axes[3][3] = {{24, 0, 0}, {0, 24, 0}, {0, 0, 24}};
+    for (int v = 0; v < 3 + g->ncent; v++) {
+        rat d = kdot(k, v < 3 ? axes[v] : g->cent[v - 3]);
+        int64_t den = (int64_t)d.d, a = N, b = den;
+        while (b) {
+            int64_t t = a % b;
+            a = b;
+            b = t;
+        }
+        N = N / a * den;
+    }
+    if (N > 1024 || (int64_t)L->nlittle * N > 4096) return spfail("k denominator above the reference limit");
+    L->N = (int)N;
+    int nh = L->nlittle * L->N;
+    L->h.n = nh;
+    L->h.mult = malloc(sizeof(int) * (size_t)nh * nh);
+    if (!L->h.mult) return spfail("out of memory");
+    for (int a = 0; a < L->nlittle; a++)
+        for (int b = 0; b < L->nlittle; b++) {
+            int c;
+            if (cocycle(g, k, L->N, L->little[a], L->little[b], &c)) return 1;
+            int ab = L->little_of[g->mult[L->little[a] * n + L->little[b]]];
+            for (int ja = 0; ja < L->N; ja++)
+                for (int jb = 0; jb < L->N; jb++)
+                    L->h.mult[(a * L->N + ja) * nh + b * L->N + jb] = ab * L->N + (ja + jb + c) % L->N;
+        }
+    /* associativity: H must be a group */
+    for (int x = 0; x < nh; x++)
+        for (int y = 0; y < nh; y++)
+            for (int z = 0; z < nh; z += nh > 64 ? 7 : 1)
+                if (L->h.mult[L->h.mult[x * nh + y] * nh + z] != L->h.mult[x * nh + L->h.mult[y * nh + z]])
+                    return spfail("the little group law is not associative");
+    return finish_group(&L->h);
+}
+
+/* the H element y x y^-1 for y in P taking k to -k and x = (e, j) in H, by affine composition */
+static int conjugate_in_h(const sp_group *g, const sp_little *L, const rat *k, int y, int x, int *out)
+{
+    int N = L->N, e = L->little[x / N], j = x % N;
+    int t1[3], have = 0;
+    {
+        for (int c = 0; c < g->ncent && !have; c++)
+            for (int a = 0; a < N && !have; a++)
+                for (int b2 = 0; b2 < N && !have; b2++)
+                    for (int d = 0; d < N && !have; d++) {
+                        int t[3] = {24 * a + g->cent[c][0], 24 * b2 + g->cent[c][1], 24 * d + g->cent[c][2]};
+                        rat v = rat_mul(rat_int(N), kdot(k, t));
+                        if (v.d == 1 && ((v.n % N) + N) % N == 1 % N) {
+                            memcpy(t1, t, sizeof t1);
+                            have = 1;
+                        }
+                    }
+        if (!have) return spfail("no lattice vector generates the arm character");
+    }
+    /* x as an affine map: (R_e, tau_e + j t1) */
+    int rx[3][3], tx[3], ry[3][3], ty[3], ri[3][3], ti[3];
+    memcpy(rx, g->ops[e].rot, sizeof rx);
+    for (int i = 0; i < 3; i++) tx[i] = g->ops[e].tran[i] + j * t1[i];
+    memcpy(ry, g->ops[y].rot, sizeof ry);
+    memcpy(ty, g->ops[y].tran, sizeof ty);
+    int yi = g->inv[y];
+    memcpy(ri, g->ops[yi].rot, sizeof ri);
+    for (int i = 0; i < 3; i++) {
+        ti[i] = 0;
+        for (int q = 0; q < 3; q++) ti[i] -= ri[i][q] * ty[q];
+    }
+    /* z = y x y^-1 */
+    int r1[3][3], t1x[3], rz[3][3], tz[3];
+    for (int i = 0; i < 3; i++) {
+        t1x[i] = ty[i];
+        for (int q = 0; q < 3; q++) t1x[i] += ry[i][q] * tx[q];
+        for (int c = 0; c < 3; c++) {
+            r1[i][c] = 0;
+            for (int q = 0; q < 3; q++) r1[i][c] += ry[i][q] * rx[q][c];
+        }
+    }
+    for (int i = 0; i < 3; i++) {
+        tz[i] = t1x[i];
+        for (int q = 0; q < 3; q++) tz[i] += r1[i][q] * ti[q];
+        for (int c = 0; c < 3; c++) {
+            rz[i][c] = 0;
+            for (int q = 0; q < 3; q++) rz[i][c] += r1[i][q] * ri[q][c];
+        }
+    }
+    for (int q = 0; q < L->nlittle; q++) {
+        int p = L->little[q];
+        if (memcmp(g->ops[p].rot, rz, sizeof rz)) continue;
+        int d[3];
+        for (int i = 0; i < 3; i++) d[i] = tz[i] - g->ops[p].tran[i];
+        int in_lattice = 0;
+        for (int c = 0; c < g->ncent && !in_lattice; c++) {
+            in_lattice = 1;
+            for (int i = 0; i < 3; i++) in_lattice &= ((d[i] - g->cent[c][i]) % 24 + 24) % 24 == 0;
+        }
+        if (!in_lattice) continue;
+        rat v = rat_mul(rat_int(N), kdot(k, d));
+        if (v.d != 1) return spfail("conjugate translation off the lattice");
+        *out = q * N + (int)(((v.n % N) + N) % N);
+        return 0;
+    }
+    return spfail("conjugate outside the little group");
+}
+
+/* irreps at k != 0: per small irrep of H appearing in the displacements, its Herring type, the
+ * full and real dimensions and the multiplicity per site */
+static int spec_k(const sp_group *g, const rat *k, int nsites, jbuf *b)
+{
+    sp_little L;
+    if (build_little(g, k, &L)) return MDE_VALUE;
+    const sp_group *h = &L.h;
+    int nh = h->n, N = L.N, exponent = 1;
+    for (int e = 0; e < nh; e++) {
+        int a = exponent, c = h->order[e];
+        while (c) {
+            int t = a % c;
+            a = c;
+            c = t;
+        }
+        exponent = exponent / a * h->order[e];
+    }
+    int m = exponent % 4 ? exponent * (exponent % 2 ? 4 : 2) : exponent;
+    const cy_field *f = cy_field_for(m);
+    uint64_t w;
+    const int *units;
+    const uint64_t *vinv;
+    if (!f || modp_field(m, f->phi, 0, &PR, &w, &units, &vinv)) return spfail("no prime for the character field"), MDE_VALUE;
+    w = powmod(w, (uint64_t)units[0], PR);
+    sp_chars ch;
+    if (characters(h, f, w, &ch)) return MDE_VALUE;
+    int kc = h->ncls, identity = 0;
+    for (int e = 0; e < nh; e++)
+        if (h->order[e] == 1) identity = e;
+    /* the displacement character per site on H: (g, j) -> zeta_N^(-j) sum_{a fixed} chi(-L_{g,a}) tr R */
+    cy *vchar = calloc((size_t)nsites * nh, sizeof(cy));
+    if (!vchar) return spfail("out of memory"), MDE_MEMORY;
+    for (int s = 0; s < nsites; s++)
+        for (int x = 0; x < nh; x++) {
+            int e = L.little[x / N], j = x % N;
+            cy acc, term, root;
+            cy_zero(f, &acc);
+            for (int cl = 0; cl < g->nclasses; cl++) {
+                if (g->class_site[cl] != s || g->perm[e * g->nclasses + cl] != cl) continue;
+                rat ph = rat_mul(rat_int(N), kdot(k, g->shift + (e * g->nclasses + cl) * 3));
+                if (ph.d != 1) return spfail("atom shift outside the lattice"), MDE_VALUE;
+                int tr = g->ops[e].rot[0][0] + g->ops[e].rot[1][1] + g->ops[e].rot[2][2];
+                cy_root(f, -(int64_t)(ph.n + j) * (m / N), &root);
+                cy_rat(f, tr, 1, &term);
+                cy_mul(f, &term, &root, &term);
+                cy_add(f, &acc, &term, &acc);
+            }
+            vchar[s * nh + x] = acc;
+        }
+    /* elements of P taking k to -k, for Herring's sum */
+    rat minus[3];
+    for (int i = 0; i < 3; i++) minus[i] = rat_neg(k[i]);
+    int *flip = malloc(sizeof(int) * (size_t)g->n), nflip = 0;
+    for (int e = 0; e < g->n; e++) {
+        rat kr[3];
+        k_times(k, (const int (*)[3])g->ops[e].rot, kr);
+        if (k_same(g, kr, minus)) flip[nflip++] = e;
+    }
+    jb_reset(b);
+    char t[200];
+    snprintf(t, sizeof t, "{\"schema\": \"APOSTRUCT.spec.k\", \"order\": %d, \"little\": %d, \"N\": %d, \"star\": %d, \"minus_k_in_star\": %s, \"irreps\": [",
+             g->n, L.nlittle, N, L.star, nflip ? "true" : "false");
+    jb_lit(b, t);
+    int written = 0, *skip = calloc((size_t)kc, sizeof(int));
+    for (int c = 0; c < kc; c++) {
+        if (skip[c]) continue;
+        const cy *sigma = ch.values + (size_t)c * kc;
+        int dim = 0;
+        {
+            rat r;
+            if (rat_of_cy(f, &sigma[h->cls[identity]], &r)) return spfail("irrational degree"), MDE_VALUE;
+            dim = (int)r.n;
+        }
+        /* multiplicity per site: (1/|H|) sum chi_V(x) sigma(x^-1) */
+        int *mult = calloc((size_t)nsites + 1, sizeof(int)), any = 0;
+        for (int s = 0; s < nsites; s++) {
+            cy acc, term;
+            cy_zero(f, &acc);
+            for (int x = 0; x < nh; x++) {
+                cy_mul(f, &vchar[s * nh + x], &sigma[h->cls[h->inv[x]]], &term);
+                cy_add(f, &acc, &term, &acc);
+            }
+            rat r;
+            if (rat_of_cy(f, &acc, &r)) return spfail("irrational multiplicity"), MDE_VALUE;
+            r = rat_div(r, rat_int(nh));
+            if (r.d != 1 || r.n < 0) return spfail("non-integral multiplicity"), MDE_VALUE;
+            mult[s] = (int)r.n;
+            any |= mult[s] > 0;
+        }
+        if (!any) {
+            free(mult);
+            continue;
+        }
+        /* Herring: (1/|P_k|) sum over g with g k = -k of sigma((g^2, c(g, g))) */
+        int nu = 0, partner = -1;
+        if (nflip) {
+            cy acc;
+            cy_zero(f, &acc);
+            for (int q = 0; q < nflip; q++) {
+                int e = flip[q], e2 = g->mult[e * g->n + e], c2;
+                if (cocycle(g, k, N, e, e, &c2)) return MDE_VALUE;
+                int x = L.little_of[e2] * N + c2;
+                cy_add(f, &acc, &sigma[h->cls[x]], &acc);
+            }
+            rat r;
+            if (rat_of_cy(f, &acc, &r)) return spfail("irrational Herring sum"), MDE_VALUE;
+            r = rat_div(r, rat_int(L.nlittle));
+            if (r.d != 1 || r.n < -1 || r.n > 1) return spfail("Herring sum outside {-1, 0, 1}"), MDE_VALUE;
+            nu = (int)r.n;
+            if (!nu) {
+                /* the partner sigma'(x) = conj(sigma(y x y^-1)) for a y taking k to -k pairs with sigma */
+                int *conjcls = malloc(sizeof(int) * (size_t)kc);
+                for (int l = 0; l < kc; l++) {
+                    int z;
+                    if (conjugate_in_h(g, &L, k, flip[0], h->cls_rep[l], &z)) return MDE_VALUE;
+                    conjcls[l] = h->cls_inv[h->cls[z]];
+                }
+                for (int d = 0; d < kc && partner < 0; d++) {
+                    int same = 1;
+                    for (int l = 0; l < kc && same; l++) {
+                        cy diff;
+                        cy_sub(f, &ch.values[(size_t)d * kc + l], &sigma[conjcls[l]], &diff);
+                        same = cy_is_zero(f, &diff);
+                    }
+                    if (same) partner = d;
+                }
+                free(conjcls);
+                if (partner < 0) return spfail("no partner for a complex small irrep"), MDE_VALUE;
+                if (partner != c) skip[partner] = 1;
+            }
+        }
+        int full = dim * L.star, real = nu == 1 ? full : 2 * full;
+        jb_lit(b, written++ ? ", {" : "{");
+        snprintf(t, sizeof t, "\"small_dim\": %d, \"full_dim\": %d, \"real_dim\": %d, \"herring\": %d, \"partner\": %s, \"multiplicity\": ", dim, full,
+                 real, nu, partner >= 0 && partner != c ? "true" : "false");
+        jb_lit(b, t);
+        put_int_list(b, mult, nsites);
+        jb_lit(b, "}");
+        free(mult);
+    }
+    jb_lit(b, "]}");
+    free(skip);
+    free(flip);
+    free(vchar);
+    return b->failed ? md_fail(MDE_MEMORY, "out of memory") : 0;
+}
+
+int spec_gamma(const jvalue *cif_info, const int *sites, int nsites, const rat *kvec, jbuf *b)
 {
     fail_status = 0;
     sp_group g;
     memset(&g, 0, sizeof g);
     if (build_group(cif_info, sites, nsites, &g)) return MDE_VALUE;
+    if (kvec) {
+        rat zero[3] = {rat_int(0), rat_int(0), rat_int(0)};
+        if (!k_same(&g, kvec, zero)) return spec_k(&g, kvec, nsites, b);
+    }
     int n = g.n, k = g.ncls, exponent = 1;
     for (int e = 0; e < n; e++) {
         int a = exponent, c = g.order[e];
