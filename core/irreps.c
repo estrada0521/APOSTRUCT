@@ -12,7 +12,7 @@
 int little_sparse_context(int gid, int dim, int element_count, double *sparse, int *available);
 
 typedef struct {
-    int ready, dim, subtract, element_count, arms;
+    int ready, sparse_ready, dim, subtract, element_count, arms;
     int elements[GEO_MAX_OPS * 5];
     int available[GEO_MAX_OPS];
     double *sparse;
@@ -128,7 +128,6 @@ int irrep_context_for(int gid, int param_count, const int64_t *kparam, irrep_con
             for (int j = 0; j < 5; j++) g->elements[5 * i + j] = (int)records[i][j];
         g->sparse = malloc(sizeof(double) * (size_t)g->element_count * (size_t)g->dim * (size_t)g->dim);
         if (!g->sparse) return IR_TABLES;
-        little_sparse_context(gid, g->dim, g->element_count, g->sparse, g->available);
         g->subtract = at(&L.k_dim, (int64_t)(geo_sg_lattice(sg) - 1) * 27 + kslot - 1, &bad) <= 0;
         g->key_count = -1;
         g->ready = 1;
@@ -142,6 +141,11 @@ int irrep_context_for(int gid, int param_count, const int64_t *kparam, irrep_con
         }
         memcpy(g->key, kparam, sizeof(int64_t) * (size_t)count);
         g->key_count = count;
+    }
+    /* the matrices last: deriving them reads this context (irrep_context_current) */
+    if (!g->sparse_ready) {
+        g->sparse_ready = 1;
+        little_sparse_context(gid, g->dim, g->element_count, g->sparse, g->available);
     }
     out->dim = g->dim;
     out->arms = g->arms;

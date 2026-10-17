@@ -5,11 +5,7 @@ from typing import Iterable
 
 import numpy as np
 
-from verification.backend.source.representation import (
-    _translation_mod_one,
-    decode_little_sparse_matrix,
-    real_phase_operator,
-)
+from verification.backend.source.representation import _translation_mod_one
 from verification.backend.modes.engine.records import (
     LittleKVectorRecord,
 )
@@ -99,59 +95,6 @@ class IrrepMixin:
             if int(op) == int(point_op):
                 return (Fraction(x, den), Fraction(y, den), Fraction(z, den))
         raise KeyError(f"point op {point_op} not found in generated SG{sg} records")
-
-    def operation_record_phases(
-        self,
-        gid: int,
-        record: tuple[int, int, int, int, int],
-    ) -> tuple[Fraction, ...]:
-        """Return the k-star phase vector used by `get_irrep4_` for a record."""
-
-        k_record = self.little_k_vectors_by_gid(gid)
-        request_tau = tuple(Fraction(int(record[i]), int(record[3])) for i in range(3))
-        generated_tau = self.generated_space_tau(k_record.sg, int(record[4]))
-        delta = tuple(request_tau[i] - generated_tau[i] for i in range(3))
-        return tuple(sum(kvec[i] * delta[i] for i in range(3)) for kvec in k_record.vectors)
-
-    def little_sparse_matrix_by_gid_record(
-        self,
-        gid: int,
-        record: tuple[int, int, int, int, int],
-    ) -> np.ndarray:
-        """Read the sparse matrix table for a full parent operation record."""
-
-        sg = int(self.iso.little["little_irr_space_group"][gid - 1])
-        position = self.generated_space_operation_position(sg, record)
-        cache = self.__dict__.setdefault("_little_sparse_matrix_cache", {})
-        matrix = cache.get((int(gid), position))
-        if matrix is None:
-            dim = self.little_record_by_gid(gid).full_dim
-            matrix = decode_little_sparse_matrix(
-                self.iso.little, self.iso.const, gid=gid, dim=dim, position=position
-            )
-            matrix.flags.writeable = False
-            cache[(int(gid), position)] = matrix
-        return matrix
-
-    def little_sparse_matrix_by_gid_op(self, gid: int, point_op: int) -> np.ndarray:
-        """Read the exact sparse matrix table used by `get_irrep4_ssgn_`."""
-
-        dim = self.little_record_by_gid(gid).full_dim
-        # The internal positions are keyed by the irrep's actual space group,
-        # not by the native little row id.
-        sg = int(self.iso.little["little_irr_space_group"][gid - 1])
-        positions = self.generated_space_point_op_positions(sg)
-        position = positions[int(point_op)]
-        return decode_little_sparse_matrix(
-            self.iso.little, self.iso.const, gid=gid, dim=dim, position=position
-        )
-
-    def phase_operator(self, gid: int, phases: Iterable[Fraction]) -> np.ndarray:
-        """Return the real row-side phase operator used by ``get_irrep4_ssgn_``."""
-
-        phase_values = tuple(phases)
-        dim = self.little_record_by_gid(gid).full_dim
-        return real_phase_operator(dim, phase_values, gid=gid)
 
     def site_pg_element_settings(self, site_pg: int) -> list[tuple[int, ...]]:
         """Return candidate site point-group operation settings.
