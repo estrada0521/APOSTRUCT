@@ -634,6 +634,199 @@ int little_matrices_from_generators(int gid, const int64_t *kparam, int *counts)
     return 0;
 }
 
+#include "modp.h"
+
+static uint64_t cy_residue(const cy_field *f, const cy *x, uint64_t w, uint64_t p)
+{
+    uint64_t v = 0, z = 1;
+    for (int i = 0; i < f->phi; i++) {
+        i128 c = x->c[i] % (i128)p;
+        if (c < 0) c += p;
+        v = (v + mulmod((uint64_t)c, z, p)) % p;
+        z = mulmod(z, w, p);
+    }
+    i128 d = x->den % (i128)p;
+    if (d < 0) d += p;
+    return mulmod(v, powmod((uint64_t)d, p - 2, p), p);
+}
+
+/* the derivation of derive_positions modulo one prime of the field, each entry matched to a constant code by its
+ * residue (checked against the whole table once, Harness/spec/gauge_verify.c); codes n x dim x dim, seed n */
+static int derive_codes(int gid, const int64_t *kparam, int **codes_out, unsigned char **seed_out, int *n_out, int *dim_out)
+{
+    irrep_context c;
+    if (irrep_context_current(gid, &c) && irrep_context_for(gid, 4, kparam, &c)) return 1;
+    int sg = irrep_space_group(gid), n = c.element_count, dim = c.dim;
+    rat (*rot)[3][3] = malloc(sizeof(rat[3][3]) * (size_t)n);
+    for (int q = 0; q < n; q++) position_rotation(sg, c.elements[5 * q + 4], rot[q]);
+    int *product = malloc(sizeof(int) * (size_t)n * n);
+    for (int a = 0; a < n; a++)
+        for (int b = 0; b < n; b++) {
+            rat m[3][3];
+            for (int i = 0; i < 3; i++)
+                for (int j = 0; j < 3; j++) {
+                    m[i][j] = rat_int(0);
+                    for (int q = 0; q < 3; q++) m[i][j] = rat_add(m[i][j], rat_mul(rot[a][i][q], rot[b][q][j]));
+                }
+            product[a * n + b] = -1;
+            for (int q = 0; q < n && product[a * n + b] < 0; q++) {
+                int same = 1;
+                for (int i = 0; i < 9 && same; i++) same = rat_eq(m[i / 3][i % 3], rot[q][i / 3][i % 3]);
+                if (same) product[a * n + b] = q;
+            }
+            if (product[a * n + b] < 0) return free(rot), free(product), 2;
+        }
+    unsigned char *in = calloc((size_t)n, 1), *seed = calloc((size_t)n, 1);
+    int gens[48], ng = 0, identity = -1;
+    for (int q = 0; q < n && identity < 0; q++) {
+        int ok = 1;
+        for (int i = 0; i < 9; i++) ok &= rat_eq(rot[q][i / 3][i % 3], rat_int(i / 3 == i % 3));
+        if (ok) identity = q;
+    }
+    in[identity] = seed[identity] = 1;
+    for (int q = 0; q < n; q++) {
+        if (in[q]) continue;
+        gens[ng++] = q;
+        in[q] = seed[q] = 1;
+        for (int grown = 1; grown;) {
+            grown = 0;
+            for (int a = 0; a < n; a++)
+                if (in[a])
+                    for (int b = 0; b < n; b++)
+                        if (in[b] && !in[product[a * n + b]]) in[product[a * n + b]] = grown = 1;
+        }
+    }
+    int m = 24;
+    for (int a = 0; a < n; a++) {
+        const cy_field *fs;
+        int need = -record_phase(dim, c.arms, c.k, c.subtract, n, c.elements, c.elements + 5 * a, -1, &fs, 0);
+        if (need <= 0) return free(rot), free(product), free(in), free(seed), 3;
+        m = m / (int)gcd64(m, need) * need;
+    }
+    const cy_field *f = cy_field_for(m);
+    uint64_t p, w;
+    const int *units;
+    const uint64_t *vinv;
+    if (!f || modp_field(m, f->phi, 0, &p, &w, &units, &vinv)) return free(rot), free(product), free(in), free(seed), 3;
+    w = powmod(w, (uint64_t)units[0], p);
+    size_t sq = (size_t)dim * dim;
+    uint64_t *S = calloc(sq * n, sizeof(uint64_t)), *W = calloc(sq * n, sizeof(uint64_t)), *P = malloc(sizeof(uint64_t) * sq);
+    uint64_t *prod = malloc(sizeof(uint64_t) * sq);
+    cy *pc = malloc(sizeof(cy) * sq), x;
+    int64_t *words = malloc(sizeof(int64_t) * 8 * sq);
+    unsigned char *have = calloc((size_t)n, 1);
+    int status = 0, *queue = malloc(sizeof(int) * (size_t)n), head = 0, tail = 0;
+#define PHASE(rec)                                                                                         \
+    do {                                                                                                   \
+        if (record_phase(dim, c.arms, c.k, c.subtract, n, c.elements, (rec), m, &f, pc)) status = 5;       \
+        for (size_t i_ = 0; i_ < sq && !status; i_++) P[i_] = cy_residue(f, &pc[i_], w, p);                \
+    } while (0)
+#define WOF(q)                                                                                             \
+    do {                                                                                                   \
+        PHASE(c.elements + 5 * (q));                                                                       \
+        for (size_t i_ = 0; i_ < (size_t)dim && !status; i_++)                                             \
+            for (size_t j_ = 0; j_ < (size_t)dim; j_++) {                                                  \
+                uint64_t acc_ = 0;                                                                         \
+                for (size_t l_ = 0; l_ < (size_t)dim; l_++)                                                \
+                    if (P[i_ * dim + l_]) acc_ = (acc_ + mulmod(P[i_ * dim + l_], S[(size_t)(q) * sq + l_ * dim + j_], p)) % p; \
+                W[(size_t)(q) * sq + i_ * dim + j_] = acc_;                                                \
+            }                                                                                              \
+    } while (0)
+    for (int q = 0; q < n && !status; q++) {
+        if (!seed[q]) continue;
+        if (little_table_words(gid, dim, q + 1, words)) {
+            status = 7;
+            break;
+        }
+        for (size_t i = 0; i < sq; i++) {
+            cy_from_sqrt23(f, words + 8 * i, &x);
+            S[(size_t)q * sq + i] = cy_residue(f, &x, w, p);
+        }
+        have[q] = 1;
+        queue[tail++] = q;
+        WOF(q);
+    }
+    while (head < tail && !status) {
+        int a = queue[head++];
+        for (int q = 0; q < ng && !status; q++) {
+            int g = gens[q], pos = product[a * n + g];
+            if (have[pos]) continue;
+            const int *ra = c.elements + 5 * a, *rg = c.elements + 5 * g;
+            rat t[3];
+            int64_t den = 1;
+            for (int i = 0; i < 3; i++) {
+                t[i] = rat_make(ra[i], ra[3]);
+                for (int j = 0; j < 3; j++) t[i] = rat_add(t[i], rat_mul(rot[a][i][j], rat_make(rg[j], rg[3])));
+                den = den / gcd64(den, (int64_t)t[i].d) * (int64_t)t[i].d;
+            }
+            int rec[5] = {(int)(t[0].n * (den / t[0].d)), (int)(t[1].n * (den / t[1].d)), (int)(t[2].n * (den / t[2].d)), (int)den,
+                          c.elements[5 * pos + 4]};
+            PHASE(rec);
+            for (size_t i = 0; i < (size_t)dim && !status; i++)
+                for (size_t j = 0; j < (size_t)dim; j++) {
+                    uint64_t acc = 0;
+                    for (size_t l = 0; l < (size_t)dim; l++) {
+                        uint64_t u = W[(size_t)a * sq + i * dim + l];
+                        if (u) acc = (acc + mulmod(u, W[(size_t)g * sq + l * dim + j], p)) % p;
+                    }
+                    prod[i * dim + j] = acc;
+                }
+            for (size_t i = 0; i < (size_t)dim && !status; i++)
+                for (size_t j = 0; j < (size_t)dim; j++) {
+                    uint64_t acc = 0;
+                    for (size_t l = 0; l < (size_t)dim; l++)
+                        if (P[l * dim + i]) acc = (acc + mulmod(P[l * dim + i], prod[l * dim + j], p)) % p;
+                    S[(size_t)pos * sq + i * dim + j] = acc;
+                }
+            have[pos] = 1;
+            WOF(pos);
+            queue[tail++] = pos;
+        }
+    }
+#undef WOF
+#undef PHASE
+    for (int q = 0; q < n && !status; q++)
+        if (!have[q]) status = 8;
+    /* codes by residue */
+    static section_view exact;
+    static int ready;
+    if (!status && !ready && (section_find("const.exact", &exact) || !section_is_int(&exact))) status = 9;
+    if (!status) ready = 1;
+    int *codes = 0;
+    if (!status) {
+        int64_t ncodes = (int64_t)exact.entry->count / 8;
+        uint64_t *value = malloc(sizeof(uint64_t) * (size_t)ncodes);
+        unsigned char *usable = calloc((size_t)ncodes, 1);
+        for (int64_t q = 2; q < ncodes; q++) {
+            int64_t wv[8];
+            for (int j = 0; j < 8; j++) wv[j] = section_int(&exact, 8 * q + j);
+            if (!wv[1]) continue;
+            cy_from_sqrt23(f, wv, &x);
+            value[q] = cy_residue(f, &x, w, p);
+            usable[q] = 1;
+        }
+        codes = malloc(sizeof(int) * sq * n);
+        for (size_t i = 0; i < sq * n && !status; i++) {
+            int code = S[i] ? 0 : 1;
+            for (int64_t q = 2; q < ncodes && !code; q++)
+                if (usable[q] && value[q] == S[i]) code = (int)q;
+            if (!code) status = 10;
+            codes[i] = code;
+        }
+        free(value), free(usable);
+    }
+    free(rot), free(product), free(in), free(S), free(W), free(P), free(prod), free(pc), free(words), free(have), free(queue);
+    if (status) {
+        free(codes), free(seed);
+        return status;
+    }
+    *codes_out = codes;
+    *seed_out = seed;
+    *n_out = n;
+    *dim_out = dim;
+    return 0;
+}
+
 /* codes of the little irrep matrices: the table's at the generators and the identity, derived elsewhere (each entry
  * matched exactly against the constant table); nonzero when that fails */
 int little_codes(int gid, int dim, int position, int *codes)
@@ -641,68 +834,31 @@ int little_codes(int gid, int dim, int position, int *codes)
     static int busy;
     if (busy) return 1;
     enum { SLOTS = 8 };
-    static derived_t cache[SLOTS];
-    static int *cache_codes[SLOTS], next;
+    static struct {
+        int gid, n, dim, *codes;
+        unsigned char *seed;
+    } cache[SLOTS];
+    static int next;
     int slot = -1;
     for (int i = 0; i < SLOTS && slot < 0; i++)
-        if (cache[i].gid == gid && cache[i].dim == dim) slot = i;
+        if (cache[i].gid == gid && cache[i].dim == dim && cache[i].codes) slot = i;
     if (slot < 0) {
         slot = next++ % SLOTS;
-        free(cache[slot].S), free(cache[slot].seed), free(cache_codes[slot]);
-        cache_codes[slot] = 0;
-        int counts[5];
+        free(cache[slot].codes), free(cache[slot].seed);
+        memset(&cache[slot], 0, sizeof cache[slot]);
         busy = 1;
-        int derived = derive_positions(gid, DERIVE_KPARAM, &cache[slot], counts);
+        int status = derive_codes(gid, DERIVE_KPARAM, &cache[slot].codes, &cache[slot].seed, &cache[slot].n, &cache[slot].dim);
         busy = 0;
-        if (derived || cache[slot].dim != dim) {
-            free(cache[slot].S), free(cache[slot].seed);
+        if (status || cache[slot].dim != dim) {
+            free(cache[slot].codes), free(cache[slot].seed);
             memset(&cache[slot], 0, sizeof cache[slot]);
             return 1;
         }
-        /* each derived entry as a constant code */
-        static section_view exact;
-        static int ready;
-        if (!ready && (section_find("const.exact", &exact) || !section_is_int(&exact))) return 1;
-        ready = 1;
-        const cy_field *f = cache[slot].f;
-        int64_t ncodes = (int64_t)exact.entry->count / 8;
-        cy *value = malloc(sizeof(cy) * (size_t)ncodes);
-        unsigned char *exactly = calloc((size_t)ncodes, 1);
-        for (int64_t q = 1; q < ncodes; q++) {
-            int64_t w[8];
-            for (int j = 0; j < 8; j++) w[j] = section_int(&exact, 8 * q + j);
-            if (!w[1] && q > 1) continue;
-            if (!w[1]) w[1] = w[3] = w[5] = w[7] = 1;
-            cy_from_sqrt23(f, w, &value[q]);
-            exactly[q] = 1;
-        }
-        size_t sq = (size_t)dim * dim, n = (size_t)cache[slot].n;
-        cache_codes[slot] = malloc(sizeof(int) * sq * n);
-        for (size_t p = 0; p < n; p++)
-            for (size_t i = 0; i < sq; i++) {
-                const cy *x = &cache[slot].S[p * sq + i];
-                int code = 0;
-                if (cy_is_zero(f, x)) code = 1;
-                for (int64_t q = 2; q < ncodes && !code; q++) {
-                    if (!exactly[q]) continue;
-                    cy diff;
-                    cy_sub(f, x, &value[q], &diff);
-                    if (cy_is_zero(f, &diff)) code = (int)q;
-                }
-                cache_codes[slot][p * sq + i] = code;
-            }
-        free(value), free(exactly);
-        free(cache[slot].S);
-        cache[slot].S = 0;
+        cache[slot].gid = gid;
     }
-    derived_t *d = &cache[slot];
-    if (position < 1 || position > d->n) return 1;
-    if (d->seed[position - 1]) return little_table_codes(gid, dim, position, codes);
-    const int *src = cache_codes[slot] + (size_t)(position - 1) * dim * dim;
-    for (int i = 0; i < dim * dim; i++) {
-        if (!src[i]) return 1;
-        codes[i] = src[i];
-    }
+    if (position < 1 || position > cache[slot].n) return 1;
+    if (cache[slot].seed[position - 1]) return little_table_codes(gid, dim, position, codes);
+    memcpy(codes, cache[slot].codes + (size_t)(position - 1) * dim * dim, sizeof(int) * (size_t)dim * dim);
     return 0;
 }
 
@@ -717,4 +873,23 @@ int little_seed_positions(int gid, int *positions, int *count)
         if (d.seed[p]) positions[(*count)++] = p + 1;
     free(d.S), free(d.seed);
     return 0;
+}
+
+/* two constant codes with the same exact value */
+int little_code_value_equal(int a, int b)
+{
+    if (a == b) return 1;
+    static section_view exact;
+    static int ready;
+    if (!ready && (section_find("const.exact", &exact) || !section_is_int(&exact))) return 0;
+    ready = 1;
+    int64_t n = (int64_t)exact.entry->count / 8;
+    if (a < 1 || b < 1 || a >= n || b >= n) return 0;
+    for (int j = 0; j < 8; j += 2) {
+        int64_t an = a == 1 ? 0 : section_int(&exact, 8 * a + j), ad = a == 1 ? 1 : section_int(&exact, 8 * a + j + 1);
+        int64_t bn = b == 1 ? 0 : section_int(&exact, 8 * b + j), bd = b == 1 ? 1 : section_int(&exact, 8 * b + j + 1);
+        if (!ad || !bd) return 0;
+        if ((__int128)an * bd != (__int128)bn * ad) return 0;
+    }
+    return 1;
 }
