@@ -679,144 +679,6 @@ static int rat_of_cy(const cy_field *f, const cy *x, rat *out)
     return 0;
 }
 
-/* echelon basis of row vectors over Q, kept reduced; adds v, returns 1 if independent */
-static int add_vector(rat *basis, int *pivots, int *rank, int len, const rat *v)
-{
-    rat *w = malloc(sizeof(rat) * (size_t)len);
-    memcpy(w, v, sizeof(rat) * (size_t)len);
-    for (int r = 0; r < *rank; r++) {
-        rat c = w[pivots[r]];
-        if (rat_zero(c)) continue;
-        for (int j = 0; j < len; j++) w[j] = rat_sub(w[j], rat_mul(c, basis[r * len + j]));
-    }
-    int p = -1;
-    for (int j = 0; j < len && p < 0; j++)
-        if (!rat_zero(w[j])) p = j;
-    if (p < 0) {
-        free(w);
-        return 0;
-    }
-    rat s = rat_div(rat_int(1), w[p]);
-    for (int j = 0; j < len; j++) w[j] = rat_mul(w[j], s);
-    for (int r = 0; r < *rank; r++) {
-        rat c = basis[r * len + p];
-        if (rat_zero(c)) continue;
-        for (int j = 0; j < len; j++) basis[r * len + j] = rat_sub(basis[r * len + j], rat_mul(c, w[j]));
-    }
-    memcpy(basis + (size_t)*rank * len, w, sizeof(rat) * (size_t)len);
-    pivots[(*rank)++] = p;
-    free(w);
-    return 1;
-}
-
-/* u = rho(h) v on the displacements of one site's classes (local numbering) */
-static void act(const sp_group *g, int h, const int *local, const int *global, int nloc, const rat *v, rat *u)
-{
-    for (int i = 0; i < 3 * nloc; i++) u[i] = rat_int(0);
-    for (int c = 0; c < nloc; c++) {
-        int target = local[g->perm[h * g->nclasses + global[c]]];
-        for (int a = 0; a < 3; a++) {
-            rat s = rat_int(0);
-            for (int b2 = 0; b2 < 3; b2++)
-                if (g->ops[h].rot[a][b2]) s = rat_add(s, rat_mul(rat_int(g->ops[h].rot[a][b2]), v[3 * c + b2]));
-            u[3 * target + a] = s;
-        }
-    }
-}
-
-/* ---- isotropy subspaces of W: d x d rational matrices, subspaces as reduced row bases ---- */
-
-typedef struct {
-    int r;
-    rat v[SP_MAX_DIM * SP_MAX_DIM];
-} sub;
-
-static void sub_reduce(sub *s, int d)
-{
-    rat basis[SP_MAX_DIM * SP_MAX_DIM];
-    int piv[SP_MAX_DIM], rank = 0;
-    for (int i = 0; i < s->r; i++) add_vector(basis, piv, &rank, d, s->v + i * d);
-    /* order rows by pivot for a canonical form */
-    for (int i = 0; i < rank; i++)
-        for (int j = i + 1; j < rank; j++)
-            if (piv[j] < piv[i]) {
-                int t = piv[i];
-                piv[i] = piv[j];
-                piv[j] = t;
-                rat tmp[SP_MAX_DIM];
-                memcpy(tmp, basis + i * d, sizeof(rat) * (size_t)d);
-                memcpy(basis + i * d, basis + j * d, sizeof(rat) * (size_t)d);
-                memcpy(basis + j * d, tmp, sizeof(rat) * (size_t)d);
-            }
-    s->r = rank;
-    memcpy(s->v, basis, sizeof(rat) * (size_t)rank * d);
-}
-
-static int sub_eq(const sub *a, const sub *b, int d)
-{
-    if (a->r != b->r) return 0;
-    for (int i = 0; i < a->r * d; i++)
-        if (!rat_eq(a->v[i], b->v[i])) return 0;
-    return 1;
-}
-
-/* rows x -> x M^T (the image of column vectors under M) */
-static void sub_image(const sub *s, const rat *mat, int d, sub *out)
-{
-    out->r = s->r;
-    for (int i = 0; i < s->r; i++)
-        for (int a = 0; a < d; a++) {
-            rat t = rat_int(0);
-            for (int b2 = 0; b2 < d; b2++) t = rat_add(t, rat_mul(mat[a * d + b2], s->v[i * d + b2]));
-            out->v[i * d + a] = t;
-        }
-    sub_reduce(out, d);
-}
-
-static int sub_fixed(const sub *s, const rat *mat, int d)
-{
-    for (int i = 0; i < s->r; i++)
-        for (int a = 0; a < d; a++) {
-            rat t = rat_int(0);
-            for (int b2 = 0; b2 < d; b2++) t = rat_add(t, rat_mul(mat[a * d + b2], s->v[i * d + b2]));
-            if (!rat_eq(t, s->v[i * d + a])) return 0;
-        }
-    return 1;
-}
-
-/* s intersected with the fixed space of mat */
-static void sub_meet_fixed(const sub *s, const rat *mat, int d, sub *out)
-{
-    /* coefficients c (length r) with sum_i c_i (M - I) x_i = 0 */
-    int r = s->r;
-    rat sys[SP_MAX_DIM * SP_MAX_DIM]; /* d equations x r unknowns, transposed into rows of length r */
-    for (int a = 0; a < d; a++)
-        for (int i = 0; i < r; i++) {
-            rat t = rat_neg(s->v[i * d + a]);
-            for (int b2 = 0; b2 < d; b2++) t = rat_add(t, rat_mul(mat[a * d + b2], s->v[i * d + b2]));
-            sys[a * r + i] = t;
-        }
-    rat ech[SP_MAX_DIM * SP_MAX_DIM];
-    int piv[SP_MAX_DIM], rank = 0;
-    for (int a = 0; a < d; a++) add_vector(ech, piv, &rank, r, sys + a * r);
-    out->r = 0;
-    for (int fcol = 0; fcol < r; fcol++) {
-        int is_pivot = 0;
-        for (int i = 0; i < rank; i++) is_pivot |= piv[i] == fcol;
-        if (is_pivot) continue;
-        rat c[SP_MAX_DIM];
-        for (int i = 0; i < r; i++) c[i] = rat_int(i == fcol);
-        for (int i = 0; i < rank; i++) c[piv[i]] = rat_neg(ech[i * r + fcol]);
-        for (int a = 0; a < d; a++) {
-            rat t = rat_int(0);
-            for (int i = 0; i < r; i++) t = rat_add(t, rat_mul(c[i], s->v[i * d + a]));
-            out->v[out->r * d + a] = t;
-        }
-        out->r++;
-    }
-    sub_reduce(out, d);
-}
-
 static void put_int_list(jbuf *b, const int *v, int n)
 {
     jb_lit(b, "[");
@@ -1205,8 +1067,32 @@ static void prow_image(const uint64_t *x, int r, const uint64_t *mt, int d, uint
 
 /* the OPDs of Gamma = Ind sigma: one copy of sigma in the site's Bloch displacements, the induced matrices on the
  * image of G, and the closure of fixed-space intersections (complex dimensions) */
+static int det3(const int (*r)[3])
+{
+    return r[0][0] * (r[1][1] * r[2][2] - r[1][2] * r[2][1]) - r[0][1] * (r[1][0] * r[2][2] - r[1][2] * r[2][0]) +
+           r[0][2] * (r[1][0] * r[2][1] - r[1][1] * r[2][0]);
+}
+
+/* the strain action eps -> R eps R^T on (11, 22, 33, 23, 13, 12) */
+static void strain_matrix(const int (*r)[3], int out[6][6])
+{
+    static const int ij[6][2] = {{0, 0}, {1, 1}, {2, 2}, {1, 2}, {0, 2}, {0, 1}};
+    for (int c = 0; c < 6; c++) {
+        int e[3][3] = {{0}}, t[3][3];
+        e[ij[c][0]][ij[c][1]] = e[ij[c][1]][ij[c][0]] = 1;
+        for (int a = 0; a < 3; a++)
+            for (int b2 = 0; b2 < 3; b2++) {
+                t[a][b2] = 0;
+                for (int p2 = 0; p2 < 3; p2++)
+                    for (int q = 0; q < 3; q++) t[a][b2] += r[a][p2] * e[p2][q] * r[b2][q];
+            }
+        for (int row = 0; row < 6; row++) out[row][c] = t[ij[row][0]][ij[row][1]];
+    }
+}
+
+/* site >= 0: the Bloch displacements (axial: moments, times det R) of one site; site < 0: the strain (k = 0) */
 static int k_opds(const sp_group *g, const sp_little *L, const rat *k, const cy_field *f, uint64_t w, const cy *sigma, int dim, int site,
-                  int nu, jbuf *b)
+                  int axial, int magnetic, int nu, jbuf *b)
 {
     const sp_group *h = &L->h;
     int nh = h->n, N = L->N, m = f->m, n = g->n;
@@ -1221,23 +1107,32 @@ static int k_opds(const sp_group *g, const sp_little *L, const rat *k, const cy_
             global[nloc++] = cl;
         }
     }
-    int len = 3 * nloc;
+    int len = site < 0 ? 6 : 3 * nloc;
+    if (site < 0) nloc = 2;
+    int *sdense = site < 0 ? malloc(sizeof(int) * 36 * (size_t)nh) : 0;
+    for (int x = 0; sdense && x < nh; x++) strain_matrix((const int (*)[3])g->ops[L->little[x / N]].rot, (int (*)[6])(sdense + 36 * x));
     /* rho(x) on the Bloch displacements: block (gx a, a) = zeta_N^(-j - N k.L) R */
     uint64_t *phase = malloc(sizeof(uint64_t) * (size_t)nh * nloc);
     int *target = malloc(sizeof(int) * (size_t)nh * nloc);
-    for (int x = 0; x < nh; x++) {
-        int e = L->little[x / N], j = x % N;
+    for (int x = 0; x < nh && site >= 0; x++) {
+        int e = L->little[x / N], j = x % N, sign = axial ? det3((const int (*)[3])g->ops[e].rot) : 1;
         for (int c = 0; c < nloc; c++) {
             int cl = global[c];
             rat ph = rat_mul(rat_int(N), kdot(k, g->shift + (e * g->nclasses + cl) * 3));
             int ex = (int)((((-(int64_t)ph.n - j) % N) + N) % N);
-            phase[x * nloc + c] = powmod(zN, (uint64_t)ex, PR);
+            phase[x * nloc + c] = sign < 0 ? psub(0, powmod(zN, (uint64_t)ex, PR)) : powmod(zN, (uint64_t)ex, PR);
             target[x * nloc + c] = local[g->perm[e * g->nclasses + cl]];
         }
     }
 #define ACT(x, v, u)                                                                                           \
     do {                                                                                                       \
         memset(u, 0, sizeof(uint64_t) * (size_t)len);                                                          \
+        if (sdense) {                                                                                          \
+            for (int a_ = 0; a_ < 6; a_++)                                                                     \
+                for (int b_ = 0; b_ < 6; b_++)                                                                 \
+                    if (sdense[36 * (x) + 6 * a_ + b_]) u[a_] = padd(u[a_], pmul(pint(sdense[36 * (x) + 6 * a_ + b_]), (v)[b_])); \
+            break;                                                                                             \
+        }                                                                                                      \
         int e_ = L->little[(x) / N];                                                                           \
         for (int c_ = 0; c_ < nloc; c_++) {                                                                    \
             int t_ = target[(x) * nloc + c_];                                                                  \
@@ -1446,7 +1341,7 @@ static int k_opds(const sp_group *g, const sp_little *L, const rat *k, const cy_
             ngens++;
         }
     }
-    uint64_t *gmat = calloc((size_t)ngens * D * D, sizeof(uint64_t));
+    uint64_t *gmat = calloc((size_t)(ngens + 1) * D * D, sizeof(uint64_t));
     for (int q = 0; q < ngens; q++)
         for (int i = 0; i < s; i++) {
             sp_aff y, hh;
@@ -1464,6 +1359,10 @@ static int k_opds(const sp_group *g, const sp_little *L, const rat *k, const cy_
             for (int r = 0; r < dim; r++)
                 for (int c = 0; c < dim; c++) gmat[((size_t)q * D + pi * dim + r) * D + i * dim + c] = smat[((size_t)x * dim + r) * dim + c];
         }
+    if (magnetic) {
+        for (int i = 0; i < D; i++) gmat[((size_t)ngens * D + i) * D + i] = psub(0, 1);
+        ngens++;
+    }
     /* the image group by closure */
     pset image = {D * D, 0, 0, 0, 0, 0};
     uint64_t *ident = calloc((size_t)D * D, sizeof(uint64_t)), *prod = malloc(sizeof(uint64_t) * (size_t)D * D);
@@ -1568,13 +1467,13 @@ static int k_opds(const sp_group *g, const sp_little *L, const rat *k, const cy_
     pset_free(&image);
     pset_free(&seen);
     free(key), free(rows), free(img), free(diff), free(reps), free(ident), free(prod), free(gmat), free(raff), free(rinv), free(rep), free(arms);
-    free(smat), free(sig), free(local), free(global), free(phase), free(target), free(v0), free(v), free(u), free(e0), free(basis), free(piv);
+    free(smat), free(sig), free(local), free(global), free(phase), free(target), free(v0), free(v), free(u), free(e0), free(basis), free(piv), free(sdense);
     return 0;
 }
 
 /* irreps at k != 0: per small irrep of H appearing in the displacements, its Herring type, the
  * full and real dimensions and the multiplicity per site */
-static int spec_k(const sp_group *g, const rat *k, int nsites, jbuf *b)
+static int spec_k(const sp_group *g, const rat *k, int nsites, const int *kinds, int strain, jbuf *b)
 {
     sp_little L;
     if (build_little(g, k, &L)) return MDE_VALUE;
@@ -1602,10 +1501,12 @@ static int spec_k(const sp_group *g, const rat *k, int nsites, jbuf *b)
     for (int e = 0; e < nh; e++)
         if (h->order[e] == 1) identity = e;
     /* the displacement character per site on H: (g, j) -> zeta_N^(-j) sum_{a fixed} chi(-L_{g,a}) tr R */
-    cy *vchar = calloc((size_t)nsites * nh, sizeof(cy));
+    /* rows: kind (0 displacements, 1 moments: tr R times det R) x site, then the strain (k = 0) */
+    cy *vchar = calloc((size_t)(2 * nsites + 1) * nh, sizeof(cy));
     if (!vchar) return spfail("out of memory"), MDE_MEMORY;
-    for (int s = 0; s < nsites; s++)
+    for (int row = 0; row < 2 * nsites; row++)
         for (int x = 0; x < nh; x++) {
+            int s = row % nsites, kind = row / nsites;
             int e = L.little[x / N], j = x % N;
             cy acc, term, root;
             cy_zero(f, &acc);
@@ -1614,12 +1515,20 @@ static int spec_k(const sp_group *g, const rat *k, int nsites, jbuf *b)
                 rat ph = rat_mul(rat_int(N), kdot(k, g->shift + (e * g->nclasses + cl) * 3));
                 if (ph.d != 1) return spfail("atom shift outside the lattice"), MDE_VALUE;
                 int tr = g->ops[e].rot[0][0] + g->ops[e].rot[1][1] + g->ops[e].rot[2][2];
+                if (kind) tr *= det3((const int (*)[3])g->ops[e].rot);
                 cy_root(f, -(int64_t)(ph.n + j) * (m / N), &root);
                 cy_rat(f, tr, 1, &term);
                 cy_mul(f, &term, &root, &term);
                 cy_add(f, &acc, &term, &acc);
             }
-            vchar[s * nh + x] = acc;
+            vchar[(size_t)row * nh + x] = acc;
+        }
+    if (strain && N == 1)
+        for (int x = 0; x < nh; x++) {
+            int sm[6][6], tr = 0;
+            strain_matrix((const int (*)[3])g->ops[L.little[x]].rot, sm);
+            for (int i = 0; i < 6; i++) tr += sm[i][i];
+            cy_rat(f, tr, 1, &vchar[(size_t)2 * nsites * nh + x]);
         }
     /* elements of P taking k to -k, for Herring's sum */
     rat minus[3];
@@ -1646,20 +1555,24 @@ static int spec_k(const sp_group *g, const rat *k, int nsites, jbuf *b)
             dim = (int)r.n;
         }
         /* multiplicity per site: (1/|H|) sum chi_V(x) sigma(x^-1) */
-        int *mult = calloc((size_t)nsites + 1, sizeof(int)), any = 0;
-        for (int s = 0; s < nsites; s++) {
+        /* multiplicities: (1/|H|) sum chi_V(x) sigma(x^-1), per kind and site, and in the strain */
+        int *mult = calloc((size_t)(2 * nsites + 1) + 1, sizeof(int)), any = 0;
+        for (int row = 0; row <= 2 * nsites; row++) {
+            int s2 = row % (nsites ? nsites : 1), kind = row == 2 * nsites ? 2 : row / nsites;
+            if (kind < 2 && !(kinds[s2] & (1 << kind))) continue;
+            if (kind == 2 && !(strain && N == 1)) continue;
             cy acc, term;
             cy_zero(f, &acc);
             for (int x = 0; x < nh; x++) {
-                cy_mul(f, &vchar[s * nh + x], &sigma[h->cls[h->inv[x]]], &term);
+                cy_mul(f, &vchar[(size_t)row * nh + x], &sigma[h->cls[h->inv[x]]], &term);
                 cy_add(f, &acc, &term, &acc);
             }
             rat r;
             if (rat_of_cy(f, &acc, &r)) return spfail("irrational multiplicity"), MDE_VALUE;
             r = rat_div(r, rat_int(nh));
             if (r.d != 1 || r.n < 0) return spfail("non-integral multiplicity"), MDE_VALUE;
-            mult[s] = (int)r.n;
-            any |= mult[s] > 0;
+            mult[row] = (int)r.n;
+            any |= mult[row] > 0;
         }
         if (!any) {
             free(mult);
@@ -1704,15 +1617,22 @@ static int spec_k(const sp_group *g, const rat *k, int nsites, jbuf *b)
             }
         }
         int full = dim * L.star, real = nu == 1 ? full : 2 * full;
-        jb_lit(b, written++ ? ", {" : "{");
-        snprintf(t, sizeof t, "\"small_dim\": %d, \"full_dim\": %d, \"real_dim\": %d, \"herring\": %d, \"partner\": %s, \"multiplicity\": ", dim, full,
-                 real, nu, partner >= 0 && partner != c ? "true" : "false");
-        jb_lit(b, t);
-        put_int_list(b, mult, nsites);
-        int site = 0;
-        while (site < nsites && !mult[site]) site++;
-        if (k_opds(g, &L, k, f, w, sigma, dim, site, nu, b)) return MDE_VALUE;
-        jb_lit(b, "}");
+        for (int kind = 0; kind < 2; kind++) {
+            int site = -1, total = 0;
+            for (int s2 = 0; s2 < nsites; s2++) {
+                total += mult[kind * nsites + s2];
+                if (site < 0 && mult[kind * nsites + s2]) site = s2;
+            }
+            int strained = kind == 0 ? mult[2 * nsites] : 0;
+            if (!total && !strained) continue;
+            jb_lit(b, written++ ? ", {" : "{");
+            snprintf(t, sizeof t, "\"kind\": \"%s\", \"small_dim\": %d, \"full_dim\": %d, \"real_dim\": %d, \"herring\": %d, \"partner\": %s, \"strain\": %d, \"multiplicity\": ",
+                     kind ? "magnetic" : "displacive", dim, full, real, nu, partner >= 0 && partner != c ? "true" : "false", strained);
+            jb_lit(b, t);
+            put_int_list(b, mult + kind * nsites, nsites);
+            if (k_opds(g, &L, k, f, w, sigma, dim, site, kind, kind, nu, b)) return MDE_VALUE;
+            jb_lit(b, "}");
+        }
         free(mult);
     }
     jb_lit(b, "]}");
@@ -1722,236 +1642,11 @@ static int spec_k(const sp_group *g, const rat *k, int nsites, jbuf *b)
     return b->failed ? md_fail(MDE_MEMORY, "out of memory") : 0;
 }
 
-int spec_gamma(const jvalue *cif_info, const int *sites, int nsites, const rat *kvec, jbuf *b)
+int spec_gamma(const jvalue *cif_info, const int *sites, const int *kinds, int nsites, int strain, const rat *kvec, jbuf *b)
 {
     fail_status = 0;
     sp_group g;
     memset(&g, 0, sizeof g);
     if (build_group(cif_info, sites, nsites, &g)) return MDE_VALUE;
-    if (kvec) {
-        rat zero[3] = {rat_int(0), rat_int(0), rat_int(0)};
-        if (!k_same(&g, kvec, zero)) return spec_k(&g, kvec, nsites, b);
-    }
-    int n = g.n, k = g.ncls, exponent = 1;
-    for (int e = 0; e < n; e++) {
-        int a = exponent, c = g.order[e];
-        while (c) {
-            int t = a % c;
-            a = c;
-            c = t;
-        }
-        exponent = exponent / a * g.order[e];
-    }
-    int m = exponent % 4 ? exponent * (exponent % 2 ? 4 : 2) : exponent;
-    const cy_field *f = cy_field_for(m);
-    uint64_t w;
-    const int *units;
-    const uint64_t *vinv;
-    if (!f || modp_field(m, f->phi, 0, &PR, &w, &units, &vinv)) return spfail("no prime for the character field"), MDE_VALUE;
-    w = powmod(w, (uint64_t)units[0], PR);
-    sp_chars ch;
-    if (characters(&g, f, w, &ch)) return MDE_VALUE;
-    int identity_cls = 0;
-    for (int e = 0; e < n; e++)
-        if (g.order[e] == 1) identity_cls = g.cls[e];
-    jb_reset(b);
-    char t[160];
-    snprintf(t, sizeof t, "{\"schema\": \"APOSTRUCT.spec.gamma\", \"order\": %d, \"classes\": %d, \"atoms\": %d, \"irreps\": [", n, k,
-             g.nclasses);
-    jb_lit(b, t);
-    int written = 0;
-    for (int c = 0; c < k; c++) {
-        int d2 = ch.conj[c];
-        if (d2 < c) continue; /* a complex pair is taken once, from its first member */
-        /* Frobenius-Schur: (1/n) sum_l |K_l| chi(l^2) */
-        cy nu, term, size;
-        cy_zero(f, &nu);
-        for (int l = 0; l < k; l++) {
-            int rep = g.cls_rep[l], sq = g.cls[g.mult[rep * n + rep]];
-            cy_rat(f, g.cls_size[l], 1, &size);
-            cy_mul(f, &ch.values[c * k + sq], &size, &term);
-            cy_add(f, &nu, &term, &nu);
-        }
-        rat nur;
-        if (rat_of_cy(f, &nu, &nur)) return spfail("irrational Frobenius-Schur sum"), MDE_VALUE;
-        nur = rat_div(nur, rat_int(n));
-        int indicator = (int)nur.n;
-        rat psi[64], norm = rat_int(indicator == 0 ? 2 : indicator == 1 ? 1 : 4);
-        for (int l = 0; l < k; l++) {
-            cy v = ch.values[c * k + l];
-            if (indicator == 0) cy_add(f, &v, &ch.values[d2 * k + l], &v);
-            if (indicator < 0) cy_add(f, &v, &v, &v);
-            if (rat_of_cy(f, &v, &psi[l])) return spfail("physically irreducible character is not rational"), MDE_VALUE;
-        }
-        int dim = (int)psi[identity_cls].n;
-        /* multiplicity per selected site: <psi, chi_site> / <psi, psi> */
-        int *mult = calloc((size_t)nsites + 1, sizeof(int)), total = 0, best_site = -1;
-        for (int s = 0; s < nsites; s++) {
-            rat acc = rat_int(0);
-            for (int e = 0; e < n; e++) {
-                int tr = 0;
-                for (int cl = 0; cl < g.nclasses; cl++)
-                    if (g.class_site[cl] == s && g.perm[e * g.nclasses + cl] == cl)
-                        tr += g.ops[e].rot[0][0] + g.ops[e].rot[1][1] + g.ops[e].rot[2][2];
-                acc = rat_add(acc, rat_mul(psi[g.cls[e]], rat_int(tr)));
-            }
-            acc = rat_div(acc, rat_mul(rat_int(n), norm));
-            if (acc.d != 1) return spfail("non-integral multiplicity"), MDE_VALUE;
-            mult[s] = (int)acc.n;
-            total += mult[s] * dim;
-            if (mult[s] > 0 && best_site < 0) best_site = s;
-        }
-        if (!total) {
-            free(mult);
-            continue;
-        }
-        if (dim > SP_MAX_DIM) return spfail("irreducible dimension above the reference limit"), MDE_VALUE;
-        /* one irreducible copy W inside the best site's displacements */
-        int nloc = 0, *global = malloc(sizeof(int) * (size_t)g.nclasses), *local = malloc(sizeof(int) * (size_t)g.nclasses);
-        for (int cl = 0; cl < g.nclasses; cl++) {
-            local[cl] = -1;
-            if (g.class_site[cl] == best_site) {
-                local[cl] = nloc;
-                global[nloc++] = cl;
-            }
-        }
-        /* a subgroup K with the least fixed dimension of W allowed by its commutant (1, 2, 4 for indicator 1, 0, -1):
-         * the K-fixed vectors of the isotypic part are then pure tensors and generate one irreducible copy */
-        int target = indicator == 1 ? 1 : indicator == 0 ? 2 : 4;
-        uint64_t keep = 0;
-        if (n > 64) return spfail("group above the reference limit"), MDE_VALUE;
-        {
-            int gens = n < 3 ? n : 3, best = -1;
-            uint64_t tried[4096];
-            int ntried = 0;
-            for (int a = 0; a < n && best != target; a++)
-                for (int b2 = a; b2 < n && best != target; b2++)
-                    for (int c2 = gens == 3 ? b2 : n - 1; c2 < n && best != target; c2++) {
-                        uint64_t set = (1ULL << a) | (1ULL << b2) | (1ULL << c2), grown = 0;
-                        while (grown != set) {
-                            grown = set;
-                            for (int x = 0; x < n; x++)
-                                if (set >> x & 1)
-                                    for (int y = 0; y < n; y++)
-                                        if (set >> y & 1) set |= 1ULL << g.mult[x * n + y];
-                        }
-                        int dup = 0;
-                        for (int q = 0; q < ntried && !dup; q++) dup = tried[q] == set;
-                        if (dup) continue;
-                        if (ntried < 4096) tried[ntried++] = set;
-                        rat fix = rat_int(0);
-                        int size = 0;
-                        for (int x = 0; x < n; x++)
-                            if (set >> x & 1) {
-                                fix = rat_add(fix, psi[g.cls[x]]);
-                                size++;
-                            }
-                        fix = rat_div(fix, rat_int(size));
-                        if (fix.d == 1 && fix.n == target) {
-                            best = target;
-                            keep = set;
-                        }
-                    }
-        }
-        int len = 3 * nloc, found = 0;
-        rat *v = malloc(sizeof(rat) * (size_t)len), *u = malloc(sizeof(rat) * (size_t)len), *basis = malloc(sizeof(rat) * (size_t)(dim + 1) * len);
-        int piv[SP_MAX_DIM + 1], rank = 0;
-        for (int start = 0; start < len && !found; start++) {
-            rat *e0 = calloc((size_t)len, sizeof(rat));
-            for (int i = 0; i < len; i++) e0[i] = rat_int(i == start);
-            for (int i = 0; i < len; i++) v[i] = rat_int(0);
-            for (int e = 0; e < n; e++) {
-                act(&g, e, local, global, nloc, e0, u);
-                for (int i = 0; i < len; i++) v[i] = rat_add(v[i], rat_mul(psi[g.cls[e]], u[i]));
-            }
-            if (keep) {
-                memcpy(e0, v, sizeof(rat) * (size_t)len);
-                for (int i = 0; i < len; i++) v[i] = rat_int(0);
-                for (int e = 0; e < n; e++)
-                    if (keep >> e & 1) {
-                        act(&g, e, local, global, nloc, e0, u);
-                        for (int i = 0; i < len; i++) v[i] = rat_add(v[i], u[i]);
-                    }
-            }
-            free(e0);
-            rank = 0;
-            int ok = 1, nonzero = 0;
-            for (int i = 0; i < len; i++) nonzero |= !rat_zero(v[i]);
-            if (!nonzero) continue;
-            for (int h = 0; h < n && ok; h++) {
-                act(&g, h, local, global, nloc, v, u);
-                add_vector(basis, piv, &rank, len, u);
-                ok = rank <= dim;
-            }
-            if (ok && rank == dim) found = 1;
-        }
-        if (rat_overflow) return spfail("rational overflow"), MDE_VALUE;
-        jb_lit(b, written++ ? ", {" : "{");
-        snprintf(t, sizeof t, "\"dim\": %d, \"indicator\": %d, \"modes\": %d, \"multiplicity\": ", dim, indicator, total);
-        jb_lit(b, t);
-        put_int_list(b, mult, nsites);
-        jb_lit(b, ", \"character\": [");
-        for (int l = 0; l < k; l++) {
-            snprintf(t, sizeof t, l ? ", %lld" : "%lld", (long long)psi[l].n);
-            jb_lit(b, t);
-        }
-        jb_lit(b, "]");
-        if (!found) {
-            jb_lit(b, ", \"opds\": null}");
-            free(v), free(u), free(basis), free(global), free(local), free(mult);
-            continue;
-        }
-        /* M_h: coordinates of rho(h) w_i at the pivots, checked exactly */
-        rat *mats = malloc(sizeof(rat) * (size_t)n * dim * dim);
-        for (int h = 0; h < n; h++)
-            for (int i = 0; i < dim; i++) {
-                act(&g, h, local, global, nloc, basis + i * len, u);
-                for (int j = 0; j < dim; j++) mats[(h * dim + j) * dim + i] = u[piv[j]];
-                for (int x = 0; x < len; x++) {
-                    rat s = rat_int(0);
-                    for (int j = 0; j < dim; j++) s = rat_add(s, rat_mul(u[piv[j]], basis[j * len + x]));
-                    if (!rat_eq(s, u[x])) return spfail("irreducible copy is not invariant"), MDE_VALUE;
-                }
-            }
-        /* closure: orbits of nonzero isotropy subspaces */
-        int cap = 4096, nreps = 0, nseen = 0, head = 0;
-        sub *reps = malloc(sizeof(sub) * (size_t)cap), *seen = malloc(sizeof(sub) * (size_t)cap * 8);
-        sub full = {dim, {{0}}};
-        for (int i = 0; i < dim * dim; i++) full.v[i] = rat_int(i / dim == i % dim);
-        reps[nreps++] = full;
-        seen[nseen++] = full;
-        while (head < nreps) {
-            sub x = reps[head++];
-            for (int h = 0; h < n; h++) {
-                sub y;
-                sub_meet_fixed(&x, mats + h * dim * dim, dim, &y);
-                if (!y.r || y.r == x.r) continue;
-                int known = 0;
-                for (int q = 0; q < nseen && !known; q++) known = sub_eq(&seen[q], &y, dim);
-                if (known) continue;
-                if (nreps == cap) return spfail("too many isotropy subspaces"), MDE_VALUE;
-                reps[nreps++] = y;
-                for (int e = 0; e < n; e++) {
-                    sub z;
-                    sub_image(&y, mats + e * dim * dim, dim, &z);
-                    int dup = 0;
-                    for (int q = 0; q < nseen && !dup; q++) dup = sub_eq(&seen[q], &z, dim);
-                    if (!dup && nseen < cap * 8) seen[nseen++] = z;
-                }
-            }
-        }
-        jb_lit(b, ", \"opds\": [");
-        for (int q = 0; q < nreps; q++) {
-            int stab = 0;
-            for (int h = 0; h < n; h++) stab += sub_fixed(&reps[q], mats + h * dim * dim, dim);
-            snprintf(t, sizeof t, q ? ", {\"dim\": %d, \"stabilizer\": %d, \"index\": %d}" : "{\"dim\": %d, \"stabilizer\": %d, \"index\": %d}",
-                     reps[q].r, stab, n / stab);
-            jb_lit(b, t);
-        }
-        jb_lit(b, "]}");
-        if (rat_overflow) return spfail("rational overflow"), MDE_VALUE;
-        free(reps), free(seen), free(mats), free(v), free(u), free(basis), free(global), free(local), free(mult);
-    }
-    jb_lit(b, "]}");
-    return b->failed ? md_fail(MDE_MEMORY, "out of memory") : 0;
+    return spec_k(&g, kvec, nsites, kinds, strain, b);
 }

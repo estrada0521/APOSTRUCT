@@ -911,7 +911,7 @@ static int request_of(const jvalue *request, jbuf *b)
     return status ? status : b->failed ? md_fail(MDE_MEMORY, "out of memory") : 0;
 }
 
-int spec_gamma(const jvalue *cif_info, const int *sites, int nsites, const rat *kvec, jbuf *b);
+int spec_gamma(const jvalue *cif_info, const int *sites, const int *kinds, int nsites, int strain, const rat *kvec, jbuf *b);
 int k_coordinate_map_words(int sg, int kslot, int64_t *out);
 
 static int run(const jvalue *request, jbuf *b)
@@ -938,13 +938,25 @@ static int run(const jvalue *request, jbuf *b)
         status = pipeline_options(request, cif_info, 0, 0, &options);
         jb_lit(&options, "}");
         jdoc *odoc = status ? 0 : jdoc_parse(options.data, options.used);
-        const jvalue *list = odoc ? member(member(jdoc_root(odoc), "distortion_selection"), "displacive_sites") : 0;
-        int nsites = jis(list, J_ARRAY) ? (int)list->count : 0, *sites = calloc((size_t)nsites + 1, sizeof(int));
-        for (int i = 0; i < nsites; i++) {
-            int64_t v = 0;
-            py_int_of(jat(list, i), &v);
-            sites[i] = (int)v;
-        }
+        /* the selected sites in CIF order, each with its kinds (1 displacive, 2 magnetic) */
+        const jvalue *sel = odoc ? member(jdoc_root(odoc), "distortion_selection") : 0;
+        const jvalue *lists[2] = {member(sel, "displacive_sites"), member(sel, "magnetic_sites")};
+        int64_t natoms = jis(member(cif_info, "atom_sites"), J_ARRAY) ? member(cif_info, "atom_sites")->count : 0;
+        int *flags = calloc((size_t)natoms + 1, sizeof(int)), nsites = 0;
+        for (int kind = 0; kind < 2; kind++)
+            for (int64_t i = 0; jis(lists[kind], J_ARRAY) && i < lists[kind]->count; i++) {
+                int64_t v = 0;
+                py_int_of(jat(lists[kind], i), &v);
+                if (v >= 1 && v <= natoms) flags[v - 1] |= 1 << kind;
+            }
+        int *sites = calloc((size_t)natoms + 1, sizeof(int)), *kinds = calloc((size_t)natoms + 1, sizeof(int));
+        for (int64_t i = 0; i < natoms; i++)
+            if (flags[i]) {
+                sites[nsites] = (int)i + 1;
+                kinds[nsites++] = flags[i];
+            }
+        int strain = jtruthy(member(sel, "strain"));
+        free(flags);
         rat kvec[3] = {rat_int(0), rat_int(0), rat_int(0)};
         if (!status && odoc) {
             /* the selected k point's coordinates: the catalog map origin + parameters . columns */
@@ -980,8 +992,9 @@ static int run(const jvalue *request, jbuf *b)
             jb_free(&parent);
             jb_free(&kstate);
         }
-        if (!status) status = odoc ? spec_gamma(cif_info, sites, nsites, kvec, b) : md_fail(MDE_MEMORY, "out of memory");
+        if (!status) status = odoc ? spec_gamma(cif_info, sites, kinds, nsites, strain, kvec, b) : md_fail(MDE_MEMORY, "out of memory");
         free(sites);
+        free(kinds);
         jdoc_free(odoc);
         jb_free(&options);
         jdoc_free(summary);
