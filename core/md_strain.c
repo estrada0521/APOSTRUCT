@@ -640,19 +640,7 @@ static int strain_definitions_of(md_request *r, const strain_spec *specs, int ns
                     if (e) jb_lit(b, ", ");
                     jb_float(b, n[WEB_ORDER[e]]);
                 }
-                jb_lit(b, "], \"tensor_components\": {\"xx\": ");
-                jb_float(b, xx);
-                jb_lit(b, ", \"xy\": ");
-                jb_float(b, xy / 2.0);
-                jb_lit(b, ", \"xz\": ");
-                jb_float(b, xz / 2.0);
-                jb_lit(b, ", \"yy\": ");
-                jb_float(b, yy);
-                jb_lit(b, ", \"yz\": ");
-                jb_float(b, yz / 2.0);
-                jb_lit(b, ", \"zz\": ");
-                jb_float(b, zz);
-                jb_lit(b, "}, \"_spec_order\": ");
+                jb_lit(b, "], \"_spec_order\": ");
                 if (s->has_order) jb_int(b, s->order);
                 else jb_lit(b, "null");
                 MD_TRY(md_factor_metadata(r, s->has_order ? (int)s->order : -1, b));

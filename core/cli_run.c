@@ -594,19 +594,15 @@ static void put_key(jbuf *b, int *first, const char *key)
 static void kpoint_result(jbuf *b, const jvalue *row)
 {
     static const char *const fields[] = {"slot",      "label",     "display",       "kid",       "kslot",  "dimension", "parameters",
-                                         "display_parameters", "miller_love_parameters", "sg_specific", "star_size", "little_order",
+                                         "display_parameters", "miller_love_parameters", "sg_specific", "star_size",
                                          "n_irreps",  "star"};
     jb_lit(b, "{");
     int first = 1;
     put_fields(b, row, fields, (int)(sizeof fields / sizeof fields[0]), &first);
-    const jvalue *display = member(row, "display_kvector"), *kvector = member(row, "kvector");
+    const jvalue *display = member(row, "display_kvector");
     if (display && !jis(display, J_NULL)) {
         put_key(b, &first, "kvector");
         jb_value(b, display);
-    }
-    if (kvector && !jis(kvector, J_NULL)) {
-        put_key(b, &first, "miller_love_kvector");
-        jb_value(b, kvector);
     }
     put_key(b, &first, "parameter_names");
     text names[3];
@@ -622,7 +618,7 @@ static void kpoint_result(jbuf *b, const jvalue *row)
 static void irrep_result(jbuf *b, const jvalue *row)
 {
     static const char *const fields[] = {"symbol",      "gid",      "k_label",  "kov_label",           "type",
-                                         "type_label",  "little_dim", "full_dim", "displacive_mode_total", "magnetic_mode_total"};
+                                         "little_dim", "full_dim", "displacive_mode_total", "magnetic_mode_total"};
     jb_lit(b, "{");
     int first = 1;
     put_fields(b, row, fields, (int)(sizeof fields / sizeof fields[0]), &first);
@@ -674,15 +670,29 @@ static void opd_result(jbuf *b, const jvalue *row)
     jb_lit(b, ", \"k_active\": ");
     const jvalue *active = member(iso, "k_active_vectors");
     put_or_null(b, jtruthy(active) ? active : member(iso, "k_active"));
-    jb_lit(b, jtruthy(member(iso, "ferroic_classified")) ? ", \"ferroic_classified\": true" : ", \"ferroic_classified\": false");
     jb_lit(b, ", \"ferroic_properties\": ");
     const jvalue *ferroic = member(iso, "ferroic_properties");
     if (jtruthy(ferroic)) jb_value(b, ferroic);
     else jb_lit(b, "[]");
     const jvalue *components = member(direction, "components");
     if (components && !jis(components, J_NULL)) {
-        jb_lit(b, ", \"components\": ");
-        jb_value(b, components);
+        jb_lit(b, ", \"components\": [");
+        for (int64_t c = 0; jis(components, J_ARRAY) && c < components->count; c++) {
+            const jvalue *component = jat(components, c);
+            jb_lit(b, c ? ", {" : "{");
+            int first = 1;
+            for (int64_t m = 0; jis(component, J_OBJECT) && m < component->count; m++) {
+                const jvalue *key = component->u.members + 2 * m;
+                if (jstr_is(key, "domain_display")) continue;
+                if (!first) jb_lit(b, ", ");
+                first = 0;
+                jb_value(b, key);
+                jb_lit(b, ": ");
+                jb_value(b, key + 1);
+            }
+            jb_lit(b, "}");
+        }
+        jb_lit(b, "]");
     }
     jb_lit(b, "}");
 }
@@ -809,7 +819,9 @@ static void compact(jbuf *b, const jvalue *value, const char *stage, const expan
     int first = 1;
     for (int64_t i = 0; jtruthy(space_group) && jis(space_group, J_OBJECT) && i < space_group->count; i++) {
         const jvalue *key = space_group->u.members + 2 * i;
-        if (e > a && jstr_is(key, "symbol")) continue;
+        if ((e > a && jstr_is(key, "symbol")) || jstr_is(key, "crystal_class") || jstr_is(key, "ml_symbol") ||
+            jstr_is(key, "point_group_order"))
+            continue;
         if (!first) jb_lit(b, ", ");
         first = 0;
         jb_value(b, key);

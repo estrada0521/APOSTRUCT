@@ -161,7 +161,6 @@ typedef struct {
     double display_basis[3][3];
     int has_exact_basis;
     rat exact_basis[3][3];
-    int presentation_identity;
     int origin_kind; /* 0 none, 1 text, 2 record */
     md_str origin_text;
     int64_t origin_record[4];
@@ -197,7 +196,7 @@ typedef struct {
     int full_parameter_opd;
     int has_source_basis_override;
     int64_t source_basis_override[9];
-    double viewer_basis[3][3], viewer_origin[3];
+    double viewer_origin[3];
 } md_request;
 
 int md_tables(void);

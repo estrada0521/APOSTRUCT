@@ -253,10 +253,6 @@ static void display_basis(md_request *r)
     for (int row = 0; row < 3 && r->has_exact_basis; row++)
         for (int col = 0; col < 3; col++)
             if (py_float_of_fraction(r->exact_basis[row][col], &r->display_basis[row][col])) r->has_exact_basis = 0;
-    int identity = 1;
-    for (int row = 0; row < 3; row++)
-        for (int col = 0; col < 3; col++) identity &= fabs(r->display_basis[row][col] - (row == col ? 1.0 : 0.0)) <= 1e-12;
-    r->presentation_identity = identity;
 }
 
 /* common._origin_from_opd_row */

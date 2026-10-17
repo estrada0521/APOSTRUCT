@@ -1482,7 +1482,7 @@ static int secondary_factors(md_request *r, md_state *st, const int *emitted, jb
         jb_lit(b, ", \"label\": ");
         jb_cstring(b, s->display_label ? s->display_label : s->label);
         jb_lit(b, s->magnetic_kind ? ", \"magnetic\": true" : ", \"magnetic\": false");
-        jb_lit(b, ", \"k_parameters\": [], \"role\": \"secondary\"");
+        jb_lit(b, ", \"role\": \"secondary\"");
         if (s->free_state == MD_SET && s->free_count > 0) {
             jb_lit(b, ", \"parameter_count\": ");
             jb_int(b, s->free_count);
@@ -1729,26 +1729,11 @@ static int subgroup_details(jbuf *b, const md_request *r, const md_state *st)
             if (i) jb_lit(b, ", ");
             jb_int(b, st->iso_basis[i]);
         }
-        jb_lit(b, "], \"basis_pml_to_cinter\": [");
-        rat pml[3][3], origin[3];
-        if (geo_setting_to_cinter(r->sg, 1, 0, pml, origin)) return md_fail(MDE_VALUE, "parent setting Source tables are inconsistent");
-        for (int row = 0; row < 3; row++) {
-            rat values[3], out[3];
-            for (int k = 0; k < 3; k++) values[k] = rat_int(st->iso_basis[3 * row + k]);
-            rat_row_mul(values, (const rat (*)[3])pml, out);
-            if (row) jb_lit(b, ", ");
-            jb_lit(b, "[");
-            for (int col = 0; col < 3; col++) {
-                if (col) jb_lit(b, ", ");
-                put_frac_text(b, out[col]);
-            }
-            jb_lit(b, "]");
-        }
         jb_lit(b, "]");
     } else {
         put_value_or_null(b, jget(r->iso, "row_id"));
-        const char *keys[5] = {"subgroup", "arms", "direction", "basis", "basis_pml_to_cinter"};
-        for (int i = 0; i < 5; i++) {
+        const char *keys[4] = {"subgroup", "arms", "direction", "basis"};
+        for (int i = 0; i < 4; i++) {
             jb_lit(b, ", ");
             jb_cstring(b, keys[i]);
             jb_lit(b, ": ");
@@ -1759,8 +1744,6 @@ static int subgroup_details(jbuf *b, const md_request *r, const md_state *st)
     put_display_basis(b, r);
     jb_lit(b, ", \"presentation_basis\": ");
     put_display_basis(b, r);
-    jb_lit(b, ", \"presentation_rule\": ");
-    jb_cstring(b, !r->has_display_basis ? "none" : r->presentation_identity ? "identity" : "child_basis");
     jb_lit(b, ", \"origin\": ");
     if (r->origin_kind == 1) {
         jb_string(b, r->origin_text.data, (size_t)r->origin_text.length);
@@ -2172,17 +2155,7 @@ static int build(md_request *r, jbuf *b, md_owned *o)
     put_sites(b, r, &o->st);
     jb_lit(b, ", \"lattice\": ");
     put_lattice(b, r->child_lattice);
-    jb_lit(b, ", \"viewer_parent_basis\": [");
-    for (int row = 0; row < 3; row++) {
-        if (row) jb_lit(b, ", ");
-        jb_lit(b, "[");
-        for (int col = 0; col < 3; col++) {
-            if (col) jb_lit(b, ", ");
-            jb_float(b, r->viewer_basis[row][col]);
-        }
-        jb_lit(b, "]");
-    }
-    jb_lit(b, "], \"viewer_parent_origin\": [");
+    jb_lit(b, ", \"viewer_parent_origin\": [");
     for (int axis = 0; axis < 3; axis++) {
         if (axis) jb_lit(b, ", ");
         jb_float(b, r->viewer_origin[axis]);

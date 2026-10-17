@@ -326,7 +326,6 @@ static int parent_cell_placement(md_request *r, const double (*basis)[3], const 
                     }
                 }
     }
-    memcpy(r->viewer_basis, parent, sizeof parent);
     memcpy(r->viewer_origin, best_origin, sizeof best_origin);
     return 0;
 }
@@ -395,7 +394,7 @@ static int exact_cell_placement(md_request *r, const rat (*basis)[3], const rat 
                     }
                 }
     }
-    if (rat_overflow || to_doubles(&parent[0][0], 9, &r->viewer_basis[0][0]) || to_doubles(best_origin, 3, r->viewer_origin))
+    if (rat_overflow || to_doubles(best_origin, 3, r->viewer_origin))
         return md_fail(MDE_ARITH, "viewer placement out of range");
     return 0;
 }
