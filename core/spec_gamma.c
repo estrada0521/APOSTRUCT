@@ -1353,12 +1353,15 @@ static int identify_opd(const sp_induced *c, const uint64_t *x, int r, int magne
 
 /* ---- naming bridge: irrep symbols from characters ---- */
 
+
 typedef struct {
     int count;
     int gid[64];
     char symbol[64][24];
     int64_t kparam[4];
 } sp_names;
+
+static const sp_names *SP_NAMES;
 
 int exact_record_matrix(int gid, int dim, int arms, const int64_t *k, int subtract_generated, int element_count, const int *elements,
                         int position, const int *record, int want_m, const cy_field **field_out, cy *w);
@@ -1696,7 +1699,9 @@ int mag_point_action(int mode, int op, int *sign);
 int mag_orderparam_group(int sg);
 int mag_tables(void);
 
-static int walk_order(const sp_induced *c, int gid, const int64_t *kparam, int magnetic, pset *out)
+/* the walk's elements in candidate order: Source records in table order, each with the translation classes modulo the
+ * irrep's kernel lattice in op_new_fractionals order; records keep the spatial point operation, signs the time reversal */
+static int walk_records(int gid, const int64_t *kparam, int magnetic, int64_t (**out)[5], int **signs, int *count)
 {
     irrep_context ctx;
     if (irrep_context_for(gid, 4, kparam, &ctx)) return spfail("irrep context for the walk order");
@@ -1725,24 +1730,171 @@ static int walk_order(const sp_induced *c, int gid, const int64_t *kparam, int m
         free(fractions);
         return spfail("translation classes for the walk order");
     }
-    uint64_t *gm = malloc(sizeof(uint64_t) * (size_t)c->D * c->D);
-    int added;
+    *out = malloc(sizeof(int64_t[5]) * (size_t)nrec * nf + 1);
+    *signs = malloc(sizeof(int) * (size_t)nrec * nf + 1);
+    *count = 0;
     for (int sp = 0; sp < nrec; sp++)
         for (int f = 0; f < nf; f++) {
-            int64_t op[5];
-            sp_aff a;
+            int64_t *op = (*out)[*count];
             if (op_vadd(fractions + 4 * f, records[sp], op)) return spfail("walk-order element");
             op[4] = cops[sp];
-            if (record_to_aff(op, &a) || gamma_of(c, &a, gm)) {
-                free(fractions), free(gm);
-                return spfail("walk-order element");
-            }
-            if (csigns[sp] < 0)
-                for (int i = 0; i < c->D * c->D; i++) gm[i] = psub(0, gm[i]);
-            if (pset_put(out, gm, &added) < 0) return spfail("out of memory");
+            (*signs)[(*count)++] = csigns[sp];
         }
     free(fractions);
-    free(gm);
+    return 0;
+}
+
+/* the walk's candidate order (the order rule of the dynamic labels): distinct Gamma matrices in first-seen order */
+static int walk_order(const sp_induced *c, int gid, const int64_t *kparam, int magnetic, pset *out)
+{
+    int64_t (*records)[5];
+    int *signs, count;
+    if (walk_records(gid, kparam, magnetic, &records, &signs, &count)) return 1;
+    uint64_t *gm = malloc(sizeof(uint64_t) * (size_t)c->D * c->D);
+    int added;
+    for (int q = 0; q < count; q++) {
+        sp_aff a;
+        if (record_to_aff(records[q], &a) || gamma_of(c, &a, gm)) {
+            free(records), free(signs), free(gm);
+            return spfail("walk-order element");
+        }
+        if (signs[q] < 0)
+            for (int i = 0; i < c->D * c->D; i++) gm[i] = psub(0, gm[i]);
+        if (pset_put(out, gm, &added) < 0) return spfail("out of memory");
+    }
+    free(records), free(signs), free(gm);
+    return 0;
+}
+
+/* invert a d x d matrix mod p; nonzero when singular */
+static int pinvert(const uint64_t *a, int d, uint64_t *out)
+{
+    uint64_t *m = malloc(sizeof(uint64_t) * (size_t)d * 2 * d);
+    int *piv = malloc(sizeof(int) * (size_t)(d + 1));
+    for (int i = 0; i < d; i++)
+        for (int j = 0; j < 2 * d; j++) m[i * 2 * d + j] = j < d ? a[i * d + j] : (uint64_t)(j - d == i);
+    int rank = prref(m, d, 2 * d, piv);
+    int ok = rank == d;
+    for (int i = 0; i < d && ok; i++) ok = piv[i] == i;
+    for (int i = 0; i < d && ok; i++)
+        for (int j = 0; j < d; j++) out[i * d + j] = m[i * 2 * d + d + j];
+    free(m), free(piv);
+    return !ok;
+}
+
+static void pmatmul(const uint64_t *a, const uint64_t *b2, int n, int k, int m2, uint64_t *out)
+{
+    for (int i = 0; i < n; i++)
+        for (int j = 0; j < m2; j++) {
+            uint64_t t = 0;
+            for (int l = 0; l < k; l++)
+                if (a[i * k + l] && b2[l * m2 + j]) t = padd(t, pmul(a[i * k + l], b2[l * m2 + j]));
+            out[i * m2 + j] = t;
+        }
+}
+
+/* the BYU gauge from Gamma: Source's W on the generators fixes an intertwiner T (W T = T Gamma_big, with Gamma_big =
+ * Gamma, or Gamma + its dual for a complex or quaternionic type); then T Gamma_big(x) T^-1 is compared with Source's W(x)
+ * on every walk element. counts: [checked, differ, status] */
+static int gauge_check(const sp_induced *c, const cy_field *f, uint64_t w, int gid, int nu, int magnetic, const sp_aff *gens, int ngens, int *counts)
+{
+    counts[0] = counts[1] = counts[2] = 0;
+    irrep_context ctx;
+    if (irrep_context_for(gid, 4, SP_NAMES->kparam, &ctx)) return (counts[2] = 1), 0;
+    int D = c->D, Db = nu == 1 ? D : 2 * D, rd = ctx.dim;
+    if (rd != Db) return (counts[2] = 2), 0;
+    if ((size_t)rd * Db > 2304) return (counts[2] = 3), 0;
+    cy *wc = malloc(sizeof(cy) * (size_t)rd * rd);
+    uint64_t *gm = malloc(sizeof(uint64_t) * (size_t)D * D), *gi = malloc(sizeof(uint64_t) * (size_t)D * D);
+    uint64_t *big = calloc((size_t)Db * Db, sizeof(uint64_t)), *wm = malloc(sizeof(uint64_t) * (size_t)rd * rd);
+    /* Source W(x) mod p in this field; transposed when Source's matrices act on rows */
+    int transposed = -1;
+#define SOURCE_W(aff, out)                                                                                                       \
+    do {                                                                                                                       \
+        int64_t r64[5];                                                                                                        \
+        int rec[5];                                                                                                            \
+        if (aff_to_record(c->g, (aff), r64)) return 1;                                                                         \
+        for (int z_ = 0; z_ < 5; z_++) rec[z_] = (int)r64[z_];                                                                 \
+        int pos_ = bw_find_position(ctx.element_count, ctx.elements, rec);                                                     \
+        const cy_field *fs_;                                                                                                   \
+        if (!pos_ || exact_record_matrix(gid, ctx.dim, ctx.arms, ctx.k, ctx.subtract, ctx.element_count, ctx.elements, pos_, rec, \
+                                         f->m, &fs_, wc))                                                                      \
+            return (counts[2] = 4), 0;                                                                                         \
+        for (int i_ = 0; i_ < rd; i_++)                                                                                        \
+            for (int j_ = 0; j_ < rd; j_++) (out)[i_ * rd + j_] = cy_mod(f, &wc[transposed == 1 ? j_ * rd + i_ : i_ * rd + j_], w); \
+    } while (0)
+#define BIG(aff)                                                                                                                 \
+    do {                                                                                                                       \
+        if (gamma_of(c, (aff), gm)) return 1;                                                                                  \
+        memset(big, 0, sizeof(uint64_t) * (size_t)Db * Db);                                                                    \
+        for (int i_ = 0; i_ < D; i_++)                                                                                         \
+            for (int j_ = 0; j_ < D; j_++) big[i_ * Db + j_] = gm[i_ * D + j_];                                                \
+        if (Db > D) {                                                                                                          \
+            sp_aff inv_;                                                                                                       \
+            aff_inv(c->g, (aff), &inv_);                                                                                       \
+            if (gamma_of(c, &inv_, gi)) return 1;                                                                              \
+            for (int i_ = 0; i_ < D; i_++)                                                                                     \
+                for (int j_ = 0; j_ < D; j_++) big[(D + i_) * Db + D + j_] = gi[j_ * D + i_];                                  \
+        }                                                                                                                      \
+    } while (0)
+    /* orientation: W(a) W(b) = W(ab) for two generators */
+    {
+        uint64_t *w1 = malloc(sizeof(uint64_t) * (size_t)rd * rd), *w2 = malloc(sizeof(uint64_t) * (size_t)rd * rd), *w12 = malloc(sizeof(uint64_t) * (size_t)rd * rd);
+        uint64_t *pr = malloc(sizeof(uint64_t) * (size_t)rd * rd);
+        sp_aff ab;
+        int a0 = 0, b0 = ngens > 1 ? 1 : 0;
+        aff_mul(&gens[a0], &gens[b0], &ab);
+        transposed = 0;
+        SOURCE_W(&gens[a0], w1);
+        SOURCE_W(&gens[b0], w2);
+        SOURCE_W(&ab, w12);
+        pmatmul(w1, w2, rd, rd, rd, pr);
+        if (memcmp(pr, w12, sizeof(uint64_t) * (size_t)rd * rd)) transposed = 1;
+        free(w1), free(w2), free(w12), free(pr);
+    }
+    /* T: rd x Db unknowns, W(g) T - T Big(g) = 0 for each generator */
+    int unknowns = rd * Db, rows = 0;
+    uint64_t *sys = calloc((size_t)ngens * unknowns * unknowns + 1, sizeof(uint64_t));
+    for (int q = 0; q < ngens; q++) {
+        SOURCE_W(&gens[q], wm);
+        BIG(&gens[q]);
+        for (int i = 0; i < rd; i++)
+            for (int j = 0; j < Db; j++, rows++) {
+                uint64_t *row = sys + (size_t)rows * unknowns;
+                for (int l = 0; l < rd; l++) row[l * Db + j] = padd(row[l * Db + j], wm[i * rd + l]);
+                for (int l = 0; l < Db; l++) row[i * Db + l] = psub(row[i * Db + l], big[l * Db + j]);
+            }
+    }
+    uint64_t *null = malloc(sizeof(uint64_t) * (size_t)unknowns * unknowns + 1);
+    int cnt = pnull(sys, rows, unknowns, null);
+    free(sys);
+    if (!cnt) return (counts[2] = 5), 0;
+    uint64_t *t = calloc((size_t)unknowns, sizeof(uint64_t)), *tinv = malloc(sizeof(uint64_t) * (size_t)unknowns), seed = 0x9e3779b97f4a7c15ULL;
+    for (int v = 0; v < cnt; v++) {
+        seed = seed * 6364136223846793005ULL + 1442695040888963407ULL;
+        uint64_t coef = (seed >> 11) % PR;
+        for (int i = 0; i < unknowns; i++) t[i] = padd(t[i], pmul(coef, null[(size_t)v * unknowns + i]));
+    }
+    free(null);
+    if (pinvert(t, rd, tinv)) return (counts[2] = 6), 0;
+    /* every walk element */
+    int64_t (*records)[5];
+    int *signs, count;
+    if (walk_records(gid, SP_NAMES->kparam, magnetic, &records, &signs, &count)) return 1;
+    uint64_t *tmp = malloc(sizeof(uint64_t) * (size_t)rd * Db), *ours = malloc(sizeof(uint64_t) * (size_t)rd * rd);
+    for (int q = 0; q < count; q++) {
+        sp_aff a;
+        if (record_to_aff(records[q], &a)) return 1;
+        SOURCE_W(&a, wm);
+        BIG(&a);
+        pmatmul(t, big, rd, Db, Db, tmp);
+        pmatmul(tmp, tinv, rd, Db, rd, ours);
+        counts[0]++;
+        if (memcmp(ours, wm, sizeof(uint64_t) * (size_t)rd * rd)) counts[1]++;
+    }
+#undef SOURCE_W
+#undef BIG
+    free(records), free(signs), free(tmp), free(ours), free(t), free(tinv), free(wc), free(gm), free(gi), free(big), free(wm);
     return 0;
 }
 
@@ -1845,10 +1997,12 @@ static int mag_table_labels(const sp_induced *c, int gid, const pset *seen, cons
     return 0;
 }
 
-static const sp_names *SP_NAMES;
 
-static int k_opds(const sp_group *g, const sp_little *L, const rat *k, const cy_field *f, uint64_t w, const cy *sigma, int dim, int site,
-                  int axial, int magnetic, int nu, jbuf *b)
+static int SP_NAMED = -1;
+static char SP_WHY[96];
+
+static int k_opds_in(const sp_group *g, const sp_little *L, const rat *k, const cy_field *f, uint64_t w, const cy *sigma, int dim, int site,
+                     int axial, int magnetic, int nu, jbuf *b)
 {
     const sp_group *h = &L->h;
     int nh = h->n, N = L->N, m = f->m, n = g->n;
@@ -2100,9 +2254,9 @@ static int k_opds(const sp_group *g, const sp_little *L, const rat *k, const cy_
     sp_induced ind = {g, L, k, s, dim, D, (const rat (*)[3])arms, raff, rinv, smat};
     int named_gid = 0;
     if (SP_NAMES && SP_NAMES->count) {
-        char why[96] = "";
-        int q = name_irrep(&ind, f, sigma, nu, nu == 1 ? D : 2 * D, SP_NAMES, why);
-        if (fail_status) return MDE_VALUE;
+        char why[96];
+        int q = SP_NAMED;
+        snprintf(why, sizeof why, "%s", SP_WHY);
         jb_lit(b, ", \"symbol\": ");
         if (q >= 0) named_gid = SP_NAMES->gid[q];
         if (q >= 0) {
@@ -2113,6 +2267,13 @@ static int k_opds(const sp_group *g, const sp_little *L, const rat *k, const cy_
             jb_lit(b, "null, \"symbol_error\": ");
             jb_cstring(b, why);
         }
+    }
+    if (named_gid > 0 && getenv("APO_SPEC_GAUGE")) {
+        int counts[3];
+        if (gauge_check(&ind, f, w, named_gid, nu, magnetic, gens, ngens, counts)) return MDE_VALUE;
+        char gt[96];
+        snprintf(gt, sizeof gt, ", \"gauge\": [%d, %d, %d]", counts[0], counts[1], counts[2]);
+        jb_lit(b, gt);
     }
     uint64_t *gmat = calloc((size_t)(ngens + 1) * D * D, sizeof(uint64_t));
     for (int q = 0; q < ngens; q++)
@@ -2278,6 +2439,78 @@ static int k_opds(const sp_group *g, const sp_little *L, const rat *k, const cy_
     free(key), free(rows), free(img), free(diff), free(reps), free(ident), free(prod), free(gmat), free(raff), free(rinv), free(rep), free(arms);
     free(smat), free(sig), free(local), free(global), free(phase), free(target), free(v0), free(v), free(u), free(e0), free(basis), free(piv), free(sdense);
     return 0;
+}
+
+/* names the irrep first (exactly), then runs the OPDs modulo a prime of a field that also holds Source's matrices */
+static int k_opds(const sp_group *g, const sp_little *L, const rat *k, const cy_field *f, uint64_t w, const cy *sigma, int dim, int site,
+                  int axial, int magnetic, int nu, jbuf *b)
+{
+    SP_NAMED = -1;
+    SP_WHY[0] = 0;
+    if (!SP_NAMES || !SP_NAMES->count) return k_opds_in(g, L, k, f, w, sigma, dim, site, axial, magnetic, nu, b);
+    int s = L->star, *rep = malloc(sizeof(int) * (size_t)s), narms = 0;
+    rat (*arms)[3] = malloc(sizeof(rat[3]) * (size_t)s);
+    for (int e = 0; e < g->n && narms < s; e++) {
+        rat a[3];
+        k_times(k, (const int (*)[3])g->ops[g->inv[e]].rot, a);
+        int known = 0;
+        for (int q = 0; q < narms && !known; q++) known = k_same(g, arms[q], a);
+        if (!known) {
+            memcpy(arms[narms], a, sizeof a);
+            rep[narms++] = e;
+        }
+    }
+    sp_aff *raff = malloc(sizeof(sp_aff) * (size_t)s), *rinv = malloc(sizeof(sp_aff) * (size_t)s);
+    for (int i = 0; i < s; i++) {
+        memcpy(raff[i].r, g->ops[rep[i]].rot, sizeof raff[i].r);
+        memcpy(raff[i].t, g->ops[rep[i]].tran, sizeof raff[i].t);
+        aff_inv(g, &raff[i], &rinv[i]);
+    }
+    int D = dim * s;
+    sp_induced pre = {g, L, k, s, dim, D, (const rat (*)[3])arms, raff, rinv, 0};
+    SP_NAMED = name_irrep(&pre, f, sigma, nu, nu == 1 ? D : 2 * D, SP_NAMES, SP_WHY);
+    free(rep), free(arms), free(raff), free(rinv);
+    if (fail_status) return MDE_VALUE;
+    if (SP_NAMED < 0) return k_opds_in(g, L, k, f, w, sigma, dim, site, axial, magnetic, nu, b);
+    /* the field of Source's matrices on the walk's elements */
+    int gid = SP_NAMES->gid[SP_NAMED], M = f->m;
+    irrep_context ctx;
+    int64_t (*records)[5];
+    int *signs, count;
+    if (irrep_context_for(gid, 4, SP_NAMES->kparam, &ctx) || walk_records(gid, SP_NAMES->kparam, 0, &records, &signs, &count)) return MDE_VALUE;
+    for (int q = 0; q < count; q++) {
+        int rec[5];
+        for (int z = 0; z < 5; z++) rec[z] = (int)records[q][z];
+        int pos = bw_find_position(ctx.element_count, ctx.elements, rec);
+        const cy_field *fs;
+        int need = pos ? -exact_record_matrix(gid, ctx.dim, ctx.arms, ctx.k, ctx.subtract, ctx.element_count, ctx.elements, pos, rec, -1, &fs, 0) : 0;
+        if (need <= 0) continue;
+        int a = M, b2 = need;
+        while (b2) {
+            int t = a % b2;
+            a = b2;
+            b2 = t;
+        }
+        M = M / a * need;
+    }
+    free(records), free(signs);
+    if (M == f->m) return k_opds_in(g, L, k, f, w, sigma, dim, site, axial, magnetic, nu, b);
+    const cy_field *fm = cy_field_for(M);
+    uint64_t saved = PR, wm;
+    const int *units;
+    const uint64_t *vinv;
+    if (!fm || modp_field(M, fm->phi, 0, &PR, &wm, &units, &vinv)) {
+        PR = saved;
+        return spfail("no prime for the gauge field"), MDE_VALUE;
+    }
+    wm = powmod(wm, (uint64_t)units[0], PR);
+    int kc = L->h.ncls;
+    cy *lifted = malloc(sizeof(cy) * (size_t)kc);
+    for (int l = 0; l < kc; l++) cy_lift(f, &sigma[l], fm, &lifted[l]);
+    int status = k_opds_in(g, L, k, fm, wm, lifted, dim, site, axial, magnetic, nu, b);
+    free(lifted);
+    PR = saved;
+    return status;
 }
 
 /* irreps at k != 0: per small irrep of H appearing in the displacements, its Herring type, the
