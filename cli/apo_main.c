@@ -545,9 +545,9 @@ static void parse_args(int argc, char **argv, int start, args_t *a)
             a->has_case_option = 1;
         } else if (!strcmp(arg, "--upto") && !strcmp(command, "run")) {
             TAKE();
-            static const char *const stages[] = {"kpoints", "irreps", "opds", "modes"};
+            static const char *const stages[] = {"kpoints", "irreps", "opds", "modes", "spec"};
             int ok = 0;
-            for (int s = 0; s < 4 && !ok; s++) ok = !strcmp(value, stages[s]);
+            for (int s = 0; s < 5 && !ok; s++) ok = !strcmp(value, stages[s]);
             if (!ok) usage_errorf("argument --upto: invalid choice: '%s' (choose from kpoints, irreps, opds, modes)", value, 0);
             a->upto = value;
         } else if (!strcmp(arg, "--k") && accepts_selection) {

@@ -911,6 +911,8 @@ static int request_of(const jvalue *request, jbuf *b)
     return status ? status : b->failed ? md_fail(MDE_MEMORY, "out of memory") : 0;
 }
 
+int spec_gamma(const jvalue *cif_info, const int *sites, int nsites, jbuf *b);
+
 static int run(const jvalue *request, jbuf *b)
 {
     const jvalue *stage_value = member(request, "stage");
@@ -928,6 +930,27 @@ static int run(const jvalue *request, jbuf *b)
     jb_reset(&compact_text);
     int status = 0;
     jdoc *sdoc = 0;
+    if (!strcmp(stage, "spec")) {
+        jbuf options = {0};
+        jb_reset(&options);
+        jb_lit(&options, "{");
+        status = pipeline_options(request, cif_info, 0, 0, &options);
+        jb_lit(&options, "}");
+        jdoc *odoc = status ? 0 : jdoc_parse(options.data, options.used);
+        const jvalue *list = odoc ? member(member(jdoc_root(odoc), "distortion_selection"), "displacive_sites") : 0;
+        int nsites = jis(list, J_ARRAY) ? (int)list->count : 0, *sites = calloc((size_t)nsites + 1, sizeof(int));
+        for (int i = 0; i < nsites; i++) {
+            int64_t v = 0;
+            py_int_of(jat(list, i), &v);
+            sites[i] = (int)v;
+        }
+        if (!status) status = odoc ? spec_gamma(cif_info, sites, nsites, b) : md_fail(MDE_MEMORY, "out of memory");
+        free(sites);
+        jdoc_free(odoc);
+        jb_free(&options);
+        jdoc_free(summary);
+        return status;
+    }
     if (!strcmp(stage, "info")) {
         status = par_parent_state(cif_info, &state);
     } else {
