@@ -224,7 +224,6 @@ void md_spec_free(md_spec *s)
     free(s->label);
     free(s->display_label);
     free(s->k_label);
-    free(s->opd);
     free(s->heading_label);
     free(s->irrep_label);
     for (int i = 0; i < s->nocc; i++) free(s->occ[i].k_label);
@@ -300,7 +299,7 @@ static int take_matrix(stream *s, md_matrix *out)
 enum {
     H_KIND, H_MODE_KIND, H_OLD_ID, H_GID, H_LITTLE_TYPE, H_MAGNETIC, H_PRIMARY, H_HAS_KP, H_HAS_CARRIER, H_HAS_PML, H_HAS_REQ,
     H_REQ_NONE, H_HAS_OCC, H_HAS_DIR, H_HAS_FREE, H_FREE_COUNT, H_OBS, H_HAS_ANCHOR, H_ANCHOR_GID, H_HAS_CAND, H_HAS_HEADING,
-    H_HEADING_GID, H_STOKES, H_CASE_NONE, H_DCASE_NONE, H_SLOT_ORDER, H_REPLACED, H_ROW_ID, H_DOMAIN,
+    H_HEADING_GID, H_STOKES, H_CASE_NONE, H_DCASE_NONE, H_SLOT_ORDER, H_REPLACED, H_ROW_ID,
     H_USE_SELECTED_ROWS, H_STATIC_UPDATED, H_COUNT
 };
 
@@ -326,7 +325,6 @@ static int copy_spec(md_spec *out, const md_spec *in)
     out->label = in->label ? (char *)md_strdup(in->label, (int64_t)strlen(in->label)) : 0;
     out->display_label = in->display_label ? (char *)md_strdup(in->display_label, (int64_t)strlen(in->display_label)) : 0;
     out->k_label = in->k_label ? (char *)md_strdup(in->k_label, (int64_t)strlen(in->k_label)) : 0;
-    out->opd = in->opd ? (char *)md_strdup(in->opd, (int64_t)strlen(in->opd)) : 0;
     out->heading_label = in->heading_label ? (char *)md_strdup(in->heading_label, (int64_t)strlen(in->heading_label)) : 0;
     out->irrep_label = in->irrep_label ? (char *)md_strdup(in->irrep_label, (int64_t)strlen(in->irrep_label)) : 0;
     out->occ = 0;
@@ -364,7 +362,7 @@ static int decode_specs(md_request *r, const spec_context *ctx)
             int64_t value = take(&s);
             if (k < H_COUNT) h[k] = value;
         }
-        char *label = take_string(&s), *k_label = take_string(&s), *opd = take_string(&s), *heading = take_string(&s);
+        char *label = take_string(&s), *k_label = take_string(&s), *heading = take_string(&s);
         int64_t kp[4], carrier[4], anchor_kp[4], cand_kp[4], heading_kp[4];
         for (int k = 0; k < 4; k++) kp[k] = take(&s);
         for (int k = 0; k < 4; k++) carrier[k] = take(&s);
@@ -381,10 +379,9 @@ static int decode_specs(md_request *r, const spec_context *ctx)
             if (occ) occ[k] = value;
         }
         md_matrix dir = {0}, recomputed = {0};
-        if (!label || !k_label || !opd || !heading || !occ || take_matrix(&s, &dir) || take_matrix(&s, &recomputed)) {
+        if (!label || !k_label || !heading || !occ || take_matrix(&s, &dir) || take_matrix(&s, &recomputed)) {
             free(label);
             free(k_label);
-            free(opd);
             free(heading);
             free(occ);
             matrix_free(&dir);
@@ -402,7 +399,6 @@ static int decode_specs(md_request *r, const spec_context *ctx)
             status = copy_spec(spec, ctx->fallback);
             free(label);
             free(k_label);
-            free(opd);
             free(heading);
             free(occ);
             matrix_free(&dir);
@@ -416,7 +412,6 @@ static int decode_specs(md_request *r, const spec_context *ctx)
         spec->label = label;
         spec->k_label = k_label;
         spec->heading_label = heading;
-        spec->opd = 0;
         spec->primary = h[H_PRIMARY] != 0;
         spec->row_id_state = MD_NONE;
         spec->occ_state = MD_SET;
@@ -470,9 +465,6 @@ static int decode_specs(md_request *r, const spec_context *ctx)
             spec->gid_state = h[H_GID] ? MD_SET : MD_NONE;
             spec->row_id_state = MD_SET;
             spec->row_id = h[H_ROW_ID];
-            spec->opd = opd;
-            opd = 0;
-            spec->domain = h[H_DOMAIN];
             has_dir_rows = 0;
             if (h[H_USE_SELECTED_ROWS]) {
                 spec->rows_state = MD_SET;
@@ -536,7 +528,6 @@ static int decode_specs(md_request *r, const spec_context *ctx)
             spec->rows_state = MD_SET;
             MD_TRY(matrix_transpose(&spec->rows, &spec->dir));
         }
-        free(opd);
         matrix_free(&dir);
         matrix_free(&recomputed);
         if (h[H_OBS]) spec->obs = 1;

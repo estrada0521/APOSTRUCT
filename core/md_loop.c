@@ -1468,7 +1468,6 @@ static void put_display_basis(jbuf *b, const md_request *r)
 static int secondary_factors(md_request *r, md_state *st, const int *emitted, jbuf *b)
 {
     int64_t slot_count = jis(r->slots, J_ARRAY) && r->slots->count ? r->slots->count : 1;
-    int magnetic_primary = jtruthy(jget(r->irrep, "magnetic"));
     jb_lit(b, "[");
     int count = 0;
     for (int i = 0; i < r->nspecs; i++) {
@@ -1487,27 +1486,6 @@ static int secondary_factors(md_request *r, md_state *st, const int *emitted, jb
         if (s->free_state == MD_SET && s->free_count > 0) {
             jb_lit(b, ", \"parameter_count\": ");
             jb_int(b, s->free_count);
-        }
-        if (s->row_id_state == MD_SET && s->row_id > 0 && s->opd && s->domain > 0 && s->opd[0]) {
-            jb_lit(b, ", \"opd\": ");
-            jb_cstring(b, s->opd);
-            jb_lit(b, ", \"domain\": ");
-            jb_int(b, s->domain);
-        } else {
-            if (!r->coupled && !magnetic_primary && !s->magnetic_kind)
-                return md_fail(MDE_VALUE, "rendered static secondary lost its Source OPD/domain identity");
-            if (s->dir_state != MD_SET || !s->dir.rows) return md_fail(MDE_VALUE, "rendered static secondary lost its direction subspace");
-            jb_lit(b, ", \"direction_matrix\": [");
-            for (int row = 0; row < s->dir.rows; row++) {
-                if (row) jb_lit(b, ", ");
-                jb_lit(b, "[");
-                for (int col = 0; col < s->dir.cols; col++) {
-                    if (col) jb_lit(b, ", ");
-                    jb_float(b, s->dir.values[row * s->dir.cols + col]);
-                }
-                jb_lit(b, "]");
-            }
-            jb_lit(b, "]");
         }
         jb_lit(b, "}");
         count++;

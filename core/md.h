@@ -119,8 +119,6 @@ typedef struct {
     int rows_state;
     md_matrix rows;
     int primary;
-    char *opd;
-    int64_t domain;
     int free_state;
     int64_t free_count;
     int little_type_state;

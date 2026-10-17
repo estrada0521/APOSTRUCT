@@ -59,8 +59,7 @@ typedef struct {
     rat dcase_k[3];
     int slot_order;
     int replaced;
-    int row_id, domain;
-    sp_str opd;
+    int row_id;
     int use_selected_rows;
     int static_updated;
 } sp_spec;
@@ -113,8 +112,8 @@ static int caught(int mask)
 #define BIT(kind) (1 << (kind))
 
 static struct {
-    section_view mag2nonmag, sub_pointer, sub_irrep, sub_subgroup, sub_domain, irrep_sg,
-        irrep_label, op_label, freeparam, irr_sg, old;
+    section_view mag2nonmag, sub_pointer, sub_irrep, sub_subgroup, irrep_sg,
+        irrep_label, freeparam, irr_sg, old;
     int ready;
 } T;
 
@@ -125,9 +124,7 @@ static int load(void)
         section_find("isotropy.isotropy_subduce_pointer", &T.sub_pointer) ||
         section_find("isotropy.isotropy_subduce_irrep", &T.sub_irrep) ||
         section_find("isotropy.isotropy_subduce_subgroup", &T.sub_subgroup) ||
-        section_find("isotropy.isotropy_subduce_domain", &T.sub_domain) ||
         section_find("irreps.irrep_space_group", &T.irrep_sg) || section_find("irreps.irrep_label", &T.irrep_label) ||
-        section_find("isotropy.isotropy_orderparam_label", &T.op_label) ||
         section_find("isotropy.isotropy_orderparam_freeparam", &T.freeparam) ||
         section_find("little.little_irr_space_group", &T.irr_sg) || section_find("little.little_irr_old", &T.old))
         return sp_fail(PY_VALUE, "spec stage Source tables are missing");
@@ -1160,13 +1157,12 @@ static int emit(const sp_specs *specs)
         int64_t header[] = {s->kind, s->mode_kind, s->old_id, s->gid, s->little_type, s->magnetic, s->primary, s->has_kp, s->has_carrier,
                             s->has_pml, s->has_req, s->req_none, s->has_occ, s->has_dir, s->has_free, s->free_count, s->obs,
                             s->has_anchor, s->anchor_gid, s->has_cand, s->has_heading, s->heading_gid, s->stokes, s->case_none,
-                            s->dcase_none, s->slot_order, s->replaced, s->row_id, s->domain,
+                            s->dcase_none, s->slot_order, s->replaced, s->row_id,
                             s->use_selected_rows, s->static_updated};
         SP_TRY(put_int((int64_t)(sizeof header / sizeof header[0])));
         for (size_t k = 0; k < sizeof header / sizeof header[0]; k++) SP_TRY(put_int(header[k]));
         SP_TRY(put_str(s->label));
         SP_TRY(put_str(s->k_label));
-        SP_TRY(put_str(s->opd));
         SP_TRY(put_str(s->heading_label));
         for (int k = 0; k < 4; k++) SP_TRY(put_int(s->kp[k]));
         for (int k = 0; k < 4; k++) SP_TRY(put_int(s->carrier[k]));
@@ -1407,8 +1403,6 @@ int spec_static(int sg, int selected_old_id, int selected_row_id, int has_frame,
             spec->label = gid ? little_label : entry_label;
             spec->k_label = k_label_from_irrep_label(entry_label);
             spec->row_id = row_id;
-            spec->opd = stripped(&T.op_label, row_id - 1);
-            spec->domain = (int)section_int(&T.sub_domain, index);
             spec->primary = old_id == selected_old_id && row_id == selected_row_id;
             if (specs_push(&specs, spec)) return finish(1);
         }
