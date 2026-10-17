@@ -18,7 +18,8 @@ int child_site_layout(int parent_sg, int child_sg, int parent_row_id, const int6
                       const int64_t *parent_param_words, int setting_count, const int *setting_ids, const int64_t *matrix_words,
                       const int64_t *origin_words, int64_t *label_memo, int memo_capacity, int source_row_id, int source_site_pg,
                       const int64_t *site_param_words, const int64_t *presentation_pml, const int64_t *representative_words,
-                      const int64_t *bridge_words, const double *presentation_basis, const double *presentation_origin,
+                      const int64_t *bridge_words, const int64_t *presentation_words, const double *presentation_basis,
+                      const double *presentation_origin,
                       int centering_letter, int point_operation_count, int magnetic_group, int capacity, int64_t *sites_out,
                       int64_t *atoms_out, double *positions_out, int64_t *rows_out, int *counts);
 int solve_wyckoff_formula(const double *base, const double *cols, const double *target, double tol, int modulo, double *params,
@@ -687,10 +688,17 @@ static int child_layout(md_request *r, md_site *s, const rat *representative)
     double presentation[9], origin[3];
     for (int i = 0; i < 9; i++) presentation[i] = r->display_basis[i / 3][i % 3];
     md_origin_vector(r, origin);
+    int64_t exact_words[48];
+    rat exact_origin[3];
+    int exact = r->has_exact_basis && md_origin_rational(r, exact_origin);
+    if (exact) {
+        for (int row = 0; row < 3; row++) write_rat_words(exact_words + 12 * row, r->exact_basis[row], 3);
+        write_rat_words(exact_words + 36, exact_origin, 3);
+    }
     int counts[3] = {0, 0, 0};
     int status = child_site_layout(r->sg, r->child_sg, (int)row_id, r->source_basis, r->source_origin, parent_words, r->setting_count,
                                    r->setting_ids, matrix_words, origin_words, r->label_memo, 256, source_row, source_pg, site_words,
-                                   r->presentation_pml, representative_words, r->has_bridge ? bridge_words : 0, presentation, origin,
+                                   r->presentation_pml, representative_words, r->has_bridge ? bridge_words : 0, exact ? exact_words : 0, presentation, origin,
                                    r->centering_letter, r->point_operation_count, r->magnetic_group, (int)capacity, sites, atoms,
                                    positions, rows, counts);
     free(rows);

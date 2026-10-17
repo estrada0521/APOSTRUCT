@@ -113,6 +113,124 @@ static void release(buffers *b)
     free(b->atom_index);
 }
 
+typedef struct {
+    rat v[3];
+    int index;
+} keyed_t;
+
+static uint64_t rat3_hash(const rat *v)
+{
+    uint64_t h = 1469598103934665603ULL;
+    for (int axis = 0; axis < 3; axis++) {
+        h = (h ^ (uint64_t)v[axis].n ^ (uint64_t)((u128)v[axis].n >> 64)) * 1099511628211ULL;
+        h = (h ^ (uint64_t)v[axis].d) * 1099511628211ULL;
+    }
+    return h ^ (h >> 29);
+}
+
+/* the slot of v in a table of size (power of 2), or the empty slot for it */
+static size_t rat3_slot(const keyed_t *table, size_t size, const rat *v)
+{
+    size_t slot = rat3_hash(v) & (size - 1);
+    while (table[slot].index >= 0 && memcmp(table[slot].v, v, sizeof table[slot].v)) slot = (slot + 1) & (size - 1);
+    return slot;
+}
+
+static int rat3_less(const rat *a, const rat *b)
+{
+    for (int axis = 0; axis < 3; axis++) {
+        int c = rat_cmp(a[axis], b[axis]);
+        if (c) return c < 0;
+    }
+    return 0;
+}
+
+/* present_rows over the rationals for points without directions: each
+ * point in the presentation cell mod 1, one row per centering class in
+ * first-seen order, each class unfolded over the centering translations. */
+static int present_exact(int count, const rat (*points)[3], const int64_t *presentation_words, int centering_letter, int capacity,
+                         int *out_source, int *out_centering, double *out_xyz, double *out_dxyz, int *out_count)
+{
+    rat basis[3][3], origin[3], inverse[3][3], t[4][3];
+    for (int row = 0; row < 3; row++) read_rat3(presentation_words + 12 * row, basis[row]);
+    read_rat3(presentation_words + 36, origin);
+    rat_overflow = 0;
+    if (rat_inverse3((const rat (*)[3])basis, inverse)) return CL_PRESENT + 1;
+    static const int shifts[][3][3] = {
+        ['A'] = {{0, 3, 3}}, ['B'] = {{3, 0, 3}}, ['C'] = {{3, 3, 0}}, ['I'] = {{3, 3, 3}},
+        ['F'] = {{0, 3, 3}, {3, 0, 3}, {3, 3, 0}}, ['R'] = {{4, 2, 2}, {2, 4, 4}},
+    };
+    int translation_count = 1;
+    for (int axis = 0; axis < 3; axis++) t[0][axis] = rat_int(0);
+    if (centering_letter > 0 && centering_letter < 'S')
+        for (int k = 0; k < 3; k++) {
+            const int *shift = shifts[centering_letter][k];
+            if (!shift[0] && !shift[1] && !shift[2]) break;
+            for (int axis = 0; axis < 3; axis++) t[translation_count][axis] = rat_make(shift[axis], 6);
+            translation_count++;
+        }
+    size_t size = 16;
+    while (size < 2 * (size_t)count * translation_count + 2) size *= 2;
+    keyed_t *classes = malloc(sizeof *classes * size), *positions = malloc(sizeof *positions * size);
+    rat (*first)[3] = malloc(sizeof *first * (size_t)(count + 1));
+    int *quotient = malloc(sizeof(int) * (size_t)(count + 1));
+    if (!classes || !positions || !first || !quotient) {
+        free(classes);
+        free(positions);
+        free(first);
+        free(quotient);
+        return CL_MEMORY;
+    }
+    for (size_t i = 0; i < size; i++) classes[i].index = positions[i].index = -1;
+    int quotient_count = 0, status = 0, conventional = 0;
+    for (int r = 0; r < count && !status; r++) {
+        rat shifted[3], xyz[3], key[3];
+        for (int i = 0; i < 3; i++) shifted[i] = rat_sub(points[r][i], origin[i]);
+        rat_row_mul(shifted, (const rat (*)[3])inverse, xyz);
+        for (int axis = 0; axis < 3; axis++) xyz[axis] = rat_mod1(xyz[axis]);
+        memcpy(key, xyz, sizeof key);
+        for (int k = 1; k < translation_count; k++) {
+            rat other[3];
+            for (int axis = 0; axis < 3; axis++) other[axis] = rat_mod1(rat_add(xyz[axis], t[k][axis]));
+            if (rat3_less(other, key)) memcpy(key, other, sizeof key);
+        }
+        if (rat_overflow) status = CL_PRESENT + 2;
+        size_t slot = rat3_slot(classes, size, key);
+        if (classes[slot].index >= 0) continue;
+        memcpy(classes[slot].v, key, sizeof key);
+        classes[slot].index = quotient_count;
+        memcpy(first[quotient_count], xyz, sizeof xyz);
+        quotient[quotient_count++] = r;
+    }
+    for (int q = 0; q < quotient_count && !status; q++)
+        for (int k = 0; k < translation_count && !status; k++) {
+            rat candidate[3];
+            for (int axis = 0; axis < 3; axis++) candidate[axis] = rat_mod1(rat_add(first[q][axis], t[k][axis]));
+            size_t slot = rat3_slot(positions, size, candidate);
+            if (positions[slot].index >= 0) continue;
+            if (conventional >= capacity) {
+                status = CL_PRESENT + 3;
+                break;
+            }
+            memcpy(positions[slot].v, candidate, sizeof candidate);
+            positions[slot].index = conventional;
+            out_source[conventional] = quotient[q];
+            out_centering[conventional] = k;
+            for (int axis = 0; axis < 3; axis++) {
+                out_xyz[3 * conventional + axis] = rat_to_double(candidate[axis]);
+                out_dxyz[3 * conventional + axis] = 0.0;
+            }
+            conventional++;
+        }
+    if (!status && rat_overflow) status = CL_PRESENT + 2;
+    *out_count = conventional;
+    free(classes);
+    free(positions);
+    free(first);
+    free(quotient);
+    return status;
+}
+
 /* label_memo: [count, then (child row offset, multiplicity, public offset)
  * triples] shared by the sites of one child structure.  A positive
  * magnetic_group regroups the ordinary sites by its exact action.  Outputs
@@ -127,7 +245,7 @@ int child_site_layout(int parent_sg, int child_sg, int parent_row_id, const int6
                       const int *setting_ids, const int64_t *matrix_words, const int64_t *origin_words,
                       int64_t *label_memo, int memo_capacity, int source_row_id, int source_site_pg,
                       const int64_t *site_param_words, const int64_t *presentation_pml,
-                      const int64_t *representative_words, const int64_t *bridge_words,
+                      const int64_t *representative_words, const int64_t *bridge_words, const int64_t *presentation_words,
                       const double *presentation_basis, const double *presentation_origin, int centering_letter,
                       int point_operation_count, int magnetic_group, int capacity, int64_t *sites_out,
                       int64_t *atoms_out,
@@ -275,7 +393,9 @@ int child_site_layout(int parent_sg, int child_sg, int parent_row_id, const int6
             for (int row = 0; row < 3; row++) read_rat3(bridge_words + 12 * row, bridge[row]);
             read_rat3(bridge_words + 36, shift);
         }
-        for (int64_t i = 0; i < table_count; i++) {
+        rat (*shown_all)[3] = presentation_words ? malloc(sizeof *shown_all * (size_t)(table_count + 1)) : 0;
+        if (presentation_words && !shown_all) status = CL_MEMORY;
+        for (int64_t i = 0; i < table_count && !status; i++) {
             rat point[3], shown[3];
             read_rat3(b.points + 12 * b.order[i], point);
             if (bridge_words) {
@@ -284,11 +404,19 @@ int child_site_layout(int parent_sg, int child_sg, int parent_row_id, const int6
             } else
                 memcpy(shown, point, sizeof shown);
             for (int axis = 0; axis < 3; axis++) b.xyz[3 * i + axis] = rat_to_double(shown[axis]);
+            if (shown_all) memcpy(shown_all[i], shown, sizeof shown);
         }
-        int present_status = present_rows((int)table_count, b.xyz, b.dxyz, presentation_basis, presentation_origin,
-                                          centering_letter, 1e-8, 4 * (int)table_count, b.source, b.centering,
-                                          b.out_xyz, b.out_dxyz, &presented);
-        if (present_status) status = CL_PRESENT + present_status;
+        if (status) {
+        } else if (shown_all) {
+            status = present_exact((int)table_count, (const rat (*)[3])shown_all, presentation_words, centering_letter, 4 * (int)table_count,
+                                   b.source, b.centering, b.out_xyz, b.out_dxyz, &presented);
+        } else {
+            int present_status = present_rows((int)table_count, b.xyz, b.dxyz, presentation_basis, presentation_origin,
+                                              centering_letter, 1e-8, 4 * (int)table_count, b.source, b.centering,
+                                              b.out_xyz, b.out_dxyz, &presented);
+            if (present_status) status = CL_PRESENT + present_status;
+        }
+        free(shown_all);
     }
     if (!status) {
         b.assign_atoms = malloc(sizeof(int64_t) * 10 * (size_t)(atom_count + 1));
