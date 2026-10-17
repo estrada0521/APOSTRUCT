@@ -911,7 +911,8 @@ static int request_of(const jvalue *request, jbuf *b)
     return status ? status : b->failed ? md_fail(MDE_MEMORY, "out of memory") : 0;
 }
 
-int spec_gamma(const jvalue *cif_info, const int *sites, const int *kinds, int nsites, int strain, const rat *kvec, jbuf *b);
+int spec_gamma(const jvalue *cif_info, const int *sites, const int *kinds, int nsites, int strain, const rat *kvec, int sg, int setting,
+               jbuf *b);
 int k_coordinate_map_words(int sg, int kslot, int64_t *out);
 
 static int run(const jvalue *request, jbuf *b)
@@ -958,6 +959,8 @@ static int run(const jvalue *request, jbuf *b)
         int strain = jtruthy(member(sel, "strain"));
         free(flags);
         rat kvec[3] = {rat_int(0), rat_int(0), rat_int(0)};
+        int64_t spec_setting = 0, spec_sg = 0;
+        py_int_of(member(member(cif_info, "parent"), "number"), &spec_sg);
         if (!status && odoc) {
             /* the selected k point's coordinates: the catalog map origin + parameters . columns */
             jbuf parent = {0}, kstate = {0};
@@ -969,6 +972,7 @@ static int run(const jvalue *request, jbuf *b)
             jdoc *kdoc = status ? 0 : jdoc_parse(kstate.data, kstate.used);
             const jvalue *kp = kdoc ? member(member(jdoc_root(kdoc), "selected"), "kpoint") : 0;
             int64_t kslot = 0, sg = 0, words[29];
+            if (pdoc) py_int_of(member(member(jdoc_root(pdoc), "_internal"), "parent_inter_setting_id"), &spec_setting);
             py_int_of(member(member(cif_info, "parent"), "number"), &sg);
             if (!status && (!kp || py_int_of(member(kp, "kslot"), &kslot) || k_coordinate_map_words((int)sg, (int)kslot, words)))
                 status = md_fail(MDE_VALUE, "spec: selected k point has no coordinate map");
@@ -992,7 +996,7 @@ static int run(const jvalue *request, jbuf *b)
             jb_free(&parent);
             jb_free(&kstate);
         }
-        if (!status) status = odoc ? spec_gamma(cif_info, sites, kinds, nsites, strain, kvec, b) : md_fail(MDE_MEMORY, "out of memory");
+        if (!status) status = odoc ? spec_gamma(cif_info, sites, kinds, nsites, strain, kvec, (int)spec_sg, (int)spec_setting, b) : md_fail(MDE_MEMORY, "out of memory");
         free(sites);
         free(kinds);
         jdoc_free(odoc);

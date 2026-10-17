@@ -14,6 +14,7 @@
 #include <string.h>
 
 #include "cyclo.h"
+#include "geometry.h"
 #include "json.h"
 #include "md.h"
 #include "modp.h"
@@ -1090,6 +1091,237 @@ static void strain_matrix(const int (*r)[3], int out[6][6])
     }
 }
 
+typedef struct {
+    const sp_group *g;
+    const sp_little *L;
+    const rat *k;
+    int s, dim, D;
+    const rat (*arms)[3];
+    const sp_aff *raff, *rinv;
+    const uint64_t *smat;
+} sp_induced;
+
+/* Gamma(x) = Ind sigma (x): block (pi(i), i) = sigma(r_pi(i)^-1 x r_i) */
+static int gamma_of(const sp_induced *c, const sp_aff *x, uint64_t *out)
+{
+    int D = c->D, dim = c->dim;
+    memset(out, 0, sizeof(uint64_t) * (size_t)D * D);
+    for (int i = 0; i < c->s; i++) {
+        sp_aff y, hh;
+        aff_mul(x, &c->raff[i], &y);
+        rat a[3];
+        int ey = p_of_rot(c->g, (const int (*)[3])y.r);
+        if (ey < 0) return spfail("rotation outside the group");
+        k_times(c->k, (const int (*)[3])c->g->ops[c->g->inv[ey]].rot, a);
+        int pi = -1;
+        for (int q2 = 0; q2 < c->s && pi < 0; q2++)
+            if (k_same(c->g, c->arms[q2], a)) pi = q2;
+        if (pi < 0) return spfail("arm image outside the star");
+        aff_mul(&c->rinv[pi], &y, &hh);
+        int h;
+        if (aff_to_h(c->g, c->L, c->k, &hh, &h)) return 1;
+        for (int r = 0; r < dim; r++)
+            for (int col = 0; col < dim; col++) out[((size_t)pi * dim + r) * D + i * dim + col] = c->smat[((size_t)h * dim + r) * dim + col];
+    }
+    return 0;
+}
+
+/* ---- naming bridge: H as Source records (pml frame) for id_subgroup ---- */
+
+static int SP_SG, SP_SETTING;
+int id_subgroup_identify(int parent, const int64_t *basis, int op_count, const int64_t *ops, int flag, int64_t *out);
+
+static int64_t igcd(int64_t a, int64_t b)
+{
+    if (a < 0) a = -a;
+    if (b < 0) b = -b;
+    while (b) {
+        int64_t t = a % b;
+        a = b;
+        b = t;
+    }
+    return a;
+}
+
+/* rows: a basis of the lattice spanned by n integer vectors (Euclid on columns); returns the rank */
+static int lattice_basis(int64_t (*v)[3], int n, int64_t (*out)[3])
+{
+    int r = 0;
+    for (int col = 0; col < 3 && r < n; col++) {
+        for (;;) {
+            int best = -1;
+            for (int i = r; i < n; i++)
+                if (v[i][col] && (best < 0 || llabs(v[i][col]) < llabs(v[best][col]))) best = i;
+            if (best < 0) break;
+            int64_t t[3];
+            memcpy(t, v[best], sizeof t);
+            memcpy(v[best], v[r], sizeof t);
+            memcpy(v[r], t, sizeof t);
+            int done = 1;
+            for (int i = r + 1; i < n; i++) {
+                int64_t q = v[i][col] / v[r][col];
+                for (int j = 0; j < 3; j++) v[i][j] -= q * v[r][j];
+                if (v[i][col]) done = 0;
+            }
+            if (done) break;
+        }
+        if (v[r][col]) r++;
+    }
+    memcpy(out, v, sizeof(int64_t[3]) * (size_t)r);
+    return r;
+}
+
+/* the sublattice of basis b (rows, 1/24 units) where k . t is integral */
+static int lattice_kernel(int64_t (*b)[3], const rat *k)
+{
+    int64_t vals[3], d = 1;
+    rat f[3];
+    for (int j = 0; j < 3; j++) {
+        int t[3] = {(int)b[j][0], (int)b[j][1], (int)b[j][2]};
+        f[j] = rat_mod1(kdot(k, t));
+        d = d / igcd(d, (int64_t)f[j].d) * (int64_t)f[j].d;
+    }
+    if (d == 1) return 0;
+    for (int j = 0; j < 3; j++) vals[j] = (int64_t)(f[j].n * (d / f[j].d)) % d;
+    /* unimodular u with vals . u = (gcd, 0, 0) */
+    int64_t u[3][3] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
+    for (int j = 1; j < 3; j++)
+        while (vals[j]) {
+            int64_t q = vals[0] / vals[j];
+            vals[0] -= q * vals[j];
+            for (int i = 0; i < 3; i++) u[i][0] -= q * u[i][j];
+            int64_t t = vals[0];
+            vals[0] = vals[j];
+            vals[j] = t;
+            for (int i = 0; i < 3; i++) {
+                t = u[i][0];
+                u[i][0] = u[i][j];
+                u[i][j] = t;
+            }
+        }
+    int64_t gg = igcd(vals[0], d), scale[3] = {d / gg, 1, 1}, nb[3][3];
+    for (int c = 0; c < 3; c++)
+        for (int j = 0; j < 3; j++) {
+            nb[c][j] = 0;
+            for (int i = 0; i < 3; i++) nb[c][j] += scale[c] * u[i][c] * b[i][j];
+        }
+    memcpy(b, nb, sizeof nb);
+    return 0;
+}
+
+/* the ordinary subgroup of the OPD with canonical rows x (r x D): records of one element per rotation in H, the
+ * lattice of H, both in the pml frame; out as id_subgroup_identify (subgroup, basis, origin); returns found */
+static int identify_opd(const sp_induced *c, const uint64_t *x, int r, int64_t *out)
+{
+    const sp_group *g = c->g;
+    int D = c->D, dim = c->dim, N = c->L->N;
+    /* arms carrying U */
+    int carried[64] = {0};
+    for (int i = 0; i < c->s; i++)
+        for (int q = 0; q < r && !carried[i]; q++)
+            for (int a = 0; a < dim && !carried[i]; a++) carried[i] = x[(size_t)q * D + i * dim + a] != 0;
+    /* T_H: the lattice where k_i . t is integral on every carried arm */
+    int64_t gens[16][3], basis[3][3];
+    int ng = 0;
+    for (int a = 0; a < 3; a++) {
+        memset(gens[ng], 0, sizeof gens[ng]);
+        gens[ng++][a] = 24;
+    }
+    for (int q = 0; q < g->ncent; q++) {
+        for (int a = 0; a < 3; a++) gens[ng][a] = g->cent[q][a];
+        ng++;
+    }
+    if (lattice_basis(gens, ng, basis) != 3) return spfail("lattice of rank below 3");
+    for (int i = 0; i < c->s; i++)
+        if (carried[i]) lattice_kernel(basis, c->arms[i]);
+    /* translation classes T / T_H by phase on the carried arms */
+    int64_t (*reps)[3] = malloc(sizeof(int64_t[3]) * 4096);
+    int nrep = 0;
+    int *keys = malloc(sizeof(int) * 4096 * 64);
+    for (int q = 0; q < g->ncent && nrep < 4096; q++)
+        for (int a = 0; a < N && nrep < 4096; a++)
+            for (int b2 = 0; b2 < N && nrep < 4096; b2++)
+                for (int c2 = 0; c2 < N && nrep < 4096; c2++) {
+                    int t[3] = {24 * a + g->cent[q][0], 24 * b2 + g->cent[q][1], 24 * c2 + g->cent[q][2]}, key[64];
+                    for (int i = 0; i < c->s; i++) {
+                        rat v = rat_mul(rat_int(N), kdot(c->arms[i], t));
+                        key[i] = carried[i] ? (int)(((v.n % N) + N) % N) : 0;
+                    }
+                    int known = 0;
+                    for (int z = 0; z < nrep && !known; z++) known = !memcmp(keys + z * 64, key, sizeof(int) * (size_t)c->s);
+                    if (known) continue;
+                    memcpy(keys + nrep * 64, key, sizeof(int) * (size_t)c->s);
+                    for (int z = 0; z < 3; z++) reps[nrep][z] = t[z];
+                    nrep++;
+                }
+    free(keys);
+    /* one element of H per rotation */
+    rat m[3][3], origin[3], minv[3][3];
+    if (geo_setting_to_cinter(SP_SG, 1, SP_SETTING, m, origin) || rat_inverse3((const rat (*)[3])m, minv)) {
+        free(reps);
+        return spfail("parent setting tables are inconsistent");
+    }
+    int64_t records[GEO_MAX_OPS][5], src[GEO_MAX_OPS][5];
+    int nsrc = geo_sg_records(SP_SG, src), nkept = 0;
+    uint64_t *gm = malloc(sizeof(uint64_t) * (size_t)D * D), *img = malloc(sizeof(uint64_t) * (size_t)r * D);
+    for (int e = 0; e < g->n; e++) {
+        int got = -1;
+        for (int q = 0; q < nrep && got < 0; q++) {
+            sp_aff y;
+            memcpy(y.r, g->ops[e].rot, sizeof y.r);
+            for (int z = 0; z < 3; z++) y.t[z] = g->ops[e].tran[z] + (int)reps[q][z];
+            if (gamma_of(c, &y, gm)) return 1;
+            prow_image(x, r, gm, D, img);
+            if (!memcmp(img, x, sizeof(uint64_t) * (size_t)r * D)) got = q;
+        }
+        if (got < 0) continue;
+        /* pml: point = m R^T m^-1 (rows act), t_pml = (t_C - origin + origin r1) m^-1 with r1 = R^T */
+        rat rt[3][3], tmp[3][3], point[3][3], tc[3], o1[3], tp[3];
+        for (int i = 0; i < 3; i++)
+            for (int j = 0; j < 3; j++) rt[i][j] = rat_int(g->ops[e].rot[j][i]);
+        for (int i = 0; i < 3; i++) rat_row_mul(m[i], (const rat (*)[3])rt, tmp[i]);
+        for (int i = 0; i < 3; i++) rat_row_mul(tmp[i], (const rat (*)[3])minv, point[i]);
+        rat_row_mul(origin, (const rat (*)[3])rt, o1);
+        for (int z = 0; z < 3; z++) tc[z] = rat_add(rat_sub(rat_make(g->ops[e].tran[z] + reps[got][z], 24), origin[z]), o1[z]);
+        rat_row_mul(tc, (const rat (*)[3])minv, tp);
+        int op = -1;
+        for (int q = 0; q < nsrc && op < 0; q++) {
+            int same = 1;
+            for (int i = 0; i < 3 && same; i++) {
+                rat unit[3] = {rat_int(i == 0), rat_int(i == 1), rat_int(i == 2)}, row[3];
+                geo_vrot(SP_SG, (int)src[q][4], unit, row);
+                for (int j = 0; j < 3; j++) same &= rat_eq(row[j], point[i][j]);
+            }
+            if (same) op = (int)src[q][4];
+        }
+        if (op < 0) {
+            free(reps), free(gm), free(img);
+            return spfail("rotation without a Source point operation");
+        }
+        int64_t den = 1;
+        for (int z = 0; z < 3; z++) den = den / igcd(den, (int64_t)tp[z].d) * (int64_t)tp[z].d;
+        for (int z = 0; z < 3; z++) records[nkept][z] = (int64_t)(tp[z].n * (den / tp[z].d));
+        records[nkept][3] = den;
+        records[nkept][4] = op;
+        nkept++;
+    }
+    free(reps), free(gm), free(img);
+    int64_t bpml[9];
+    for (int i = 0; i < 3; i++) {
+        rat row[3], v[3];
+        for (int z = 0; z < 3; z++) row[z] = rat_make(basis[i][z], 24);
+        rat_row_mul(row, (const rat (*)[3])minv, v);
+        for (int z = 0; z < 3; z++) {
+            if (v[z].d != 1) return spfail("lattice of H is not integral in the pml frame");
+            bpml[i * 3 + z] = (int64_t)v[z].n;
+        }
+    }
+    if (rat_overflow) return spfail("rational overflow in the naming bridge");
+    int found = id_subgroup_identify(SP_SG, bpml, nkept, &records[0][0], 0, out);
+    if (found < 0) return spfail("subgroup identification failed");
+    return found;
+}
+
 /* site >= 0: the Bloch displacements (axial: moments, times det R) of one site; site < 0: the strain (k = 0) */
 static int k_opds(const sp_group *g, const sp_little *L, const rat *k, const cy_field *f, uint64_t w, const cy *sigma, int dim, int site,
                   int axial, int magnetic, int nu, jbuf *b)
@@ -1341,24 +1573,10 @@ static int k_opds(const sp_group *g, const sp_little *L, const rat *k, const cy_
             ngens++;
         }
     }
+    sp_induced ind = {g, L, k, s, dim, D, (const rat (*)[3])arms, raff, rinv, smat};
     uint64_t *gmat = calloc((size_t)(ngens + 1) * D * D, sizeof(uint64_t));
     for (int q = 0; q < ngens; q++)
-        for (int i = 0; i < s; i++) {
-            sp_aff y, hh;
-            aff_mul(&gens[q], &raff[i], &y);
-            rat a[3];
-            int ey = p_of_rot(g, (const int (*)[3])y.r);
-            k_times(k, (const int (*)[3])g->ops[g->inv[ey]].rot, a);
-            int pi = -1;
-            for (int q2 = 0; q2 < s && pi < 0; q2++)
-                if (k_same(g, arms[q2], a)) pi = q2;
-            if (pi < 0) return spfail("arm image outside the star"), MDE_VALUE;
-            aff_mul(&rinv[pi], &y, &hh);
-            int x;
-            if (aff_to_h(g, L, k, &hh, &x)) return MDE_VALUE;
-            for (int r = 0; r < dim; r++)
-                for (int c = 0; c < dim; c++) gmat[((size_t)q * D + pi * dim + r) * D + i * dim + c] = smat[((size_t)x * dim + r) * dim + c];
-        }
+        if (gamma_of(&ind, &gens[q], gmat + (size_t)q * D * D)) return MDE_VALUE;
     if (magnetic) {
         for (int i = 0; i < D; i++) gmat[((size_t)ngens * D + i) * D + i] = psub(0, 1);
         ngens++;
@@ -1460,7 +1678,11 @@ static int k_opds(const sp_group *g, const sp_little *L, const rat *k, const cy_
             prow_image(x, r, image.items + q2 * image.width, D, img);
             stab += !memcmp(img, x, sizeof(uint64_t) * (size_t)r * D);
         }
-        snprintf(t, sizeof t, q ? ", {\"dim\": %d, \"index\": %zu}" : "{\"dim\": %d, \"index\": %zu}", r * (nu == 1 ? 1 : 2), order / stab);
+        int64_t ident14[14] = {0};
+        int found = magnetic ? 0 : identify_opd(&ind, x, r, ident14);
+        if (found < 0 || fail_status) return MDE_VALUE;
+        snprintf(t, sizeof t, q ? ", {\"dim\": %d, \"index\": %zu, \"subgroup\": %lld}" : "{\"dim\": %d, \"index\": %zu, \"subgroup\": %lld}",
+                 r * (nu == 1 ? 1 : 2), order / stab, found > 0 ? (long long)ident14[0] : -1LL);
         jb_lit(b, t);
     }
     jb_lit(b, "]");
@@ -1642,9 +1864,13 @@ static int spec_k(const sp_group *g, const rat *k, int nsites, const int *kinds,
     return b->failed ? md_fail(MDE_MEMORY, "out of memory") : 0;
 }
 
-int spec_gamma(const jvalue *cif_info, const int *sites, const int *kinds, int nsites, int strain, const rat *kvec, jbuf *b)
+int spec_gamma(const jvalue *cif_info, const int *sites, const int *kinds, int nsites, int strain, const rat *kvec, int sg, int setting,
+               jbuf *b)
 {
     fail_status = 0;
+    SP_SG = sg;
+    SP_SETTING = setting;
+    if (geo_load()) return spfail("Source tables are inconsistent"), MDE_VALUE;
     sp_group g;
     memset(&g, 0, sizeof g);
     if (build_group(cif_info, sites, nsites, &g)) return MDE_VALUE;
