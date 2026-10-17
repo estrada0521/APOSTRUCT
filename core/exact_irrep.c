@@ -635,12 +635,11 @@ int little_matrices_from_generators(int gid, const int64_t *kparam, int *counts)
 }
 
 /* codes of the little irrep matrices: the table's at the generators and the identity, derived elsewhere (each entry
- * matched exactly against the constant table); APO_TABLE_LITTLE reads the table everywhere */
+ * matched exactly against the constant table); nonzero when that fails */
 int little_codes(int gid, int dim, int position, int *codes)
 {
-    static int table_only = -1, busy;
-    if (table_only < 0) table_only = getenv("APO_TABLE_LITTLE") != 0;
-    if (table_only || busy) return little_table_codes(gid, dim, position, codes);
+    static int busy;
+    if (busy) return 1;
     enum { SLOTS = 8 };
     static derived_t cache[SLOTS];
     static int *cache_codes[SLOTS], next;
@@ -658,7 +657,7 @@ int little_codes(int gid, int dim, int position, int *codes)
         if (derived || cache[slot].dim != dim) {
             free(cache[slot].S), free(cache[slot].seed);
             memset(&cache[slot], 0, sizeof cache[slot]);
-            return little_table_codes(gid, dim, position, codes);
+            return 1;
         }
         /* each derived entry as a constant code */
         static section_view exact;
@@ -701,8 +700,21 @@ int little_codes(int gid, int dim, int position, int *codes)
     if (d->seed[position - 1]) return little_table_codes(gid, dim, position, codes);
     const int *src = cache_codes[slot] + (size_t)(position - 1) * dim * dim;
     for (int i = 0; i < dim * dim; i++) {
-        if (!src[i]) return little_table_codes(gid, dim, position, codes);
+        if (!src[i]) return 1;
         codes[i] = src[i];
     }
+    return 0;
+}
+
+/* the positions whose matrices the derivation reads from the table (the identity and the generators), 1-based */
+int little_seed_positions(int gid, int *positions, int *count)
+{
+    derived_t d;
+    int counts[5];
+    *count = 0;
+    if (derive_positions(gid, DERIVE_KPARAM, &d, counts)) return 1;
+    for (int p = 0; p < d.n; p++)
+        if (d.seed[p]) positions[(*count)++] = p + 1;
+    free(d.S), free(d.seed);
     return 0;
 }
