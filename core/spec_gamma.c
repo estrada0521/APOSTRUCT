@@ -1005,6 +1005,573 @@ static int conjugate_in_h(const sp_group *g, const sp_little *L, const rat *k, i
     return spfail("conjugate outside the little group");
 }
 
+/* ---- OPDs at k != 0, modulo p in one embedding ---- */
+
+typedef struct {
+    int r[3][3];
+    int t[3]; /* 1/24 units, not reduced */
+} sp_aff;
+
+static void aff_mul(const sp_aff *a, const sp_aff *b, sp_aff *out)
+{
+    sp_aff z;
+    for (int i = 0; i < 3; i++) {
+        z.t[i] = a->t[i];
+        for (int q = 0; q < 3; q++) z.t[i] += a->r[i][q] * b->t[q];
+        for (int c = 0; c < 3; c++) {
+            z.r[i][c] = 0;
+            for (int q = 0; q < 3; q++) z.r[i][c] += a->r[i][q] * b->r[q][c];
+        }
+    }
+    *out = z;
+}
+
+static int p_of_rot(const sp_group *g, const int (*rot)[3])
+{
+    for (int e = 0; e < g->n; e++)
+        if (!memcmp(g->ops[e].rot, rot, sizeof(int[3][3]))) return e;
+    return -1;
+}
+
+static void aff_inv(const sp_group *g, const sp_aff *a, sp_aff *out)
+{
+    int e = p_of_rot(g, (const int (*)[3])a->r), ei = g->inv[e];
+    memcpy(out->r, g->ops[ei].rot, sizeof out->r);
+    for (int i = 0; i < 3; i++) {
+        out->t[i] = 0;
+        for (int q = 0; q < 3; q++) out->t[i] -= out->r[i][q] * a->t[q];
+    }
+}
+
+static int in_lattice(const sp_group *g, const int *d)
+{
+    for (int c = 0; c < g->ncent; c++) {
+        int ok = 1;
+        for (int i = 0; i < 3; i++) ok &= ((d[i] - g->cent[c][i]) % 24 + 24) % 24 == 0;
+        if (ok) return 1;
+    }
+    return 0;
+}
+
+/* the H element of an affine map in G_k */
+static int aff_to_h(const sp_group *g, const sp_little *L, const rat *k, const sp_aff *a, int *out)
+{
+    int e = p_of_rot(g, (const int (*)[3])a->r);
+    if (e < 0 || L->little_of[e] < 0) return spfail("element outside the little group");
+    int d[3];
+    for (int i = 0; i < 3; i++) d[i] = a->t[i] - g->ops[e].tran[i];
+    if (!in_lattice(g, d)) return spfail("translation outside the lattice");
+    rat v = rat_mul(rat_int(L->N), kdot(k, d));
+    if (v.d != 1) return spfail("translation phase outside Z_N");
+    *out = L->little_of[e] * L->N + (int)(((v.n % L->N) + L->N) % L->N);
+    return 0;
+}
+
+static uint64_t cy_mod(const cy_field *f, const cy *x, uint64_t w)
+{
+    uint64_t v = 0, z = 1;
+    for (int i = 0; i < f->phi; i++) {
+        i128 c = x->c[i] % (i128)PR;
+        if (c < 0) c += PR;
+        v = padd(v, pmul((uint64_t)c, z));
+        z = pmul(z, w);
+    }
+    i128 dd = x->den % (i128)PR;
+    if (dd < 0) dd += PR;
+    return pmul(v, pinv((uint64_t)dd));
+}
+
+/* add row v (len) to a reduced echelon basis mod p; returns 1 if independent */
+static int padd_vector(uint64_t *basis, int *piv, int *rank, int len, const uint64_t *v0)
+{
+    uint64_t *v = malloc(sizeof(uint64_t) * (size_t)len);
+    memcpy(v, v0, sizeof(uint64_t) * (size_t)len);
+    for (int r = 0; r < *rank; r++) {
+        uint64_t c = v[piv[r]];
+        if (!c) continue;
+        for (int j = 0; j < len; j++) v[j] = psub(v[j], pmul(c, basis[(size_t)r * len + j]));
+    }
+    int p = -1;
+    for (int j = 0; j < len && p < 0; j++)
+        if (v[j]) p = j;
+    if (p < 0) {
+        free(v);
+        return 0;
+    }
+    uint64_t sc = pinv(v[p]);
+    for (int j = 0; j < len; j++) v[j] = pmul(v[j], sc);
+    for (int r = 0; r < *rank; r++) {
+        uint64_t c = basis[(size_t)r * len + p];
+        if (!c) continue;
+        for (int j = 0; j < len; j++) basis[(size_t)r * len + j] = psub(basis[(size_t)r * len + j], pmul(c, v[j]));
+    }
+    memcpy(basis + (size_t)*rank * len, v, sizeof(uint64_t) * (size_t)len);
+    piv[(*rank)++] = p;
+    free(v);
+    return 1;
+}
+
+/* canonical rows of a subspace: reduced echelon sorted by pivot */
+static int pcanon(uint64_t *rows, int r, int d)
+{
+    uint64_t *basis = malloc(sizeof(uint64_t) * (size_t)(r + 1) * d);
+    int *piv = malloc(sizeof(int) * (size_t)(r + 1)), rank = 0;
+    for (int i = 0; i < r; i++) padd_vector(basis, piv, &rank, d, rows + (size_t)i * d);
+    for (int i = 0; i < rank; i++)
+        for (int j = i + 1; j < rank; j++)
+            if (piv[j] < piv[i]) {
+                int t = piv[i];
+                piv[i] = piv[j];
+                piv[j] = t;
+                for (int x = 0; x < d; x++) {
+                    uint64_t u = basis[(size_t)i * d + x];
+                    basis[(size_t)i * d + x] = basis[(size_t)j * d + x];
+                    basis[(size_t)j * d + x] = u;
+                }
+            }
+    memcpy(rows, basis, sizeof(uint64_t) * (size_t)rank * d);
+    free(basis);
+    free(piv);
+    return rank;
+}
+
+typedef struct {
+    int width; /* words per item */
+    size_t count, cap, slots;
+    uint64_t *items;
+    int64_t *table;
+} pset;
+
+static uint64_t phash(const uint64_t *v, int n)
+{
+    uint64_t h = 1469598103934665603ULL;
+    for (int i = 0; i < n; i++) h = (h ^ v[i]) * 1099511628211ULL;
+    return h ^ (h >> 31);
+}
+
+/* index of v in the set, inserting it when absent (*added = 1) */
+static int64_t pset_put(pset *s, const uint64_t *v, int *added)
+{
+    if (!s->slots || s->count * 2 >= s->slots) {
+        size_t slots = s->slots ? s->slots * 2 : 1024;
+        int64_t *table = malloc(sizeof(int64_t) * slots);
+        if (!table) return -1;
+        for (size_t i = 0; i < slots; i++) table[i] = -1;
+        for (size_t i = 0; i < s->count; i++) {
+            size_t slot = phash(s->items + i * s->width, s->width) & (slots - 1);
+            while (table[slot] >= 0) slot = (slot + 1) & (slots - 1);
+            table[slot] = (int64_t)i;
+        }
+        free(s->table);
+        s->table = table;
+        s->slots = slots;
+    }
+    size_t slot = phash(v, s->width) & (s->slots - 1);
+    for (; s->table[slot] >= 0; slot = (slot + 1) & (s->slots - 1))
+        if (!memcmp(s->items + (size_t)s->table[slot] * s->width, v, sizeof(uint64_t) * (size_t)s->width)) {
+            *added = 0;
+            return s->table[slot];
+        }
+    if (s->count == s->cap) {
+        size_t cap = s->cap ? s->cap * 2 : 256;
+        uint64_t *items = realloc(s->items, sizeof(uint64_t) * cap * s->width);
+        if (!items) return -1;
+        s->items = items;
+        s->cap = cap;
+    }
+    memcpy(s->items + s->count * s->width, v, sizeof(uint64_t) * (size_t)s->width);
+    s->table[slot] = (int64_t)s->count;
+    *added = 1;
+    return (int64_t)s->count++;
+}
+
+static void pset_free(pset *s)
+{
+    free(s->items);
+    free(s->table);
+}
+
+/* rows x -> x M^T for d x d M */
+static void prow_image(const uint64_t *x, int r, const uint64_t *mt, int d, uint64_t *out)
+{
+    for (int i = 0; i < r; i++)
+        for (int a = 0; a < d; a++) {
+            uint64_t t = 0;
+            for (int q = 0; q < d; q++)
+                if (x[(size_t)i * d + q] && mt[(size_t)a * d + q]) t = padd(t, pmul(mt[(size_t)a * d + q], x[(size_t)i * d + q]));
+            out[(size_t)i * d + a] = t;
+        }
+}
+
+/* the OPDs of Gamma = Ind sigma: one copy of sigma in the site's Bloch displacements, the induced matrices on the
+ * image of G, and the closure of fixed-space intersections (complex dimensions) */
+static int k_opds(const sp_group *g, const sp_little *L, const rat *k, const cy_field *f, uint64_t w, const cy *sigma, int dim, int site,
+                  int nu, jbuf *b)
+{
+    const sp_group *h = &L->h;
+    int nh = h->n, N = L->N, m = f->m, n = g->n;
+    uint64_t zN = powmod(w, (uint64_t)(m / N), PR);
+    uint64_t *sig = malloc(sizeof(uint64_t) * (size_t)nh);
+    for (int x = 0; x < nh; x++) sig[x] = cy_mod(f, &sigma[h->cls[x]], w);
+    int nloc = 0, *local = malloc(sizeof(int) * (size_t)g->nclasses), *global = malloc(sizeof(int) * (size_t)g->nclasses);
+    for (int cl = 0; cl < g->nclasses; cl++) {
+        local[cl] = -1;
+        if (g->class_site[cl] == site) {
+            local[cl] = nloc;
+            global[nloc++] = cl;
+        }
+    }
+    int len = 3 * nloc;
+    /* rho(x) on the Bloch displacements: block (gx a, a) = zeta_N^(-j - N k.L) R */
+    uint64_t *phase = malloc(sizeof(uint64_t) * (size_t)nh * nloc);
+    int *target = malloc(sizeof(int) * (size_t)nh * nloc);
+    for (int x = 0; x < nh; x++) {
+        int e = L->little[x / N], j = x % N;
+        for (int c = 0; c < nloc; c++) {
+            int cl = global[c];
+            rat ph = rat_mul(rat_int(N), kdot(k, g->shift + (e * g->nclasses + cl) * 3));
+            int ex = (int)((((-(int64_t)ph.n - j) % N) + N) % N);
+            phase[x * nloc + c] = powmod(zN, (uint64_t)ex, PR);
+            target[x * nloc + c] = local[g->perm[e * g->nclasses + cl]];
+        }
+    }
+#define ACT(x, v, u)                                                                                           \
+    do {                                                                                                       \
+        memset(u, 0, sizeof(uint64_t) * (size_t)len);                                                          \
+        int e_ = L->little[(x) / N];                                                                           \
+        for (int c_ = 0; c_ < nloc; c_++) {                                                                    \
+            int t_ = target[(x) * nloc + c_];                                                                  \
+            for (int a_ = 0; a_ < 3; a_++) {                                                                   \
+                uint64_t s_ = 0;                                                                               \
+                for (int b_ = 0; b_ < 3; b_++)                                                                 \
+                    if (g->ops[e_].rot[a_][b_]) s_ = padd(s_, pmul(pint(g->ops[e_].rot[a_][b_]), (v)[3 * c_ + b_])); \
+                u[3 * t_ + a_] = pmul(s_, phase[(x) * nloc + c_]);                                             \
+            }                                                                                                  \
+        }                                                                                                      \
+    } while (0)
+    uint64_t *v0 = malloc(sizeof(uint64_t) * (size_t)len), *v = malloc(sizeof(uint64_t) * (size_t)len), *u = malloc(sizeof(uint64_t) * (size_t)len);
+    uint64_t *e0 = malloc(sizeof(uint64_t) * (size_t)len), *basis = malloc(sizeof(uint64_t) * (size_t)(dim + 1) * len);
+    int *piv = malloc(sizeof(int) * (size_t)(dim + 2)), rank = 0, found = 0;
+    /* candidate subgroups K: trivial, cyclic, and pairs of lifted little elements; keep those with dim sigma^K = 1 */
+    /* first: an element x and an eigenvalue zeta_o^j of sigma(x) of multiplicity one; the eigenvectors of the
+     * isotypic part for it are pure tensors */
+    for (int x = 0; x < nh && !found; x++) {
+        int o = h->order[x];
+        if (m % o) continue;
+        uint64_t zo = powmod(w, (uint64_t)(m / o), PR);
+        int *pw = malloc(sizeof(int) * (size_t)o);
+        int identity = 0;
+        for (int y = 0; y < nh; y++)
+            if (h->order[y] == 1) identity = y;
+        pw[0] = identity;
+        for (int t2 = 1; t2 < o; t2++) pw[t2] = h->mult[pw[t2 - 1] * nh + x];
+        for (int j = 0; j < o && !found; j++) {
+            uint64_t mu = 0, zinv = pinv(powmod(zo, (uint64_t)j, PR)), z = 1;
+            for (int t2 = 0; t2 < o; t2++) {
+                mu = padd(mu, pmul(sig[pw[t2]], z));
+                z = pmul(z, zinv);
+            }
+            mu = pmul(mu, pinv(pint(o)));
+            if (mu != 1) continue;
+            for (int start = 0; start < len && !found; start++) {
+                memset(e0, 0, sizeof(uint64_t) * (size_t)len);
+                e0[start] = 1;
+                memset(v0, 0, sizeof(uint64_t) * (size_t)len);
+                for (int y = 0; y < nh; y++) {
+                    ACT(y, e0, u);
+                    uint64_t c = sig[h->inv[y]];
+                    for (int i = 0; i < len; i++) v0[i] = padd(v0[i], pmul(c, u[i]));
+                }
+                memset(v, 0, sizeof(uint64_t) * (size_t)len);
+                z = 1;
+                for (int t2 = 0; t2 < o; t2++) {
+                    ACT(pw[t2], v0, u);
+                    for (int i = 0; i < len; i++) v[i] = padd(v[i], pmul(z, u[i]));
+                    z = pmul(z, zinv);
+                }
+                int nonzero = 0;
+                for (int i = 0; i < len; i++) nonzero |= v[i] != 0;
+                if (!nonzero) continue;
+                rank = 0;
+                int ok = 1;
+                for (int y = 0; y < nh && ok; y++) {
+                    ACT(y, v, u);
+                    padd_vector(basis, piv, &rank, len, u);
+                    ok = rank <= dim;
+                }
+                found = ok && rank == dim;
+            }
+        }
+        free(pw);
+    }
+    /* pairs over all of H when it is small, else over the lifts with every phase */
+    int pool = nh <= 192 ? nh : L->nlittle, pool_step = nh <= 192 ? 1 : N;
+    int64_t ncand = 1 + nh + (int64_t)pool * pool;
+    for (int64_t cand = 0; cand < ncand && !found; cand++) {
+        unsigned char *in = calloc((size_t)nh, 1);
+        int gens[2] = {-1, -1};
+        if (cand > 0 && cand <= nh) gens[0] = (int)cand - 1;
+        else if (cand > nh) {
+            int a = (int)((cand - nh - 1) / pool), c2 = (int)((cand - nh - 1) % pool);
+            if (c2 <= a) {
+                free(in);
+                continue;
+            }
+            gens[0] = a * pool_step;
+            gens[1] = c2 * pool_step;
+        }
+        int identity = 0;
+        for (int x = 0; x < nh; x++)
+            if (h->order[x] == 1) identity = x;
+        in[identity] = 1;
+        int grown = 1;
+        while (grown) {
+            grown = 0;
+            for (int x = 0; x < nh; x++)
+                if (in[x])
+                    for (int q = 0; q < 2; q++)
+                        if (gens[q] >= 0 && !in[h->mult[x * nh + gens[q]]]) {
+                            in[h->mult[x * nh + gens[q]]] = 1;
+                            grown = 1;
+                        }
+        }
+        uint64_t fix = 0;
+        int size = 0;
+        for (int x = 0; x < nh; x++)
+            if (in[x]) {
+                fix = padd(fix, sig[x]);
+                size++;
+            }
+        fix = pmul(fix, pinv(pint(size)));
+        if (fix != 1) {
+            free(in);
+            continue;
+        }
+        for (int start = 0; start < len && !found; start++) {
+            memset(e0, 0, sizeof(uint64_t) * (size_t)len);
+            e0[start] = 1;
+            memset(v0, 0, sizeof(uint64_t) * (size_t)len);
+            for (int x = 0; x < nh; x++) {
+                ACT(x, e0, u);
+                uint64_t c = sig[h->inv[x]];
+                for (int i = 0; i < len; i++) v0[i] = padd(v0[i], pmul(c, u[i]));
+            }
+            memset(v, 0, sizeof(uint64_t) * (size_t)len);
+            for (int x = 0; x < nh; x++)
+                if (in[x]) {
+                    ACT(x, v0, u);
+                    for (int i = 0; i < len; i++) v[i] = padd(v[i], u[i]);
+                }
+            int nonzero = 0;
+            for (int i = 0; i < len; i++) nonzero |= v[i] != 0;
+            if (!nonzero) continue;
+            rank = 0;
+            int ok = 1;
+            for (int x = 0; x < nh && ok; x++) {
+                ACT(x, v, u);
+                padd_vector(basis, piv, &rank, len, u);
+                ok = rank <= dim;
+            }
+            found = ok && rank == dim;
+        }
+        free(in);
+    }
+    if (!found) {
+        jb_lit(b, ", \"opds\": null");
+        free(sig), free(local), free(global), free(phase), free(target), free(v0), free(v), free(u), free(e0), free(basis), free(piv);
+        return 0;
+    }
+    /* sigma's matrices on the copy: coordinates at the pivots */
+    uint64_t *smat = malloc(sizeof(uint64_t) * (size_t)nh * dim * dim);
+    for (int x = 0; x < nh; x++)
+        for (int c = 0; c < dim; c++) {
+            ACT(x, basis + (size_t)c * len, u);
+            for (int r = 0; r < dim; r++) smat[((size_t)x * dim + r) * dim + c] = u[piv[r]];
+        }
+#undef ACT
+    /* arms and coset representatives */
+    int s = L->star, *rep = malloc(sizeof(int) * (size_t)s), narms = 0;
+    rat (*arms)[3] = malloc(sizeof(rat[3]) * (size_t)s);
+    for (int e = 0; e < n && narms < s; e++) {
+        rat a[3];
+        k_times(k, (const int (*)[3])g->ops[g->inv[e]].rot, a);
+        int known = 0;
+        for (int q = 0; q < narms && !known; q++) known = k_same(g, arms[q], a);
+        if (!known) {
+            memcpy(arms[narms], a, sizeof a);
+            rep[narms++] = e;
+        }
+    }
+    int D = dim * s;
+    /* Gamma(x) for an affine x: block (pi(i), i) = sigma(r_pi(i)^-1 x r_i) */
+    sp_aff *raff = malloc(sizeof(sp_aff) * (size_t)s), *rinv = malloc(sizeof(sp_aff) * (size_t)s);
+    for (int i = 0; i < s; i++) {
+        memcpy(raff[i].r, g->ops[rep[i]].rot, sizeof raff[i].r);
+        memcpy(raff[i].t, g->ops[rep[i]].tran, sizeof raff[i].t);
+        aff_inv(g, &raff[i], &rinv[i]);
+    }
+    int ngens = 0;
+    sp_aff gens[64];
+    /* generators: a generating set of P (greedy) and the lattice translations */
+    {
+        unsigned char *in = calloc((size_t)n, 1);
+        int identity = 0;
+        for (int e = 0; e < n; e++)
+            if (g->order[e] == 1) identity = e;
+        in[identity] = 1;
+        for (int e = 0; e < n && ngens < 48; e++) {
+            if (in[e]) continue;
+            memcpy(gens[ngens].r, g->ops[e].rot, sizeof gens[ngens].r);
+            memcpy(gens[ngens].t, g->ops[e].tran, sizeof gens[ngens].t);
+            ngens++;
+            int grown = 1;
+            in[e] = 1;
+            while (grown) {
+                grown = 0;
+                for (int x = 0; x < n; x++)
+                    if (in[x])
+                        for (int y = 0; y < n; y++)
+                            if (in[y] && !in[g->mult[x * n + y]]) {
+                                in[g->mult[x * n + y]] = 1;
+                                grown = 1;
+                            }
+            }
+        }
+        free(in);
+        for (int a = 0; a < 3 + g->ncent && ngens < 64; a++) {
+            memset(&gens[ngens], 0, sizeof gens[ngens]);
+            for (int i = 0; i < 3; i++) gens[ngens].r[i][i] = 1;
+            if (a < 3) gens[ngens].t[a] = 24;
+            else memcpy(gens[ngens].t, g->cent[a - 3], sizeof gens[ngens].t);
+            ngens++;
+        }
+    }
+    uint64_t *gmat = calloc((size_t)ngens * D * D, sizeof(uint64_t));
+    for (int q = 0; q < ngens; q++)
+        for (int i = 0; i < s; i++) {
+            sp_aff y, hh;
+            aff_mul(&gens[q], &raff[i], &y);
+            rat a[3];
+            int ey = p_of_rot(g, (const int (*)[3])y.r);
+            k_times(k, (const int (*)[3])g->ops[g->inv[ey]].rot, a);
+            int pi = -1;
+            for (int q2 = 0; q2 < s && pi < 0; q2++)
+                if (k_same(g, arms[q2], a)) pi = q2;
+            if (pi < 0) return spfail("arm image outside the star"), MDE_VALUE;
+            aff_mul(&rinv[pi], &y, &hh);
+            int x;
+            if (aff_to_h(g, L, k, &hh, &x)) return MDE_VALUE;
+            for (int r = 0; r < dim; r++)
+                for (int c = 0; c < dim; c++) gmat[((size_t)q * D + pi * dim + r) * D + i * dim + c] = smat[((size_t)x * dim + r) * dim + c];
+        }
+    /* the image group by closure */
+    pset image = {D * D, 0, 0, 0, 0, 0};
+    uint64_t *ident = calloc((size_t)D * D, sizeof(uint64_t)), *prod = malloc(sizeof(uint64_t) * (size_t)D * D);
+    for (int i = 0; i < D; i++) ident[i * D + i] = 1;
+    int added;
+    pset_put(&image, ident, &added);
+    for (size_t at = 0; at < image.count; at++) {
+        if (image.count * (size_t)image.width > ((size_t)40 << 20)) return spfail("image group above the reference limit"), MDE_VALUE;
+        for (int q = 0; q < ngens; q++) {
+            const uint64_t *a = gmat + (size_t)q * D * D;
+            for (int i = 0; i < D; i++)
+                for (int c = 0; c < D; c++) {
+                    uint64_t t2 = 0;
+                    for (int l = 0; l < D; l++) {
+                        uint64_t x1 = a[i * D + l], x2 = image.items[at * image.width + (size_t)l * D + c];
+                        if (x1 && x2) t2 = padd(t2, pmul(x1, x2));
+                    }
+                    prod[i * D + c] = t2;
+                }
+            if (pset_put(&image, prod, &added) < 0) return spfail("out of memory"), MDE_MEMORY;
+        }
+    }
+    size_t order = image.count;
+    /* closure of isotropy subspaces; subspaces as canonical rows, key = rank then rows */
+    pset seen = {1 + D * D, 0, 0, 0, 0, 0};
+    uint64_t *key = calloc((size_t)1 + D * D, sizeof(uint64_t)), *rows = malloc(sizeof(uint64_t) * (size_t)D * D);
+    uint64_t *img = malloc(sizeof(uint64_t) * (size_t)D * D), *diff = malloc(sizeof(uint64_t) * (size_t)D * D);
+    size_t rcap = 1024, nreps = 0;
+    uint64_t *reps = malloc(sizeof(uint64_t) * rcap * (1 + D * D));
+    memcpy(rows, ident, sizeof(uint64_t) * (size_t)D * D);
+    key[0] = (uint64_t)D;
+    memcpy(key + 1, rows, sizeof(uint64_t) * (size_t)D * D);
+    memcpy(reps, key, sizeof(uint64_t) * (size_t)(1 + D * D));
+    nreps = 1;
+    pset_put(&seen, key, &added);
+    for (size_t head = 0; head < nreps; head++) {
+        int r = (int)reps[head * (1 + D * D)];
+        const uint64_t *x = reps + head * (1 + D * D) + 1;
+        for (size_t q = 0; q < order; q++) {
+            const uint64_t *mat = image.items + q * image.width;
+            /* D' = X M^T - X; coefficients c with c D' = 0 */
+            prow_image(x, r, mat, D, img);
+            for (int i = 0; i < r * D; i++) diff[i] = psub(img[i], x[i]);
+            uint64_t *tr = malloc(sizeof(uint64_t) * (size_t)D * r), *cs = malloc(sizeof(uint64_t) * (size_t)r * r);
+            for (int i = 0; i < r; i++)
+                for (int a = 0; a < D; a++) tr[a * r + i] = diff[i * D + a];
+            int cnt = pnull(tr, D, r, cs);
+            free(tr);
+            if (!cnt || cnt == r) {
+                free(cs);
+                continue;
+            }
+            memset(rows, 0, sizeof(uint64_t) * (size_t)cnt * D);
+            for (int v2 = 0; v2 < cnt; v2++)
+                for (int i = 0; i < r; i++)
+                    if (cs[v2 * r + i])
+                        for (int a = 0; a < D; a++) rows[v2 * D + a] = padd(rows[v2 * D + a], pmul(cs[v2 * r + i], x[i * D + a]));
+            free(cs);
+            int rr = pcanon(rows, cnt, D);
+            memset(key, 0, sizeof(uint64_t) * (size_t)(1 + D * D));
+            key[0] = (uint64_t)rr;
+            memcpy(key + 1, rows, sizeof(uint64_t) * (size_t)rr * D);
+            pset_put(&seen, key, &added);
+            if (!added) continue;
+            if (seen.count * (size_t)seen.width > ((size_t)40 << 20)) return spfail("isotropy orbits above the reference limit"), MDE_VALUE;
+            if (nreps == rcap) {
+                rcap *= 2;
+                reps = realloc(reps, sizeof(uint64_t) * rcap * (1 + D * D));
+            }
+            if (nreps > 20000) return spfail("too many isotropy subspaces"), MDE_VALUE;
+            memcpy(reps + nreps * (1 + D * D), key, sizeof(uint64_t) * (size_t)(1 + D * D));
+            nreps++;
+            /* the whole orbit is seen */
+            uint64_t *orbit = malloc(sizeof(uint64_t) * (size_t)(1 + D * D));
+            for (size_t q2 = 0; q2 < order; q2++) {
+                prow_image(rows, rr, image.items + q2 * image.width, D, img);
+                int r2 = pcanon(img, rr, D);
+                memset(orbit, 0, sizeof(uint64_t) * (size_t)(1 + D * D));
+                orbit[0] = (uint64_t)r2;
+                memcpy(orbit + 1, img, sizeof(uint64_t) * (size_t)r2 * D);
+                pset_put(&seen, orbit, &added);
+            }
+            free(orbit);
+        }
+    }
+    jb_lit(b, ", \"image\": ");
+    char t[96];
+    snprintf(t, sizeof t, "%zu, \"opds\": [", order);
+    jb_lit(b, t);
+    for (size_t q = 0; q < nreps; q++) {
+        int r = (int)reps[q * (1 + D * D)];
+        const uint64_t *x = reps + q * (1 + D * D) + 1;
+        size_t stab = 0;
+        for (size_t q2 = 0; q2 < order; q2++) {
+            prow_image(x, r, image.items + q2 * image.width, D, img);
+            stab += !memcmp(img, x, sizeof(uint64_t) * (size_t)r * D);
+        }
+        snprintf(t, sizeof t, q ? ", {\"dim\": %d, \"index\": %zu}" : "{\"dim\": %d, \"index\": %zu}", r * (nu == 1 ? 1 : 2), order / stab);
+        jb_lit(b, t);
+    }
+    jb_lit(b, "]");
+    pset_free(&image);
+    pset_free(&seen);
+    free(key), free(rows), free(img), free(diff), free(reps), free(ident), free(prod), free(gmat), free(raff), free(rinv), free(rep), free(arms);
+    free(smat), free(sig), free(local), free(global), free(phase), free(target), free(v0), free(v), free(u), free(e0), free(basis), free(piv);
+    return 0;
+}
+
 /* irreps at k != 0: per small irrep of H appearing in the displacements, its Herring type, the
  * full and real dimensions and the multiplicity per site */
 static int spec_k(const sp_group *g, const rat *k, int nsites, jbuf *b)
@@ -1142,6 +1709,9 @@ static int spec_k(const sp_group *g, const rat *k, int nsites, jbuf *b)
                  real, nu, partner >= 0 && partner != c ? "true" : "false");
         jb_lit(b, t);
         put_int_list(b, mult, nsites);
+        int site = 0;
+        while (site < nsites && !mult[site]) site++;
+        if (k_opds(g, &L, k, f, w, sigma, dim, site, nu, b)) return MDE_VALUE;
         jb_lit(b, "}");
         free(mult);
     }
