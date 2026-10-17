@@ -136,11 +136,12 @@ static size_t rat3_slot(const keyed_t *table, size_t size, const rat *v)
     return slot;
 }
 
+/* a total order on reduced rationals, by denominator then numerator */
 static int rat3_less(const rat *a, const rat *b)
 {
     for (int axis = 0; axis < 3; axis++) {
-        int c = rat_cmp(a[axis], b[axis]);
-        if (c) return c < 0;
+        if (a[axis].d != b[axis].d) return a[axis].d < b[axis].d;
+        if (a[axis].n != b[axis].n) return a[axis].n < b[axis].n;
     }
     return 0;
 }
