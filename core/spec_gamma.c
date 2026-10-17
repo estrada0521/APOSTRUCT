@@ -1212,7 +1212,14 @@ static int lattice_kernel(int64_t (*b)[3], const rat *k)
 
 /* the ordinary subgroup of the OPD with canonical rows x (r x D): records of one element per rotation in H, the
  * lattice of H, both in the pml frame; out as id_subgroup_identify (subgroup, basis, origin); returns found */
-static int identify_opd(const sp_induced *c, const uint64_t *x, int r, int64_t *out)
+int mag_nonmagnetic_op(int op);
+int mag_time_reversed(int op);
+int mag_tables(void);
+int64_t mag_point_product_count(void);
+int id_subgroup_magnetic_identify(int parent, const int64_t *basis, int op_count, const int64_t *ops, int flag, int64_t capacity, int64_t *out);
+
+/* magnetic: elements (R, t) with or without time reversal (Gamma negated) that fix U; out[0] the magnetic group */
+static int identify_opd(const sp_induced *c, const uint64_t *x, int r, int magnetic, int64_t *out)
 {
     const sp_group *g = c->g;
     int D = c->D, dim = c->dim, N = c->L->N;
@@ -1262,16 +1269,19 @@ static int identify_opd(const sp_induced *c, const uint64_t *x, int r, int64_t *
         free(reps);
         return spfail("parent setting tables are inconsistent");
     }
-    int64_t records[GEO_MAX_OPS][5], src[GEO_MAX_OPS][5];
+    int64_t records[2 * GEO_MAX_OPS][5], src[GEO_MAX_OPS][5];
     int nsrc = geo_sg_records(SP_SG, src), nkept = 0;
     uint64_t *gm = malloc(sizeof(uint64_t) * (size_t)D * D), *img = malloc(sizeof(uint64_t) * (size_t)r * D);
-    for (int e = 0; e < g->n; e++) {
-        int got = -1;
+    if (magnetic && mag_tables()) return spfail("magnetic tables are missing");
+    for (int pass = 0; pass < (magnetic ? 2 : 1) * g->n; pass++) {
+        int e = pass % g->n, reversed = pass >= g->n, got = -1;
         for (int q = 0; q < nrep && got < 0; q++) {
             sp_aff y;
             memcpy(y.r, g->ops[e].rot, sizeof y.r);
             for (int z = 0; z < 3; z++) y.t[z] = g->ops[e].tran[z] + (int)reps[q][z];
             if (gamma_of(c, &y, gm)) return 1;
+            if (reversed)
+                for (int i = 0; i < D * D; i++) gm[i] = psub(0, gm[i]);
             prow_image(x, r, gm, D, img);
             if (!memcmp(img, x, sizeof(uint64_t) * (size_t)r * D)) got = q;
         }
@@ -1304,6 +1314,16 @@ static int identify_opd(const sp_induced *c, const uint64_t *x, int r, int64_t *
         for (int z = 0; z < 3; z++) records[nkept][z] = (int64_t)(tp[z].n * (den / tp[z].d));
         records[nkept][3] = den;
         records[nkept][4] = op;
+        if (magnetic) {
+            int code = 0;
+            for (int64_t mc = 1; mc <= mag_point_product_count() && mc <= 1000 && !code; mc++)
+                if (mag_nonmagnetic_op((int)mc) == op && mag_time_reversed((int)mc) == reversed) code = (int)mc;
+            if (!code) {
+                free(reps), free(gm), free(img);
+                return spfail("no magnetic point operation");
+            }
+            records[nkept][4] = code;
+        }
         nkept++;
     }
     free(reps), free(gm), free(img);
@@ -1318,6 +1338,14 @@ static int identify_opd(const sp_induced *c, const uint64_t *x, int r, int64_t *
         }
     }
     if (rat_overflow) return spfail("rational overflow in the naming bridge");
+    if (magnetic) {
+        static int64_t flat[8192];
+        int64_t length = id_subgroup_magnetic_identify(SP_SG, bpml, nkept, &records[0][0], 0, 8192, flat);
+        if (length == -2 || length < -7) return spfail("magnetic subgroup identification failed");
+        if (length <= 0) return 0;
+        out[0] = flat[0];
+        return 1;
+    }
     int found = id_subgroup_identify(SP_SG, bpml, nkept, &records[0][0], 0, out);
     if (found < 0) return spfail("subgroup identification failed");
     return found;
@@ -2232,7 +2260,7 @@ static int k_opds(const sp_group *g, const sp_little *L, const rat *k, const cy_
             stab += !memcmp(img, x, sizeof(uint64_t) * (size_t)r * D);
         }
         int64_t ident14[14] = {0};
-        int found = magnetic ? 0 : identify_opd(&ind, x, r, ident14);
+        int found = identify_opd(&ind, x, r, magnetic, ident14);
         if (found < 0 || fail_status) return MDE_VALUE;
         snprintf(t, sizeof t, "%s{\"dim\": %d, \"index\": %zu, \"subgroup\": %lld, \"label\": ", q ? ", " : "", r * (nu == 1 ? 1 : 2), order / stab,
                  found > 0 ? (long long)ident14[0] : -1LL);
