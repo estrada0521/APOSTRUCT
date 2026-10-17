@@ -442,6 +442,7 @@ static void load_case(const char *raw, apo_case *c)
 
 extern int exact_certify;
 extern long exact_certified[4];
+extern long exact_walk_certified[8];
 
 typedef struct {
     const char *structure, *case_path, *opd, *output, *format, *upto, *host, *server;
@@ -1071,7 +1072,12 @@ int main(int argc, char **argv)
     int status = run_request(&request, a.output);
     jb_free(&request);
     if (a.certify)
-        fprintf(stderr, "{\"certify\": {\"checked\": %ld, \"failed\": %ld, \"outside_field\": %ld, \"undecided\": %ld}}\n", exact_certified[0],
-                exact_certified[1], exact_certified[2], exact_certified[3]);
+        fprintf(stderr,
+                "{\"certify\": {\"checked\": %ld, \"failed\": %ld, \"outside_field\": %ld, \"undecided\": %ld, \"walks\": %ld, "
+                "\"walk_nodes\": %ld, \"rank_failed\": %ld, \"intersections\": %ld, \"missing\": %ld, \"walk_exact\": %ld, "
+                "\"walk_exact_failed\": %ld, \"walk_undecided\": %ld}}\n",
+                exact_certified[0], exact_certified[1], exact_certified[2], exact_certified[3], exact_walk_certified[0],
+                exact_walk_certified[1], exact_walk_certified[2], exact_walk_certified[3], exact_walk_certified[4], exact_walk_certified[5], exact_walk_certified[6],
+                exact_walk_certified[7]);
     return status;
 }

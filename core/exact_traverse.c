@@ -423,6 +423,8 @@ typedef struct {
     int *nz_start, *nz_row; /* per matrix, dim + 1 column starts into nz_row (source rows) */
     const xe *matrices_one, *matrices_all; /* the first embedding only, and every embedding */
     int no_intern;                         /* equation_data computes equations without a key */
+    int *owner;                            /* --certify: per key, a node and a matrix that map the node onto it */
+    size_t owner_size;
 } Context;
 
 /* Most decisions use the first embedding (one word per element); new nodes,
@@ -985,6 +987,7 @@ typedef struct {
 
 static void context_free(Context *ctx)
 {
+    free(ctx->owner);
     free(ctx->residue_slots);
     free(ctx->projective);
     free(ctx->orbit_pairs);
@@ -1114,6 +1117,264 @@ static int push_node(Node **queue, size_t *capacity, size_t *tail, int free_rows
 
 typedef int (*xt_node_fn)(void *user, int free_rows, const uint64_t *row_orderparam);
 
+extern int exact_certify;
+
+static int own(Context *ctx, int key, int node, int matrix)
+{
+    if (key < 0) return XT_OK;
+    if ((size_t)key >= ctx->owner_size) {
+        size_t size = ctx->owner_size ? ctx->owner_size : 1024;
+        while (size <= (size_t)key) size *= 2;
+        int *grown = realloc(ctx->owner, sizeof(int) * size * 2);
+        if (!grown) return XT_NO_MEMORY;
+        for (size_t i = ctx->owner_size * 2; i < size * 2; i++) grown[i] = -1;
+        ctx->owner = grown;
+        ctx->owner_size = size;
+    }
+    if (ctx->owner[2 * key] < 0) {
+        ctx->owner[2 * key] = node;
+        ctx->owner[2 * key + 1] = matrix;
+    }
+    return XT_OK;
+}
+
+/* the keys of an accepted node's orbit, from its last orbit() */
+static int own_orbit(Context *ctx, const IntList *keys, int node)
+{
+    TRY(own(ctx, keys->data[0], node, -1));
+    for (int matrix = 0; matrix < ctx->matrix_count; matrix++) TRY(own(ctx, ctx->orbit_matrix_key[matrix], node, matrix));
+    return XT_OK;
+}
+
+/* walks, nodes, rank failed, intersections, missing, exact checks, exact failures, undecided */
+long exact_walk_certified[8];
+
+/* Exact elements kept compact: the denominator, then phi coefficients. */
+static int lift_compact(const xe *all, size_t cells, i128 *out)
+{
+    int phi = F->phi;
+    for (size_t i = 0; i < cells; i++) {
+        cy x;
+        if (elift(all + i * phi, &x)) return XT_ARITHMETIC;
+        i128 *o = out + i * (phi + 1);
+        o[0] = x.den;
+        memcpy(o + 1, x.c, sizeof(i128) * phi);
+    }
+    return XT_OK;
+}
+
+static void expand(const i128 *c, cy *out)
+{
+    out->den = c[0];
+    memcpy(out->c, c + 1, sizeof(i128) * F->phi);
+}
+
+/* out = v m for rows x dim v and [source_row][col] m, over the nonzeros of matrix */
+static void exact_times(const Context *ctx, int matrix, int rows, const i128 *v, const i128 *m, i128 *out)
+{
+    int dim = ctx->dim;
+    size_t w = (size_t)F->phi + 1;
+    const int *start = ctx->nz_start + (size_t)matrix * (dim + 1);
+    cy acc, a, b, t;
+    for (int r = 0; r < rows; r++)
+        for (int c = 0; c < dim; c++) {
+            cy_zero(F, &acc);
+            for (int n = start[c]; n < start[c + 1]; n++) {
+                int k = ctx->nz_row[n];
+                expand(v + ((size_t)r * dim + k) * w, &a);
+                if (cy_is_zero(F, &a)) continue;
+                expand(m + ((size_t)k * dim + c) * w, &b);
+                cy_mul(F, &a, &b, &t);
+                cy_add(F, &acc, &t, &acc);
+            }
+            i128 *o = out + ((size_t)r * dim + c) * w;
+            o[0] = acc.den;
+            memcpy(o + 1, acc.c, sizeof(i128) * F->phi);
+        }
+}
+
+static int exact_same(size_t cells, const i128 *x, const i128 *y)
+{
+    size_t w = (size_t)F->phi + 1;
+    cy a, b, t;
+    for (size_t i = 0; i < cells; i++) {
+        expand(x + i * w, &a);
+        expand(y + i * w, &b);
+        cy_sub(F, &a, &b, &t);
+        if (!cy_is_zero(F, &t)) return 0;
+    }
+    return 1;
+}
+
+/* rows of u lie in the span of the canonical v (an identity column per row) */
+static int exact_inside(int dim, int u_rows, const i128 *u, int v_rows, const i128 *v, i128 *scratch)
+{
+    size_t w = (size_t)F->phi + 1;
+    int columns[48];
+    cy a, b, t, acc;
+    for (int r = 0; r < v_rows; r++) {
+        columns[r] = -1;
+        for (int c = 0; c < dim && columns[r] < 0; c++) {
+            int unit = 1;
+            for (int q = 0; q < v_rows && unit; q++) {
+                expand(v + ((size_t)q * dim + c) * w, &a);
+                cy_rat(F, q == r, 1, &b);
+                cy_sub(F, &a, &b, &t);
+                unit = cy_is_zero(F, &t);
+            }
+            if (unit) columns[r] = c;
+        }
+        if (columns[r] < 0) return 0;
+    }
+    for (int r = 0; r < u_rows; r++)
+        for (int c = 0; c < dim; c++) {
+            expand(u + ((size_t)r * dim + c) * w, &acc);
+            for (int q = 0; q < v_rows; q++) {
+                expand(u + ((size_t)r * dim + columns[q]) * w, &a);
+                expand(v + ((size_t)q * dim + c) * w, &b);
+                if (cy_is_zero(F, &a) || cy_is_zero(F, &b)) continue;
+                cy_mul(F, &a, &b, &t);
+                cy_sub(F, &acc, &t, &acc);
+            }
+            if (!cy_is_zero(F, &acc)) return 0;
+        }
+    (void)scratch;
+    return 1;
+}
+
+typedef struct {
+    Context *ctx;
+    i128 **matrix;
+    i128 *rows, *product;
+} Exact;
+
+static const i128 *exact_matrix(Exact *x, int matrix)
+{
+    if (x->matrix[matrix]) return x->matrix[matrix];
+    size_t cells = (size_t)x->ctx->dim * x->ctx->dim;
+    i128 *out = malloc(sizeof(i128) * cells * ((size_t)F->phi + 1));
+    if (out && lift_compact(x->ctx->matrices_all + (size_t)matrix * cells * F->phi, cells, out)) {
+        free(out);
+        out = 0;
+    }
+    return x->matrix[matrix] = out;
+}
+
+static void exact_count(int verdict)
+{
+    if (cy_overflow || verdict < 0) exact_walk_certified[7]++;
+    else {
+        exact_walk_certified[5]++;
+        if (!verdict) exact_walk_certified[6]++;
+    }
+}
+
+/* --certify on a finished walk: each node is the fixed space of its
+ * stabilizer (dim Fix(H) as the mean trace over H), and its intersection with
+ * the fixed space of every other matrix lies in the orbit of some node. The
+ * residue decisions that can err (an invariance, an equal key) are redone
+ * over Q(zeta_m): a residue rank never exceeds the true one, so a found
+ * intersection that contains an exact image of a node of its dimension is
+ * that image. */
+static int certify_walk(Context *ctx, const Node *queue, size_t count)
+{
+    int dim = ctx->dim, matrix_count = ctx->matrix_count, phi = F->phi;
+    size_t square = (size_t)dim * dim, w = (size_t)phi + 1, images_size = (size_t)ctx->keys.count, budget = (size_t)64 << 20;
+    xe *next = malloc(sizeof(xe) * (square + 1));
+    i128 **lifted = calloc(count + 1, sizeof(i128 *)), **images = calloc(images_size + 1, sizeof(i128 *));
+    Exact x = {ctx, calloc((size_t)matrix_count + 1, sizeof(i128 *)), 0, malloc(sizeof(i128) * square * w)};
+    int status = next && lifted && images && x.matrix && x.product ? XT_OK : XT_NO_MEMORY;
+    use_one(ctx);
+    exact_walk_certified[0]++;
+    for (size_t j = 0; j < count && !status; j++) {
+        size_t cells = (size_t)queue[j].free_rows * dim;
+        lifted[j] = malloc(sizeof(i128) * cells * w);
+        if (lifted[j] && lift_compact(queue[j].node_all, cells, lifted[j])) {
+            free(lifted[j]);
+            lifted[j] = 0;
+        }
+    }
+    for (size_t index = 0; index < count && !status; index++) {
+        const Node *node = &queue[index];
+        uint64_t trace = 0, order = 0;
+        exact_walk_certified[1]++;
+        for (int matrix = 0; matrix < matrix_count && !status; matrix++) {
+            const xe *m = cat(ctx->matrices, (size_t)matrix * square);
+            int preserves, found, next_free, key;
+            if ((status = orderparam_check(ctx, node->free_rows, node->node_one, m, &preserves))) break;
+            if (preserves) {
+                order++;
+                for (int i = 0; i < dim; i++) trace = madd(trace, m[(size_t)i * dim + i]);
+                const i128 *e = exact_matrix(&x, matrix);
+                if (!e || !lifted[index]) {
+                    exact_walk_certified[7]++;
+                    continue;
+                }
+                cy_overflow = 0;
+                exact_times(ctx, matrix, node->free_rows, lifted[index], e, x.product);
+                exact_count(exact_same((size_t)node->free_rows * dim, x.product, lifted[index]));
+                continue;
+            }
+            if ((status = fixed_space_intersection(ctx, node->free_rows, node->node_one, m, &found, &next_free, next, &key))) break;
+            exact_walk_certified[3]++;
+            if (!found) continue;
+            if (!ctx->seen[key]) {
+                exact_walk_certified[4]++;
+                fprintf(stderr, "certify: walk dim %d node %zu (free %d) misses a %d-dimensional intersection with matrix %d\n", dim, index,
+                        node->free_rows, next_free, matrix);
+                continue;
+            }
+            /* the node image U with this key: U g = U and U inside the node */
+            int j = (size_t)key < ctx->owner_size ? ctx->owner[2 * key] : -1, image = j < 0 ? -1 : ctx->owner[2 * key + 1];
+            const i128 *g = exact_matrix(&x, matrix), *u = 0;
+            if (j >= 0 && lifted[j] && queue[j].free_rows == next_free) {
+                if (image < 0)
+                    u = lifted[j];
+                else if ((size_t)key < images_size && images[key])
+                    u = images[key];
+                else {
+                    const i128 *e = exact_matrix(&x, image);
+                    size_t bytes = sizeof(i128) * (size_t)next_free * dim * w;
+                    i128 *made = e ? malloc(bytes) : 0;
+                    if (made) {
+                        cy_overflow = 0;
+                        exact_times(ctx, image, next_free, lifted[j], e, made);
+                        if (cy_overflow) {
+                            free(made);
+                            made = 0;
+                        } else if ((size_t)key < images_size && budget >= bytes) {
+                            images[key] = made;
+                            budget -= bytes;
+                        } else {
+                            free(x.rows);
+                            x.rows = made;
+                        }
+                    }
+                    u = made;
+                }
+            }
+            if (!g || !u || !lifted[index]) {
+                exact_walk_certified[7]++;
+                continue;
+            }
+            cy_overflow = 0;
+            exact_times(ctx, matrix, next_free, u, g, x.product);
+            exact_count(exact_same((size_t)next_free * dim, x.product, u) && exact_inside(dim, next_free, u, node->free_rows, lifted[index], 0));
+        }
+        if (!status && (!order || from_mont(mm(trace, minv(to_mont(order)))) != (uint64_t)node->free_rows)) exact_walk_certified[2]++;
+    }
+    for (size_t j = 0; lifted && j < count; j++) free(lifted[j]);
+    for (size_t key = 0; images && key < images_size; key++) free(images[key]);
+    for (int matrix = 0; x.matrix && matrix < matrix_count; matrix++) free(x.matrix[matrix]);
+    free(lifted);
+    free(images);
+    free(x.matrix);
+    free(x.rows);
+    free(x.product);
+    free(next);
+    return status;
+}
+
 /* matrices: matrix_count x dim x dim elements of f ([source_row][col]), the
  * rest as in isotropy_traverse.  on_node gets each node's representative. */
 static int walk(const cy_field *f, int dim, int space_count, int fraction_count, xe *embedded, int matrix_count, const int *pair_matrix,
@@ -1156,6 +1417,7 @@ static int walk(const cy_field *f, int dim, int space_count, int fraction_count,
     first_embedding(first_all, first_one, square);
     if ((status = orbit(&ctx, dim, first_one, first_all, 0, &keys, rep_one, rep_all))) goto done;
     for (size_t index = 0; index < keys.used; index++) ctx.seen[keys.data[index]] = 1;
+    if (exact_certify && (status = own_orbit(&ctx, &keys, 0))) goto done;
     for (int pair = 0; pair < ctx.pair_count; pair++) {
         int preserves;
         if ((status = orderparam_check(&ctx, dim, rep_one, matrix_of_pair(&ctx, pair), &preserves))) goto done;
@@ -1225,10 +1487,12 @@ static int walk(const cy_field *f, int dim, int space_count, int fraction_count,
             if (overlaps) continue;
             if ((status = close_child_flags(&ctx, next_free, next_one, node.flags, pair))) goto done;
             for (size_t item = 0; item < keys.used; item++) ctx.seen[keys.data[item]] = 1;
+            if (exact_certify && (status = own_orbit(&ctx, &keys, (int)tail))) goto done;
             if ((status = push_node(&queue, &queue_capacity, &tail, next_free, dim, ctx.pair_count, next_one, next_all, rep_all, ctx.flags)))
                 goto done;
         }
     }
+    if (exact_certify) status = certify_walk(&ctx, queue, tail);
 done:
     for (size_t index = 0; index < tail; index++) {
         free(queue[index].node_one);
