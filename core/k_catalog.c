@@ -11,8 +11,8 @@
 #include "tables.h"
 
 static struct {
-    section_view k, k_dim, k_label, k_kov, k_count, label_bc, label_ml, label, lattice_label, sg_point_group, pg_order, star_count,
-        star_minusk, ops_count, star_pointer, star, star_special, irr_sg, irr_k, irr_old, full_label, full_kov_label, full_dim,
+    section_view k, k_dim, k_label, k_kov, k_count, label_bc, lattice_label, sg_point_group, star_count,
+        star_minusk, star_pointer, star, star_special, irr_sg, irr_k, irr_old, full_label, full_kov_label, full_dim,
         irr_type, irr_lif, real_pointer, real2_pointer, irrep_image, image_label, image_dimension, image_order, image_type,
         image_landau, image_subgroup_count, image_subgroup_pointer;
     int ready;
@@ -24,10 +24,9 @@ static int load(void)
     if (geo_load() || section_find("little.little_k", &T.k) || section_find("little.little_k_dim", &T.k_dim) ||
         section_find("little.little_k_label", &T.k_label) || section_find("little.little_k_kov", &T.k_kov) ||
         section_find("little.little_k_count", &T.k_count) || section_find("space.space_label_bc", &T.label_bc) ||
-        section_find("space.space_label_ml", &T.label_ml) || section_find("space.space_label", &T.label) ||
         section_find("space.lattice_label", &T.lattice_label) || section_find("space.ispace_point_group", &T.sg_point_group) ||
-        section_find("space.ipoint_group_order", &T.pg_order) || section_find("little.little_k_star_count", &T.star_count) ||
-        section_find("little.little_k_star_minusk", &T.star_minusk) || section_find("little.little_ops_count", &T.ops_count) ||
+        section_find("little.little_k_star_count", &T.star_count) ||
+        section_find("little.little_k_star_minusk", &T.star_minusk) ||
         section_find("little.little_k_star_ml_pointer", &T.star_pointer) || section_find("little.little_k_star", &T.star) ||
         section_find("little.little_k_star_special", &T.star_special) ||
         section_find("little.little_irr_space_group", &T.irr_sg) || section_find("little.little_irr_k", &T.irr_k) ||
@@ -328,8 +327,7 @@ static int put_slot(buffer *b, int sg, int kslot, int lattice, int extra)
         free(text.data);
     }
     int star_count = (int)section_int(&T.star_count, sg_slot);
-    put(b, ", \"star_size\": %d, \"minus_k\": %lld, \"little_order\": %lld", star_count,
-        (long long)section_int(&T.star_minusk, sg_slot), (long long)section_int(&T.ops_count, sg_slot));
+    put(b, ", \"star_size\": %d, \"minus_k\": %lld", star_count, (long long)section_int(&T.star_minusk, sg_slot));
     put(b, ", \"sg_specific\": %s, \"star\": [", extra ? "true" : "false");
     int64_t pointer = section_int(&T.star_pointer, sg_slot);
     if (star_count > 0 && pointer > 0) {
@@ -386,11 +384,7 @@ static int put_slot(buffer *b, int sg, int kslot, int lattice, int extra)
             put(b, "%d", full_dim / star_count);
         else
             put(b, "null");
-        put(b, ", \"type\": %d, \"type_label\": ", type);
-        if (type == 1)
-            put(b, "\"real\"");
-        else
-            put(b, "\"type %d\"", type);
+        put(b, ", \"type\": %d", type);
         put(b, ", \"lif\": %lld, \"real_pointer\": %lld, \"real2_pointer\": %lld, \"image\": ", (long long)section_int(&T.irr_lif, idx),
             (long long)section_int(&T.real_pointer, idx), (long long)section_int(&T.real2_pointer, idx));
         if (old_id > 0) {
@@ -450,18 +444,12 @@ const char *k_catalog_json(int sg)
         extra[at] = is_extra;
         n++;
     }
-    str symbol = strip(&T.label_bc, sg - 1), ml = strip(&T.label_ml, sg - 1), crystal = strip(&T.label, sg - 1),
-        lattice_type = strip(&T.lattice_label, lattice - 1);
+    str symbol = strip(&T.label_bc, sg - 1), lattice_type = strip(&T.lattice_label, lattice - 1);
     put(b, "{\"source\": \"Source/data_*\", \"space_group\": {\"number\": %d, \"symbol\": ", sg);
     put_json_str(b, symbol.text, symbol.length);
-    put(b, ", \"ml_symbol\": ");
-    put_json_str(b, ml.text, ml.length);
-    put(b, ", \"crystal_class\": ");
-    put_json_str(b, crystal.text, crystal.length);
     put(b, ", \"lattice\": %d, \"lattice_type\": ", lattice);
     put_json_str(b, lattice_type.text, lattice_type.length);
-    put(b, ", \"point_group\": %d, \"point_group_order\": %lld}, \"kpoints\": [", point_group,
-        (long long)section_int(&T.pg_order, point_group - 1));
+    put(b, ", \"point_group\": %d}, \"kpoints\": [", point_group);
     for (int i = 0; i < n; i++) {
         if (i) put(b, ", ");
         if (put_slot(b, sg, order[i], lattice, extra[i])) return 0;

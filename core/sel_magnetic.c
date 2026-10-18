@@ -515,7 +515,7 @@ static int magnetic_row(jbuf *b, int64_t old_id, int64_t row_id, int canonical, 
         jb_int(b, parent_group);
         jb_lit(b, ", \"magnetic_subgroup_old\": ");
         jb_int(b, section_int(&T.iso_subgroup_old, idx));
-        jb_lit(b, ", \"ferroic_classified\": true, \"ferroic_properties\": ");
+        jb_lit(b, ", \"ferroic_properties\": ");
         status = sel_mag_ferroic(b, sub_group);
         jb_lit(b, "}}");
     }

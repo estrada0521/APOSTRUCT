@@ -313,53 +313,6 @@ static int select_orderparam(const jvalue *rows, const jvalue *orderparam, int64
     return 0;
 }
 
-/* selection._domain_display */
-static void domain_display(jbuf *b, const jvalue *iso, const char *label, size_t label_length, int64_t domain, const char *display_opd,
-                           size_t display_length, const jbuf *basis, const jbuf *origin)
-{
-    const jvalue *subgroup = member(iso, "subgroup");
-    jbuf first = {0}, second = {0};
-    jb_reset(&first);
-    jb_reset(&second);
-    const jvalue *display_label = member(subgroup, "display_label");
-    str_or_empty(&first, jtruthy(display_label) ? display_label : member(subgroup, "number"));
-    str_or_empty(&second, member(subgroup, "symbol"));
-    jb_raw(b, label, label_length);
-    char number[32];
-    snprintf(number, sizeof number, "(%lld)", (long long)domain);
-    jb_lit(b, number);
-    if (display_length) {
-        jb_lit(b, " ");
-        for (size_t i = 0; i < display_length; i++) jb_raw(b, display_opd[i] == ';' ? "," : display_opd + i, 1);
-    }
-    if (first.used || second.used) {
-        jb_lit(b, " ");
-        jb_raw(b, first.data, first.used);
-        if (first.used && second.used) jb_lit(b, " ");
-        jb_raw(b, second.data, second.used);
-    }
-    jbuf basis_text = {0}, origin_text = {0};
-    jb_reset(&basis_text);
-    jb_reset(&origin_text);
-    if (basis) jb_raw(&basis_text, basis->data, basis->used);
-    else str_or_empty(&basis_text, member(iso, "basis_text"));
-    if (origin) jb_raw(&origin_text, origin->data, origin->used);
-    else str_or_empty(&origin_text, member(iso, "origin"));
-    if (basis_text.used) {
-        jb_lit(b, ", basis={");
-        jb_raw(b, basis_text.data, basis_text.used);
-        jb_lit(b, "}");
-    }
-    if (origin_text.used) {
-        jb_lit(b, ", origin=");
-        jb_raw(b, origin_text.data, origin_text.used);
-    }
-    jb_free(&first);
-    jb_free(&second);
-    jb_free(&basis_text);
-    jb_free(&origin_text);
-}
-
 static int k_parameter_names(int sg, int64_t kslot, char *names, int *count)
 {
     int64_t map[29];
@@ -394,16 +347,14 @@ int sel_opd_factors(jbuf *b, int sg, const jvalue *slots, const jvalue *selected
         return 0;
     }
     int64_t n = slots->count;
-    jbuf *labels = calloc((size_t)n + 1, sizeof(jbuf)), *displays = calloc((size_t)n + 1, sizeof(jbuf)),
-         *domain_displays = calloc((size_t)n + 1, sizeof(jbuf));
+    jbuf *labels = calloc((size_t)n + 1, sizeof(jbuf)), *displays = calloc((size_t)n + 1, sizeof(jbuf));
     int64_t *domains = calloc((size_t)n + 1, sizeof(int64_t)), *counts = calloc((size_t)n + 1, sizeof(int64_t));
     int *valid = calloc((size_t)n + 1, sizeof(int));
-    if (!labels || !displays || !domain_displays || !domains || !counts || !valid) return md_fail(MDE_MEMORY, "out of memory");
+    if (!labels || !displays || !domains || !counts || !valid) return md_fail(MDE_MEMORY, "out of memory");
     int status = 0, ok = 1;
     if (n == 1) {
         jb_reset(&labels[0]);
         jb_reset(&displays[0]);
-        jb_reset(&domain_displays[0]);
         str_or_empty(&labels[0], member(iso, "opd_label"));
         int64_t domain = 1, count = 0;
         truthy_int(member(iso, "selected_domain"), 1, &domain);
@@ -413,8 +364,6 @@ int sel_opd_factors(jbuf *b, int sg, const jvalue *slots, const jvalue *selected
         valid[0] = 1;
         const jvalue *display = member(iso, "display_opd");
         str_or_empty(&displays[0], jtruthy(display) ? display : member(iso, "source_opd"));
-        domain_display(&domain_displays[0], iso, labels[0].data ? labels[0].data : "", labels[0].used, domain,
-                       displays[0].data ? displays[0].data : "", displays[0].used, 0, 0);
     } else {
         const jvalue *components = member(member(selected, "direction"), "components");
         int64_t m = jis(components, J_ARRAY) ? components->count : 0;
@@ -429,7 +378,6 @@ int sel_opd_factors(jbuf *b, int sg, const jvalue *slots, const jvalue *selected
             const jvalue *component = jat(components, i);
             jb_reset(&labels[i]);
             jb_reset(&displays[i]);
-            jb_reset(&domain_displays[i]);
             str_or_empty(&labels[i], member(component, "opd"));
             const jvalue *domain = member(component, "domain");
             valid[i] = jis(domain, J_INT);
@@ -439,11 +387,10 @@ int sel_opd_factors(jbuf *b, int sg, const jvalue *slots, const jvalue *selected
             counts[i] = jis(free, J_INT) ? free->u.i : 0;
             if (!jis(free, J_INT)) valid[i] = 0;
             str_or_empty(&displays[i], member(component, "display_opd"));
-            str_or_empty(&domain_displays[i], member(component, "domain_display"));
         }
     }
     for (int64_t i = 0; !status && ok && i < n; i++)
-        if (!labels[i].used || !displays[i].used || !domain_displays[i].used || !valid[i] || domains[i] < 1 || counts[i] < 1) ok = 0;
+        if (!labels[i].used || !displays[i].used || !valid[i] || domains[i] < 1 || counts[i] < 1) ok = 0;
     if (!status && !ok) status = md_fail(MDE_VALUE, "selected OPD does not retain one exact displayed domain per primary slot");
     if (!status) jb_lit(b, "[");
     for (int64_t i = 0; !status && i < n; i++) {
@@ -489,8 +436,6 @@ int sel_opd_factors(jbuf *b, int sg, const jvalue *slots, const jvalue *selected
         jb_string(b, labels[i].data, labels[i].used);
         jb_lit(b, ", \"domain\": ");
         jb_int(b, domains[i]);
-        jb_lit(b, ", \"domain_display\": ");
-        jb_string(b, domain_displays[i].data, domain_displays[i].used);
         jb_lit(b, ", \"parameter_count\": ");
         jb_int(b, counts[i]);
         if (dimension <= 0) jb_lit(b, ", \"source_k_parameters\": []");
@@ -531,11 +476,9 @@ int sel_opd_factors(jbuf *b, int sg, const jvalue *slots, const jvalue *selected
     for (int64_t i = 0; i < n; i++) {
         jb_free(&labels[i]);
         jb_free(&displays[i]);
-        jb_free(&domain_displays[i]);
     }
     free(labels);
     free(displays);
-    free(domain_displays);
     free(domains);
     free(counts);
     free(valid);
@@ -716,186 +659,6 @@ static int coupled_labels(const jvalue *orderparam, int slot_count, int selected
     return parts == slot_count ? parts : 0;
 }
 
-/* The coupled rows with their components' internal keys dropped and the
- * selected row's domain displays added. */
-static void put_coupled_row(jbuf *b, const jvalue *row, const jbuf *displays, int n)
-{
-    jb_lit(b, "{");
-    for (int64_t i = 0; i < row->count; i++) {
-        const jvalue *key = row->u.members + 2 * i, *value = key + 1;
-        if (i) jb_lit(b, ", ");
-        jb_string(b, key->u.s, (size_t)key->count);
-        jb_lit(b, ": ");
-        if (!key_is(key, "direction")) {
-            jb_value(b, value);
-            continue;
-        }
-        jb_lit(b, "{");
-        for (int64_t j = 0; j < value->count; j++) {
-            const jvalue *dkey = value->u.members + 2 * j, *dvalue = dkey + 1;
-            if (j) jb_lit(b, ", ");
-            jb_string(b, dkey->u.s, (size_t)dkey->count);
-            jb_lit(b, ": ");
-            if (!key_is(dkey, "components")) {
-                jb_value(b, dvalue);
-                continue;
-            }
-            jb_lit(b, "[");
-            for (int64_t c = 0; c < dvalue->count; c++) {
-                const jvalue *component = jat(dvalue, c);
-                if (c) jb_lit(b, ", ");
-                jb_lit(b, "{");
-                int first = 1;
-                for (int64_t k = 0; k < component->count; k++) {
-                    const jvalue *ckey = component->u.members + 2 * k;
-                    if (key_is(ckey, "_domain_operation_record") || key_is(ckey, "_magnetic_domain_operation")) continue;
-                    if (!first) jb_lit(b, ", ");
-                    first = 0;
-                    jb_string(b, ckey->u.s, (size_t)ckey->count);
-                    jb_lit(b, ": ");
-                    jb_value(b, ckey + 1);
-                }
-                if (displays && c < n) {
-                    if (!first) jb_lit(b, ", ");
-                    jb_lit(b, "\"domain_display\": ");
-                    jb_string(b, displays[c].data, displays[c].used);
-                }
-                jb_lit(b, "}");
-            }
-            jb_lit(b, "]");
-        }
-        jb_lit(b, "}");
-    }
-    jb_lit(b, "}");
-}
-
-/* selection._complete_coupled_domain_displays for one component */
-static int coupled_domain_display(jbuf *b, int sg, const sel_context *c, const jvalue *slot, const jvalue *component)
-{
-    jbuf label = {0};
-    jb_reset(&label);
-    str_or_empty(&label, member(component, "opd"));
-    const jvalue *row = row_for_label(slot, label.data ? label.data : "", label.used);
-    if (!row) {
-        int status = md_fail(MDE_VALUE, "selected Source OPD row not found: %.*s", (int)label.used, label.data ? label.data : "");
-        jb_free(&label);
-        return status;
-    }
-    const jvalue *iso = member(row, "isotropy");
-    int64_t domain = 0;
-    if (py_int_of(member(component, "domain"), &domain)) {
-        jb_free(&label);
-        return md_fail(MDE_TYPE, "int() argument must be a string, a bytes-like object or a real number");
-    }
-    jbuf basis = {0}, origin = {0};
-    jb_reset(&basis);
-    jb_reset(&origin);
-    str_or_empty(&basis, member(iso, "basis_text"));
-    str_or_empty(&origin, member(iso, "origin"));
-    int status = 0;
-    if (domain > 1) {
-        const jvalue *raw = member(component, "_domain_operation_record");
-        int ok = jis(raw, J_ARRAY) && raw->count == 5;
-        int64_t record[5];
-        for (int k = 0; ok && k < 5; k++) {
-            ok = jis(jat(raw, k), J_INT);
-            if (ok) record[k] = jat(raw, k)->u.i;
-        }
-        if (!ok) status = md_fail(MDE_VALUE, "selected domain operation record is incomplete");
-        if (!status && jtruthy(member(component, "_magnetic_domain_operation"))) record[4] = section_int(&T.mag2nonmag, record[4] - 1);
-        int64_t sb[9], so[4];
-        const jvalue *sbv = member(iso, "source_basis_values"), *sov = member(iso, "source_origin_values");
-        for (int k = 0; !status && k < 9; k++)
-            if (py_int_of(jat(sbv, k), sb + k)) status = md_fail(MDE_TYPE, "source basis values are not integers");
-        for (int k = 0; !status && k < 4; k++)
-            if (py_int_of(jat(sov, k), so + k)) status = md_fail(MDE_TYPE, "source origin values are not integers");
-        int64_t point[9];
-        if (!status && geo_pml_point_matrix(sg, (int)record[4], point))
-            status = md_fail(MDE_KEY, "missing pml point operation SG%d/op%lld", sg, (long long)record[4]);
-        if (!status) {
-            rat transform[4][4], operation[4][4];
-            for (int r = 0; r < 4; r++)
-                for (int k = 0; k < 4; k++) transform[r][k] = operation[r][k] = rat_int(0);
-            for (int r = 0; r < 3; r++)
-                for (int k = 0; k < 3; k++) {
-                    transform[r][k] = rat_int(sb[r * 3 + k]);
-                    operation[r][k] = rat_int(point[r * 3 + k]);
-                }
-            for (int k = 0; k < 3; k++) {
-                transform[3][k] = rat_make(so[k], so[3] ? so[3] : 1);
-                operation[3][k] = rat_make(record[k], record[3]);
-            }
-            transform[3][3] = operation[3][3] = rat_int(1);
-            rat basis_t[4][4], origin_t[4][4];
-            for (int r = 0; r < 4; r++)
-                for (int k = 0; k < 4; k++) {
-                    rat x = rat_int(0), y = rat_int(0);
-                    for (int m = 0; m < 4; m++) {
-                        x = rat_add(x, rat_mul(operation[r][m], transform[m][k]));
-                        y = rat_add(y, rat_mul(transform[r][m], operation[m][k]));
-                    }
-                    basis_t[r][k] = x;
-                    origin_t[r][k] = y;
-                }
-            int64_t values[9], mod[4];
-            for (int r = 0; r < 3; r++)
-                for (int k = 0; k < 3; k++) values[r * 3 + k] = (int64_t)(basis_t[r][k].n / basis_t[r][k].d);
-            i128 den = 1;
-            for (int k = 0; k < 3; k++) den = den / rat_gcd(den, origin_t[3][k].d) * origin_t[3][k].d;
-            i128 nums[3], g = den;
-            for (int k = 0; k < 3; k++) {
-                nums[k] = origin_t[3][k].n * (den / origin_t[3][k].d);
-                g = rat_gcd(g, nums[k] < 0 ? -nums[k] : nums[k]);
-            }
-            if (g) {
-                den /= g;
-                for (int k = 0; k < 3; k++) nums[k] /= g;
-            }
-            for (int k = 0; k < 3; k++) mod[k] = (int64_t)(((nums[k] % den) + den) % den);
-            mod[3] = (int64_t)den;
-            const jvalue *subgroup = member(iso, "subgroup");
-            int64_t ordinary = member_int(subgroup, "ordinary_number");
-            if (!ordinary) ordinary = member_int(subgroup, "number");
-            sel_setting displayed;
-            int same = sg == ordinary;
-            status = sel_change_setting(sg, (int)ordinary, values, mod, 1, c->setting_id, same, c->setting_id, &displayed);
-            if (!status) {
-                rat rows[3][3];
-                for (int r = 0; r < 3; r++)
-                    for (int k = 0; k < 3; k++) rows[r][k] = rat_make(displayed.basis[r][k], displayed.denominator ? displayed.denominator : 1);
-                jbuf q = {0};
-                jb_reset(&q);
-                sel_put_basis_text(&q, (const rat (*)[3])rows);
-                jdoc *doc = jdoc_parse(q.data, q.used);
-                jb_reset(&basis);
-                jb_raw(&basis, jdoc_root(doc)->u.s, (size_t)jdoc_root(doc)->count);
-                jdoc_free(doc);
-                jb_reset(&q);
-                rat integer_rows[3][3];
-                for (int r = 0; r < 3; r++)
-                    for (int k = 0; k < 3; k++) integer_rows[r][k] = rat_int(displayed.basis[r][k]);
-                sel_put_origin_text(&q, sg, (int)ordinary, (const rat (*)[3])integer_rows, displayed.origin);
-                doc = jdoc_parse(q.data, q.used);
-                jb_reset(&origin);
-                jb_raw(&origin, jdoc_root(doc)->u.s, (size_t)jdoc_root(doc)->count);
-                jdoc_free(doc);
-                jb_free(&q);
-            }
-        }
-    }
-    if (!status) {
-        jbuf display = {0};
-        jb_reset(&display);
-        str_or_empty(&display, member(component, "display_opd"));
-        domain_display(b, iso, label.data ? label.data : "", label.used, domain, display.data ? display.data : "", display.used, &basis, &origin);
-        jb_free(&display);
-    }
-    jb_free(&label);
-    jb_free(&basis);
-    jb_free(&origin);
-    return status;
-}
-
 static int multi(const jvalue *state, const jvalue *opts, int sg, jbuf *out)
 {
     const jvalue *selections = member(opts, "selections");
@@ -1035,19 +798,10 @@ static int multi(const jvalue *state, const jvalue *opts, int sg, jbuf *out)
     const jvalue *rows = cdoc ? jdoc_root(cdoc) : 0, *selected = 0;
     int64_t orderparam_index = jis(member(opts, "orderparam_index"), J_INT) ? member(opts, "orderparam_index")->u.i : 1;
     if (!status) status = select_orderparam(rows, orderparam, orderparam_index, &selected);
-    jbuf *displays = 0;
-    int ndisplays = 0;
     if (!status && selected) {
         const jvalue *components = member(member(selected, "direction"), "components");
         int64_t m = jis(components, J_ARRAY) ? components->count : 0;
         if (m != n) status = md_fail(MDE_VALUE, "selected OPD components do not match primary slots");
-        displays = calloc((size_t)n + 1, sizeof(jbuf));
-        if (!status && !displays) status = md_fail(MDE_MEMORY, "out of memory");
-        for (int64_t i = 0; !status && i < n; i++) {
-            jb_reset(&displays[i]);
-            status = coupled_domain_display(&displays[i], sg, &c, jat(jdoc_root(sdoc), i), jat(components, i));
-            ndisplays = (int)i + 1;
-        }
     }
     jbuf rows_json = {0}, selected_json = {0}, factors = {0}, sel_json = {0}, irreps = {0}, first_irrep = {0};
     jb_reset(&rows_json);
@@ -1057,13 +811,8 @@ static int multi(const jvalue *state, const jvalue *opts, int sg, jbuf *out)
     jb_reset(&irreps);
     jb_reset(&first_irrep);
     if (!status) {
-        jb_lit(&rows_json, "[");
-        for (int64_t i = 0; i < rows->count; i++) {
-            if (i) jb_lit(&rows_json, ", ");
-            put_coupled_row(&rows_json, jat(rows, i), jat(rows, i) == selected ? displays : 0, ndisplays);
-        }
-        jb_lit(&rows_json, "]");
-        if (selected) put_coupled_row(&selected_json, selected, displays, ndisplays);
+        jb_value(&rows_json, rows);
+        if (selected) jb_value(&selected_json, selected);
         else jb_lit(&selected_json, "null");
         jdoc *seldoc = jdoc_parse(selected_json.data, selected_json.used);
         status = sel_opd_factors(&factors, sg, jdoc_root(sdoc), jdoc_root(seldoc));
@@ -1085,8 +834,6 @@ static int multi(const jvalue *state, const jvalue *opts, int sg, jbuf *out)
         kv top[2] = {{"schema", "\"APOSTRUCT.opd_direction.multi.v1\"", strlen("\"APOSTRUCT.opd_direction.multi.v1\"")}, {"selected", sel_json.data, sel_json.used}};
         sel_merge(out, state, top, 2);
     }
-    for (int i = 0; i < ndisplays; i++) jb_free(&displays[i]);
-    free(displays);
     jdoc_free(cdoc);
     jdoc_free(sdoc);
     jb_free(&slots);

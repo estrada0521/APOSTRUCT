@@ -1115,7 +1115,7 @@ static int isotropy_row(int64_t old_id, int64_t row_id, int parent_sg, int64_t f
     jb_int(b, fe);
     jb_lit(b, ", \"ferroelastic\": ");
     jb_int(b, fa);
-    jb_lit(b, "}, \"ferroic_classified\": true, \"ferroic_properties\": [");
+    jb_lit(b, "}, \"ferroic_properties\": [");
     if (ferroic == 1) {
         int first = 1;
         if (fe == 1 || fe == 2) {

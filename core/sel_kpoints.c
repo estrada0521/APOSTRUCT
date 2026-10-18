@@ -270,7 +270,6 @@ int sel_k_points(const jvalue *state, const jvalue *opts, jbuf *out)
             jb_int(&entry, member_int(row, "dimension"));
             jb_lit(&entry, jtruthy(member(row, "sg_specific")) ? ", \"sg_specific\": true" : ", \"sg_specific\": false");
             put_member(&entry, row, "star", 0);
-            put_member(&entry, row, "little_order", 0);
             jb_lit(&entry, "}");
             if (i) jb_lit(&selected, ", ");
             jb_raw(&selected, entry.data, entry.used);
@@ -302,7 +301,6 @@ int sel_k_points(const jvalue *state, const jvalue *opts, jbuf *out)
             for (int j = 0; j < 7; j++) put_member(&list, k, keys[j], j == 0);
             jb_lit(&list, jtruthy(member(k, "sg_specific")) ? ", \"sg_specific\": true" : ", \"sg_specific\": false");
             put_member(&list, k, "star_size", 0);
-            put_member(&list, k, "little_order", 0);
             put_member(&list, k, "n_irreps", 0);
             jb_lit(&list, "}");
         }
@@ -533,7 +531,6 @@ int sel_irreps(const jvalue *state, jbuf *out)
             for (int j = 0; j < 3; j++) put_member(&irrep_catalog, row, keys[j], 0);
             jb_lit(&irrep_catalog, jtruthy(member(row, "sg_specific")) ? ", \"sg_specific\": true" : ", \"sg_specific\": false");
             put_member(&irrep_catalog, row, "star_size", 0);
-            put_member(&irrep_catalog, row, "little_order", 0);
             put_member(&irrep_catalog, row, "irreps", 0);
             jb_lit(&irrep_catalog, "}");
         }

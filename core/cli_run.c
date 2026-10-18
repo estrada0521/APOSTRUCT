@@ -819,9 +819,7 @@ static void compact(jbuf *b, const jvalue *value, const char *stage, const expan
     int first = 1;
     for (int64_t i = 0; jtruthy(space_group) && jis(space_group, J_OBJECT) && i < space_group->count; i++) {
         const jvalue *key = space_group->u.members + 2 * i;
-        if ((e > a && jstr_is(key, "symbol")) || jstr_is(key, "crystal_class") || jstr_is(key, "ml_symbol") ||
-            jstr_is(key, "point_group_order"))
-            continue;
+        if (e > a && jstr_is(key, "symbol")) continue;
         if (!first) jb_lit(b, ", ");
         first = 0;
         jb_value(b, key);

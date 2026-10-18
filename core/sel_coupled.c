@@ -885,18 +885,7 @@ static int emit_tuple(const int32_t *domains, const int64_t *kept_basis, const r
         jb_lit(&t, ")");
         jb_string(b, t.data, t.used);
         jb_free(&t);
-        int64_t index = r->numbers[d] - 1;
-        if (index < 0) index += r->ndomain_ops;
-        if (index < 0 || index >= r->ndomain_ops) {
-            status = md_fail(MDE_INDEX, "tuple index out of range");
-            break;
-        }
-        jb_lit(b, ", \"_domain_operation_record\": [");
-        for (int k = 0; k < 5; k++) {
-            if (k) jb_lit(b, ", ");
-            jb_int(b, r->domain_ops[index][k]);
-        }
-        jb_lit(b, R.magnetic_request ? "], \"_magnetic_domain_operation\": true}" : "], \"_magnetic_domain_operation\": false}");
+        jb_lit(b, "}");
     }
     jb_lit(b, "]}, \"isotropy\": {\"row_id\": ");
     b = &row.rest;
@@ -990,8 +979,7 @@ static int emit_tuple(const int32_t *domains, const int64_t *kept_basis, const r
     }
     jb_lit(&extra, ", \"source_operation_records\": ");
     sel_put_records(&extra, &kept_ops[0][0], nkept);
-    jb_lit(&extra, R.magnetic_request || !ferroic_none ? ", \"ferroic_classified\": true, \"ferroic_properties\": "
-                                                       : ", \"ferroic_classified\": false, \"ferroic_properties\": ");
+    jb_lit(&extra, ", \"ferroic_properties\": ");
     if (R.magnetic_request || !ferroic_none) jb_raw(&extra, ferroic.data, ferroic.used);
     else jb_lit(&extra, "[]");
     jb_lit(&extra, ", \"subduction\": {\"expected\": [");

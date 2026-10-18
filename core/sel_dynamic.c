@@ -388,13 +388,13 @@ static int dynamic_row(jbuf *b, int magnetic, int parent_sg, int64_t gid, int64_
         jb_int(b, r->origin[i]);
     }
     if (magnetic) {
-        jb_lit(b, "], \"ferroic\": null, \"ferroic_classified\": true, \"ferroic_properties\": ");
+        jb_lit(b, "], \"ferroic\": null, \"ferroic_properties\": ");
         status = sel_mag_ferroic(b, group);
         jb_lit(b, ", \"magnetic_parent_group\": ");
         jb_int(b, parent_group);
         jb_lit(b, ", \"magnetic_subgroup_old\": null}}");
     } else {
-        jb_lit(b, "], \"ferroic\": null, \"ferroic_classified\": false, \"ferroic_properties\": []}}");
+        jb_lit(b, "], \"ferroic\": null, \"ferroic_properties\": []}}");
     }
     strings_free(&active);
     jb_free(&opd);
