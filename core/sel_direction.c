@@ -13,18 +13,13 @@
 int k_coordinate_map_words(int sg, int kslot, int64_t *out);
 
 static struct {
-    section_view image_label, image_dimension, image_order, image_type, image_landau, image_count, image_pointer, irrep_image, mag2nonmag;
     int ready;
 } T;
 
 static int load(void)
 {
     if (T.ready) return 0;
-    if (sel_tables() || sel_mag_tables() || section_find("images.image_label", &T.image_label) ||
-        section_find("images.image_dimension", &T.image_dimension) || section_find("images.image_order", &T.image_order) ||
-        section_find("images.image_type", &T.image_type) || section_find("images.image_landau", &T.image_landau) ||
-        section_find("images.image_subgroup_count", &T.image_count) || section_find("images.image_subgroup_pointer", &T.image_pointer) ||
-        section_find("irreps.irrep_image", &T.irrep_image) || section_find("magnetic.mag_point_op_mag2nonmag", &T.mag2nonmag))
+    if (sel_tables() || sel_mag_tables())
         return md_fail(MDE_VALUE, "selection Source tables are inconsistent");
     T.ready = 1;
     return 0;
@@ -485,40 +480,6 @@ int sel_opd_factors(jbuf *b, int sg, const jvalue *slots, const jvalue *selected
     return status;
 }
 
-static void image_record(jbuf *b, int64_t old_id)
-{
-    int64_t image = section_int(&T.irrep_image, old_id - 1), i = image - 1;
-    jb_lit(b, "{\"id\": ");
-    jb_int(b, image);
-    jb_lit(b, ", \"label\": ");
-    const char *s;
-    int64_t n;
-    if (section_string(&T.image_label, i, &s, &n)) {
-        s = "";
-        n = 0;
-    }
-    while (n && (*s == ' ' || *s == '\t')) {
-        s++;
-        n--;
-    }
-    while (n && (s[n - 1] == ' ' || s[n - 1] == '\t')) n--;
-    jb_string(b, s, (size_t)n);
-    jb_lit(b, ", \"dimension\": ");
-    jb_int(b, section_int(&T.image_dimension, i));
-    jb_lit(b, ", \"order\": ");
-    jb_int(b, section_int(&T.image_order, i));
-    jb_lit(b, ", \"type\": ");
-    if (i < section_count(&T.image_type)) jb_int(b, section_int(&T.image_type, i));
-    else jb_lit(b, "null");
-    jb_lit(b, ", \"landau\": ");
-    jb_int(b, section_int(&T.image_landau, i));
-    jb_lit(b, ", \"direction_count\": ");
-    jb_int(b, section_int(&T.image_count, i));
-    jb_lit(b, ", \"subgroup_pointer\": ");
-    jb_int(b, section_int(&T.image_pointer, i));
-    jb_lit(b, "}");
-}
-
 static void context_of(const jvalue *state, sel_context *c)
 {
     const jvalue *internal = member(state, "_internal");
@@ -568,10 +529,9 @@ static int single(const jvalue *state, const jvalue *opts, int sg, jbuf *out)
     const jvalue *selected = 0;
     int64_t orderparam_index = jis(member(opts, "orderparam_index"), J_INT) ? member(opts, "orderparam_index")->u.i : 1;
     if (!status) status = select_orderparam(jdoc_root(rdoc), orderparam, orderparam_index, &selected);
-    jbuf slots = {0}, factors = {0}, image = {0}, sel_json = {0};
+    jbuf slots = {0}, factors = {0}, sel_json = {0};
     jb_reset(&slots);
     jb_reset(&factors);
-    jb_reset(&image);
     jb_reset(&sel_json);
     if (!status) {
         jb_lit(&slots, "[{\"slot\": 1, \"kpoint\": ");
@@ -590,9 +550,6 @@ static int single(const jvalue *state, const jvalue *opts, int sg, jbuf *out)
         jdoc_free(sdoc);
     }
     if (!status) {
-        int64_t old_id = member_int(irrep, "old_id");
-        if (old_id <= 0) jb_lit(&image, "null");
-        else image_record(&image, old_id);
         jbuf selected_text = {0};
         jb_reset(&selected_text);
         if (selected) jb_value(&selected_text, selected);
@@ -600,10 +557,10 @@ static int single(const jvalue *state, const jvalue *opts, int sg, jbuf *out)
         jbuf irrep_text = {0};
         jb_reset(&irrep_text);
         jb_value(&irrep_text, irrep);
-        kv items[6] = {{"irrep", irrep_text.data, irrep_text.used},       {"selection_slots", slots.data, slots.used},
-                       {"opd_factors", factors.data, factors.used},      {"image", image.data, image.used},
-                       {"opd_rows", rows.data, rows.used},               {"orderparam", selected_text.data, selected_text.used}};
-        sel_merge(&sel_json, member(state, "selected"), items, 6);
+        kv items[5] = {{"irrep", irrep_text.data, irrep_text.used}, {"selection_slots", slots.data, slots.used},
+                       {"opd_factors", factors.data, factors.used}, {"opd_rows", rows.data, rows.used},
+                       {"orderparam", selected_text.data, selected_text.used}};
+        sel_merge(&sel_json, member(state, "selected"), items, 5);
         kv top[2] = {{"schema", "\"APOSTRUCT.opd_direction.v1\"", strlen("\"APOSTRUCT.opd_direction.v1\"")}, {"selected", sel_json.data, sel_json.used}};
         sel_merge(out, state, top, 2);
         jb_free(&selected_text);
@@ -618,7 +575,6 @@ static int single(const jvalue *state, const jvalue *opts, int sg, jbuf *out)
     jb_free(&block);
     jb_free(&slots);
     jb_free(&factors);
-    jb_free(&image);
     jb_free(&sel_json);
     return status;
 }

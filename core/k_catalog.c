@@ -11,10 +11,7 @@
 #include "tables.h"
 
 static struct {
-    section_view k, k_dim, k_label, k_kov, k_count, label_bc, lattice_label, sg_point_group, star_count,
-        star_minusk, star_pointer, star, star_special, irr_sg, irr_k, irr_old, full_label, full_kov_label, full_dim,
-        irr_type, irr_lif, real_pointer, real2_pointer, irrep_image, image_label, image_dimension, image_order, image_type,
-        image_landau, image_subgroup_count, image_subgroup_pointer;
+    section_view k, k_dim, k_label, k_kov, k_count, label_bc, lattice_label, sg_point_group, star_count, star_pointer, star, star_special, irr_sg, irr_k, irr_old, full_label, full_kov_label, full_dim, irr_type;
     int ready;
 } T;
 
@@ -26,20 +23,12 @@ static int load(void)
         section_find("little.little_k_count", &T.k_count) || section_find("space.space_label_bc", &T.label_bc) ||
         section_find("space.lattice_label", &T.lattice_label) || section_find("space.ispace_point_group", &T.sg_point_group) ||
         section_find("little.little_k_star_count", &T.star_count) ||
-        section_find("little.little_k_star_minusk", &T.star_minusk) ||
         section_find("little.little_k_star_ml_pointer", &T.star_pointer) || section_find("little.little_k_star", &T.star) ||
         section_find("little.little_k_star_special", &T.star_special) ||
         section_find("little.little_irr_space_group", &T.irr_sg) || section_find("little.little_irr_k", &T.irr_k) ||
         section_find("little.little_irr_old", &T.irr_old) || section_find("little.little_irr_full_label", &T.full_label) ||
         section_find("little.little_irr_full_kov_label", &T.full_kov_label) ||
-        section_find("little.little_irr_full_dim", &T.full_dim) || section_find("little.little_irr_type", &T.irr_type) ||
-        section_find("little.little_irr_lif", &T.irr_lif) || section_find("little.little_irr_real_pointer", &T.real_pointer) ||
-        section_find("little.little_irr_real2_pointer", &T.real2_pointer) || section_find("irreps.irrep_image", &T.irrep_image) ||
-        section_find("images.image_label", &T.image_label) || section_find("images.image_dimension", &T.image_dimension) ||
-        section_find("images.image_order", &T.image_order) || section_find("images.image_type", &T.image_type) ||
-        section_find("images.image_landau", &T.image_landau) ||
-        section_find("images.image_subgroup_count", &T.image_subgroup_count) ||
-        section_find("images.image_subgroup_pointer", &T.image_subgroup_pointer))
+        section_find("little.little_irr_full_dim", &T.full_dim) || section_find("little.little_irr_type", &T.irr_type))
         return 1;
     T.ready = 1;
     return 0;
@@ -297,18 +286,7 @@ static int put_slot(buffer *b, int sg, int kslot, int lattice, int extra)
         put_json_str(b, g, (int64_t)strlen(g));
     else
         put_json_str(b, label.text, label.length);
-    put(b, ", \"dimension\": %d, \"basis_records\": [", dim);
-    for (int r = 0; r < 4; r++) {
-        put(b, r ? ", [" : "[");
-        for (int c = 0; c < 3; c++) {
-            if (c) put(b, ", ");
-            put(b, "\"");
-            put_frac(b, records[r][c]);
-            put(b, "\"");
-        }
-        put(b, "]");
-    }
-    put(b, "], \"kvector\": ");
+    put(b, ", \"dimension\": %d, \"kvector\": ", dim);
     {
         buffer text = {0};
         put_vector(&text, (const rat (*)[3])records, dim + 1);
@@ -327,7 +305,7 @@ static int put_slot(buffer *b, int sg, int kslot, int lattice, int extra)
         free(text.data);
     }
     int star_count = (int)section_int(&T.star_count, sg_slot);
-    put(b, ", \"star_size\": %d, \"minus_k\": %lld", star_count, (long long)section_int(&T.star_minusk, sg_slot));
+    put(b, ", \"star_size\": %d", star_count);
     put(b, ", \"sg_specific\": %s, \"star\": [", extra ? "true" : "false");
     int64_t pointer = section_int(&T.star_pointer, sg_slot);
     if (star_count > 0 && pointer > 0) {
@@ -385,24 +363,6 @@ static int put_slot(buffer *b, int sg, int kslot, int lattice, int extra)
         else
             put(b, "null");
         put(b, ", \"type\": %d", type);
-        put(b, ", \"lif\": %lld, \"real_pointer\": %lld, \"real2_pointer\": %lld, \"image\": ", (long long)section_int(&T.irr_lif, idx),
-            (long long)section_int(&T.real_pointer, idx), (long long)section_int(&T.real2_pointer, idx));
-        if (old_id > 0) {
-            int64_t image = section_int(&T.irrep_image, old_id - 1), im = image - 1;
-            str image_label = strip(&T.image_label, im);
-            put(b, "{\"id\": %lld, \"label\": ", (long long)image);
-            put_json_str(b, image_label.text, image_label.length);
-            put(b, ", \"dimension\": %lld, \"order\": %lld, \"type\": ", (long long)section_int(&T.image_dimension, im),
-                (long long)section_int(&T.image_order, im));
-            if (im < section_count(&T.image_type))
-                put(b, "%lld", (long long)section_int(&T.image_type, im));
-            else
-                put(b, "null");
-            put(b, ", \"landau\": %lld, \"direction_count\": %lld, \"subgroup_pointer\": %lld}", (long long)section_int(&T.image_landau, im),
-                (long long)section_int(&T.image_subgroup_count, im), (long long)section_int(&T.image_subgroup_pointer, im));
-        } else {
-            put(b, "null");
-        }
         put(b, "}");
     }
     put(b, "]}");
