@@ -11,6 +11,10 @@
 #include "geometry.h"
 #include "tables.h"
 
+int64_t isotropy_row_count(void);
+int isotropy_row_dim(int64_t row_id);
+int isotropy_row_free(int64_t row_id);
+
 const char *irrep_full_label(int gid);
 const char *irrep_old_label(int old_id);
 
@@ -55,8 +59,8 @@ static int fail(int kind, const char *message)
 
 static struct {
     section_view w_pointer, w_count, w_label, w_pg, vector_reps, irr_sg, irr_old, full_dim, irr_type, irr_k, k_label,
-        irr_count, iso_irrep_pointer, iso_subgroup, iso_arms, iso_direction, iso_basis, iso_origin, iso_freeparam,
-        iso_op_dim, iso_op_pointer, iso_op, const_values, sg_point_group, pg_order, pg_gen_count, pg_gen, lattice;
+        irr_count, iso_irrep_pointer, iso_subgroup, iso_arms, iso_direction, iso_basis, iso_origin,
+        iso_op_pointer, iso_op, const_values, sg_point_group, pg_order, pg_gen_count, pg_gen, lattice;
     int ready;
 } T;
 
@@ -74,8 +78,6 @@ static int load(void)
         section_find("isotropy.isotropy_subgroup", &T.iso_subgroup) || section_find("isotropy.isotropy_arms", &T.iso_arms) ||
         section_find("isotropy.isotropy_direction", &T.iso_direction) || section_find("isotropy.isotropy_basis", &T.iso_basis) ||
         section_find("isotropy.isotropy_origin", &T.iso_origin) ||
-        section_find("isotropy.isotropy_orderparam_freeparam", &T.iso_freeparam) ||
-        section_find("isotropy.isotropy_orderparam_dim", &T.iso_op_dim) ||
         section_find("isotropy.isotropy_orderparam_pointer", &T.iso_op_pointer) ||
         section_find("isotropy.isotropy_orderparam", &T.iso_op) || section_find("const.values", &T.const_values) ||
         section_find("space.ispace_point_group", &T.sg_point_group) || section_find("space.ipoint_group_order", &T.pg_order) ||
@@ -166,7 +168,7 @@ static int canonical_row(const iso_row *rows, int count)
             int64_t op = section_int(&T.pg_gen, (int64_t)(pg - 1) * 5 + g);
             inversion |= op == 25 || op == 61;
         }
-        int64_t key[5] = {section_int(&T.iso_freeparam, r->row_id - 1), abs_det(r->basis), -section_int(&T.pg_order, pg - 1),
+        int64_t key[5] = {isotropy_row_free(r->row_id), abs_det(r->basis), -section_int(&T.pg_order, pg - 1),
                           inversion ? 0 : 1, r->row_id};
         int less = best < 0;
         for (int k = 0; k < 5 && !less; k++) {
@@ -723,13 +725,13 @@ int mode_frame(int sg, const char *wyckoff, int64_t wyckoff_length, const char *
         source_row_id = 0;
     } else if (source_row_id > 0) {
         int64_t idx = source_row_id - 1;
-        if (idx >= section_count(&T.iso_op_dim)) {
+        if (idx >= isotropy_row_count()) {
             free(rows);
             free(entries);
             snprintf(message, sizeof message, "isotropy row out of range: %d", source_row_id);
             return fail(PY_KEY, message), fail_kind;
         }
-        int count = (int)section_int(&T.iso_op_dim, idx);
+        int count = isotropy_row_dim(source_row_id);
         int64_t pointer = section_int(&T.iso_op_pointer, idx) - 1;
         const double *constants = (const double *)T.const_values.data;
         R.source_rows = count;
@@ -859,7 +861,7 @@ int mode_frame(int sg, const char *wyckoff, int64_t wyckoff_length, const char *
         }
     }
     int freeparam = -1;
-    if (emit_freeparam && source_row_id > 0) freeparam = (int)section_int(&T.iso_freeparam, source_row_id - 1);
+    if (emit_freeparam && source_row_id > 0) freeparam = isotropy_row_free(source_row_id);
     double complex *inverse = 0;
     int inverse_error = 0;
     if (irrep_type == 2 || irrep_type == 3) {

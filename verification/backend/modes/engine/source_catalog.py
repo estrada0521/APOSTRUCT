@@ -46,14 +46,6 @@ class ModeSourceCatalogMixin:
     vrot_fraction = SourceTables.vrot_fraction
     wyc_pg_elements_records = SourceTables.wyc_pg_elements_records
 
-    def isotropy_orderparam_dim(self, row_id: int) -> int:
-        row_id = int(row_id)
-        return int(self.iso.isotropy["isotropy_orderparam_dim"][row_id - 1])
-
-    def isotropy_orderparam_freeparam(self, row_id: int) -> int:
-        row_id = int(row_id)
-        return int(self.iso.isotropy["isotropy_orderparam_freeparam"][row_id - 1])
-
     space_group_has_inversion = SourceTables.space_group_has_inversion
     space_group_point_group_order = SourceTables.space_group_point_group_order
 

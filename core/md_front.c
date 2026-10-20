@@ -11,6 +11,10 @@
 #include "md.h"
 #include "tables.h"
 
+int64_t isotropy_row_count(void);
+int isotropy_row_dim(int64_t row_id);
+int isotropy_row_free(int64_t row_id);
+
 const char *evaluated_kvector_text(const char *text, int64_t length, int nparams, const char *names, const int64_t *name_lengths,
                                    const char *values, const int64_t *value_lengths);
 int mode_text_status(void);
@@ -19,15 +23,14 @@ int little_star_arm_width(int64_t gid);
 
 
 static struct {
-    section_view inter_choice, label_short, freeparam;
+    section_view inter_choice, label_short;
     int ready;
 } T;
 
 static int tables(void)
 {
     if (T.ready) return 0;
-    if (section_find("space.ispace_inter_choice", &T.inter_choice) || section_find("space.space_inter_label_short", &T.label_short) ||
-        section_find("isotropy.isotropy_orderparam_freeparam", &T.freeparam))
+    if (section_find("space.ispace_inter_choice", &T.inter_choice) || section_find("space.space_inter_label_short", &T.label_short))
         return 1;
     T.ready = 1;
     return 0;
@@ -416,11 +419,11 @@ static int64_t source_freeparam(md_request *r, int *has)
     }
     int64_t row_id;
     if (!r->iso || py_int_of(jget(r->iso, "row_id"), &row_id)) return 0;
-    int64_t count = section_count(&T.freeparam), index = row_id - 1;
+    int64_t count = isotropy_row_count(), index = row_id - 1;
     if (index < 0) index += count;
     if (index < 0 || index >= count) return 0;
     *has = 1;
-    return section_int(&T.freeparam, index);
+    return isotropy_row_free(index + 1);
 }
 
 int md_front(md_request *r)

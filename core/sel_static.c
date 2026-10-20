@@ -10,6 +10,10 @@
 #include "sel.h"
 #include "tables.h"
 
+int64_t isotropy_row_count(void);
+int isotropy_row_dim(int64_t row_id);
+int isotropy_row_free(int64_t row_id);
+
 int opd_basis_presentation(int subgroup, const int64_t *basis, const double *cell, int parametric, int coupled, int magnetic_group,
                            int64_t *out);
 const char *k_numeric_star_json(int parent_sg, int gid, int has_visible, const int64_t *visible_words, int has_source_visible,
@@ -20,7 +24,7 @@ int k_coordinate_map_words(int sg, int kslot, int64_t *out);
 static struct {
     section_view image_label, image_dimension, image_subgroup, image_subgroup_count, image_subgroup_pointer, image_subgroup_maximal,
         image_subgroup_min, image_subgroup_rg, dir_label, dir_dimension, dir_subduction, dir_pointer, dir, irrep_image, irrep_sg,
-        iso_pointer, iso_basis, iso_origin, iso_direction, iso_subgroup, iso_label, iso_dim, iso_free, iso_op_pointer, iso_op, const_values, point_group, group_order, gen_count, gen,
+        iso_pointer, iso_basis, iso_origin, iso_direction, iso_subgroup, iso_label, iso_op_pointer, iso_op, const_values, point_group, group_order, gen_count, gen,
         irr_old, irr_sg, irr_k, k_dim;
     int ready;
 } T;
@@ -52,8 +56,6 @@ int sel_tables(void)
                 {"isotropy.isotropy_direction", &T.iso_direction},
                 {"isotropy.isotropy_subgroup", &T.iso_subgroup},
                 {"isotropy.isotropy_orderparam_label", &T.iso_label},
-                {"isotropy.isotropy_orderparam_dim", &T.iso_dim},
-                {"isotropy.isotropy_orderparam_freeparam", &T.iso_free},
                 {"isotropy.isotropy_orderparam_pointer", &T.iso_op_pointer},
                 {"isotropy.isotropy_orderparam", &T.iso_op},
                 {"const.values", &T.const_values},
@@ -948,7 +950,7 @@ static int isotropy_row(int64_t old_id, int64_t row_id, int parent_sg, int64_t f
     int64_t basis[9], origin[4];
     for (int i = 0; i < 9; i++) basis[i] = section_int(&T.iso_basis, idx * 9 + i);
     for (int i = 0; i < 4; i++) origin[i] = section_int(&T.iso_origin, idx * 4 + i);
-    int64_t dim = section_int(&T.iso_dim, idx), free_count = section_int(&T.iso_free, idx);
+    int64_t dim = isotropy_row_dim(row_id), free_count = isotropy_row_free(row_id);
     int64_t pointer = section_int(&T.iso_op_pointer, idx) - 1, total = section_count(&T.iso_op);
     /* stored orderparam */
     int sn = (int)dim;

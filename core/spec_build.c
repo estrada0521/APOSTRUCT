@@ -12,6 +12,10 @@
 #include "spec_core.h"
 #include "tables.h"
 
+int64_t isotropy_row_count(void);
+int isotropy_row_dim(int64_t row_id);
+int isotropy_row_free(int64_t row_id);
+
 const char *irrep_full_label(int gid);
 const char *irrep_old_label(int old_id);
 
@@ -116,7 +120,7 @@ static int caught(int mask)
 
 static struct {
     section_view mag2nonmag, iso_basis, iso_origin, iso_subgroup, irrep_sg,
-        freeparam, irr_sg, old;
+        irr_sg, old;
     int ready;
 } T;
 
@@ -125,7 +129,6 @@ static int load(void)
     if (T.ready) return 0;
     if (geo_load() || section_find("magnetic.mag_point_op_mag2nonmag", &T.mag2nonmag) ||
         section_find("irreps.irrep_space_group", &T.irrep_sg) ||
-        section_find("isotropy.isotropy_orderparam_freeparam", &T.freeparam) ||
         section_find("little.little_irr_space_group", &T.irr_sg) || section_find("little.little_irr_old", &T.old))
         return sp_fail(PY_VALUE, "spec stage Source tables are missing");
     T.ready = 1;
@@ -1375,7 +1378,7 @@ int spec_static(int sg, int selected_old_id, int selected_row_id, int has_frame,
     result.count = result.cap = 0;
     if (load()) return finish(1);
     if (selected_old_id < 1 || selected_old_id > section_count(&T.irrep_sg) ||
-        selected_row_id < 1 || selected_row_id > section_count(&T.freeparam))
+        selected_row_id < 1 || selected_row_id > isotropy_row_count())
         return finish(sp_fail(PY_INDEX, "selected isotropy row is out of range"));
     int64_t default_basis[9], default_origin[4];
     if (!has_frame) {
@@ -1421,7 +1424,7 @@ int spec_static(int sg, int selected_old_id, int selected_row_id, int has_frame,
             spec->primary = primary;
             spec->row_id = primary ? selected_row_id : 0;
             spec->has_free = 1;
-            spec->free_count = primary ? (int)section_int(&T.freeparam, selected_row_id - 1) : last[old]->count;
+            spec->free_count = primary ? isotropy_row_free(selected_row_id) : last[old]->count;
             if (!primary) {
                 const sp_row *row = last[old];
                 spec->static_updated = 1;
