@@ -20,8 +20,7 @@ int k_coordinate_map_words(int sg, int kslot, int64_t *out);
 static struct {
     section_view image_label, image_dimension, image_subgroup, image_subgroup_count, image_subgroup_pointer, image_subgroup_maximal,
         image_subgroup_min, image_subgroup_rg, dir_label, dir_dimension, dir_subduction, dir_pointer, dir, irrep_image, irrep_sg,
-        iso_pointer, iso_basis, iso_origin, iso_direction, iso_subgroup, iso_label, iso_dim, iso_free, iso_op_pointer, iso_op, iso_ferroic,
-        iso_ferroelectric, iso_ferroelastic, const_values, point_group, group_order, gen_count, gen,
+        iso_pointer, iso_basis, iso_origin, iso_direction, iso_subgroup, iso_label, iso_dim, iso_free, iso_op_pointer, iso_op, const_values, point_group, group_order, gen_count, gen,
         irr_old, irr_sg, irr_k, k_dim;
     int ready;
 } T;
@@ -57,9 +56,6 @@ int sel_tables(void)
                 {"isotropy.isotropy_orderparam_freeparam", &T.iso_free},
                 {"isotropy.isotropy_orderparam_pointer", &T.iso_op_pointer},
                 {"isotropy.isotropy_orderparam", &T.iso_op},
-                {"isotropy.isotropy_ferroic", &T.iso_ferroic},
-                {"isotropy.isotropy_ferroelectric", &T.iso_ferroelectric},
-                {"isotropy.isotropy_ferroelastic", &T.iso_ferroelastic},
                 {"const.values", &T.const_values},
                 {"space.ispace_point_group", &T.point_group},
                 {"space.ipoint_group_order", &T.group_order},
@@ -260,6 +256,8 @@ void sel_display_opd(jbuf *b, const char *opd)
 /* ------------------------------------------------------------ settings */
 
 char *sel_default_symbol(int sg) { return md_default_symbol(sg); }
+
+int ferroic_codes(int sg, int subgroup, const int64_t *basis, const int64_t *origin, int gid, int *fe, int *fa);
 
 int64_t sel_point_group_order(int sg)
 {
@@ -1028,8 +1026,9 @@ static int isotropy_row(int64_t old_id, int64_t row_id, int parent_sg, int64_t f
         if (display_n > 0) MD_TRY(sel_active_k_vectors(parent_sg, gid, full_dim, matrix, display_n, matrix_w, active_params, &active));
         else MD_TRY(sel_active_k_vectors(parent_sg, gid, full_dim, matrix, rn, matrix_w, active_params, &active));
     }
-    int64_t ferroic = section_int(&T.iso_ferroic, idx), fe = section_int(&T.iso_ferroelectric, idx),
-            fa = section_int(&T.iso_ferroelastic, idx);
+    int fe, fa;
+    if (ferroic_codes(parent_sg, subgroup, basis, origin, (int)gid, &fe, &fa))
+        return md_fail(MDE_VALUE, "ferroic classes of the isotropy subgroup cannot be computed");
     const char *label;
     int64_t label_length;
     strip_view(&T.iso_label, idx, &label, &label_length);
@@ -1100,23 +1099,15 @@ static int isotropy_row(int64_t old_id, int64_t row_id, int parent_sg, int64_t f
     jb_lit(b, ", \"k_active\": ");
     sel_put_joined(b, &active);
     sel_put_subgroup(b, parent_sg, subgroup, basis, origin, &displayed, (const rat (*)[3])rows, displayed.size, 0, 0);
-    jb_lit(b, ", \"ferroic\": {\"raw\": ");
-    jb_int(b, ferroic);
-    jb_lit(b, ", \"ferroelectric\": ");
+    jb_lit(b, ", \"ferroic\": {\"ferroelectric\": ");
     jb_int(b, fe);
     jb_lit(b, ", \"ferroelastic\": ");
     jb_int(b, fa);
     jb_lit(b, "}, \"ferroic_properties\": [");
-    if (ferroic == 1) {
-        int first = 1;
-        if (fe == 1 || fe == 2) {
-            jb_lit(b, fe == 1 ? "\"proper ferroelectric\"" : "\"improper ferroelectric\"");
-            first = 0;
-        }
-        if (fa == 1 || fa == 2) {
-            if (!first) jb_lit(b, ", ");
-            jb_lit(b, fa == 1 ? "\"proper ferroelastic\"" : "\"improper ferroelastic\"");
-        }
+    if (fe) jb_lit(b, fe == 1 ? "\"proper ferroelectric\"" : "\"improper ferroelectric\"");
+    if (fa) {
+        if (fe) jb_lit(b, ", ");
+        jb_lit(b, fa == 1 ? "\"proper ferroelastic\"" : "\"improper ferroelastic\"");
     }
     jb_lit(b, "]}");
     key->row_id = row_id;

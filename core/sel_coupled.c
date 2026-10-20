@@ -592,7 +592,7 @@ static int ordinary_ferroic(jbuf *b, const rec *child_ops, int nchild, srow_t *c
         int proper = 0;
         for (int i = 0; i < R.nslots; i++) {
             const jvalue *f = member(rows[i]->iso, "ferroic");
-            proper |= member_int(f, "raw") == 1 && member_int(f, "ferroelectric") == 1;
+            proper |= member_int(f, "ferroelectric") == 1;
         }
         jb_lit(b, proper ? "\"proper ferroelectric\"" : "\"improper ferroelectric\"");
     }
@@ -600,7 +600,7 @@ static int ordinary_ferroic(jbuf *b, const rec *child_ops, int nchild, srow_t *c
         int proper = 0;
         for (int i = 0; i < R.nslots; i++) {
             const jvalue *f = member(rows[i]->iso, "ferroic");
-            proper |= member_int(f, "raw") == 1 && member_int(f, "ferroelastic") == 1;
+            proper |= member_int(f, "ferroelastic") == 1;
         }
         if (cp > pp) jb_lit(b, ", ");
         jb_lit(b, proper ? "\"proper ferroelastic\"" : "\"improper ferroelastic\"");
