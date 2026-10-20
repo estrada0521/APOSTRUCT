@@ -24,6 +24,7 @@ from verification.backend.exactmath import (
     fraction_matrix_inverse3,
     fraction_matrix_multiply3,
 )
+from verification.backend import native
 from verification.backend.source.compiled import CompiledSource
 
 _SECTION = re.compile(r"^[a-z][a-z0-9_]*$")
@@ -231,7 +232,7 @@ class ISOData:
         start = self.irreps["irrep_space_group_pointer"][sg - 1]
         end_excl = self.irreps["irrep_space_group_pointer"][sg]
         for oid in range(start, end_excl):
-            if self.irreps["irrep_label"][oid - 1].strip() == label:
+            if native.irrep_old_label(oid) == label:
                 return oid
         raise KeyError(f"irrep label {label!r} not found for SG{sg}")
 

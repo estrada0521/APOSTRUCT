@@ -13,6 +13,9 @@
 #include "spec_core.h"
 #include "tables.h"
 
+const char *irrep_full_label(int gid);
+const char *irrep_old_label(int old_id);
+
 int k_family_records(int mode, int sg, const int64_t *basis, int preferred_count, const char *const *preferred_labels,
                      const int64_t *preferred_label_lengths, const int64_t *preferred_kparams, int family_capacity,
                      int occurrence_capacity, int64_t *families_out, int64_t *occurrences_out,
@@ -86,7 +89,7 @@ void sp_reset(void)
 
 int sp_str_eq(sp_str a, sp_str b) { return a.length == b.length && !memcmp(a.text, b.text, (size_t)a.length); }
 static struct {
-    section_view full_label, full_dim, old, type, k_label, irr_k, irr_sg, star, star_count, star_pointer, point_op, lattice_ml,
+    section_view full_dim, old, type, k_label, irr_k, irr_sg, star, star_count, star_pointer, point_op, lattice_ml,
         lattice_ml_denom, nonmag2mag;
     int ready;
 } T;
@@ -94,8 +97,7 @@ static struct {
 static int load(void)
 {
     if (T.ready) return 0;
-    if (geo_load() || section_find("little.little_irr_full_label", &T.full_label) ||
-        section_find("little.little_irr_full_dim", &T.full_dim) || section_find("little.little_irr_old", &T.old) ||
+    if (geo_load() || section_find("little.little_irr_full_dim", &T.full_dim) || section_find("little.little_irr_old", &T.old) ||
         section_find("little.little_irr_type", &T.type) || section_find("little.little_k_label", &T.k_label) ||
         section_find("little.little_irr_k", &T.irr_k) || section_find("little.little_irr_space_group", &T.irr_sg) ||
         section_find("little.little_k_star", &T.star) || section_find("little.little_k_star_count", &T.star_count) ||
@@ -121,7 +123,7 @@ static sp_str table_string(const section_view *view, int64_t index)
 int sp_little_old_id(int gid) { return load() ? 0 : (int)section_int(&T.old, gid - 1); }
 int sp_little_type(int gid) { return load() ? 0 : (int)section_int(&T.type, gid - 1); }
 int sp_little_full_dim(int gid) { return load() ? 0 : (int)section_int(&T.full_dim, gid - 1); }
-sp_str sp_irrep_full_label(int gid) { return load() ? (sp_str){"", 0} : table_string(&T.full_label, gid - 1); }
+sp_str sp_irrep_full_label(int gid) { return (sp_str){irrep_full_label(gid), (int64_t)strlen(irrep_full_label(gid))}; }
 
 static sp_str gid_k_label(int gid)
 {
@@ -371,7 +373,7 @@ int sp_frame_rows(const sp_frame *frame, const sp_preferred *preferred, int npre
         sp_row out_row;
         memset(&out_row, 0, sizeof out_row);
         out_row.gid = gid;
-        out_row.irrep_label = table_string(&T.full_label, gid - 1);
+        out_row.irrep_name = sp_irrep_full_label(gid);
         out_row.k_label = gid_k_label((int)sub_families[11 * family]);
         memcpy(out_row.kp, sub_families + 11 * family + 1, 4 * sizeof(int64_t));
         for (int axis = 0; axis < 3; axis++)
@@ -432,7 +434,7 @@ static int append_alias(alias_ctx *c, const int64_t *kp, int occurrence)
     sp_row alias;
     memset(&alias, 0, sizeof alias);
     alias.gid = c->row->gid;
-    alias.irrep_label = c->row->irrep_label;
+    alias.irrep_name = c->row->irrep_name;
     alias.k_label = c->row->k_label;
     memcpy(alias.kp, kp, 4 * sizeof(int64_t));
     memcpy(alias.pml, sp_occ_pool[occurrence].pml, sizeof alias.pml);

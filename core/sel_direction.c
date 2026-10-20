@@ -509,8 +509,8 @@ static int single(const jvalue *state, const jvalue *opts, int sg, jbuf *out)
     sel_params_of(jdoc_root(ddoc), &display);
     const jvalue *selections = member(opts, "selections"), *selection = 0;
     if (jtruthy(selections)) selection = jat(selections, 0);
-    const jvalue *irrep_label = member(selection, "irrep");
-    if (!selection || !jget(selection, "irrep")) irrep_label = member(opts, "irrep");
+    const jvalue *irrep_name = member(selection, "irrep");
+    if (!selection || !jget(selection, "irrep")) irrep_name = member(opts, "irrep");
     int64_t default_index = 1, index;
     truthy_int(member(opts, "irrep_index"), 1, &default_index);
     int status = truthy_int(member(selection, "irrep_index"), default_index, &index);
@@ -518,7 +518,7 @@ static int single(const jvalue *state, const jvalue *opts, int sg, jbuf *out)
     jbuf rows = {0}, block = {0};
     jb_reset(&rows);
     jb_reset(&block);
-    if (!status) status = select_irrep(member(member(state, "selected"), "irreps"), irrep_label, index, &irrep);
+    if (!status) status = select_irrep(member(member(state, "selected"), "irreps"), irrep_name, index, &irrep);
     sel_context c;
     context_of(state, &c);
     const jvalue *orderparam = member(opts, "orderparam");

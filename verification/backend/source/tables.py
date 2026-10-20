@@ -457,7 +457,7 @@ class SourceTables:
         return LittleIrrep(
             gid=gid,
             old_id=int(self.little["little_irr_old"][gid - 1]),
-            label=str(self.little["little_irr_full_label"][gid - 1]).strip(),
+            label=native.irrep_full_label(gid),
             full_dim=int(self.little["little_irr_full_dim"][gid - 1]),
             irrep_type=int(self.little["little_irr_type"][gid - 1]),
             lif=int(self.little["little_irr_lif"][gid - 1]),
@@ -518,7 +518,7 @@ class SourceTables:
         old_id = int(old_id)
         return (
             int(self.iso.irreps["irrep_space_group"][old_id - 1]),
-            str(self.iso.irreps["irrep_label"][old_id - 1]).strip(),
+            native.irrep_old_label(old_id),
         )
 
     def wyckoff_rows(self, sg: int) -> list[WyckoffRow]:

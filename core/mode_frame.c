@@ -11,6 +11,9 @@
 #include "geometry.h"
 #include "tables.h"
 
+const char *irrep_full_label(int gid);
+const char *irrep_old_label(int old_id);
+
 int mode_block(int sg, int row_id, int site_pg, int gid, int irrep_type, int full_dim, int old_id, int entry_count,
                const int *pg_irreps, int param_count, const int64_t *params, const double *inverse, int inverse_error,
                int vector_setting, int row_total, int row_stride, const int *row_lengths, const double *rows,
@@ -51,7 +54,7 @@ static int fail(int kind, const char *message)
 }
 
 static struct {
-    section_view w_pointer, w_count, w_label, w_pg, vector_reps, irr_sg, irr_old, full_label, full_dim, irr_type, irr_k, k_label,
+    section_view w_pointer, w_count, w_label, w_pg, vector_reps, irr_sg, irr_old, full_dim, irr_type, irr_k, k_label,
         irr_count, iso_irrep_pointer, iso_subgroup, iso_arms, iso_direction, iso_basis, iso_origin, iso_freeparam,
         iso_op_dim, iso_op_pointer, iso_op, const_values, sg_point_group, pg_order, pg_gen_count, pg_gen, lattice;
     int ready;
@@ -64,7 +67,7 @@ static int load(void)
         section_find("wyckoff.wyckoff_label", &T.w_label) || section_find("wyckoff.iwyckoff_pg", &T.w_pg) ||
         section_find("wyckoff.iwyckoff_pg_vector_reps", &T.vector_reps) ||
         section_find("little.little_irr_space_group", &T.irr_sg) || section_find("little.little_irr_old", &T.irr_old) ||
-        section_find("little.little_irr_full_label", &T.full_label) || section_find("little.little_irr_full_dim", &T.full_dim) ||
+        section_find("little.little_irr_full_dim", &T.full_dim) ||
         section_find("little.little_irr_type", &T.irr_type) || section_find("little.little_irr_k", &T.irr_k) ||
         section_find("little.little_k_label", &T.k_label) || section_find("little.little_irr_count", &T.irr_count) ||
         section_find("isotropy.isotropy_irrep_pointer", &T.iso_irrep_pointer) ||
@@ -420,7 +423,7 @@ static int k_family_of(int sg, const char *k_label, int64_t k_label_length, cons
         int gid = (int)index + 1, old = (int)section_int(&T.irr_old, index), key = old > 0 ? old : -gid, dup = 0;
         for (int i = 0; i < nseen && !dup; i++) dup = seen[i] == key;
         if (dup) continue;
-        str label = strip(&T.full_label, index), prefix;
+        str label = {irrep_full_label(gid), (int64_t)strlen(irrep_full_label(gid))}, prefix;
         if (!k_prefix(label, &prefix)) {
             f->failed = 1;
             f->fail_kind = PY_VALUE;

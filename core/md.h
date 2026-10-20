@@ -144,7 +144,7 @@ typedef struct {
     /* render tuple */
     int magnetic_kind; /* mode_kind == "mag" */
     int vector_setting;
-    char *irrep_label;
+    char *irrep_name;
 } md_spec;
 
 typedef struct {

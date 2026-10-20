@@ -12,6 +12,9 @@
 #include "spec_core.h"
 #include "tables.h"
 
+const char *irrep_full_label(int gid);
+const char *irrep_old_label(int old_id);
+
 int parent_operation_records(int parent_sg, int child_sg, const int64_t *basis, const int64_t *origin, int64_t (*out)[5]);
 
 enum {
@@ -113,7 +116,7 @@ static int caught(int mask)
 
 static struct {
     section_view mag2nonmag, iso_basis, iso_origin, iso_subgroup, irrep_sg,
-        irrep_label, freeparam, irr_sg, old;
+        freeparam, irr_sg, old;
     int ready;
 } T;
 
@@ -121,7 +124,7 @@ static int load(void)
 {
     if (T.ready) return 0;
     if (geo_load() || section_find("magnetic.mag_point_op_mag2nonmag", &T.mag2nonmag) ||
-        section_find("irreps.irrep_space_group", &T.irrep_sg) || section_find("irreps.irrep_label", &T.irrep_label) ||
+        section_find("irreps.irrep_space_group", &T.irrep_sg) ||
         section_find("isotropy.isotropy_orderparam_freeparam", &T.freeparam) ||
         section_find("little.little_irr_space_group", &T.irr_sg) || section_find("little.little_irr_old", &T.old))
         return sp_fail(PY_VALUE, "spec stage Source tables are missing");
@@ -243,7 +246,7 @@ struct builder {
 static void spec_from_row(sp_spec *spec, const sp_row *row)
 {
     spec->gid = row->gid;
-    spec->label = row->irrep_label;
+    spec->label = row->irrep_name;
     spec->k_label = row->k_label;
     spec->has_kp = 1;
     memcpy(spec->kp, row->kp, sizeof spec->kp);
@@ -382,7 +385,7 @@ typedef struct {
 
 typedef struct {
     int gid;
-    sp_str irrep_label, k_label;
+    sp_str irrep_name, k_label;
     const int *occ;
     int nocc;
     kp_pml item;
@@ -451,7 +454,7 @@ static int stored_alias_specs(const alias_mode *mode, const sp_rows *raw, const 
         if (!row->kp[3]) continue;
         represented_entry *e = &entries[nentries++];
         e->gid = row->gid;
-        e->irrep_label = row->irrep_label;
+        e->irrep_name = row->irrep_name;
         e->k_label = row->k_label;
         e->occ = row->occ;
         e->nocc = row->nocc;
@@ -468,14 +471,14 @@ static int stored_alias_specs(const alias_mode *mode, const sp_rows *raw, const 
         int nfound = 0;
         for (int i = 0; i < nentries; i++) {
             const represented_entry *e = &entries[i];
-            if (e->gid == row->gid && sp_str_eq(e->irrep_label, row->irrep_label) && sp_str_eq(e->k_label, row->k_label) &&
+            if (e->gid == row->gid && sp_str_eq(e->irrep_name, row->irrep_name) && sp_str_eq(e->k_label, row->k_label) &&
                 occs_eq(e->occ, e->nocc, row->occ, row->nocc))
                 kp_pml_add(found, &nfound, &e->item);
         }
         if (!nfound && row->nocc)
             for (int i = 0; i < nentries; i++) {
                 const represented_entry *e = &entries[i];
-                if (e->gid == row->gid && sp_str_eq(e->irrep_label, row->irrep_label) && sp_str_eq(e->k_label, row->k_label) && e->nocc &&
+                if (e->gid == row->gid && sp_str_eq(e->irrep_name, row->irrep_name) && sp_str_eq(e->k_label, row->k_label) && e->nocc &&
                     occ_subset(e->occ, e->nocc, row->occ, row->nocc))
                     kp_pml_add(found, &nfound, &e->item);
             }
@@ -1403,7 +1406,7 @@ int spec_static(int sg, int selected_old_id, int selected_row_id, int has_frame,
         for (int old = 1; old <= nold; old++) {
             int primary = old == selected_old_id;
             if ((pass == 0) != primary || (!primary && !last[old]) || section_int(&T.irrep_sg, old - 1) != sg) continue;
-            sp_str entry_label = stripped(&T.irrep_label, old - 1), label = entry_label;
+            sp_str entry_label = {irrep_old_label(old), (int64_t)strlen(irrep_old_label(old))}, label = entry_label;
             sp_str k_label = k_label_from_irrep_label(entry_label);
             int gid;
             if (canonical_little(sg, k_label, old, &gid, &label)) return finish(1);

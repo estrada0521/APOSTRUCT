@@ -86,10 +86,24 @@ def _load() -> ctypes.CDLL:
         ctypes.c_int, ctypes.c_int, f64, f64, ctypes.c_int, ctypes.c_double, i32, f64, i32, f64,
     )
     library.match_inter_wyckoff.restype = ctypes.c_int
+    library.irrep_full_label.argtypes = (ctypes.c_int,)
+    library.irrep_full_label.restype = ctypes.c_char_p
+    library.irrep_old_label.argtypes = (ctypes.c_int,)
+    library.irrep_old_label.restype = ctypes.c_char_p
     return library
 
 
 _LIBRARY = _load()
+
+
+def irrep_full_label(gid: int) -> str:
+    """The Miller-Love label of a little irrep, assembled by apo from its parts."""
+    return _LIBRARY.irrep_full_label(int(gid)).decode()
+
+
+def irrep_old_label(old_id: int) -> str:
+    """The label of a data_irreps (old) irrep, assembled by apo from its parts."""
+    return _LIBRARY.irrep_old_label(int(old_id)).decode()
 
 
 _OPD_BASIS_ERRORS = {

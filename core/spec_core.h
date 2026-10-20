@@ -54,7 +54,7 @@ typedef struct {
 
 typedef struct {
     int gid;
-    sp_str irrep_label, k_label;
+    sp_str irrep_name, k_label;
     int64_t kp[4];
     rat pml[3];
     int dim, count;

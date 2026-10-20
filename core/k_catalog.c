@@ -10,8 +10,11 @@
 #include "k_display.h"
 #include "tables.h"
 
+const char *irrep_full_label(int gid);
+const char *irrep_old_label(int old_id);
+
 static struct {
-    section_view k, k_dim, k_label, k_kov, k_count, label_bc, lattice_label, sg_point_group, star_count, star_pointer, star, star_special, irr_sg, irr_k, irr_old, full_label, full_kov_label, full_dim, irr_type;
+    section_view k, k_dim, k_label, k_kov, k_count, label_bc, lattice_label, sg_point_group, star_count, star_pointer, star, star_special, irr_sg, irr_k, irr_old, full_kov_label, full_dim, irr_type;
     int ready;
 } T;
 
@@ -26,7 +29,7 @@ static int load(void)
         section_find("little.little_k_star_ml_pointer", &T.star_pointer) || section_find("little.little_k_star", &T.star) ||
         section_find("little.little_k_star_special", &T.star_special) ||
         section_find("little.little_irr_space_group", &T.irr_sg) || section_find("little.little_irr_k", &T.irr_k) ||
-        section_find("little.little_irr_old", &T.irr_old) || section_find("little.little_irr_full_label", &T.full_label) ||
+        section_find("little.little_irr_old", &T.irr_old) ||
         section_find("little.little_irr_full_kov_label", &T.full_kov_label) ||
         section_find("little.little_irr_full_dim", &T.full_dim) || section_find("little.little_irr_type", &T.irr_type))
         return 1;
@@ -345,7 +348,7 @@ static int put_slot(buffer *b, int sg, int kslot, int lattice, int extra)
         int64_t idx = gid - 1;
         int full_dim = (int)section_int(&T.full_dim, idx), type = (int)section_int(&T.irr_type, idx);
         int old_id = (int)section_int(&T.irr_old, idx);
-        str symbol = strip(&T.full_label, idx), kov_label = strip(&T.full_kov_label, idx);
+        str symbol = {irrep_full_label(gid), (int64_t)strlen(irrep_full_label(gid))}, kov_label = strip(&T.full_kov_label, idx);
         int64_t k_length = 0;
         while (k_length < symbol.length &&
                ((symbol.text[k_length] >= 'A' && symbol.text[k_length] <= 'Z') || (symbol.text[k_length] >= 'a' && symbol.text[k_length] <= 'z')))

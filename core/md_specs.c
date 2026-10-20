@@ -225,7 +225,7 @@ void md_spec_free(md_spec *s)
     free(s->display_label);
     free(s->k_label);
     free(s->heading_label);
-    free(s->irrep_label);
+    free(s->irrep_name);
     for (int i = 0; i < s->nocc; i++) free(s->occ[i].k_label);
     free(s->occ);
     matrix_free(&s->dir);
@@ -326,7 +326,7 @@ static int copy_spec(md_spec *out, const md_spec *in)
     out->display_label = in->display_label ? (char *)md_strdup(in->display_label, (int64_t)strlen(in->display_label)) : 0;
     out->k_label = in->k_label ? (char *)md_strdup(in->k_label, (int64_t)strlen(in->k_label)) : 0;
     out->heading_label = in->heading_label ? (char *)md_strdup(in->heading_label, (int64_t)strlen(in->heading_label)) : 0;
-    out->irrep_label = in->irrep_label ? (char *)md_strdup(in->irrep_label, (int64_t)strlen(in->irrep_label)) : 0;
+    out->irrep_name = in->irrep_name ? (char *)md_strdup(in->irrep_name, (int64_t)strlen(in->irrep_name)) : 0;
     out->occ = 0;
     if (in->nocc) {
         out->occ = malloc(sizeof(md_occurrence) * (size_t)in->nocc);
@@ -555,9 +555,9 @@ static int set_render(md_spec *s, int magnetic, const char *label)
 {
     s->magnetic_kind = magnetic;
     s->vector_setting = magnetic ? 2 : 1;
-    free(s->irrep_label);
-    s->irrep_label = (char *)md_strdup(label, (int64_t)strlen(label));
-    return s->irrep_label ? 0 : md_fail(MDE_MEMORY, "out of memory");
+    free(s->irrep_name);
+    s->irrep_name = (char *)md_strdup(label, (int64_t)strlen(label));
+    return s->irrep_name ? 0 : md_fail(MDE_MEMORY, "out of memory");
 }
 
 /* ------------------------------------------------- magnetic frame */

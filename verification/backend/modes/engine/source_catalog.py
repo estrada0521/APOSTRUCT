@@ -32,8 +32,8 @@ class ModeSourceCatalogMixin:
     def little_record_by_gid(self, gid: int) -> LittleIrrepRecord:
         """Return little-irrep metadata by its `data_little` row id.
 
-        Some `little_irr_full_label` values are combined labels that are not
-        directly present as `data_irreps:irrep_label`. Callers that already
+        Some full little-irrep labels are combined labels that are not
+        directly present as old (data_irreps) labels. Callers that already
         have the little-row id therefore need not depend on label reverse
         lookup.
         """

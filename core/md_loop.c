@@ -11,6 +11,9 @@
 #include "md.h"
 #include "tables.h"
 
+const char *irrep_full_label(int gid);
+const char *irrep_old_label(int old_id);
+
 int mode_frame(int sg, const char *wyckoff, int64_t wyckoff_length, const char *k_label, int64_t k_label_length, int nparams,
                const int64_t *param_words, int nsite, const int64_t *site_words, int selected_gid, int has_row_id,
                int selected_row_id, int has_basis_override, const int64_t *basis_override, int emit_all_rows, int emit_freeparam,
@@ -1111,13 +1114,13 @@ static int site_loop(md_request *r, md_state *st, md_aliases *al)
                 char *atom_label = jtruthy(label) ? md_py_str(label) : jtruthy(type) ? md_py_str(type) : (char *)md_strdup("Atom", 4);
                 char *wyckoff = jtruthy(wyck) ? md_py_str(wyck) : (char *)md_strdup("?", 1);
                 b->kvector = md_format("(%s)", st->text_kvector[spec_index]);
-                b->label_prefix = md_format("%s[%s]%s%s[%s:%s:%s]", r->parent_symbol, st->text_kvector[spec_index], spec->irrep_label,
+                b->label_prefix = md_format("%s[%s]%s%s[%s:%s:%s]", r->parent_symbol, st->text_kvector[spec_index], spec->irrep_name,
                                             st->text_direction[spec_index], atom_label, wyckoff, mag ? "mag" : "dsp");
                 free(atom_label);
                 free(wyckoff);
                 b->direction = st->text_direction[spec_index];
                 b->k = spec->k_label;
-                b->irrep = spec->irrep_label;
+                b->irrep = spec->irrep_name;
                 b->gid = spec_gid;
                 b->subspace_replaced = spec->replaced_state == MD_SET && spec->replaced;
                 b->spec = spec;
@@ -1751,7 +1754,7 @@ static void put_undistorted(jbuf *b, const md_request *r)
 }
 
 static struct {
-    section_view irrep_pointer, irrep_label, irr_old, irr_sg;
+    section_view irrep_pointer, irrep_name, irr_old, irr_sg;
     int ready;
 } S;
 
@@ -1759,7 +1762,7 @@ static struct {
 static int64_t little_gid_of_label(int sg, const char *label)
 {
     if (!S.ready) {
-        if (section_find("irreps.irrep_space_group_pointer", &S.irrep_pointer) || section_find("irreps.irrep_label", &S.irrep_label) ||
+        if (section_find("irreps.irrep_space_group_pointer", &S.irrep_pointer) ||
             section_find("little.little_irr_old", &S.irr_old) || section_find("little.little_irr_space_group", &S.irr_sg))
             return 0;
         S.ready = 1;
@@ -1769,14 +1772,8 @@ static int64_t little_gid_of_label(int sg, const char *label)
     while (e > a && (e[-1] == ' ' || (e[-1] >= '\t' && e[-1] <= '\r'))) e--;
     int64_t start = section_int(&S.irrep_pointer, sg - 1), end = section_int(&S.irrep_pointer, sg), old_id = 0;
     for (int64_t oid = start; oid < end && !old_id; oid++) {
-        const char *s;
-        int64_t n;
-        if (section_string(&S.irrep_label, oid - 1, &s, &n)) continue;
-        while (n && (*s == ' ' || *s == '\t')) {
-            s++;
-            n--;
-        }
-        while (n && (s[n - 1] == ' ' || s[n - 1] == '\t')) n--;
+        const char *s = irrep_old_label((int)oid);
+        int64_t n = (int64_t)strlen(s);
         if (n == e - a && !memcmp(s, a, (size_t)n)) old_id = oid;
     }
     if (!old_id) return 0;
