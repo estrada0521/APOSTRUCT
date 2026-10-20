@@ -51,24 +51,6 @@ static int is_f64(const jvalue *v)
            v->u.members[1].count == 2;
 }
 
-static void put_vectors(jbuf *b, const jvalue *placeholder, const expand_t *x)
-{
-    const jvalue *pair = placeholder->u.members + 1;
-    int64_t offset = jat(pair, 0)->u.i, atoms = jat(pair, 1)->u.i;
-    jb_lit(b, "[");
-    for (int64_t a = 0; a < atoms; a++) {
-        if (a) jb_lit(b, ", ");
-        jb_lit(b, "[");
-        for (int k = 0; k < 3; k++) {
-            if (k) jb_lit(b, ", ");
-            int64_t at = offset + 3 * a + k;
-            jb_float(b, at < x->nvectors ? x->vectors[at] : 0.0);
-        }
-        jb_lit(b, "]");
-    }
-    jb_lit(b, "]");
-}
-
 /* A compact copy of v; private keys dropped when public. */
 static void put_copy(jbuf *b, const jvalue *v, int public_only, const expand_t *x)
 {
@@ -77,7 +59,7 @@ static void put_copy(jbuf *b, const jvalue *v, int public_only, const expand_t *
         return;
     }
     if (is_f64(v)) {
-        put_vectors(b, v, x);
+        jb_value(b, v);
         return;
     }
     if (jis(v, J_ARRAY)) {
@@ -148,11 +130,41 @@ static int key_order(const void *a, const void *b)
 static void newline(jbuf *b, int indent, int depth)
 {
     jb_raw(b, "\n", 1);
-    for (int i = 0; i < indent * depth; i++) jb_raw(b, " ", 1);
+    static const char spaces[] = "                                                                ";
+    int64_t remaining = (int64_t)indent * depth;
+    while (remaining > 0) {
+        size_t n = remaining < (int64_t)(sizeof spaces - 1) ? (size_t)remaining : sizeof spaces - 1;
+        jb_raw(b, spaces, n);
+        remaining -= (int64_t)n;
+    }
 }
 
-static int put_pretty(jbuf *b, const jvalue *v, int indent, int depth)
+static int put_pretty(jbuf *b, const jvalue *v, int indent, int depth, const expand_t *x)
 {
+    if (is_f64(v)) {
+        const jvalue *pair = v->u.members + 1;
+        int64_t offset = jat(pair, 0)->u.i, atoms = jat(pair, 1)->u.i;
+        jb_lit(b, "[");
+        for (int64_t a = 0; a < atoms; a++) {
+            if (a) jb_lit(b, ",");
+            newline(b, indent, depth + 1);
+            jb_lit(b, "[");
+            for (int k = 0; k < 3; k++) {
+                if (k) jb_lit(b, ",");
+                newline(b, indent, depth + 2);
+                int64_t at = offset + 3 * a + k;
+                double value = at < x->nvectors ? x->vectors[at] : 0.0;
+                if (value != value || value - value != 0.0)
+                    return md_fail(MDE_VALUE, "Out of range float values are not JSON compliant");
+                jb_float(b, value);
+            }
+            newline(b, indent, depth + 1);
+            jb_lit(b, "]");
+        }
+        if (atoms) newline(b, indent, depth);
+        jb_lit(b, "]");
+        return 0;
+    }
     switch (v->kind) {
     case J_STRING: put_text(b, v->u.s, v->count); return 0;
     case J_FLOAT:
@@ -168,7 +180,7 @@ static int put_pretty(jbuf *b, const jvalue *v, int indent, int depth)
         for (int64_t i = 0; i < v->count; i++) {
             if (i) jb_lit(b, ",");
             newline(b, indent, depth + 1);
-            MD_TRY(put_pretty(b, v->u.items + i, indent, depth + 1));
+            MD_TRY(put_pretty(b, v->u.items + i, indent, depth + 1, x));
         }
         newline(b, indent, depth);
         jb_lit(b, "]");
@@ -189,7 +201,7 @@ static int put_pretty(jbuf *b, const jvalue *v, int indent, int depth)
             newline(b, indent, depth + 1);
             put_text(b, keys[i]->u.s, keys[i]->count);
             jb_lit(b, ": ");
-            status = put_pretty(b, keys[i] + 1, indent, depth + 1);
+            status = put_pretty(b, keys[i] + 1, indent, depth + 1, x);
         }
         free(keys);
         if (status) return status;
@@ -201,15 +213,15 @@ static int put_pretty(jbuf *b, const jvalue *v, int indent, int depth)
     }
 }
 
-/* Prints compact sorted and indented; compact is released once parsed. */
-static int print_json(jbuf *compact, int indent, jbuf *b)
+/* Parse metadata only; expand vector placeholders in the final formatter. */
+static int print_json(jbuf *compact, int indent, jbuf *b, const expand_t *x)
 {
     if (compact->failed) return md_fail(MDE_MEMORY, "out of memory");
     jdoc *doc = jdoc_parse(compact->data, compact->used);
     jb_free(compact);
     if (!doc) return md_fail(MDE_MEMORY, "out of memory");
     jb_reset(b);
-    int status = put_pretty(b, jdoc_root(doc), indent < 0 ? 0 : indent, 0);
+    int status = put_pretty(b, jdoc_root(doc), indent < 0 ? 0 : indent, 0, x);
     jb_raw(b, "\n", 1);
     jdoc_free(doc);
     return status ? status : b->failed ? md_fail(MDE_MEMORY, "out of memory") : 0;
@@ -1125,7 +1137,7 @@ static int run(const jvalue *request, jbuf *b)
         run_status = !strcmp(stage, "modes") && jstr_is(member(details, "status"), "error") ? 2 : 0;
         jdoc_free(sdoc);
         sdoc = 0;
-        status = print_json(&compact_text, (int)indent, b);
+        status = print_json(&compact_text, (int)indent, b, &x);
     }
     jdoc_free(sdoc);
     jb_free(&state);
