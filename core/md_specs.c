@@ -463,7 +463,7 @@ static int decode_specs(md_request *r, const spec_context *ctx)
             spec->kp_state = MD_ABSENT;
             spec->pml_state = MD_ABSENT;
             spec->gid_state = h[H_GID] ? MD_SET : MD_NONE;
-            spec->row_id_state = MD_SET;
+            spec->row_id_state = h[H_ROW_ID] > 0 ? MD_SET : MD_NONE;
             spec->row_id = h[H_ROW_ID];
             has_dir_rows = 0;
             if (h[H_USE_SELECTED_ROWS]) {

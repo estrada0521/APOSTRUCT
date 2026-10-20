@@ -112,7 +112,7 @@ static int caught(int mask)
 #define BIT(kind) (1 << (kind))
 
 static struct {
-    section_view mag2nonmag, sub_pointer, sub_irrep, sub_subgroup, irrep_sg,
+    section_view mag2nonmag, iso_basis, iso_origin, iso_subgroup, irrep_sg,
         irrep_label, freeparam, irr_sg, old;
     int ready;
 } T;
@@ -121,9 +121,6 @@ static int load(void)
 {
     if (T.ready) return 0;
     if (geo_load() || section_find("magnetic.mag_point_op_mag2nonmag", &T.mag2nonmag) ||
-        section_find("isotropy.isotropy_subduce_pointer", &T.sub_pointer) ||
-        section_find("isotropy.isotropy_subduce_irrep", &T.sub_irrep) ||
-        section_find("isotropy.isotropy_subduce_subgroup", &T.sub_subgroup) ||
         section_find("irreps.irrep_space_group", &T.irrep_sg) || section_find("irreps.irrep_label", &T.irrep_label) ||
         section_find("isotropy.isotropy_orderparam_freeparam", &T.freeparam) ||
         section_find("little.little_irr_space_group", &T.irr_sg) || section_find("little.little_irr_old", &T.old))
@@ -1365,6 +1362,8 @@ static int canonical_little(int sg, sp_str k_label, int old_id, int *gid_out, sp
     return 0;
 }
 
+/* Old-compatible render specs; secondary membership and rank come from the
+ * fixed subspaces of the child frame, not the isotropy_subduce tables. */
 int spec_static(int sg, int selected_old_id, int selected_row_id, int has_frame, int child_sg, const int64_t *basis,
                 const int64_t *origin)
 {
@@ -1372,81 +1371,72 @@ int spec_static(int sg, int selected_old_id, int selected_row_id, int has_frame,
     result.items = 0;
     result.count = result.cap = 0;
     if (load()) return finish(1);
-    sp_specs specs = {0};
-    int64_t pointers = section_count(&T.sub_pointer);
-    if (selected_row_id >= 1 && selected_row_id <= pointers) {
-        int64_t start = section_int(&T.sub_pointer, selected_row_id - 1);
-        int64_t end = selected_row_id < pointers ? section_int(&T.sub_pointer, selected_row_id) : section_count(&T.sub_irrep) + 1;
-        int64_t (*seen)[2] = sp_alloc(sizeof(int64_t) * 2 * (size_t)(end - start + 1));
-        if (!seen) return finish(1);
-        int nseen = 0;
-        for (int64_t index = start - 1; index < end - 1; index++) {
-            int old_id = (int)section_int(&T.sub_irrep, index);
-            int entry_sg = (int)section_int(&T.irrep_sg, old_id - 1);
-            if (entry_sg != sg) continue;
-            int row_id = (int)section_int(&T.sub_subgroup, index);
-            int dup = 0;
-            for (int i = 0; i < nseen && !dup; i++) dup = seen[i][0] == old_id && seen[i][1] == row_id;
-            if (dup) continue;
-            seen[nseen][0] = old_id;
-            seen[nseen++][1] = row_id;
-            sp_str entry_label = stripped(&T.irrep_label, old_id - 1);
+    if (selected_old_id < 1 || selected_old_id > section_count(&T.irrep_sg) ||
+        selected_row_id < 1 || selected_row_id > section_count(&T.freeparam))
+        return finish(sp_fail(PY_INDEX, "selected isotropy row is out of range"));
+    int64_t default_basis[9], default_origin[4];
+    if (!has_frame) {
+        if (section_find("isotropy.isotropy_basis", &T.iso_basis) ||
+            section_find("isotropy.isotropy_origin", &T.iso_origin) ||
+            section_find("isotropy.isotropy_subgroup", &T.iso_subgroup))
+            return finish(sp_fail(PY_VALUE, "selected isotropy frame is missing"));
+        child_sg = (int)section_int(&T.iso_subgroup, selected_row_id - 1);
+        for (int j = 0; j < 9; j++) default_basis[j] = section_int(&T.iso_basis, 9 * (selected_row_id - 1) + j);
+        for (int j = 0; j < 4; j++) default_origin[j] = section_int(&T.iso_origin, 4 * (selected_row_id - 1) + j);
+        basis = default_basis;
+        origin = default_origin;
+    }
+    sp_frame frame;
+    if (frame_operations(sg, child_sg, basis, origin, &frame)) return finish(1);
+    sp_rows rows = {0};
+    if (sp_frame_rows(&frame, 0, 0, &rows)) return finish(1);
+    int nold = (int)section_count(&T.irrep_sg);
+    const sp_row **last = sp_alloc(sizeof *last * (size_t)(nold + 1));
+    if (!last) return finish(1);
+    memset(last, 0, sizeof *last * (size_t)(nold + 1));
+    for (int r = 0; r < rows.count; r++) {
+        int old = sp_little_old_id(rows.items[r].gid);
+        if (old > 0 && old <= nold) last[old] = &rows.items[r];
+    }
+    /* Primary first, then old secondaries in ascending catalog order. */
+    for (int pass = 0; pass < 2; pass++)
+        for (int old = 1; old <= nold; old++) {
+            int primary = old == selected_old_id;
+            if ((pass == 0) != primary || (!primary && !last[old]) || section_int(&T.irrep_sg, old - 1) != sg) continue;
+            sp_str entry_label = stripped(&T.irrep_label, old - 1), label = entry_label;
+            sp_str k_label = k_label_from_irrep_label(entry_label);
             int gid;
-            sp_str little_label = entry_label;
-            if (canonical_little(sg, k_label_from_irrep_label(entry_label), old_id, &gid, &little_label)) return finish(1);
+            if (canonical_little(sg, k_label, old, &gid, &label)) return finish(1);
             sp_spec *spec = spec_new();
             if (!spec) return finish(1);
             spec->kind = SK_STATIC;
             spec->mode_kind = 1;
-            spec->old_id = old_id;
+            spec->old_id = old;
             spec->gid = gid;
-            spec->label = gid ? little_label : entry_label;
-            spec->k_label = k_label_from_irrep_label(entry_label);
-            spec->row_id = row_id;
-            spec->primary = old_id == selected_old_id && row_id == selected_row_id;
-            if (specs_push(&specs, spec)) return finish(1);
-        }
-    }
-    for (int i = 0; i < specs.count; i++) {
-        sp_spec *spec = specs.items[i];
-        spec->has_free = 1;
-        spec->free_count = (int)section_int(&T.freeparam, spec->row_id - 1);
-    }
-    if (has_frame) {
-        sp_frame frame;
-        if (frame_operations(sg, child_sg, basis, origin, &frame)) return finish(1);
-        sp_rows rows = {0};
-        if (sp_frame_rows(&frame, 0, 0, &rows)) return finish(1);
-        for (int i = 0; i < specs.count; i++) {
-            sp_spec *spec = specs.items[i];
-            if (spec->primary) continue;
-            const sp_row *selected = 0;
-            for (int r = 0; r < rows.count; r++) {
-                int old = sp_little_old_id(rows.items[r].gid);
-                if (old > 0 && old == spec->old_id) selected = &rows.items[r];
+            spec->label = gid ? label : entry_label;
+            spec->k_label = k_label;
+            spec->primary = primary;
+            spec->row_id = primary ? selected_row_id : 0;
+            spec->has_free = 1;
+            spec->free_count = primary ? (int)section_int(&T.freeparam, selected_row_id - 1) : last[old]->count;
+            if (!primary) {
+                const sp_row *row = last[old];
+                spec->static_updated = 1;
+                spec->gid = row->gid;
+                spec->has_kp = spec->has_pml = spec->has_dir = 1;
+                memcpy(spec->kp, row->kp, sizeof spec->kp);
+                memcpy(spec->pml, row->pml, sizeof spec->pml);
+                spec->dir = row->dir;
+                spec->dim = row->dim;
+                spec->count = row->count;
             }
-            if (!selected) continue;
-            spec->static_updated = 1;
-            spec->gid = selected->gid;
-            spec->has_kp = 1;
-            memcpy(spec->kp, selected->kp, sizeof spec->kp);
-            spec->has_pml = 1;
-            memcpy(spec->pml, selected->pml, sizeof spec->pml);
-            spec->has_dir = 1;
-            spec->dir = selected->dir;
-            spec->dim = selected->dim;
-            spec->count = selected->count;
+            if (specs_push(&result, spec)) return finish(1);
         }
-        for (int r = 0; r < rows.count; r++) {
-            if (sp_little_old_id(rows.items[r].gid) != 0) continue;
-            sp_spec *spec;
-            if (dyn_spec(&rows.items[r], 0, 0, &spec) || specs_push(&specs, spec)) return finish(1);
-        }
+    for (int r = 0; r < rows.count; r++) {
+        if (sp_little_old_id(rows.items[r].gid) != 0) continue;
+        sp_spec *spec;
+        if (dyn_spec(&rows.items[r], 0, 0, &spec) || specs_push(&result, spec)) return finish(1);
     }
-    for (int i = 0; i < specs.count; i++)
-        if (specs.items[i]->primary && specs_push(&result, specs.items[i])) return finish(1);
-    for (int i = 0; i < specs.count; i++)
-        if (!specs.items[i]->primary && specs_push(&result, specs.items[i])) return finish(1);
     return finish(0);
 }
 
