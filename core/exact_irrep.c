@@ -497,6 +497,7 @@ static int derive_positions(int gid, const int64_t *kparam, derived_t *out, int 
         for (int i = 0; i < 9; i++) ok &= rat_eq(rot[p][i / 3][i % 3], rat_int(i / 3 == i % 3));
         if (ok) identity = p;
     }
+    if (!in || identity < 0) return free(rot), free(product), free(in), 2;
     in[identity] = 1;
     for (int p = 0; p < n; p++) {
         if (in[p]) continue;
@@ -711,6 +712,7 @@ static int derive_codes(int gid, const int64_t *kparam, int **codes_out, unsigne
         for (int i = 0; i < 9; i++) ok &= rat_eq(rot[q][i / 3][i % 3], rat_int(i / 3 == i % 3));
         if (ok) identity = q;
     }
+    if (!in || !seed || identity < 0) return free(rot), free(product), free(in), free(seed), 2;
     in[identity] = seed[identity] = 1;
     for (int q = 0; q < n; q++) {
         if (in[q]) continue;
