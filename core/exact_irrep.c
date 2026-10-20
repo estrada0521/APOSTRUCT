@@ -13,6 +13,30 @@
 
 int bw_find_position(int element_count, const int *elements, const int *record);
 
+/* Sparse seed-position index. Both matrix readers share this lookup. */
+static int little_seed_index(int gid, int position, int64_t *index)
+{
+    static section_view irr, positions;
+    static int ready;
+    if (!ready) {
+        if (section_find("little.little_irr_full_matrices_irr_pointer", &irr)
+            || section_find("little.little_irr_full_matrices_position", &positions)) return 1;
+        ready = 1;
+    }
+    if (gid < 1 || gid >= section_count(&irr) || position < 1) return 1;
+    int64_t lo = section_int(&irr, gid - 1) - 1, end = section_int(&irr, gid) - 1;
+    if (lo < 0 || end < lo || end > section_count(&positions)) return 1;
+    int64_t hi = end;
+    while (lo < hi) {
+        int64_t mid = lo + (hi - lo) / 2;
+        if (section_int(&positions, mid) < position) lo = mid + 1;
+        else hi = mid;
+    }
+    if (lo >= end || section_int(&positions, lo) != position) return 1;
+    *index = lo + 1;
+    return 0;
+}
+
 /* The table's constant codes of a little irrep at a generated position, dense (code 1 is zero); nonzero when the table
  * does not hold the position. */
 int little_table_codes(int gid, int dim, int position, int *codes)
@@ -26,10 +50,8 @@ int little_table_codes(int gid, int dim, int position, int *codes)
             return 1;
         ready = 1;
     }
-    int64_t irr_length = (int64_t)irr_pointer.entry->count, pointer_length = (int64_t)pointer.entry->count;
-    if (gid < 1 || gid > irr_length || position < 1 || dim <= 0) return 1;
-    int64_t index = section_int(&irr_pointer, gid - 1) + position - 1;
-    if (index < 1 || index >= pointer_length) return 1;
+    int64_t index;
+    if (dim <= 0 || little_seed_index(gid, position, &index) || index >= section_count(&pointer)) return 1;
     int64_t start = section_int(&pointer, index - 1), end = section_int(&pointer, index);
     if (start < 1 || end < start || (end - 1) * 3 > (int64_t)matrices.entry->count) return 1;
     for (int i = 0; i < dim * dim; i++) codes[i] = 1;
@@ -88,10 +110,8 @@ static int little_table_words(int gid, int dim, int position, int64_t *words)
             return 1;
         ready = 1;
     }
-    int64_t irr_length = (int64_t)irr_pointer.entry->count, pointer_length = (int64_t)pointer.entry->count;
-    if (gid < 1 || gid > irr_length || position < 1) return 1;
-    int64_t index = section_int(&irr_pointer, gid - 1) + position - 1;
-    if (index < 1 || index >= pointer_length) return 1;
+    int64_t index;
+    if (dim <= 0 || little_seed_index(gid, position, &index) || index >= section_count(&pointer)) return 1;
     int64_t start = section_int(&pointer, index - 1), end = section_int(&pointer, index);
     memset(words, 0, sizeof(int64_t) * 8 * (size_t)dim * dim);
     for (int i = 0; i < dim * dim; i++)
