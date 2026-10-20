@@ -10,6 +10,9 @@
 #include "sel.h"
 #include "tables.h"
 
+int mag_isotropy_row_dim(int64_t row_id);
+int mag_isotropy_row_free(int64_t row_id);
+
 void exact_register_codes(int rows, int cols, const double *doubles, const int64_t *codes);
 
 int magnetic_records(int group, int setting, int capacity, int64_t *records_out);
@@ -22,7 +25,7 @@ int id_subgroup_magnetic_identify(int parent, const int64_t *basis, int op_count
 
 static struct {
     section_view point_group, point_group_order, op_r, mag2nonmag, bns, nlabel, space_group, iso_pointer, iso_parent, iso_subgroup,
-        iso_subgroup_old, iso_basis, iso_origin, iso_dim, iso_free, iso_label, iso_op_pointer, iso_op, point_op, const_values, irr_sg;
+        iso_subgroup_old, iso_basis, iso_origin, iso_label, iso_op_pointer, iso_op, point_op, const_values, irr_sg;
     int ready;
 } T;
 
@@ -45,8 +48,6 @@ int sel_mag_tables(void)
                 {"magnetic.mag_iso_subgroup_old", &T.iso_subgroup_old},
                 {"magnetic.mag_iso_basis", &T.iso_basis},
                 {"magnetic.mag_iso_origin", &T.iso_origin},
-                {"magnetic.mag_iso_orderparam_dim", &T.iso_dim},
-                {"magnetic.mag_iso_orderparam_freeparam", &T.iso_free},
                 {"magnetic.mag_iso_orderparam_label", &T.iso_label},
                 {"magnetic.mag_iso_orderparam_pointer", &T.iso_op_pointer},
                 {"magnetic.mag_iso_orderparam", &T.iso_op},
@@ -282,7 +283,7 @@ static int magnetic_row(jbuf *b, int64_t old_id, int64_t row_id, int canonical, 
     sel_setting displayed;
     rat rows[3][3];
     MD_TRY(sel_display(ordinary_parent, ordinary_sub, basis, origin, has_setting, setting_id, has_cell, cell, 0, 0, sub_group, &displayed, rows));
-    int64_t dim = section_int(&T.iso_dim, idx), free_count = section_int(&T.iso_free, idx);
+    int64_t dim = mag_isotropy_row_dim(idx + 1), free_count = mag_isotropy_row_free(idx + 1);
     int64_t pointer = section_int(&T.iso_op_pointer, idx);
     int64_t end = idx + 1 < section_count(&T.iso_op_pointer) ? section_int(&T.iso_op_pointer, idx + 1) : section_count(&T.iso_op) + 1;
     int64_t raw_start = pointer - 1, raw_end = end - 1, total = section_count(&T.iso_op);

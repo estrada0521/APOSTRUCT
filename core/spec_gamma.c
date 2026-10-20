@@ -1547,6 +1547,9 @@ static int name_irrep(const sp_induced *c, const cy_field *f, const cy *sigma, i
 
 /* site >= 0: the Bloch displacements (axial: moments, times det R) of one site; site < 0: the strain (k = 0) */
 #include "tables.h"
+
+int mag_isotropy_row_dim(int64_t row_id);
+int mag_isotropy_row_free(int64_t row_id);
 int parent_operation_records(int parent_sg, int child_sg, const int64_t *basis, const int64_t *origin, int64_t (*out)[5]);
 
 /* a Source record (pml frame) as an affine map of G in the CIF frame */
@@ -1906,11 +1909,10 @@ int orderparam_to_subgroup_rows(int gid, int param_count, const int64_t *kparam,
  * with time reversal, and a lattice) as the table path derives it; its fixed space on Gamma names one of our orbits */
 static int mag_table_labels(const sp_induced *c, int gid, const pset *seen, const int *orbit_of, char (*labels)[16], size_t nreps)
 {
-    static section_view old, pointer, dimv, freev, opptr, ops, label, consts;
+    static section_view old, pointer, opptr, ops, label, consts;
     static int ready;
     if (!ready) {
         if (mag_tables() || section_find("little.little_irr_old", &old) || section_find("magnetic.mag_iso_irrep_pointer", &pointer) ||
-            section_find("magnetic.mag_iso_orderparam_dim", &dimv) || section_find("magnetic.mag_iso_orderparam_freeparam", &freev) ||
             section_find("magnetic.mag_iso_orderparam_pointer", &opptr) || section_find("magnetic.mag_iso_orderparam", &ops) ||
             section_find("magnetic.mag_iso_orderparam_label", &label) || section_find("const.values", &consts))
             return spfail("magnetic isotropy tables are missing");
@@ -1927,7 +1929,7 @@ static int mag_table_labels(const sp_induced *c, int gid, const pset *seen, cons
     int D = c->D;
     uint64_t *x = malloc(sizeof(uint64_t) * ((size_t)D * D + 1)), *gm = malloc(sizeof(uint64_t) * (size_t)D * D), *key = malloc(sizeof(uint64_t) * (1 + (size_t)D * D));
     for (int64_t row = start; row < end; row++) {
-        int64_t idx = row - 1, dim = section_int(&dimv, idx), fn = section_int(&freev, idx), ptr = section_int(&opptr, idx) - 1;
+        int64_t idx = row - 1, dim = mag_isotropy_row_dim(row), fn = mag_isotropy_row_free(row), ptr = section_int(&opptr, idx) - 1;
         if (fn <= 0 || dim <= 0 || dim > 48) continue;
         double *values = calloc((size_t)fn * 48 + 1, sizeof(double));
         for (int64_t p = 0; p < fn; p++)
