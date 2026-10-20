@@ -43,7 +43,10 @@ int tables_open(const char *path)
     return 0;
 }
 
-int section_find(const char *name, section_view *view)
+int star_rule_section(const char *name, section_view *view, int *handled);
+
+/* a section as stored in the blob */
+int section_find_stored(const char *name, section_view *view)
 {
     for (uint32_t i = 0; i < blob_count; i++)
         if (!strncmp(blob_index[i].name, name, BLOB_NAME_SIZE)) {
@@ -53,6 +56,13 @@ int section_find(const char *name, section_view *view)
             return 0;
         }
     return 1;
+}
+
+/* a section by name; the star of k sections are built from their rule (star_rule.c) */
+int section_find(const char *name, section_view *view)
+{
+    int handled, status = star_rule_section(name, view, &handled);
+    return handled ? status : section_find_stored(name, view);
 }
 
 int64_t section_int(const section_view *view, int64_t index)
