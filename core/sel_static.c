@@ -476,11 +476,6 @@ static void put_direction(jbuf *b, const direction *d, int image_entry)
         }
         jb_lit(b, "]");
     }
-    if (image_entry >= 0) {
-        jb_lit(b, section_int(&T.image_subgroup_maximal, image_entry) ? ", \"maximal\": true" : ", \"maximal\": false");
-        jb_lit(b, section_int(&T.image_subgroup_min, image_entry) ? ", \"minimal\": true" : ", \"minimal\": false");
-        jb_lit(b, section_int(&T.image_subgroup_rg, image_entry) ? ", \"rg\": true" : ", \"rg\": false");
-    }
     jb_lit(b, "}");
 }
 
@@ -1040,12 +1035,8 @@ static int isotropy_row(int64_t old_id, int64_t row_id, int parent_sg, int64_t f
     strip_view(&T.iso_label, idx, &label, &label_length);
     jb_lit(b, "{\"row_id\": ");
     jb_int(b, row_id);
-    jb_lit(b, ", \"canonical\": ");
-    jb_lit(b, "\x01");
     jb_lit(b, ", \"opd_label\": ");
     jb_string(b, label, (size_t)label_length);
-    jb_lit(b, ", \"direction_id\": ");
-    jb_int(b, direction_id);
     jb_lit(b, ", \"direction_label\": ");
     if (d.valid) jb_string(b, d.label, (size_t)d.label_length);
     else jb_lit(b, "\"?\"");
@@ -1174,32 +1165,6 @@ int sel_static_rows(int old_id, const sel_params *k_params, const sel_params *di
         jb_reset(&rows[i]);
         MD_TRY(isotropy_row(old_id, start + i, parent_sg, full_dim, k_params, active_params, has_setting, setting_id, has_cell, cell,
                             &rows[i], &keys[i]));
-    }
-    /* canonical_isotropy_row_id */
-    int best = -1;
-    for (int i = 0; i < n; i++) {
-        int64_t k[5] = {keys[i].free, keys[i].size, -sel_point_group_order((int)keys[i].subgroup), sel_has_inversion((int)keys[i].subgroup) ? 0 : 1,
-                        keys[i].row_id};
-        if (best < 0) {
-            best = i;
-            continue;
-        }
-        int64_t q[5] = {keys[best].free, keys[best].size, -sel_point_group_order((int)keys[best].subgroup),
-                        sel_has_inversion((int)keys[best].subgroup) ? 0 : 1, keys[best].row_id};
-        int c = 0;
-        for (int j = 0; j < 5 && !c; j++) c = (k[j] > q[j]) - (k[j] < q[j]);
-        if (c < 0) best = i;
-    }
-    for (int i = 0; i < n; i++) {
-        char *mark = strchr(rows[i].data, '\x01');
-        const char *value = i == best ? "true" : "false";
-        jbuf fixed = {0};
-        jb_reset(&fixed);
-        jb_raw(&fixed, rows[i].data, (size_t)(mark - rows[i].data));
-        jb_lit(&fixed, value);
-        jb_lit(&fixed, mark + 1);
-        jb_free(&rows[i]);
-        rows[i] = fixed;
     }
     /* group by direction id in the image's direction order */
     int64_t image_ptr = section_int(&T.image_subgroup_pointer, image_id - 1) - 1, image_count = section_int(&T.image_subgroup_count, image_id - 1);

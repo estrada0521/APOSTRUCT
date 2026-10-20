@@ -79,31 +79,6 @@ static void stripped(const section_view *view, int64_t index, const char **s, in
     while (*n && sel_is_space((*s)[*n - 1])) (*n)--;
 }
 
-/* SourceTables.inter_setting_record */
-void par_setting_record(jbuf *b, int64_t id)
-{
-    int64_t i = id - 1;
-    jb_lit(b, "{\"id\": ");
-    jb_int(b, id);
-    jb_lit(b, ", \"space_group\": ");
-    jb_int(b, section_int(&T.inter_number, i));
-    jb_lit(b, ", \"version\": ");
-    jb_int(b, section_int(&T.inter_version, i));
-    jb_lit(b, ", \"origin\": ");
-    jb_int(b, section_int(&T.inter_origin, i));
-    jb_lit(b, ", \"cell\": ");
-    jb_int(b, section_int(&T.inter_cell, i));
-    jb_lit(b, ", \"axis\": ");
-    par_put_stripped(b, &T.inter_axis, i);
-    jb_lit(b, ", \"abc\": ");
-    par_put_stripped(b, &T.inter_abc, i);
-    jb_lit(b, ", \"label_full\": ");
-    par_put_stripped(b, &T.inter_label_full, i);
-    jb_lit(b, ", \"label_short\": ");
-    par_put_stripped(b, &T.inter_label_short, i);
-    jb_lit(b, "}");
-}
-
 /* SourceTables.parent_preference_text, empty for "" */
 void par_preference_text(jbuf *b, int64_t id)
 {
@@ -1035,20 +1010,6 @@ static void put_match_site(jbuf *b, int sg, const jvalue *site, const match_t *m
             }
             jb_lit(&texts[6], "]");
             items[n++] = (kv){"representative_matched_fract", texts[6].data, texts[6].used};
-            jb_cstring(&texts[7], m->operation);
-            items[n++] = (kv){"representative_operation", texts[7].data, texts[7].used};
-            if (m->operation_index < 0) jb_lit(&texts[8], "null");
-            else jb_int(&texts[8], m->operation_index);
-            items[n++] = (kv){"representative_operation_index", texts[8].data, texts[8].used};
-            if (m->has_translation) {
-                jb_lit(&texts[9], "[");
-                for (int a = 0; a < 3; a++) {
-                    if (a) jb_lit(&texts[9], ", ");
-                    jb_int(&texts[9], m->translation[a]);
-                }
-                jb_lit(&texts[9], "]");
-                items[n++] = (kv){"representative_lattice_translation", texts[9].data, texts[9].used};
-            }
         }
     } else {
         double v[3];
@@ -1152,34 +1113,13 @@ int par_parent_state(const jvalue *cif_info, jbuf *out)
         if (!formula_from_sites(jdoc_root(sdoc), &formula)) jb_lit(&formula, "null");
         input_items[ninput++] = (kv){"formula", formula.data, formula.used};
     }
-    jbuf input = {0}, setting = {0}, internal = {0}, space_group = {0}, rows = {0};
+    jbuf input = {0}, internal = {0}, space_group = {0}, rows = {0};
     jb_reset(&input);
-    jb_reset(&setting);
     jb_reset(&internal);
     jb_reset(&space_group);
     jb_reset(&rows);
     sel_merge(&input, cif_info, input_items, ninput);
-    int default_id = geo_default_setting(sg), parent_id = chosen.id;
-    jb_lit(&setting, "{\"default_preferences\": ");
-    jb_cstring(&setting, PAR_DEFAULT_PREFERENCES);
-    jb_lit(&setting, ", \"default_inter_setting\": ");
-    par_setting_record(&setting, default_id);
-    jb_lit(&setting, ", \"parent_preferences\": ");
-    jbuf preference = {0};
-    jb_reset(&preference);
-    if (jtruthy(member(cif_info, "explicit_parent_preference"))) py_str_of(&preference, member(cif_info, "explicit_parent_preference"));
-    const char *pa = preference.data ? preference.data : "", *pe = pa + preference.used;
-    while (pa < pe && sel_is_space(*pa)) pa++;
-    while (pe > pa && sel_is_space(pe[-1])) pe--;
-    jbuf chosen_pref = {0};
-    jb_reset(&chosen_pref);
-    if (pa < pe) jb_raw(&chosen_pref, pa, (size_t)(pe - pa));
-    else par_preference_text(&chosen_pref, parent_id);
-    if (chosen_pref.used) jb_string(&setting, chosen_pref.data, chosen_pref.used);
-    else jb_lit(&setting, "null");
-    jb_lit(&setting, ", \"parent_inter_setting\": ");
-    par_setting_record(&setting, parent_id);
-    jb_lit(&setting, "}");
+    int parent_id = chosen.id;
     int all_matched = 1;
     for (int64_t i = 0; i < n; i++) all_matched &= final[i].found && final[i].row_id;
     jb_lit(&rows, "[");
@@ -1210,8 +1150,7 @@ int par_parent_state(const jvalue *cif_info, jbuf *out)
     jb_int(out, lattice);
     jb_lit(out, ", \"lattice_type\": ");
     par_put_stripped(out, &T.lattice_label, lattice - 1);
-    jb_lit(out, "}, \"setting\": ");
-    jb_raw(out, setting.data, setting.used);
+    jb_lit(out, "}");
     jb_lit(out, ", \"_internal\": {\"parent_inter_setting_id\": ");
     jb_int(out, parent_id);
     jb_lit(out, ", \"displacive_row_ids\": ");
@@ -1226,11 +1165,8 @@ int par_parent_state(const jvalue *cif_info, jbuf *out)
     jb_free(&formula);
     jb_free(&formula_text);
     jb_free(&input);
-    jb_free(&setting);
     jb_free(&internal);
     jb_free(&space_group);
     jb_free(&rows);
-    jb_free(&preference);
-    jb_free(&chosen_pref);
     return 0;
 }

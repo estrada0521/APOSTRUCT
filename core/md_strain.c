@@ -640,9 +640,7 @@ static int strain_definitions_of(md_request *r, const strain_spec *specs, int ns
                     if (e) jb_lit(b, ", ");
                     jb_float(b, n[WEB_ORDER[e]]);
                 }
-                jb_lit(b, "], \"_spec_order\": ");
-                if (s->has_order) jb_int(b, s->order);
-                else jb_lit(b, "null");
+                jb_lit(b, "]");
                 MD_TRY(md_factor_metadata(r, s->has_order ? (int)s->order : -1, b));
                 jb_lit(b, "}");
             }

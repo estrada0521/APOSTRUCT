@@ -972,32 +972,13 @@ static int emit_tuple(const int32_t *domains, const int64_t *kept_basis, const r
     }
     jb_lit(&subgroup_json, "}");
     if (R.magnetic_request) {
-        jb_lit(&extra, ", \"magnetic_parent_group\": ");
-        jb_int(&extra, parent_group);
-        jb_lit(&extra, ", \"magnetic_subgroup_selection\": ");
-        sel_put_selection(&extra, flat);
     }
     jb_lit(&extra, ", \"source_operation_records\": ");
     sel_put_records(&extra, &kept_ops[0][0], nkept);
     jb_lit(&extra, ", \"ferroic_properties\": ");
     if (R.magnetic_request || !ferroic_none) jb_raw(&extra, ferroic.data, ferroic.used);
     else jb_lit(&extra, "[]");
-    jb_lit(&extra, ", \"subduction\": {\"expected\": [");
-    for (int i = 0; i < n; i++) {
-        if (i) jb_lit(&extra, ", ");
-        jb_int(&extra, rows[i]->free);
-    }
-    jb_lit(&extra, "], \"binary_slot_kernel\": [");
-    for (int i = 0; i < n; i++) {
-        if (i) jb_lit(&extra, ", ");
-        jb_int(&extra, binary[i]);
-    }
-    jb_lit(&extra, "], \"coupled_common_kernel\": [");
-    for (int i = 0; i < n; i++) {
-        if (i) jb_lit(&extra, ", ");
-        jb_int(&extra, coupled[i]);
-    }
-    jb_lit(&extra, "]}");
+    jb_lit(&extra, ", \"subduction\": {}");
     sel_put_subgroup(b, R.sg, (int)ordinary, basis, origin, &displayed, (const rat (*)[3])brows, det, &subgroup_json, &extra);
     jb_lit(b, "}}");
     jb_free(&subgroup_json);
@@ -1349,7 +1330,7 @@ static int coupled(const jvalue *request, jbuf *out)
         jb_int(out, i + 1);
         jb_lit(out, ", \"source_ordinal\": ");
         jb_int(out, U.rows[i].ordinal);
-        jb_lit(out, i ? ", \"coupled\": true, \"canonical\": false" : ", \"coupled\": true, \"canonical\": true");
+        jb_lit(out, ", \"coupled\": true");
         jb_raw(out, U.rows[i].rest.data, U.rows[i].rest.used);
     }
     jb_lit(out, "]");

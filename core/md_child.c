@@ -853,9 +853,9 @@ static void put_rat_float(jbuf *b, rat value)
 }
 
 /* The child structure as the dev comparison reads it. */
-void md_child_structure_json(const md_request *r, jbuf *b)
+void md_child_atoms_json(const md_request *r, jbuf *b)
 {
-    jb_lit(b, "{\"undistorted_atoms\": [");
+    jb_lit(b, "[");
     int first = 1;
     for (int i = 0; i < r->nsites; i++) {
         const md_site *s = r->sites + i;
@@ -894,48 +894,5 @@ void md_child_structure_json(const md_request *r, jbuf *b)
             jb_lit(b, "]}");
         }
     }
-    jb_lit(b, "], \"site_params\": [");
-    for (int i = 0; i < r->nsites; i++) {
-        const md_site *s = r->sites + i;
-        if (i) jb_lit(b, ", ");
-        if (s->site_param_count < 0) {
-            jb_lit(b, "null");
-            continue;
-        }
-        jb_lit(b, "[");
-        for (int k = 0; k < s->site_param_count; k++) {
-            if (k) jb_lit(b, ", ");
-            jb_float(b, s->site_params[k]);
-        }
-        jb_lit(b, "]");
-    }
-    jb_lit(b, "], \"layouts\": [");
-    for (int i = 0; i < r->nsites; i++) {
-        const md_site *s = r->sites + i;
-        if (i) jb_lit(b, ", ");
-        jb_lit(b, "{\"atom_site_ids\": [");
-        for (int a = 0; a < s->natoms; a++) {
-            if (a) jb_lit(b, ", ");
-            jb_cstring(b, s->children[s->atom_site[a]].id);
-        }
-        jb_lit(b, "], \"member_orders\": [");
-        for (int a = 0; a < s->natoms; a++) {
-            if (a) jb_lit(b, ", ");
-            jb_int(b, s->member_order[a]);
-        }
-        jb_lit(b, "], \"topology_atoms\": [");
-        for (int a = 0; a < s->natoms; a++) {
-            if (a) jb_lit(b, ", ");
-            jb_lit(b, "[");
-            for (int k = 0; k < 10; k++) {
-                if (k) jb_lit(b, ", ");
-                jb_int(b, s->topology[10 * (size_t)a + k]);
-            }
-            jb_lit(b, "]");
-        }
-        jb_lit(b, "], \"presentation_row_count\": ");
-        jb_int(b, s->presentation_rows);
-        jb_lit(b, "}");
-    }
-    jb_lit(b, "]}");
+    jb_lit(b, "]");
 }

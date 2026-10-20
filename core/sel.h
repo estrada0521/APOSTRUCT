@@ -93,7 +93,6 @@ int sel_mag_ordinary(int group);
 void sel_mag_subgroup_json(jbuf *b, int group);
 int64_t sel_mag_index(int parent_group, int subgroup_group, int64_t size, int *has);
 int sel_mag_ferroic(jbuf *b, int group);
-void sel_put_selection(jbuf *b, const int64_t *flat);
 void sel_put_records(jbuf *b, const int64_t *records, int64_t count);
 int sel_magnetic_static_rows(int old_id, int has_parent, int parent_sg, int has_gid, int64_t gid, const sel_params *display,
                              const jvalue *selected_orderparam, int has_setting, int64_t setting_id, int has_cell, const double *cell, jbuf *out);

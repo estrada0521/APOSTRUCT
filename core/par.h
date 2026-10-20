@@ -12,7 +12,6 @@
 
 int par_tables(void);
 void par_put_stripped(jbuf *b, const section_view *view, int64_t index);
-void par_setting_record(jbuf *b, int64_t id);
 void par_preference_text(jbuf *b, int64_t id);
 extern const char *PAR_DEFAULT_PREFERENCES;
 int64_t par_wyckoff_multiplicity(int sg, int row_id);

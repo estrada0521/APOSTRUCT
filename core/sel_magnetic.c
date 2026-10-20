@@ -193,80 +193,6 @@ static void put_ints(jbuf *b, const int64_t *values, int64_t n)
     jb_lit(b, "]");
 }
 
-/* asdict(MagneticIdSubgroupSelection) of a flat id_subgroup_magnetic_ record */
-void sel_put_selection(jbuf *b, const int64_t *flat)
-{
-    const int64_t *v = flat;
-    int64_t group = v[0];
-    v += 15;
-    jb_lit(b, "{\"base_value_count\": ");
-    jb_int(b, v[0]);
-    jb_lit(b, ", \"candidate_scan_ordinal\": ");
-    jb_int(b, v[1]);
-    jb_lit(b, ", \"mapping_ordinal\": ");
-    jb_int(b, v[2]);
-    jb_lit(b, ", \"basis_candidate_ordinal\": ");
-    jb_int(b, v[3]);
-    v += 4;
-    jb_lit(b, ", \"candidate_basis\": [");
-    for (int r = 0; r < 3; r++) {
-        if (r) jb_lit(b, ", ");
-        put_ints(b, v + 3 * r, 3);
-    }
-    v += 9;
-    jb_lit(b, "], \"candidate_origin\": ");
-    put_ints(b, v, 4);
-    v += 4;
-    int64_t generators = *v++;
-    const int64_t *counts = v;
-    v += generators;
-    jb_lit(b, ", \"generator_mapping\": {\"candidate_magnetic_group\": ");
-    jb_int(b, group);
-    jb_lit(b, ", \"candidate_generator_count\": ");
-    jb_int(b, generators);
-    jb_lit(b, ", \"per_generator_match_counts\": ");
-    put_ints(b, counts, generators);
-    jb_lit(b, ", \"per_generator_match_slots\": [");
-    for (int64_t g = 0; g < generators; g++) {
-        if (g) jb_lit(b, ", ");
-        put_ints(b, v, counts[g]);
-        v += counts[g];
-    }
-    jb_lit(b, "], \"selected_input_generator_slots\": ");
-    put_ints(b, v, generators);
-    v += generators;
-    jb_lit(b, ", \"selected_candidate_generator_ops\": ");
-    put_ints(b, v, generators);
-    v += generators;
-    int64_t inputs = *v++;
-    jb_lit(b, "}, \"point_operation_correspondence\": [");
-    for (int64_t slot = 1; slot <= inputs; slot++, v += 3) {
-        if (slot > 1) jb_lit(b, ", ");
-        jb_lit(b, "{\"input_slot\": ");
-        jb_int(b, slot);
-        jb_lit(b, ", \"input_point_op\": ");
-        jb_int(b, v[0]);
-        jb_lit(b, ", \"canonical_point_op\": ");
-        jb_int(b, v[1]);
-        jb_lit(b, v[2] ? ", \"selected_generator\": true}" : ", \"selected_generator\": false}");
-    }
-    int64_t lifted = *v++;
-    jb_lit(b, "], \"full_operation_correspondence\": [");
-    static const char *keys[4] = {", \"input_record\": ", ", \"local_input_record\": ", ", \"transformed_input_record\": ",
-                                  ", \"canonical_record\": "};
-    for (int64_t i = 0; i < lifted; i++) {
-        if (i) jb_lit(b, ", ");
-        jb_lit(b, "{\"input_slot\": ");
-        jb_int(b, *v++);
-        for (int k = 0; k < 4; k++, v += 5) {
-            jb_lit(b, keys[k]);
-            put_ints(b, v, 5);
-        }
-        jb_lit(b, "}");
-    }
-    jb_lit(b, "]}");
-}
-
 void sel_put_records(jbuf *b, const int64_t *records, int64_t count)
 {
     jb_lit(b, "[");
@@ -452,11 +378,8 @@ static int magnetic_row(jbuf *b, int64_t old_id, int64_t row_id, int canonical, 
         jb_raw(b, vectors.data, vectors.used);
         jb_lit(b, "}, \"isotropy\": {\"row_id\": ");
         jb_int(b, row_id);
-        jb_lit(b, canonical ? ", \"canonical\": true" : ", \"canonical\": false");
         jb_lit(b, ", \"magnetic\": true, \"opd_label\": ");
         jb_string(b, label, (size_t)label_length);
-        jb_lit(b, ", \"direction_id\": ");
-        jb_int(b, row_id);
         jb_lit(b, ", \"direction_label\": ");
         jb_string(b, label, (size_t)label_length);
         static const char *opd_keys[4] = {", \"direction_opd\": ", ", \"stored_opd\": ", ", \"display_opd\": ", ", \"source_opd\": "};
@@ -501,8 +424,6 @@ static int magnetic_row(jbuf *b, int64_t old_id, int64_t row_id, int canonical, 
         jb_reset(&extra);
         sel_mag_subgroup_json(&subgroup, sub_group);
         if (found) {
-            jb_lit(&extra, ", \"magnetic_subgroup_selection\": ");
-            sel_put_selection(&extra, flat);
             if (kept_count) {
                 jb_lit(&extra, ", \"source_operation_records\": ");
                 sel_put_records(&extra, &kept[0][0], kept_count);
@@ -511,10 +432,6 @@ static int magnetic_row(jbuf *b, int64_t old_id, int64_t row_id, int canonical, 
         sel_put_subgroup(b, ordinary_parent, ordinary_sub, basis, origin, &displayed, (const rat (*)[3])rows, displayed.size, &subgroup, &extra);
         jb_free(&subgroup);
         jb_free(&extra);
-        jb_lit(b, ", \"magnetic_parent_group\": ");
-        jb_int(b, parent_group);
-        jb_lit(b, ", \"magnetic_subgroup_old\": ");
-        jb_int(b, section_int(&T.iso_subgroup_old, idx));
         jb_lit(b, ", \"ferroic_properties\": ");
         status = sel_mag_ferroic(b, sub_group);
         jb_lit(b, "}}");

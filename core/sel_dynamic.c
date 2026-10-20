@@ -326,11 +326,10 @@ static int dynamic_row(jbuf *b, int magnetic, int parent_sg, int64_t gid, int64_
     jb_int(b, index);
     jb_lit(b, ", \"dynamic\": true, \"dynamic_gid\": ");
     jb_int(b, gid);
-    jb_lit(b, index == 1 ? ", \"canonical\": true" : ", \"canonical\": false");
     if (magnetic) jb_lit(b, ", \"magnetic\": true");
     jb_lit(b, ", \"opd_label\": ");
     jb_cstring(b, r->label);
-    jb_lit(b, ", \"direction_id\": 0, \"direction_label\": ");
+    jb_lit(b, ", \"direction_label\": ");
     jb_cstring(b, r->label);
     const char *opd_keys[3] = {", \"direction_opd\": ", ", \"stored_opd\": ", ", \"display_opd\": "};
     for (int k = 0; k < 3; k++) {
@@ -371,8 +370,6 @@ static int dynamic_row(jbuf *b, int magnetic, int parent_sg, int64_t gid, int64_
         jb_reset(&subgroup_json);
         jb_reset(&extra);
         sel_mag_subgroup_json(&subgroup_json, group);
-        jb_lit(&extra, ", \"magnetic_subgroup_selection\": ");
-        sel_put_selection(&extra, r->flat);
         if (r->nkept) {
             jb_lit(&extra, ", \"source_operation_records\": ");
             sel_put_records(&extra, r->kept, r->nkept);
@@ -390,9 +387,7 @@ static int dynamic_row(jbuf *b, int magnetic, int parent_sg, int64_t gid, int64_
     if (magnetic) {
         jb_lit(b, "], \"ferroic\": null, \"ferroic_properties\": ");
         status = sel_mag_ferroic(b, group);
-        jb_lit(b, ", \"magnetic_parent_group\": ");
-        jb_int(b, parent_group);
-        jb_lit(b, ", \"magnetic_subgroup_old\": null}}");
+        jb_lit(b, "}}");
     } else {
         jb_lit(b, "], \"ferroic\": null, \"ferroic_properties\": []}}");
     }

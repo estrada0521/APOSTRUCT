@@ -1564,24 +1564,7 @@ static void put_identity(jbuf *b, const md_state *st, const md_mode *m)
     jb_int(b, id->gid);
     jb_lit(b, ", \"site_pg\": ");
     jb_int(b, id->site_pg);
-    jb_lit(b, ", \"pg_irrep\": ");
-    jb_int(b, id->pg_irrep);
-    jb_lit(b, ", \"family\": ");
-    jb_int(b, id->family);
-    jb_lit(b, ", \"component\": ");
-    jb_int(b, id->component);
-    jb_lit(b, ", \"print_component\": ");
-    jb_int(b, id->print_component);
-    jb_lit(b, ", \"family_width\": ");
-    jb_int(b, id->family_width);
-    jb_lit(b, ", \"source_row_count\": ");
-    jb_int(b, id->source_row_count);
-    jb_lit(b, ", \"little_type\": ");
-    jb_int(b, id->little_type);
-    jb_lit(b, ", \"opd_groups\": ");
-    summary_group_json(b, blk->summaries + id->summary);
     jb_lit(b, blk->dynamic ? ", \"dynamic\": true" : ", \"dynamic\": false");
-    jb_lit(b, blk->phase ? ", \"phase\": true" : ", \"phase\": false");
     jb_lit(b, ", \"source_kparam\": [");
     for (int k = 0; k < blk->nkp; k++) {
         if (k) jb_lit(b, ", ");
@@ -1635,18 +1618,10 @@ static int public_definitions(md_request *r, md_state *st, const int *list, int 
         jb_lit(b, "}, \"normfactor\": ");
         if (m->has_normfactor) jb_float(b, m->normfactor);
         else jb_lit(b, "null");
-        jb_lit(b, ", \"_spec_order\": ");
-        jb_int(b, blk->spec_order);
         jb_lit(b, ", \"_site_order\": ");
         jb_int(b, blk->site_order);
-        jb_lit(b, ", \"_mode_kind\": ");
-        jb_cstring(b, blk->magnetic ? "mag" : "dsp");
-        if (blk->stokes) jb_lit(b, ", \"_selected_stokes_columns\": true");
         jb_lit(b, ", \"_source_print_identity\": ");
         put_identity(b, st, m);
-        jb_lit(b, ", \"_display_site_irrep_label\": ");
-        if (m->display) jb_cstring(b, m->display);
-        else jb_lit(b, "null");
         jb_lit(b, ", \"atom_block\": ");
         jb_int(b, plan->atom_block);
         jb_lit(b, ", \"vectors\": {\"$f64\": [");
@@ -1772,15 +1747,7 @@ static int subgroup_details(jbuf *b, const md_request *r, const md_state *st)
 
 static void put_undistorted(jbuf *b, const md_request *r)
 {
-    jbuf child = {0};
-    jb_reset(&child);
-    md_child_structure_json(r, &child);
-    /* {"undistorted_atoms": [...], ...}: copy the first member's value */
-    const char *start = strchr(child.data, '[');
-    const char *end = strstr(child.data, "], \"site_params\"");
-    if (start && end) jb_raw(b, start, (size_t)(end - start + 1));
-    else jb_lit(b, "[]");
-    jb_free(&child);
+    md_child_atoms_json(r, b);
 }
 
 static struct {

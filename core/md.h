@@ -233,7 +233,7 @@ char *md_default_symbol(int sg);
 void md_origin_vector(const md_request *r, double *out);
 int md_origin_rational(const md_request *r, rat *out);
 void md_spec_free(md_spec *spec);
-void md_child_structure_json(const md_request *r, jbuf *b);
+void md_child_atoms_json(const md_request *r, jbuf *b);
 void md_release(md_request *r);
 
 #endif

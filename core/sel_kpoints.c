@@ -485,17 +485,12 @@ int sel_irreps(const jvalue *state, jbuf *out)
         jb_free(&magnetic);
         jb_lit(&irreps[k], "]");
         counts[k] = count + magnetic_count;
-        jbuf unfiltered = {0};
-        jb_reset(&unfiltered);
-        jb_value(&unfiltered, candidates);
         char number[32];
         snprintf(number, sizeof number, "%lld", (long long)counts[k]);
-        kv items[3] = {{"_ordinary_irreps_unfiltered", unfiltered.data, unfiltered.used},
-                       {"irreps", irreps[k].data, irreps[k].used},
+        kv items[2] = {{"irreps", irreps[k].data, irreps[k].used},
                        {"n_irreps", number, strlen(number)}};
         jb_reset(&kp_json[k]);
-        sel_merge(&kp_json[k], kpoint, items, 3);
-        jb_free(&unfiltered);
+        sel_merge(&kp_json[k], kpoint, items, 2);
     }
     if (!status) {
         jbuf list = {0}, new_catalog = {0};
