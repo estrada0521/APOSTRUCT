@@ -40,10 +40,10 @@ enum {
 
 static struct {
     section_view m2n, r, nlabel, t4_pointer, t4_sg, t4_basis, t4_origin, gen_count, gen, op_code,
-        point_group, point_group_code;
+        point_group_code;
     section_view point_op, lattice, label_bc, sg_pointer;
     int ready, groups;
-    short products[144 * 144], *ordinary, *type;
+    short products[144 * 144], *ordinary, *type, *point_group, point_group_order[256];
 } M;
 
 static int mag_bad;
@@ -72,7 +72,6 @@ static int load(void)
         {"magnetic.mag_gen_count", &M.gen_count, 0},
         {"magnetic.mag_gen", &M.gen, 0},
         {"magnetic.mag_point_op_code", &M.op_code, 0},
-        {"magnetic.mag_point_group", &M.point_group, 0},
         {"magnetic.mag_point_group_code", &M.point_group_code, 0},
         {"space.ipoint_op", &M.point_op, 0},
         {"space.ispace_lattice", &M.lattice, 0},
@@ -121,6 +120,28 @@ static int load(void)
             else anti = 1;
         }
         M.type[g] = (short)(!reversed ? 1 : gray ? 2 : anti ? 4 : 3);
+    }
+    /* each group's point group: the one whose code is the sum of the codes over the closure of the generators */
+    M.point_group = calloc((size_t)M.groups + 1, sizeof(short));
+    if (!M.point_group || section_count(&M.point_group_code) > 255) return MG_TABLES;
+    for (int g = 1; g <= M.groups; g++) {
+        int count = (int)section_int(&M.gen_count, g - 1), ops[4], n = 1, closure[144];
+        for (int i = 0; i < count && i < 4; i++) ops[i] = (int)section_int(&M.gen, (int64_t)(g - 1) * 20 + i * 5 + 4);
+        closure[0] = of[1][0];
+        for (int i = 0; i < count && i < 4; i++)
+            if (ops[i] >= 1 && ops[i] <= 144 && section_int(&M.m2n, ops[i] - 1) > 48) closure[0] = of[49][0];
+        for (int i = 0; i < n; i++)
+            for (int k = 0; k < count && k < 4; k++) {
+                int x = ops[k] >= 1 && ops[k] <= 144 ? M.products[(ops[k] - 1) * 144 + closure[i] - 1] : 0, seen = !x;
+                for (int j = 0; j < n && !seen; j++) seen = closure[j] == x;
+                if (!seen && n < 144) closure[n++] = x;
+            }
+        int64_t code = 0;
+        for (int i = 0; i < n; i++) code += section_int(&M.op_code, closure[i] - 1);
+        for (int64_t pg = 0; pg < section_count(&M.point_group_code) && !M.point_group[g]; pg++)
+            if (section_int(&M.point_group_code, pg) == code) M.point_group[g] = (short)(pg + 1);
+        if (!M.point_group[g]) return MG_TABLES;
+        M.point_group_order[M.point_group[g]] = (short)n;
     }
     M.ready = 1;
     return 0;
@@ -308,7 +329,25 @@ int mag_group_type(int group)
     }
     return M.type[group];
 }
-int64_t mag_group_code(int group) { return at(&M.point_group_code, at(&M.point_group, group - 1) - 1); }
+int64_t mag_group_code(int group) { return at(&M.point_group_code, mag_group_pg(group) - 1); }
+
+int mag_group_pg(int group)
+{
+    if (load() || group < 1 || group > M.groups) {
+        fail(MG_TABLES);
+        return 0;
+    }
+    return M.point_group[group];
+}
+
+int mag_pg_order(int point_group)
+{
+    if (load() || point_group < 1 || point_group > 255) {
+        fail(MG_TABLES);
+        return 0;
+    }
+    return M.point_group_order[point_group];
+}
 int64_t mag_op_code(int op) { return at(&M.op_code, op - 1); }
 int mag_nonmagnetic_op(int op) { return ordinary_of(op); }
 int mag_time_reversed(int op) { return at(&M.r, op - 1) != 0; }

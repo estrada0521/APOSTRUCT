@@ -12,6 +12,8 @@ int64_t mag_group_total(void);
 int mag_ordinary_group(int group);
 /* 1 ordinary, 2 gray, 3 black-white, 4 black-white with an anti-translation */
 int mag_group_type(int group);
+int mag_group_pg(int group);
+int mag_pg_order(int point_group);
 int64_t mag_group_code(int group);
 int64_t mag_op_code(int op);
 int mag_nonmagnetic_op(int op);

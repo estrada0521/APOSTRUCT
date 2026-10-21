@@ -26,7 +26,7 @@ int id_subgroup_magnetic_identify(int parent, const int64_t *basis, int op_count
 int mag_isotropy_row_subgroup(int64_t row_id);
 
 static struct {
-    section_view point_group, point_group_order, op_r, mag2nonmag, bns, nlabel, iso_pointer, iso_basis, iso_origin, iso_label, iso_op_pointer, iso_op, point_op, const_values, irr_sg, old_sg;
+    section_view op_r, mag2nonmag, bns, nlabel, iso_pointer, iso_basis, iso_origin, iso_label, iso_op_pointer, iso_op, point_op, const_values, irr_sg, old_sg;
     int ready;
 } T;
 
@@ -36,9 +36,7 @@ int sel_mag_tables(void)
     struct {
         const char *name;
         section_view *view;
-    } list[] = {{"magnetic.mag_point_group", &T.point_group},
-                {"magnetic.mag_point_group_order", &T.point_group_order},
-                {"magnetic.mag_point_op_r", &T.op_r},
+    } list[] = {{"magnetic.mag_point_op_r", &T.op_r},
                 {"magnetic.mag_point_op_mag2nonmag", &T.mag2nonmag},
                 {"magnetic.mag_bns_label", &T.bns},
                 {"magnetic.mag_nlabel", &T.nlabel},
@@ -94,8 +92,7 @@ void sel_mag_subgroup_json(jbuf *b, int group)
 /* catalog._magnetic_subgroup_index_for_groups */
 int64_t sel_mag_index(int parent_group, int subgroup_group, int64_t size, int *has)
 {
-    int64_t parent_pg = section_int(&T.point_group, parent_group - 1), sub_pg = section_int(&T.point_group, subgroup_group - 1);
-    int64_t parent_order = section_int(&T.point_group_order, parent_pg - 1), sub_order = section_int(&T.point_group_order, sub_pg - 1);
+    int64_t parent_order = mag_pg_order(mag_group_pg(parent_group)), sub_order = mag_pg_order(mag_group_pg(subgroup_group));
     int64_t value = size * parent_order;
     *has = sub_order > 0 && value % sub_order == 0;
     return *has ? value / sub_order : 0;
@@ -142,14 +139,14 @@ static int rank3(int64_t (*m)[3], int rows)
 int sel_mag_ferroic(jbuf *b, int group)
 {
     static signed char cache[256];
-    int64_t total = section_count(&T.point_group);
+    int64_t total = mag_group_total();
     if (group < 1 || group > total) return md_fail(MDE_VALUE, "unknown magnetic group: %d", group);
-    int64_t pg = section_int(&T.point_group, group - 1);
+    int64_t pg = mag_group_pg(group);
     if (pg < 1 || pg > 255) return md_fail(MDE_VALUE, "unknown magnetic point group: %lld", (long long)pg);
     if (!cache[pg]) {
         int representative = 0;
         for (int64_t g = 0; g < total && !representative; g++)
-            if (section_int(&T.point_group, g) == pg) representative = (int)g + 1;
+            if (mag_group_pg((int)g + 1) == pg) representative = (int)g + 1;
         if (!representative) return md_fail(MDE_VALUE, "unknown magnetic point group: %lld", (long long)pg);
         int64_t records[192][5];
         int count = magnetic_records(representative, 1, 192, &records[0][0]);
@@ -159,7 +156,7 @@ int sel_mag_ferroic(jbuf *b, int group)
             md_err.message[0] = 0;
             return MDE_MAGNETIC;
         }
-        int64_t expected = section_int(&T.point_group_order, pg - 1);
+        int64_t expected = mag_pg_order((int)pg);
         if (count != expected)
             return md_fail(MDE_VALUE, "magnetic point-group closure is incomplete: group=%d expected=%lld actual=%d", representative,
                            (long long)expected, count);
