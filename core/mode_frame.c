@@ -10,6 +10,7 @@
 
 #include "geometry.h"
 #include "tables.h"
+int isotropy_row_subgroup(int64_t row_id);
 
 int64_t isotropy_row_count(void);
 int isotropy_row_dim(int64_t row_id);
@@ -59,7 +60,7 @@ static int fail(int kind, const char *message)
 
 static struct {
     section_view w_pointer, w_count, w_label, w_pg, vector_reps, irr_sg, irr_old, full_dim, irr_type, irr_k, k_label,
-        irr_count, iso_irrep_pointer, iso_subgroup, iso_arms, iso_direction, iso_basis, iso_origin,
+        irr_count, iso_irrep_pointer, iso_arms, iso_direction, iso_basis, iso_origin,
         iso_op_pointer, iso_op, const_values, sg_point_group, pg_order, pg_gen_count, pg_gen, lattice;
     int ready;
 } T;
@@ -75,7 +76,7 @@ static int load(void)
         section_find("little.little_irr_type", &T.irr_type) || section_find("little.little_irr_k", &T.irr_k) ||
         section_find("little.little_k_label", &T.k_label) || section_find("little.little_irr_count", &T.irr_count) ||
         section_find("isotropy.isotropy_irrep_pointer", &T.iso_irrep_pointer) ||
-        section_find("isotropy.isotropy_subgroup", &T.iso_subgroup) || section_find("isotropy.isotropy_arms", &T.iso_arms) ||
+        section_find("isotropy.isotropy_arms", &T.iso_arms) ||
         section_find("isotropy.isotropy_direction", &T.iso_direction) || section_find("isotropy.isotropy_basis", &T.iso_basis) ||
         section_find("isotropy.isotropy_origin", &T.iso_origin) ||
         section_find("isotropy.isotropy_orderparam_pointer", &T.iso_op_pointer) ||
@@ -139,7 +140,7 @@ static int iso_rows(int gid, iso_row **out, int *count)
         iso_row *r = &rows[row_id - start];
         int64_t idx = row_id - 1;
         r->row_id = row_id;
-        r->subgroup = (int)section_int(&T.iso_subgroup, idx);
+        r->subgroup = isotropy_row_subgroup(row_id);
         r->arms = (int)section_int(&T.iso_arms, idx);
         r->direction = (int)section_int(&T.iso_direction, idx);
         for (int i = 0; i < 9; i++) r->basis[i] = section_int(&T.iso_basis, idx * 9 + i);

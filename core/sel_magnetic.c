@@ -23,9 +23,11 @@ int orderparam_to_subgroup_rows(int gid, int param_count, const int64_t *kparam,
 int id_subgroup_magnetic_identify(int parent, const int64_t *basis, int op_count, const int64_t *ops, int flag, int64_t capacity,
                                   int64_t *out);
 
+int mag_isotropy_row_subgroup(int64_t row_id);
+
 static struct {
-    section_view point_group, point_group_order, op_r, mag2nonmag, bns, nlabel, space_group, type, iso_pointer, iso_subgroup, iso_basis, iso_origin, iso_label, iso_op_pointer, iso_op, point_op, const_values, irr_sg, old_sg;
-    int ready, gray[231];
+    section_view point_group, point_group_order, op_r, mag2nonmag, bns, nlabel, space_group, iso_pointer, iso_basis, iso_origin, iso_label, iso_op_pointer, iso_op, point_op, const_values, irr_sg, old_sg;
+    int ready;
 } T;
 
 int sel_mag_tables(void)
@@ -41,9 +43,7 @@ int sel_mag_tables(void)
                 {"magnetic.mag_bns_label", &T.bns},
                 {"magnetic.mag_nlabel", &T.nlabel},
                 {"magnetic.mag_space_group", &T.space_group},
-                {"magnetic.mag_type", &T.type},
                 {"magnetic.mag_iso_irrep_pointer", &T.iso_pointer},
-                {"magnetic.mag_iso_subgroup", &T.iso_subgroup},
                 {"magnetic.mag_iso_basis", &T.iso_basis},
                 {"magnetic.mag_iso_origin", &T.iso_origin},
                 {"magnetic.mag_iso_orderparam_label", &T.iso_label},
@@ -56,10 +56,6 @@ int sel_mag_tables(void)
     if (sel_tables() || mag_tables()) return 1;
     for (size_t i = 0; i < sizeof list / sizeof list[0]; i++)
         if (section_find(list[i].name, list[i].view)) return 1;
-    for (int64_t g = 0; g < section_count(&T.type); g++) {
-        int sg = (int)section_int(&T.space_group, g);
-        if (section_int(&T.type, g) == 2 && sg > 0 && sg <= 230) T.gray[sg] = (int)g + 1;
-    }
     T.ready = 1;
     return 0;
 }
@@ -278,7 +274,7 @@ static int magnetic_row(jbuf *b, int64_t old_id, int64_t row_id, int canonical, 
     int64_t basis[9], origin[4];
     for (int i = 0; i < 9; i++) basis[i] = section_int(&T.iso_basis, idx * 9 + i);
     for (int i = 0; i < 4; i++) origin[i] = section_int(&T.iso_origin, idx * 4 + i);
-    int parent_group = T.gray[(int)section_int(&T.old_sg, old_id - 1)], sub_group = (int)section_int(&T.iso_subgroup, idx);
+    int parent_group = mag_orderparam_group((int)section_int(&T.old_sg, old_id - 1)), sub_group = mag_isotropy_row_subgroup(row_id);
     int ordinary_parent = sel_mag_ordinary(parent_group), ordinary_sub = sel_mag_ordinary(sub_group);
     int64_t s0 = basis[0] * (basis[4] * basis[8] - basis[5] * basis[7]) - basis[1] * (basis[3] * basis[8] - basis[5] * basis[6]) +
                  basis[2] * (basis[3] * basis[7] - basis[4] * basis[6]);

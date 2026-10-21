@@ -1131,6 +1131,7 @@ static int gamma_of(const sp_induced *c, const sp_aff *x, uint64_t *out)
 
 static int SP_SG, SP_SETTING;
 int id_subgroup_identify(int parent, const int64_t *basis, int op_count, const int64_t *ops, int flag, int64_t *out);
+int isotropy_row_subgroup(int64_t row_id);
 
 static int64_t igcd(int64_t a, int64_t b)
 {
@@ -1616,11 +1617,11 @@ static int table_rows(int gid, int magnetic)
  * Gamma, its fixed space is an isotropy subspace, and its orbit is one of ours */
 static int table_labels(const sp_induced *c, int gid, const pset *seen, const int *orbit_of, char (*labels)[16], size_t nreps)
 {
-    static section_view old, pointer, subgroup, basis, origin, label;
+    static section_view old, pointer, basis, origin, label;
     static int ready;
     if (!ready) {
         if (section_find("little.little_irr_old", &old) || section_find("isotropy.isotropy_irrep_pointer", &pointer) ||
-            section_find("isotropy.isotropy_subgroup", &subgroup) || section_find("isotropy.isotropy_basis", &basis) ||
+            section_find("isotropy.isotropy_basis", &basis) ||
             section_find("isotropy.isotropy_origin", &origin) || section_find("isotropy.isotropy_orderparam_label", &label))
             return spfail("isotropy tables are missing");
         ready = 1;
@@ -1634,7 +1635,7 @@ static int table_labels(const sp_induced *c, int gid, const pset *seen, const in
         int64_t idx = row - 1, b9[9], o4[4], records[GEO_MAX_OPS][5];
         for (int i = 0; i < 9; i++) b9[i] = section_int(&basis, idx * 9 + i);
         for (int i = 0; i < 4; i++) o4[i] = section_int(&origin, idx * 4 + i);
-        int n = parent_operation_records(SP_SG, (int)section_int(&subgroup, idx), b9, o4, records);
+        int n = parent_operation_records(SP_SG, isotropy_row_subgroup(idx + 1), b9, o4, records);
         if (n <= 0) return spfail("table subgroup does not map into the parent");
         memset(x, 0, sizeof(uint64_t) * (size_t)D * D);
         for (int i = 0; i < D; i++) x[i * D + i] = 1;

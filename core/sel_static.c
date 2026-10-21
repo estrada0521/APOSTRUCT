@@ -9,6 +9,7 @@
 #include "geometry.h"
 #include "sel.h"
 #include "tables.h"
+int isotropy_row_subgroup(int64_t row_id);
 
 int64_t isotropy_row_count(void);
 int isotropy_row_dim(int64_t row_id);
@@ -24,7 +25,7 @@ int k_coordinate_map_words(int sg, int kslot, int64_t *out);
 static struct {
     section_view image_label, image_dimension, image_subgroup, image_subgroup_count, image_subgroup_pointer, image_subgroup_maximal,
         image_subgroup_min, image_subgroup_rg, dir_label, dir_dimension, dir_subduction, dir_pointer, dir, irrep_image, irrep_sg,
-        iso_pointer, iso_basis, iso_origin, iso_direction, iso_subgroup, iso_label, iso_op_pointer, iso_op, const_values, point_group, group_order, gen_count, gen,
+        iso_pointer, iso_basis, iso_origin, iso_direction, iso_label, iso_op_pointer, iso_op, const_values, point_group, group_order, gen_count, gen,
         irr_old, irr_sg, irr_k, k_dim;
     int ready;
 } T;
@@ -54,7 +55,6 @@ int sel_tables(void)
                 {"isotropy.isotropy_basis", &T.iso_basis},
                 {"isotropy.isotropy_origin", &T.iso_origin},
                 {"isotropy.isotropy_direction", &T.iso_direction},
-                {"isotropy.isotropy_subgroup", &T.iso_subgroup},
                 {"isotropy.isotropy_orderparam_label", &T.iso_label},
                 {"isotropy.isotropy_orderparam_pointer", &T.iso_op_pointer},
                 {"isotropy.isotropy_orderparam", &T.iso_op},
@@ -1013,7 +1013,7 @@ static int isotropy_row(int64_t old_id, int64_t row_id, int parent_sg, int64_t f
     int64_t direction_id = section_int(&T.iso_direction, idx);
     direction d;
     MD_TRY(direction_of(direction_id, &d));
-    int subgroup = (int)section_int(&T.iso_subgroup, idx);
+    int subgroup = isotropy_row_subgroup(idx + 1);
     sel_setting displayed;
     rat rows[3][3];
     MD_TRY(sel_display(parent_sg, subgroup, basis, origin, has_setting, setting_id, has_cell, cell, k_params->count > 0, 0, 0, &displayed, rows));

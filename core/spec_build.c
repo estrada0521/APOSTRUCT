@@ -11,6 +11,7 @@
 #include "geometry.h"
 #include "spec_core.h"
 #include "tables.h"
+int isotropy_row_subgroup(int64_t row_id);
 
 int64_t isotropy_row_count(void);
 int isotropy_row_dim(int64_t row_id);
@@ -119,7 +120,7 @@ static int caught(int mask)
 #define BIT(kind) (1 << (kind))
 
 static struct {
-    section_view mag2nonmag, iso_basis, iso_origin, iso_subgroup, irrep_sg,
+    section_view mag2nonmag, iso_basis, iso_origin, irrep_sg,
         irr_sg, old;
     int ready;
 } T;
@@ -1383,10 +1384,9 @@ int spec_static(int sg, int selected_old_id, int selected_row_id, int has_frame,
     int64_t default_basis[9], default_origin[4];
     if (!has_frame) {
         if (section_find("isotropy.isotropy_basis", &T.iso_basis) ||
-            section_find("isotropy.isotropy_origin", &T.iso_origin) ||
-            section_find("isotropy.isotropy_subgroup", &T.iso_subgroup))
+            section_find("isotropy.isotropy_origin", &T.iso_origin))
             return finish(sp_fail(PY_VALUE, "selected isotropy frame is missing"));
-        child_sg = (int)section_int(&T.iso_subgroup, selected_row_id - 1);
+        child_sg = isotropy_row_subgroup(selected_row_id);
         for (int j = 0; j < 9; j++) default_basis[j] = section_int(&T.iso_basis, 9 * (selected_row_id - 1) + j);
         for (int j = 0; j < 4; j++) default_origin[j] = section_int(&T.iso_origin, 4 * (selected_row_id - 1) + j);
         basis = default_basis;
