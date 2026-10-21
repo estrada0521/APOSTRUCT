@@ -219,10 +219,9 @@ class ISOData:
         raise KeyError(f"irrep label {label!r} not found for SG{sg}")
 
     def irrep_dim(self, old_id: int) -> int:
-        # The reliable dimension table is in data_little, keyed through little_irr_old.
         for i, oid in enumerate(self.little["little_irr_old"]):
             if oid == old_id:
-                return int(self.little["little_irr_full_dim"][i])
+                return native.little_full_dim(i + 1)
         raise KeyError(f"dimension for old irrep id {old_id} not found")
 
     # ------------------------------------------------------------------

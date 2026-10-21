@@ -44,6 +44,7 @@ int tables_open(const char *path)
 }
 
 int star_rule_section(const char *name, section_view *view, int *handled);
+int irrep_dims_section(const char *name, section_view *view, int *handled);
 
 /* a section as stored in the blob */
 int section_find_stored(const char *name, section_view *view)
@@ -58,10 +59,12 @@ int section_find_stored(const char *name, section_view *view)
     return 1;
 }
 
-/* a section by name; the star of k sections are built from their rule (star_rule.c) */
+/* a section by name; the star of k sections are built from their rule (star_rule.c), the irrep dimensions from the
+ * matrices (irrep_dims.c) */
 int section_find(const char *name, section_view *view)
 {
     int handled, status = star_rule_section(name, view, &handled);
+    if (!handled) status = irrep_dims_section(name, view, &handled);
     return handled ? status : section_find_stored(name, view);
 }
 

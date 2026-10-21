@@ -454,7 +454,7 @@ class SourceTables:
             gid=gid,
             old_id=int(self.little["little_irr_old"][gid - 1]),
             label=native.irrep_full_label(gid),
-            full_dim=int(self.little["little_irr_full_dim"][gid - 1]),
+            full_dim=native.little_full_dim(gid),
         )
 
     def image_record(self, old_id: int) -> dict[str, Any]:
