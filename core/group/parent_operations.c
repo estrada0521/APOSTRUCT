@@ -1,5 +1,4 @@
-/* structure_runtime._subgroup_parent_operation_records: the child's Source
- * operations mapped into the selected raw parent embedding, integer lattice
+/* A subgroup's Source operations mapped into the selected raw parent embedding, integer lattice
  * translations kept. */
 
 #include <stdint.h>

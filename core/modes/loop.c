@@ -1,4 +1,4 @@
-/* build_mode_details' site x spec loop and its output: every site block's
+/* The site x spec loop of the mode details and its output: every site block's
  * mode frame, layout, row plan and presented modes, the occurrence-alias
  * admission, the coupled independent union and the public definitions. */
 
@@ -286,7 +286,7 @@ static void put_rat_words(int64_t *out, const rat *values, int count)
     }
 }
 
-/* request_context._spec_label: case k parameters and the displayed k vector */
+/* a spec's case k parameters and displayed k vector */
 static int spec_texts(md_request *r, md_state *st, int index)
 {
     const md_spec *s = r->specs + index;
@@ -394,7 +394,6 @@ static int spec_texts(md_request *r, md_state *st, int index)
     return 0;
 }
 
-/* request_context._should_emit_all_source_opd_rows */
 static int emit_full_rows(const md_request *r, const md_spec *s, int *out)
 {
     *out = 0;
@@ -728,7 +727,7 @@ static void summary_group_json(jbuf *b, const md_summary *s)
     jb_lit(b, "]");
 }
 
-/* assembly._occurrence_source_signature as canonical text, NULL for None */
+/* the Source signature of an occurrence as canonical text, NULL when it has none */
 static char *source_signature(const md_frame *f, const int64_t *layout_modes, int identity_covered, int site_pg)
 {
     if (!identity_covered || f->mode_count <= 0) return 0;
@@ -1754,7 +1753,7 @@ static struct {
     int ready;
 } S;
 
-/* modes.engine.source_catalog.little_record(sg, label).gid; 0 when it raises KeyError */
+/* the gid of the little irrep with this label in sg; 0 when there is none */
 static int64_t little_gid_of_label(int sg, const char *label)
 {
     if (!S.ready) {
@@ -1782,7 +1781,7 @@ static int64_t little_gid_of_label(int sg, const char *label)
     return matches == 1 ? found : 0;
 }
 
-/* build_mode_details' strain_mode_specs: dsp spec copies with their order */
+/* the strain specs: copies of the displacive specs with their order */
 static int strain_mode_specs(md_request *r, md_spec **owned, const md_spec ***list, int **orders, int *count)
 {
     int n = r->nspecs;
@@ -2194,7 +2193,7 @@ int md_build(md_request *r, jbuf *b)
     return status;
 }
 
-/* build_mode_details up to its render specs: the unsupported answers and
+/* The mode details up to the render specs: the unsupported answers and
  * the parent cell; *done when out already holds the answer. */
 int md_preflight(md_request *r, jbuf *b, int *done)
 {

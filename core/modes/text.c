@@ -1,4 +1,4 @@
-/* modes.mode_detail_text.render_mode_detail_text over a full modes state. */
+/* The mode details text (the Web complete-modes page) of a full modes state. */
 
 #include <math.h>
 #include <stdio.h>
@@ -69,7 +69,7 @@ static int lattice_lines(jbuf *b, const jvalue *lattice, const double *values, i
     return 0;
 }
 
-/* modes._supercell_lattice: 0 and the six values, or 1 to keep the parent's. */
+/* the supercell lattice: 0 and the six values, or 1 to keep the parent's */
 static int supercell(const jvalue *parent, const jvalue *basis, double *out)
 {
     if (!jtruthy(basis) || !jis(parent, J_OBJECT)) return 1;
@@ -253,7 +253,6 @@ static double mod1(double x)
     return m;
 }
 
-/* modes.mode_detail_text.parent_display_xyz */
 static int parent_xyz(const jvalue *site, double *xyz)
 {
     const jvalue *formula = member(site, "wyckoff_formula"), *params = member(site, "wyckoff_params");

@@ -1,5 +1,4 @@
-/* The Python exception a native error code stands for (native._raise_mode_detail
- * and native._raise_selection): its type name and text. */
+/* The error kind and text a stage error code stands for, as the CLI and the GUI report it. */
 
 #include <stdio.h>
 #include <string.h>

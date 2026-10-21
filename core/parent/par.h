@@ -17,7 +17,7 @@ extern const char *PAR_DEFAULT_PREFERENCES;
 int64_t par_wyckoff_multiplicity(int sg, int row_id);
 void par_wyckoff_label(jbuf *b, int row_id);
 void par_site_pg_label(jbuf *b, int site_pg);
-/* SourceTables._wyckoff_formula_from_vectors: the formula as a JSON string; used[i] for x, y, z */
+/* the formula as a JSON string; used[i] for x, y, z */
 void par_formula(const rat (*v)[3], jbuf *formula, int *used);
 int par_inter_vectors(int sg, int offset0, int setting_id, rat (*out)[3]);
 double par_mod1(double x);

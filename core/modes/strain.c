@@ -1,6 +1,5 @@
-/* definition_presentation._strain_mode_definitions with modes.engine.tensor:
- * the rank-2 tensor copies of a GM irrep and the strain definitions they
- * give, in numpy's operation order (math/linalg.c in place of BLAS / LAPACK, with the
+/* The strain mode definitions: the rank-2 tensor copies of a GM irrep and the strain definitions they give, in the
+ * operation order of the former numpy implementation (math/linalg.c in place of BLAS / LAPACK, with the
  * transpose flags numpy passes for each operand layout). */
 
 
@@ -120,7 +119,6 @@ static int cartesian_basis(int sg, nd *out)
     return 0;
 }
 
-/* tensor._cartesian_point_matrix */
 static int cartesian_point_matrix(int sg, int op, nd *out)
 {
     int64_t m[9];
@@ -155,7 +153,7 @@ static int cartesian_point_matrix(int sg, int op, nd *out)
 
 static const int INDICES[6][2] = {{0, 0}, {0, 1}, {0, 2}, {1, 1}, {1, 2}, {2, 2}};
 
-/* tensor._rank2_representation: columns[k] = transformed unit tensor k, returned as columns.T */
+/* columns[k] = transformed unit tensor k, returned transposed */
 static int rank2_representation(const nd *rotation, nd *out)
 {
     nd columns;
@@ -225,7 +223,7 @@ static int irrep_matrix(int64_t gid, int position, int dim, nd *out)
     return 0;
 }
 
-/* tensor._canonical_copy (in place, layout kept) */
+/* the canonical copy of a tensor, in place, layout kept */
 static void canonical_copy(nd *a, double tol)
 {
     int n = a->rows * a->cols;
@@ -273,7 +271,6 @@ static int vstack(const nd *items, int count, const nd *extra, nd *out)
     return 0;
 }
 
-/* tensor._hexagonal_source_carrier_gauge */
 static int hexagonal_gauge(const nd *anchor, nd *out, double tol)
 {
     int rows = anchor->rows;
@@ -334,7 +331,6 @@ typedef struct {
     int count;
 } copies;
 
-/* tensor._rank2_tensor_copies */
 static int rank2_tensor_copies(int sg, int64_t gid, copies *out)
 {
     out->items = 0;
@@ -455,7 +451,6 @@ static void groups_free(row_groups *g)
     memset(g, 0, sizeof *g);
 }
 
-/* tensor.selected_rank2_tensor_row_groups */
 static int selected_row_groups(int sg, int64_t gid, const md_matrix *direction_matrix, row_groups *out)
 {
     memset(out, 0, sizeof *out);
@@ -503,7 +498,7 @@ static int selected_row_groups(int sg, int64_t gid, const md_matrix *direction_m
     return 0;
 }
 
-/* tensor.totally_symmetric_rank2_rows, each row its own group */
+/* the totally symmetric rank-2 rows, each its own group */
 static int totally_symmetric_rows(int sg, int64_t gid, row_groups *out)
 {
     memset(out, 0, sizeof *out);
@@ -642,7 +637,7 @@ static int strain_definitions_of(md_request *r, const strain_spec *specs, int ns
     return 0;
 }
 
-/* The strain specs of build_mode_details and _strain_mode_definitions over them. */
+/* The strain mode definitions over the strain specs. */
 int md_strain_definitions(md_request *r, const md_spec *const *specs, const int *orders, int nspecs, jbuf *b)
 {
     if (tables()) return md_fail(MDE_VALUE, "mode Source tables are inconsistent");

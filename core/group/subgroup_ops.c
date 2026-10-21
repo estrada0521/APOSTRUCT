@@ -176,8 +176,6 @@ static int in_lattice(const int64_t *record, const int64_t *basis)
     }
     return 1;
 }
-
-/* coupled._operation_in_subgroup */
 static int in_subgroup(const int64_t *candidate, const int64_t *basis, int count, const int64_t *operations)
 {
     const int64_t *representative = 0;

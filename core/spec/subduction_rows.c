@@ -1,5 +1,4 @@
-/* dynamic_subduction._subduction_rows_for_families and its magnetic twin:
- * for every k family in order and every little irrep of that k label, the
+/* The subduction rows of the k families, ordinary and magnetic: for every k family in order and every little irrep of that k label, the
  * invariant directions over the operations plus the supercell translations,
  * merged by (gid, reciprocal point-group orbit) with the preferred source k
  * parameter taking over a row's family. */

@@ -1,5 +1,4 @@
-/* isotropy.coupled.coupled_opd_rows: relative domains of every selected
- * order-parameter subspace, their common stabilizers and identified
+/* The coupled OPD rows: relative domains of every selected order-parameter subspace, their common stabilizers and identified
  * subgroups. */
 
 #include <math.h>
@@ -148,8 +147,6 @@ static int64_t det3(const int64_t *m)
 }
 
 static int64_t abs64(int64_t v) { return v < 0 ? -v : v; }
-
-/* coupled._number */
 static int number_of(const jvalue *v, double *out)
 {
     if (jis(v, J_INT)) {
@@ -270,8 +267,6 @@ static int kernel_records(const int64_t *basis, int group, rec **out, int *count
 }
 
 int exact_refine_rows(int rows, int cols, double *values);
-
-/* coupled._orderparam */
 static int row_orderparam(const cslot_t *s, srow_t *r)
 {
     const jvalue *direction = member(r->row, "direction");
@@ -545,7 +540,7 @@ typedef struct {
 
 static int float_nonzero(const void *ctx, int row, int col) { return fabs(((const float_rows *)ctx)->values[row * 48 + col]) > 1e-9; }
 
-/* coupled._fixed_dimensions_for_point_actions over the distinct point matrices */
+/* the fixed dimensions of the polar vector and the strain over the distinct point matrices */
 static int fixed_dimensions(const rec *ops, int n, int64_t *polar, int64_t *strain)
 {
     int64_t (*seen)[9] = calloc((size_t)(n ? n : 1), sizeof *seen);
@@ -573,7 +568,7 @@ static int fixed_dimensions(const rec *ops, int n, int64_t *polar, int64_t *stra
     return 0;
 }
 
-/* coupled._ordinary_coupled_ferroic_properties: 0 classified into b, 1 None */
+/* 0 classified into b, 1 when unclassified */
 static int ordinary_ferroic(jbuf *b, const rec *child_ops, int nchild, srow_t *const *rows, int *none)
 {
     *none = 0;
@@ -609,7 +604,7 @@ static int ordinary_ferroic(jbuf *b, const rec *child_ops, int nchild, srow_t *c
     return 0;
 }
 
-/* coupled._unique_static_factor_presentation: 1 with basis/origin */
+/* 1 with basis/origin */
 static int static_presentation(int ordinary, const int64_t *final_basis, const rec *final_ops, int nfinal, const int32_t *domains,
                                srow_t *const *rows, int64_t *basis_out, int64_t *origin_out, int *found)
 {

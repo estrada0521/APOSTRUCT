@@ -1,5 +1,4 @@
-/* isotropy.catalog._dynamic_opd_rows: the get_isotropy_ rows of a
- * parametric gid in their displayed settings. */
+/* The OPD rows of a parametric gid: the get_isotropy_ rows in their displayed settings. */
 
 #include <math.h>
 #include <stdio.h>
@@ -53,7 +52,7 @@ static int strip_bounds(const char *raw, const char **a, const char **e)
     return *a < *e;
 }
 
-/* catalog._dynamic_kparam: 1 with out, 0 for None */
+/* 1 with out, 0 when absent */
 static int dynamic_kparam(int64_t gid, const sel_params *p, int64_t *out)
 {
     if (!p->count) return 0;
@@ -396,8 +395,6 @@ static int dynamic_row(jbuf *b, int magnetic, int parent_sg, int64_t gid, int64_
     jb_free(&display);
     return status;
 }
-
-/* catalog._dynamic_point_occurrence */
 static int point_occurrence(const jvalue *selector)
 {
     if (!jis(selector, J_STRING)) return 0;

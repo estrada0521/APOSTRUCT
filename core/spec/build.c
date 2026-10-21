@@ -1,7 +1,6 @@
-/* modes.subduction_specs: the primary/secondary mode-subduction specs of a
- * selected OPD (ordinary, static, magnetic-embedding, magnetic, coupled).
- * Selected-OPD inputs arrive decoded; specs leave as records the Python
- * boundary turns into the mode schema dicts. */
+/* The primary and secondary mode-subduction specs of a selected OPD (ordinary, static, magnetic-embedding, magnetic, coupled).
+ * Selected-OPD inputs arrive decoded; specs leave as records the modes stage
+ * reads. */
 
 #include <math.h>
 #include <stdio.h>

@@ -1,5 +1,4 @@
-/* modes.assembly._build_child_structure: the selected presentation, the
- * parent setting bridge and every parent site's canonical child layout. */
+/* The child structure: the selected presentation, the parent setting bridge and every parent site's canonical child layout. */
 
 #include <math.h>
 #include <stdarg.h>
@@ -148,8 +147,6 @@ static int exact_int(const jvalue *v, int64_t *out)
     *out = v->u.i;
     return 0;
 }
-
-/* structure_runtime._exact_integer_tuple */
 static int exact_integer_tuple(const jvalue *v, int size, const char *name, int64_t *out)
 {
     if (!jis(v, J_ARRAY) || v->count != size) return md_fail(MDE_VALUE, "%s requires %d entries", name, size);
@@ -182,8 +179,6 @@ int md_parent_setting_bridge(int sg, int has_setting, int64_t setting_id, int *h
     *has_bridge = 1;
     return 0;
 }
-
-/* common._cell_params */
 int md_cell_params(md_request *r)
 {
     const jvalue *lattice = jget(r->cif, "lattice");
@@ -200,8 +195,6 @@ int md_cell_params(md_request *r)
         }
     return 0;
 }
-
-/* structure_runtime._selected_subgroup_number */
 static void selected_subgroup_number(md_request *r)
 {
     r->has_child_sg = 0;
@@ -235,8 +228,6 @@ static int exact_basis_text(const jvalue *text, rat (*out)[3])
     }
     return c != e;
 }
-
-/* structure_runtime._basis_from_opd_row */
 static void display_basis(md_request *r)
 {
     r->has_display_basis = 0;
@@ -253,8 +244,6 @@ static void display_basis(md_request *r)
         for (int col = 0; col < 3; col++)
             if (py_float_of_fraction(r->exact_basis[row][col], &r->display_basis[row][col])) r->has_exact_basis = 0;
 }
-
-/* common._origin_from_opd_row */
 static void selected_origin(md_request *r)
 {
     r->origin_kind = 0;
@@ -274,8 +263,6 @@ static void selected_origin(md_request *r)
         if (py_int_of(jat(origin, i), &r->origin_record[i])) return;
     r->origin_kind = 2;
 }
-
-/* structure_runtime._basis_cinter_to_pml */
 static int basis_cinter_to_pml(md_request *r)
 {
     r->has_presentation_pml = 0;
@@ -317,8 +304,6 @@ static int basis_cinter_to_pml(md_request *r)
     r->has_presentation_pml = 1;
     return 0;
 }
-
-/* structure_runtime._selected_magnetic_group_number */
 static void selected_magnetic_group(md_request *r)
 {
     r->magnetic_group = 0;
@@ -346,8 +331,6 @@ static int reference_space_group(int group)
     if (type == 4) sg = section_int(&T.mag_type4_supergroup, section_int(&T.mag_type4_pointer, group - 1) - 1);
     return (int)sg;
 }
-
-/* structure_runtime._exact_presentation_origin */
 static int exact_presentation_origin(const md_request *r, rat *out)
 {
     for (int i = 0; i < 3; i++) out[i] = rat_int(0);
@@ -399,7 +382,7 @@ static int exact_presentation_origin(const md_request *r, rat *out)
     return 0;
 }
 
-/* common._origin_vector of the selected origin */
+/* the selected origin, exactly */
 int md_origin_rational(const md_request *r, rat *out)
 {
     for (int i = 0; i < 3; i++) out[i] = rat_int(0);
@@ -461,7 +444,6 @@ void md_origin_vector(const md_request *r, double *out)
     memcpy(out, values, sizeof values);
 }
 
-/* common._site_params of a parameter dict */
 static void site_params(md_site *s)
 {
     s->site_param_count = -1;
@@ -619,8 +601,6 @@ static int64_t determinant3(const int64_t *b)
     int64_t d = b[0] * (b[4] * b[8] - b[5] * b[7]) - b[1] * (b[3] * b[8] - b[5] * b[6]) + b[2] * (b[3] * b[7] - b[4] * b[6]);
     return d < 0 ? -d : d;
 }
-
-/* structure_runtime._child_layout_for_site */
 static int child_layout(md_request *r, md_site *s, const rat *representative)
 {
     const jvalue *row_value = jget(s->site, "wyckoff_row_id");

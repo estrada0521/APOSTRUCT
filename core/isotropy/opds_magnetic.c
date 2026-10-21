@@ -1,5 +1,4 @@
-/* isotropy.catalog.magnetic_opd_rows for a Source irrep: the data_magnetic
- * isotropy rows, their fixed BNS selection and ferromagnetism. */
+/* The magnetic OPD rows of an irrep: the magnetic isotropy table rows, their fixed BNS selection and ferromagnetism. */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -88,8 +87,6 @@ void sel_mag_subgroup_json(jbuf *b, int group)
     put_label(b, &T.nlabel, group - 1);
     jb_lit(b, "}");
 }
-
-/* catalog._magnetic_subgroup_index_for_groups */
 int64_t sel_mag_index(int parent_group, int subgroup_group, int64_t size, int *has)
 {
     int64_t parent_order = mag_pg_order(mag_group_pg(parent_group)), sub_order = mag_pg_order(mag_group_pg(subgroup_group));
@@ -135,7 +132,6 @@ static int rank3(int64_t (*m)[3], int rows)
     return rank;
 }
 
-/* catalog.magnetic_ferroic_properties into b */
 int sel_mag_ferroic(jbuf *b, int group)
 {
     static signed char cache[256];
@@ -199,7 +195,7 @@ void sel_put_records(jbuf *b, const int64_t *records, int64_t count)
     jb_lit(b, "]");
 }
 
-/* catalog._fixed_magnetic_subgroup_selection: *found 1 with the flat result
+/* *found 1 with the flat result
  * in flat and the kept records in kept; errors Python catches leave it 0. */
 static int fixed_selection(int parent_sg, int64_t gid, const double *const *numeric, int free_count, int64_t full_dim, int subgroup_group,
                            const int64_t *basis, const int64_t *origin, int *found, int64_t *flat, int64_t (*kept)[5], int *kept_count)

@@ -1,4 +1,4 @@
-/* build_mode_details before its site loop: the selected texts, the child
+/* The mode details before the site loop: the selected texts, the child
  * lattice and presentation frame, the viewer placement and the selected
  * Source frame flags. */
 
@@ -146,7 +146,6 @@ static double dot_metric(const double *u, const double *v, const double (*m)[3])
     return py_sum(terms, 9);
 }
 
-/* common._cell_from_basis */
 static void cell_from_basis(const double *params, int has_basis, const double (*basis)[3], double *out)
 {
     if (!has_basis) {
@@ -187,7 +186,6 @@ static void row_multiply(const double *row, const double (*matrix)[3], double *o
     }
 }
 
-/* presentation.child_lattice_cartesian with the identity basis */
 static void child_lattice_cartesian(const double *lattice, double (*out)[3])
 {
     double a = lattice[0], b = lattice[1], c = lattice[2];
@@ -199,7 +197,6 @@ static void child_lattice_cartesian(const double *lattice, double (*out)[3])
     for (int i = 0; i < 3; i++) row_multiply(identity[i], (const double (*)[3])parent, out[i]);
 }
 
-/* presentation.centering_translations */
 static int centering_translations(char letter, double (*out)[3])
 {
     out[0][0] = out[0][1] = out[0][2] = 0.0;
@@ -231,7 +228,6 @@ static char centering_letter(int sg)
     return letter;
 }
 
-/* common._float_matrix_inverse_3 */
 static int float_inverse(const double (*m)[3], double (*out)[3])
 {
     double det = m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) +
@@ -249,7 +245,6 @@ static int float_inverse(const double (*m)[3], double (*out)[3])
     return 0;
 }
 
-/* presentation._inverse3 */
 static int presentation_inverse3(const double (*a)[3], double (*out)[3])
 {
     double det = a[0][0] * (a[1][1] * a[2][2] - a[1][2] * a[2][1]) - a[0][1] * (a[1][0] * a[2][2] - a[1][2] * a[2][0]) +
@@ -402,7 +397,7 @@ static int exact_cell_placement(md_request *r, const rat (*basis)[3], const rat 
     return 0;
 }
 
-/* common._origin_vector of the selected origin (as structure_runtime reads it) */
+/* the selected origin as a vector */
 void md_origin_vector(const md_request *r, double *out);
 
 static int64_t source_freeparam(md_request *r, int *has)

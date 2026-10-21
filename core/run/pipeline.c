@@ -39,7 +39,7 @@ static void put_error_object(jbuf *b)
     jb_free(&reason);
 }
 
-/* pipeline.attach_mode_details: state with selected.mode_details */
+/* state with selected.mode_details */
 static int attach(const jvalue *state, const jvalue *k_params, jbuf *b)
 {
     const jvalue *selected = member(state, "selected"), *internal = member(state, "_internal"),

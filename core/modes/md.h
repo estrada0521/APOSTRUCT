@@ -1,5 +1,4 @@
-/* The mode-details stage (modes.assembly.build_mode_details) in C: shared
- * request state and helpers of the md_*.c files. */
+/* The mode-details stage: the request state and helpers shared by the files of modes/. */
 
 #ifndef APOSTRUCT_MD_H
 #define APOSTRUCT_MD_H
@@ -64,7 +63,7 @@ typedef struct {
     char param_names[3][8];
     double param_values[3];
     const jvalue *param_raw[3]; /* the JSON value read, NULL when solved */
-    int site_param_count; /* -1 for None */
+    int site_param_count; /* -1 when absent */
     double site_params[3];
     int nchild;
     md_child_site *children;
@@ -93,8 +92,7 @@ typedef struct {
     double *values; /* rows x cols */
 } md_matrix;
 
-/* One render spec: the spec dict of subduction_specs._specs (or the
- * fallback dict) with its mode kind, vector setting and display label. */
+/* One render spec from the spec stage (or its fallback), with its mode kind, vector setting and display label. */
 typedef struct {
     int kind;
     int64_t old_id;
@@ -181,7 +179,7 @@ typedef struct {
     int coupled;
     int nspecs, spec_cap;
     md_spec *specs;
-    /* front (build_mode_details before its site loop) */
+    /* front (before the site loop) */
     char *parent_symbol, *display_kvector, *opd_direction;
     int has_selected_gid;
     int64_t selected_gid;

@@ -1,4 +1,4 @@
-/* parent.read_cif_summary: a CIF 1.1 reader for one data block (pairs, loops,
+/* A CIF 1.1 reader for one data block (pairs, loops,
  * quoted values, text fields, comments) and the summary the parent stage reads
  * from it. save_ frames, global_ and stop_ are rejected. */
 
@@ -253,8 +253,6 @@ static span py_strip(span v)
     while (v.n && py_space((unsigned char)v.s[v.n - 1])) v.n--;
     return v;
 }
-
-/* parent._strip_cif */
 static span strip_cif(span v)
 {
     v = py_strip(v);
@@ -291,7 +289,7 @@ static const item *find_loop(const block *b, const char *tag, int *column)
     return 0;
 }
 
-/* parent._cif_value over a tag list */
+/* the first value of any of the tags */
 static int cif_value(const block *b, const char *const *tags, int ntags, span *out)
 {
     for (int i = 0; i < ntags; i++) {

@@ -1,5 +1,4 @@
-/* parent.build_parent_state_from_cif_info: the parent International setting
- * and every atom site's Wyckoff position. */
+/* The parent state: the International setting and every atom site's Wyckoff position. */
 
 #include <math.h>
 #include <stdio.h>
@@ -79,7 +78,7 @@ static void stripped(const section_view *view, int64_t index, const char **s, in
     while (*n && sel_is_space((*s)[*n - 1])) (*n)--;
 }
 
-/* SourceTables.parent_preference_text, empty for "" */
+/* empty for "" */
 void par_preference_text(jbuf *b, int64_t id)
 {
     int64_t i = id - 1;
@@ -146,7 +145,7 @@ static void put_frac(jbuf *b, rat v)
     jb_lit(b, text);
 }
 
-/* SourceTables._wyckoff_formula_from_vectors: formula text (JSON) and the used parameters */
+/* formula text (JSON) and the used parameters */
 void par_formula(const rat (*v)[3], jbuf *formula, int *used)
 {
     static const char names[3] = {'x', 'y', 'z'};
@@ -191,8 +190,6 @@ void par_formula(const rat (*v)[3], jbuf *formula, int *used)
     jb_string(formula, t.data, t.used);
     jb_free(&t);
 }
-
-/* SourceTables._inter_wyckoff_fraction_vectors */
 int par_inter_vectors(int sg, int offset0, int setting_id, rat (*out)[3])
 {
     rat pml[4][3], matrix[3][3], origin[3];
@@ -256,7 +253,7 @@ static int wanted_multiplicity(const jvalue *site)
 typedef struct {
     double fract[3];
     char *operation;
-    int index; /* -1 for None */
+    int index; /* -1 when absent */
 } image_t;
 
 typedef struct {
@@ -270,8 +267,6 @@ static void images_free(images_t *im)
     free(im->items);
     memset(im, 0, sizeof *im);
 }
-
-/* parent._equivalent_site_images */
 static int site_images(const jvalue *site, const jvalue *ops, images_t *out)
 {
     memset(out, 0, sizeof *out);
@@ -424,7 +419,7 @@ static int inter_match(int sg, const jvalue *site, const images_t *im, int setti
     return status;
 }
 
-/* SourceTables.match_wyckoff_site in the Source (legacy) frame */
+/* the Wyckoff match in the Source frame */
 static int legacy_match(int sg, const jvalue *site, const double *fract, match_t *out)
 {
     memset(out, 0, sizeof *out);
@@ -462,8 +457,6 @@ static int legacy_match(int sg, const jvalue *site, const double *fract, match_t
     }
     return 0;
 }
-
-/* parent._match_wyckoff_site_with_symmetry */
 static int legacy_symmetry_match(int sg, const jvalue *site, const jvalue *ops, match_t *best)
 {
     memset(best, 0, sizeof *best);
@@ -509,7 +502,7 @@ static int legacy_symmetry_match(int sg, const jvalue *site, const jvalue *ops, 
     return 0;
 }
 
-/* parent._canonical_representative_mapping onto m */
+/* onto m */
 static void canonical_mapping(const jvalue *site, const jvalue *ops, match_t *m)
 {
     if (!m->has_inter) return;
@@ -557,8 +550,6 @@ typedef struct {
     int id;
     match_t *matches;
 } scored_t;
-
-/* parent._match_parent_inter_setting */
 static int setting_score(int sg, const jvalue *sites, int drop_multiplicity, images_t *images, int setting_id, scored_t *out)
 {
     int64_t n = sites->count;
@@ -786,8 +777,6 @@ static char origin_choice(int sg, const jvalue *ops)
     free(have);
     return choice;
 }
-
-/* parent._select_parent_inter_setting */
 static int select_setting(int sg, const jvalue *sites, const jvalue *ops, scored_t *chosen)
 {
     int64_t n = sites->count;
@@ -873,7 +862,7 @@ static int element_of(const jvalue *site, char *out)
     return ok;
 }
 
-/* parent._formula_number: 0 with *out, 1 for None */
+/* 0 with *out, 1 when absent */
 static int formula_number(const jvalue *v, int has_default, rat *out)
 {
     jbuf t = {0};
@@ -899,7 +888,7 @@ static int formula_number(const jvalue *v, int has_default, rat *out)
     return status;
 }
 
-/* parent._formula_from_sites over the output sites (wyckoff_multiplicity set); 0 None */
+/* the formula over the output sites (wyckoff_multiplicity set); 0 when there is none */
 static int formula_from_sites(const jvalue *sites, jbuf *out)
 {
     char elements[64][3];

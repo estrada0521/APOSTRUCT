@@ -1,5 +1,4 @@
-/* The mode-details entry: one JSON request (build_mode_details' keyword
- * arguments) in, one JSON result out. */
+/* The mode-details entry: one JSON request in, one JSON result out. */
 
 #include <stdlib.h>
 #include <string.h>

@@ -1,5 +1,4 @@
-/* Mode-label texts of modes.request_context: the evaluated selected k vector,
- * the OPD direction texts, each spec's k parameters and displayed k vector,
+/* The label texts of the modes: the evaluated selected k vector, the OPD direction texts, each spec's k parameters and displayed k vector,
  * and whether a spec emits every Source OPD row. */
 
 #include <ctype.h>
@@ -520,7 +519,7 @@ typedef struct {
 } record4;
 
 typedef struct {
-    int count; /* -1 for None */
+    int count; /* -1 when absent */
     rat v[8];
 } params;
 
@@ -650,7 +649,7 @@ static void evaluate_map(const kmap *map, const rat *values, rat *out)
     }
 }
 
-/* decoder.display_k_vector_from_case: 0 with out, -1 for KeyError/ValueError. */
+/* the displayed k vector of a case: 0 with out, -1 when the label or the parameters are unknown */
 static int case_vector(int sg, const char *label, int64_t label_length, const params *k, rat *out)
 {
     int lattice = geo_sg_lattice(sg), kslot = 0, matches = 0;
@@ -780,8 +779,8 @@ static int display_try(int sg, const char *k_label, int64_t k_label_length, int 
 }
 
 /* _case_k_params and _spec_display_kvector of one render spec.  Records are
- * four ints (has_* 0 for None or a non-integral record); parameter lists are
- * int128 rational words with count -1 for None; request_count -1 when the
+ * four ints (has_* 0 when absent or a non-integral record); parameter lists are
+ * int128 rational words with count -1 when absent; request_count -1 when the
  * request k parameters failed to parse.  The text is spec_label_text(). */
 int spec_label(int sg, const char *k_label, int64_t k_label_length, int flags, int has_gid, int64_t gid, int has_source,
                const int64_t *source_words, int has_carrier, const int64_t *carrier_words, int case_count, const int64_t *case_words,
@@ -877,7 +876,7 @@ int spec_label_params(int64_t *words)
     return R.k.count;
 }
 
-/* _little_star_arm_width; 0 for None. */
+/* 0 when absent */
 int little_star_arm_width(int64_t gid)
 {
     if (load()) return -MT_TABLES;
@@ -926,8 +925,7 @@ int emit_all_source_rows(int row_count, int width, const double *rows, int has_f
     return (flags & SL_COUPLED) && little_type == 3 && row_count > 1;
 }
 
-/* request_context.case_k_parameters_from_source_record for a positive gid and
- * a four-int record: the count (-1 for None) with out as int128 words, or
+/* the case k parameters of a Source k record for a positive gid and a four-int record: the count (-1 when absent) with out as int128 words, or
  * -100 - MT_. */
 int source_record_case_k_params(int64_t gid, const int64_t *record, int64_t *out)
 {

@@ -1,4 +1,4 @@
-/* structure_runtime's mode topology and row plan of one site block: every
+/* The mode topology and row plan of one site block: every
  * Source row/centering representation assigned to its canonical child atom,
  * the raw vector slot each atom reads, its Source-equivalent slots, the
  * presentation inverse and the magnetic occurrence negation. */

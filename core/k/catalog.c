@@ -1,4 +1,4 @@
-/* reciprocal.catalog: the k-point catalog of a space group (kpoints) as JSON,
+/* The k-point catalog of a space group (kpoints) as JSON,
  * and the displayed k-vector texts of Source k records. */
 
 #include <stdarg.h>
@@ -600,7 +600,7 @@ static void star_arm_records(int64_t pointer, int arm, int dim, rat (*out)[3])
     (void)dim;
 }
 
-/* isotropy.catalog._solve_star_parameter_values: 1 with values, 0 for None. */
+/* 1 with values, 0 when absent. */
 static int solve_star_parameters(const rat (*records)[3], int count, const rat *visible, rat *values)
 {
     int dim = count - 1;
@@ -650,7 +650,7 @@ static int solve_star_parameters(const rat (*records)[3], int count, const rat *
 
 int k_source_kparam_of_visible(int sg, int kslot, const int64_t *visible_words, int64_t *out);
 
-/* isotropy.catalog._numeric_display_star_vectors as a JSON list (empty for
+/* the numeric display star vectors as a JSON list (empty for
  * no star).  visible: the request's visible k under parent_sg's display map;
  * source_visible: the same under the gid's own space group, for the Source
  * kparam fallback. */

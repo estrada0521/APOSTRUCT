@@ -1,5 +1,4 @@
-/* definition_presentation._apply_dynamic_source_family_presentation: the
- * public axis order of Source carrier tensors.  Modes of one print family
+/* The public axis order of Source carrier tensors.  Modes of one print family
  * (spec, site, site irrep and, unless the family is one multi-row carrier,
  * the site-irrep component) are reordered by the carrier's tensor rule. */
 

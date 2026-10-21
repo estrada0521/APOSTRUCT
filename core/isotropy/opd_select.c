@@ -1,5 +1,4 @@
-/* isotropy.selection.select_order_parameter_direction: the OPD rows of the
- * selected irrep (or coupled irreps), the selected row and its factors. */
+/* The OPD selection: the OPD rows of the selected irrep (or coupled irreps), the selected row and its factors. */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -100,7 +99,6 @@ static int truthy_int(const jvalue *v, int64_t fallback, int64_t *out)
     return py_int_of(v, out) ? md_fail(MDE_VALUE, "invalid literal for int()") : 0;
 }
 
-/* reciprocal.k_points.normalize_k_params as JSON text */
 void sel_normalize_params(jbuf *b, const jvalue *v)
 {
     jb_lit(b, "{");
@@ -159,8 +157,6 @@ void sel_normalize_params(jbuf *b, const jvalue *v)
 static int params_empty(const jbuf *json) { return json->used <= 2; }
 
 /* ------------------------------------------------------------ selection */
-
-/* reciprocal.irreps.select_irrep */
 static int select_irrep(const jvalue *irreps, const jvalue *label, int64_t index, const jvalue **out)
 {
     int64_t n = jis(irreps, J_ARRAY) ? irreps->count : 0;
@@ -231,7 +227,7 @@ static void repr_value(jbuf *b, const jvalue *v)
     else py_repr_of(b, v);
 }
 
-/* selection._select_orderparam: *out NULL for None */
+/* *out NULL when absent */
 static int select_orderparam(const jvalue *rows, const jvalue *orderparam, int64_t orderparam_index, const jvalue **out)
 {
     *out = 0;
@@ -332,8 +328,6 @@ static const jvalue *row_for_label(const jvalue *slot, const char *label, size_t
     }
     return 0;
 }
-
-/* selection._selected_opd_factors */
 int sel_opd_factors(jbuf *b, int sg, const jvalue *slots, const jvalue *selected)
 {
     const jvalue *iso = member(selected, "isotropy");
@@ -579,7 +573,7 @@ static int single(const jvalue *state, const jvalue *opts, int sg, jbuf *out)
     return status;
 }
 
-/* selection._coupled_selected_labels: count of labels (into starts/lengths) or 0 for None */
+/* count of labels (into starts/lengths) or 0 when absent */
 static int coupled_labels(const jvalue *orderparam, int slot_count, int selected_only, const char **starts, int *lengths)
 {
     if (!selected_only || !jis(orderparam, J_STRING) || slot_count < 2) return 0;

@@ -1,6 +1,6 @@
 /* Complete-mode Cartesian Gram-Schmidt within print families
- * (definition_presentation._orthogonalize_definition_modes).  Every
- * arithmetic step follows the numpy expression it replaces: Cartesian rows
+ * Every arithmetic step
+ * keeps the operation order of the former numpy implementation: Cartesian rows
  * use the CPython sum() replica, row dots add rows upward from +0.0. */
 
 #include <math.h>

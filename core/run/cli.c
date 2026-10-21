@@ -287,7 +287,7 @@ static void put_str(jbuf *b, const jvalue *v)
     jb_free(&t);
 }
 
-/* case_input.parameter_names_for_kpoint over DISPLAY_K_PARAMS (a, b, g) */
+/* the parameter names (a, b, g) of a k point */
 static int parameter_names(const jvalue *kpoint, text *names)
 {
     const jvalue *expression = member(kpoint, "display_kvector");
@@ -410,7 +410,7 @@ static text site_name(const jvalue *atom, const char *first, const char *second,
     return (text){scratch, strlen(scratch)};
 }
 
-/* case_input.pipeline_request_from_cif_info: the selection options, as
+/* the selection options, as
  * object members without braces. */
 static int pipeline_options(const jvalue *request, const jvalue *cif_info, int require_irreps, int allow_empty, jbuf *b)
 {
@@ -855,8 +855,6 @@ static void info_sites(jbuf *b, const jvalue *atoms)
     }
     jb_lit(b, "]");
 }
-
-/* cli_output.compact_result */
 static void compact(jbuf *b, const jvalue *value, const char *stage, const expand_t *x)
 {
     const jvalue *input = member(value, "input"), *selected = member(value, "selected");

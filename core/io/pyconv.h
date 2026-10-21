@@ -27,7 +27,7 @@ int py_float_of(const jvalue *value, double *out);
 int py_int_of(const jvalue *value, int64_t *out);
 /* str(value) of a decoded JSON scalar into b (strings verbatim). */
 void py_str_of(jbuf *b, const jvalue *value);
-/* cif_numbers.float_cif_number: 0 with *out, 1 for None. */
+/* a CIF number as a float: 0 with *out, 1 when absent */
 int float_cif_number(const jvalue *value, double *out);
 
 /* sum() of floats (Neumaier compensation, started from int 0). */

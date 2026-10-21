@@ -1,7 +1,5 @@
-/* modes.engine.trace.pipeline_trace.project_mode_block: the selected little
- * irrep's Wyckoff row, project entries, isotropy row and basis, Source
- * order-parameter rows, presentation setting frame and materialized atom
- * layouts around one mode_block call. */
+/* The frame of one mode block: the selected little irrep's Wyckoff row, project entries, isotropy row and basis,
+ * Source order-parameter rows, presentation setting frame and materialized atom layouts around one mode_block call. */
 
 #include <complex.h>
 #include <stdio.h>

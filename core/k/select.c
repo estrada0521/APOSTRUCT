@@ -1,4 +1,4 @@
-/* reciprocal.k_points.select_k_points and reciprocal.irreps.select_irreps. */
+/* The k point and irrep selections of the selection stage. */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -51,8 +51,6 @@ static int casefold_equal(const jbuf *a, const jbuf *b)
     }
     return 1;
 }
-
-/* reciprocal.k_points.select_k */
 static int select_k(const jvalue *kpoints, const jvalue *label, int64_t index, const jvalue **out)
 {
     int64_t n = jis(kpoints, J_ARRAY) ? kpoints->count : 0;

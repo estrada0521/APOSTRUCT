@@ -1,5 +1,4 @@
-/* modes.subduction_specs: the render specs of one request from the C spec
- * stage (spec/build.c), decoded into md_spec as _specs builds its dicts. */
+/* The render specs of one request from the spec stage (spec/build.c), decoded into md_spec. */
 
 #include <ctype.h>
 #include <math.h>
@@ -113,7 +112,6 @@ int md_float_rows(const jvalue *rows, md_matrix *out, int *ndim)
 
 /* ------------------------------------------------------- request helpers */
 
-/* request_context._selected_dynamic_gid */
 static int selected_dynamic_gid(const md_request *r, int64_t *gid)
 {
     const char *keys[2] = {"gid", "dynamic_gid"};
@@ -148,7 +146,7 @@ int md_dynamic_gid(const md_request *r, int *has, int64_t *gid)
     return 0;
 }
 
-/* request_context._source_kparam_record (four entries) */
+/* the Source k parameter record (four entries) */
 static int source_kparam_record(const md_request *r, int *has, int64_t *kp)
 {
     *has = 0;
@@ -167,7 +165,6 @@ static void isotropy_row_id(const md_request *r, int *state, int64_t *row_id)
     if (r->iso && !py_int_of(jget(r->iso, "row_id"), row_id)) *state = MD_SET;
 }
 
-/* common._k_label_from_irrep_label */
 char *md_k_label_from_irrep_label(const char *label)
 {
     const char *s = label, *e = label + strlen(label);
@@ -180,7 +177,7 @@ char *md_k_label_from_irrep_label(const char *label)
     return (char *)md_strdup(s, z - s);
 }
 
-/* common._integer_basis_tuple(structure_runtime._source_split_basis_from_opd_row) */
+/* the integer Source basis of the selected OPD row */
 int md_integer_source_basis(const md_request *r, int64_t *out)
 {
     const jvalue *basis = r->iso ? jget(r->iso, "source_basis_values") : 0;
@@ -576,7 +573,6 @@ static struct {
     int ready;
 } G;
 
-/* subduction_specs._magnetic_orderparam_frame */
 static int build_magnetic_frame(md_request *r, int require_gid_first, magnetic_frame *f)
 {
     memset(f, 0, sizeof *f);
@@ -742,7 +738,6 @@ static int magnetic_specs(md_request *r)
 
 /* ------------------------------------------------------------ coupled */
 
-/* common._k_params */
 static int k_params_of(const jvalue *params, rat *out, int *count)
 {
     *count = 0;
@@ -840,7 +835,6 @@ static int put_fraction_words(words *w, const rat *values, int count)
     return 0;
 }
 
-/* subduction_specs._coupled_render_specs */
 int md_coupled_specs(md_request *r, int include_displacive, int include_magnetic)
 {
     int64_t basis[9];

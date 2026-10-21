@@ -1,6 +1,5 @@
-/* reciprocal.catalog.k_coordinate_map_for_slot (the affine map behind the
- * displayed K-family expression, display conventions included) and
- * request_context._pml_vector_to_case_k_params. */
+/* The affine map behind the displayed k-family expression of a slot (display conventions included), and the case
+ * k parameters of a primitive (PML) k vector. */
 
 #include <stdint.h>
 #include <string.h>

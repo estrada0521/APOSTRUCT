@@ -1,4 +1,3 @@
-/* pipeline._apply_distortion_selection */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,9 +20,6 @@ typedef struct {
     int n;
     int *items;
 } ints_t;
-
-
-/* pipeline._site_selection */
 static int site_selection(const jvalue *requested, int site_count, int default_all, ints_t *out)
 {
     out->n = 0;
@@ -116,8 +112,6 @@ static void put_row_ids(jbuf *b, const jvalue *atoms, const ints_t *v)
 }
 
 static int mode_set_is(const jvalue *mode_set, const char *a, const char *b) { return jstr_is(mode_set, a) || (b && jstr_is(mode_set, b)); }
-
-/* pipeline._apply_distortion_selection */
 int par_distortion(const jvalue *state, const jvalue *mode_set, const jvalue *requested, int allow_empty, jbuf *out)
 {
     const jvalue *atoms = member(member(state, "input"), "atom_sites");

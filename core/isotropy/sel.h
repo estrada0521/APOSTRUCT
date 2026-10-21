@@ -19,7 +19,6 @@
 #define MDE_BRIDGE 124
 /* OverflowError("Python int too large to convert to C long") */
 #define MDE_OVERFLOW 125
-/* selection.OpdNotFoundError */
 #define MDE_OPD_NOT_FOUND 126
 /* md_err.status carries a vector_mode_total status. */
 #define MDE_PROJECTION_ENTRY 111
@@ -35,12 +34,10 @@ void sel_params_of(const jvalue *object, sel_params *out);
 const char *sel_param(const sel_params *p, const char *name);
 
 int sel_tables(void);
-/* isotropy.catalog formatting */
 void sel_fmt_complex(jbuf *b, double real);
 void sel_fmt_display_value(jbuf *b, double value);
 void sel_opd_from_rows(jbuf *b, char ***rows, int nrows, const int *widths);
 void sel_display_opd(jbuf *b, const char *opd);
-/* SourceTables.subgroup_change_setting_cinter */
 typedef struct {
     int64_t basis[3][3], denominator, origin[4], size;
 } sel_setting;
@@ -78,7 +75,7 @@ typedef struct {
 } kv;
 /* {**base, key: value, ...} */
 void sel_merge(jbuf *b, const jvalue *base, const kv *items, int n);
-/* reciprocal.k_points.normalize_k_params as JSON text */
+/* the k parameters normalized, as JSON text */
 void sel_normalize_params(jbuf *b, const jvalue *v);
 int sel_k_points(const jvalue *state, const jvalue *opts, jbuf *out);
 int sel_irreps(const jvalue *state, jbuf *out);
@@ -87,7 +84,7 @@ void sel_put_basis(jbuf *b, const rat (*rows)[3]);
 int sel_order_parameter_direction(const jvalue *state, const jvalue *opts, jbuf *out);
 void sel_put_basis_text(jbuf *b, const rat (*rows)[3]);
 void sel_put_origin_text(jbuf *b, int parent_sg, int subgroup, const rat (*rows)[3], const int64_t *origin);
-/* catalog._dynamic_kparam: 1 with out, 0 for None, -kind on error. */
+/* 1 with out, 0 when absent, -kind on error. */
 int sel_dynamic_kparam(int64_t gid, const sel_params *p, int64_t *out);
 int sel_mag_ordinary(int group);
 void sel_mag_subgroup_json(jbuf *b, int group);
@@ -96,10 +93,10 @@ int sel_mag_ferroic(jbuf *b, int group);
 void sel_put_records(jbuf *b, const int64_t *records, int64_t count);
 int sel_magnetic_static_rows(int old_id, int has_parent, int parent_sg, int has_gid, int64_t gid, const sel_params *display,
                              const jvalue *selected_orderparam, int has_setting, int64_t setting_id, int has_cell, const double *cell, jbuf *out);
-/* reciprocal.catalog.visible_k_vector: 1 with words (n, d) x3, 0 for None, -kind on error. */
+/* 1 with words (n, d) x3, 0 when absent, -kind on error. */
 int sel_visible_k_vector(int sg, int kslot, const sel_params *p, int64_t *words);
 
-/* catalog.opd_rows for a Source irrep (old_id > 0) / a dynamic gid, as a JSON array. */
+/* the OPD rows of an old irrep (old_id > 0) or of a parametric gid, as a JSON array */
 int sel_static_rows(int old_id, const sel_params *k_params, const sel_params *display, int has_setting, int64_t setting_id,
                     int has_cell, const double *cell, jbuf *out);
 int sel_dynamic_rows(int magnetic, int parent_sg, int64_t gid, const sel_params *k_params, const sel_params *display, const jvalue *selected_orderparam,

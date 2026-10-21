@@ -1,5 +1,5 @@
-/* isotropy.catalog.opd_rows of a Source irrep with an old id: the image
- * directions and the data_isotropy rows in their displayed settings. */
+/* The OPD rows of an irrep at a k point without parameters: the image directions and the isotropy table rows in
+ * their displayed settings. */
 
 #include <math.h>
 #include <stdio.h>
@@ -129,7 +129,6 @@ static double py_round(double value, int digits)
     return strtod(text, 0);
 }
 
-/* catalog._fmt_complex of a real Source constant */
 void sel_fmt_complex(jbuf *b, double real)
 {
     double re = py_round(real, 8);
@@ -139,8 +138,6 @@ void sel_fmt_complex(jbuf *b, double real)
     else snprintf(text, sizeof text, "%g", re);
     jb_lit(b, text);
 }
-
-/* catalog._fmt_opd_display_value */
 void sel_fmt_display_value(jbuf *b, double value)
 {
     char text[64];
@@ -154,7 +151,6 @@ void sel_fmt_display_value(jbuf *b, double value)
     jb_lit(b, text);
 }
 
-/* catalog._opd_from_rows over rows of coefficient strings */
 void sel_opd_from_rows(jbuf *b, char ***rows, int nrows, const int *widths)
 {
     if (!nrows) return;
@@ -183,8 +179,6 @@ void sel_opd_from_rows(jbuf *b, char ***rows, int nrows, const int *widths)
 }
 
 int sel_is_space(char c) { return c == ' ' || (c >= '\t' && c <= '\r'); }
-
-/* catalog._display_opd */
 void sel_display_opd(jbuf *b, const char *opd)
 {
     const char *s = opd, *e = opd + strlen(opd);
@@ -289,7 +283,7 @@ static void mat4_mul(const int64_t *a, const int64_t *b, int64_t *out)
     memcpy(out, r, sizeof r);
 }
 
-/* SourceTables._trans4(first, middle, last) = last @ middle @ first */
+/* last . middle . first */
 static void trans4(const int64_t *first, const int64_t *middle, const int64_t *last, int64_t *out)
 {
     int64_t inner[16];
@@ -400,8 +394,6 @@ char *sel_complex_text(double value)
     sel_fmt_complex(&b, value);
     return b.data;
 }
-
-/* catalog._direction */
 static int direction_of(int64_t did, direction *d)
 {
     memset(d, 0, sizeof *d);
@@ -501,7 +493,7 @@ static int strings_of_json(const char *json, strings *out)
     return out->items ? 0 : md_fail(MDE_MEMORY, "out of memory");
 }
 
-/* reciprocal.catalog.visible_k_vector: 0 none, 1 with words */
+/* 0 none, 1 with words */
 int sel_visible_k_vector(int sg, int kslot, const sel_params *p, int64_t *words)
 {
     int64_t map[29];
@@ -531,7 +523,7 @@ int sel_visible_k_vector(int sg, int kslot, const sel_params *p, int64_t *words)
     return rat_overflow ? -MDE_ARITH : 1;
 }
 
-/* reciprocal.catalog.evaluate_k_component; 0 with *out, 1 for None */
+/* 0 with *out, 1 when absent */
 static int evaluate_k_component(const char *text, int64_t length, const sel_params *p, rat *out)
 {
     char *s = malloc((size_t)length + 1);
@@ -602,7 +594,7 @@ static int evaluate_k_component(const char *text, int64_t length, const sel_para
     return 0;
 }
 
-/* reciprocal.catalog.substitute_k_vector with whitespace removed */
+/* the k vector with the parameters substituted, whitespace removed */
 static char *substitute_k_vector(const char *vector, const sel_params *given)
 {
     sel_params p = *given;
@@ -698,7 +690,6 @@ static int nonzero_opd_value(const char *text)
     return 1;
 }
 
-/* catalog._active_k_vectors_for_gid over string rows */
 static int string_nonzero(const void *ctx, int row, int col) { return nonzero_opd_value(((char ***)ctx)[row][col]); }
 
 int sel_active_k_vectors(int parent_sg, int64_t gid, int64_t full_dim, char ***rows, int nrows, const int *widths, const sel_params *p,
@@ -780,7 +771,6 @@ static void put_frac_text(jbuf *b, rat v)
     jb_lit(b, text);
 }
 
-/* basis_rows through lattice_conventions.present_opd_basis_rows */
 int sel_present_basis(int subgroup, const sel_setting *displayed, int has_cell, const double *cell, int parametric, int coupled,
                       int magnetic_group, rat (*rows)[3])
 {
@@ -837,8 +827,6 @@ void sel_put_basis_text(jbuf *b, const rat (*rows)[3])
     jb_string(b, t.data, t.used);
     jb_free(&t);
 }
-
-/* catalog._display_origin_text */
 void sel_put_origin_text(jbuf *b, int parent_sg, int subgroup, const rat (*rows)[3], const int64_t *origin)
 {
     int identity = 1;
@@ -941,7 +929,7 @@ int sel_display(int parent_sg, int subgroup, const int64_t *basis, const int64_t
     return sel_present_basis(subgroup, displayed, has_cell, cell, parametric, coupled, magnetic_group, rows);
 }
 
-/* catalog._isotropy_rows for one row; *key for canonical_isotropy_row_id */
+/* one isotropy row; *key for canonical_isotropy_row_id */
 static int isotropy_row(int64_t old_id, int64_t row_id, int parent_sg, int64_t full_dim, const sel_params *k_params,
                         const sel_params *active_params, int has_setting, int64_t setting_id, int has_cell, const double *cell,
                         jbuf *b, iso_key *key)
@@ -1136,7 +1124,7 @@ static int isotropy_row(int64_t old_id, int64_t row_id, int parent_sg, int64_t f
     return 0;
 }
 
-/* catalog.opd_rows for old_id > 0 into out as a JSON array */
+/* the OPD rows of old irrep old_id (> 0) as a JSON array */
 int sel_static_rows(int old_id, const sel_params *k_params, const sel_params *display, int has_setting, int64_t setting_id,
                     int has_cell, const double *cell, jbuf *out)
 {

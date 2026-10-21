@@ -233,7 +233,7 @@ int case_display_kvector(int sg, int kslot, int param_count, const int64_t *para
     return rat_overflow ? KV_RANGE : 0;
 }
 
-/* dynamic_subduction._reciprocal_point_group_orbit_key: the least
+/* the orbit key of a k vector: the least
  * ((x mod 1, den), (y mod 1, den), (z mod 1, den)) over the images of a
  * reciprocal PML vector under the inverses of the parent point operations.
  * vector: three rationals as int128 words; out: (numerator, denominator) x 3. */

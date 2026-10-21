@@ -1,8 +1,7 @@
-/* lattice_conventions.present_opd_basis_rows: the OPD-table presentation of a
- * subgroup basis (FINDSYM triclinic_lattparam_ and monoclinic_lattparam_,
+/* The OPD-table presentation of a subgroup basis (FINDSYM triclinic_lattparam_ and monoclinic_lattparam_,
  * the fixed-coupled trigonal basal turn), admitted for a magnetic subgroup
- * only while the selected BNS operation set stays fixed.  Floats follow the
- * Python kernels: CPython sum(), math.radians/degrees and libm. */
+ * only while the selected BNS operation set stays fixed.  Floats keep the
+ * operation order of the former Python kernels (Neumaier sums, radians/degrees, libm). */
 
 #include <math.h>
 #include <stdlib.h>
