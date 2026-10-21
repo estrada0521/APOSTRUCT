@@ -32,3 +32,7 @@ number field is a space-separated list, a text field is the text.
 | `images/*.txt` | | the image catalog: images, their subgroups and directions |
 
 `const.dat` names the constants that matrix and direction entries refer to by number.
+
+`bin/byu_export bin/source.blob DIR [--full-matrices]` writes the tables back in the BYU format (`data_*.txt`): every
+section apo reads, including those it builds at startup, and with `--full-matrices` the little irrep matrices at every
+position. They equal the corresponding BYU tables.

@@ -13,6 +13,7 @@ typedef struct {
 } section_view;
 
 int section_find(const char *name, section_view *view);
+const char *section_stored_name(uint32_t i);
 int section_is_int(const section_view *view);
 int64_t section_int(const section_view *view, int64_t index);
 int64_t section_count(const section_view *view);
