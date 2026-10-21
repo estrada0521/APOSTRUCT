@@ -1,6 +1,7 @@
-/* Little-irrep sections built from other tables: little_irr_full_dim, the number of entries of the stored identity
- * matrix (0 for an irrep without matrices); little_irr_old, the old (data_irreps) id, which the irreps at k points
- * without parameters take in gid order. */
+/* Little-irrep sections built from other tables: little_irr_full_matrices_pointer, where each stored matrix starts in
+ * the sparse triples (each matrix lists its entries by column, then row, so a new one starts where that order drops);
+ * little_irr_full_dim, the number of entries of the stored identity matrix (0 for an irrep without matrices);
+ * little_irr_old, the old (data_irreps) id, which the irreps at k points without parameters take in gid order. */
 
 #include <stdlib.h>
 #include <string.h>
@@ -11,23 +12,35 @@ int section_find_stored(const char *name, section_view *view);
 
 static struct {
     int ready, failed;
-    int64_t *dims, *old;
-    blob_section entries[2];
+    int64_t *dims, *old, *pointer;
+    blob_section entries[3];
 } D;
 
 static int build(void)
 {
-    section_view sg, kslot, k_dim, lattice, irr, position, pointer;
+    section_view sg, kslot, k_dim, lattice, irr, position, triples;
     if (section_find_stored("little.little_irr_space_group", &sg) || section_find_stored("little.little_irr_k", &kslot) ||
         section_find_stored("little.little_k_dim", &k_dim) || section_find_stored("space.ispace_lattice", &lattice) ||
         section_find_stored("little.little_irr_full_matrices_irr_pointer", &irr) ||
         section_find_stored("little.little_irr_full_matrices_position", &position) ||
-        section_find_stored("little.little_irr_full_matrices_pointer", &pointer))
+        section_find_stored("little.little_irr_full_matrices", &triples))
         return 1;
     int64_t count = section_count(&sg), irrs = section_count(&irr), positions = section_count(&position), olds = 0;
+    int64_t entries = section_count(&triples) / 3, matrices = 0;
     D.dims = calloc((size_t)count + 1, sizeof(int64_t));
     D.old = calloc((size_t)count + 1, sizeof(int64_t));
-    if (!D.dims || !D.old) return 1;
+    D.pointer = calloc((size_t)positions + 2, sizeof(int64_t));
+    if (!D.dims || !D.old || !D.pointer) return 1;
+    for (int64_t t = 0; t < entries; t++) {
+        int64_t row = section_int(&triples, 3 * t), col = section_int(&triples, 3 * t + 1);
+        int64_t prow = t ? section_int(&triples, 3 * t - 3) : 0, pcol = t ? section_int(&triples, 3 * t - 2) : 0;
+        if (!t || col < pcol || (col == pcol && row <= prow)) {
+            if (matrices == positions) return 1;
+            D.pointer[matrices++] = t + 1;
+        }
+    }
+    if (matrices != positions) return 1;
+    D.pointer[matrices] = entries + 1;
     for (int64_t g = 0; g < count; g++) {
         int64_t s = section_int(&sg, g), k = section_int(&kslot, g);
         if (s < 1 || s > section_count(&lattice) || k < 1 || k > 27) continue;
@@ -36,22 +49,27 @@ static int build(void)
     for (int64_t g = 0; g + 1 < irrs && g < count; g++) {
         int64_t first = section_int(&irr, g), end = section_int(&irr, g + 1);
         if (end <= first || first < 1 || first > positions || section_int(&position, first - 1) != 1) continue;
-        D.dims[g] = section_int(&pointer, first) - section_int(&pointer, first - 1);
+        D.dims[g] = D.pointer[first] - D.pointer[first - 1];
     }
-    const char *names[2] = {"little.little_irr_full_dim", "little.little_irr_old"};
-    for (int i = 0; i < 2; i++) {
+    const char *names[3] = {"little.little_irr_full_dim", "little.little_irr_old", "little.little_irr_full_matrices_pointer"};
+    int64_t counts[3] = {count, count, positions + 1};
+    for (int i = 0; i < 3; i++) {
         strncpy(D.entries[i].name, names[i], BLOB_NAME_SIZE - 1);
         D.entries[i].kind = BLOB_I64;
-        D.entries[i].count = (uint64_t)count;
-        D.entries[i].bytes = (uint64_t)count * sizeof(int64_t);
+        D.entries[i].count = (uint64_t)counts[i];
+        D.entries[i].bytes = (uint64_t)counts[i] * sizeof(int64_t);
     }
     return 0;
 }
 
-/* section_find for little_irr_full_dim and little_irr_old; *handled 0 for any other name */
+/* section_find for the sections above; *handled 0 for any other name */
 int little_derived_section(const char *name, section_view *view, int *handled)
 {
-    int which = !strncmp(name, "little.little_irr_full_dim", BLOB_NAME_SIZE) ? 0 : !strncmp(name, "little.little_irr_old", BLOB_NAME_SIZE) ? 1 : -1;
+    int which = -1;
+    for (int i = 0; i < 3 && which < 0; i++)
+        if (!strncmp(name, i == 0 ? "little.little_irr_full_dim" : i == 1 ? "little.little_irr_old" : "little.little_irr_full_matrices_pointer",
+                     BLOB_NAME_SIZE))
+            which = i;
     *handled = which >= 0;
     if (!*handled) return 1;
     if (!D.ready && !D.failed) {
@@ -60,7 +78,7 @@ int little_derived_section(const char *name, section_view *view, int *handled)
     }
     if (!D.ready) return 1;
     view->entry = &D.entries[which];
-    view->data = (const unsigned char *)(which ? D.old : D.dims);
+    view->data = (const unsigned char *)(which == 0 ? D.dims : which == 1 ? D.old : D.pointer);
     return 0;
 }
 
