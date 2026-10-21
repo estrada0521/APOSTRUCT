@@ -6,7 +6,9 @@
  * - little_irr_full_matrices_pointer: where each stored matrix starts in the sparse triples (each matrix lists its
  *   entries by column, then row, so a new one starts where that order drops);
  * - little_irr_full_dim: the number of entries of the stored identity matrix (0 for an irrep without matrices);
- * - little_irr_old: the old (data_irreps) id, which the irreps at k points without parameters take in gid order. */
+ * - little_irr_old: the old (data_irreps) id, which the irreps at k points without parameters take in gid order;
+ * - little_irr_irrnum: the local number, the smallest one at the same (sg, k) not taken, in gid order, by an irrep or by
+ *   its partner (little_irr_cc). */
 
 #include <stdlib.h>
 #include <string.h>
@@ -16,9 +18,10 @@
 
 int section_find_stored(const char *name, section_view *view);
 
-enum { NAMES = 5 };
+enum { NAMES = 6 };
 static const char *const names[NAMES] = {"little.little_irr_full_dim", "little.little_irr_old", "little.little_irr_full_matrices_pointer",
-                                         "little.little_irr_full_matrices_position", "little.little_irr_full_matrices_irr_pointer"};
+                                         "little.little_irr_full_matrices_position", "little.little_irr_full_matrices_irr_pointer",
+                                         "little.little_irr_irrnum"};
 
 static struct {
     int ready, failed;
@@ -53,8 +56,9 @@ static int seed_positions(int sg, int *out)
 
 static int build(void)
 {
-    section_view sg, kslot, k_dim, lattice, triples;
+    section_view sg, kslot, k_dim, lattice, triples, partner;
     if (geo_load() || section_find_stored("little.little_irr_space_group", &sg) || section_find_stored("little.little_irr_k", &kslot) ||
+        section_find_stored("little.little_irr_cc", &partner) ||
         section_find_stored("little.little_k_dim", &k_dim) || section_find_stored("space.ispace_lattice", &lattice) ||
         section_find_stored("little.little_irr_full_matrices", &triples))
         return 1;
@@ -66,7 +70,7 @@ static int build(void)
         int64_t s = section_int(&sg, g);
         if (s >= 1 && s <= 230) last = g + 1, positions += nseeds[s];
     }
-    int64_t counts[NAMES] = {count, count, positions + 1, positions, last + 1};
+    int64_t counts[NAMES] = {count, count, positions + 1, positions, last + 1, count};
     for (int i = 0; i < NAMES; i++) {
         if (!(D.data[i] = calloc((size_t)counts[i] + 1, sizeof(int64_t)))) return 1;
         strncpy(D.entries[i].name, names[i], BLOB_NAME_SIZE - 1);
@@ -74,7 +78,17 @@ static int build(void)
         D.entries[i].count = (uint64_t)counts[i];
         D.entries[i].bytes = (uint64_t)counts[i] * sizeof(int64_t);
     }
-    int64_t *dims = D.data[0], *old = D.data[1], *pointer = D.data[2], *position = D.data[3], *irr = D.data[4];
+    int64_t *dims = D.data[0], *old = D.data[1], *pointer = D.data[2], *position = D.data[3], *irr = D.data[4], *number = D.data[5];
+    static uint64_t taken[231][28];
+    memset(taken, 0, sizeof taken);
+    for (int64_t g = 0; g < count; g++) {
+        int64_t s = section_int(&sg, g), k = section_int(&kslot, g), cc = section_int(&partner, g), n = 1;
+        if (s < 1 || s > 230 || k < 1 || k > 27) continue;
+        while (n < 64 && (taken[s][k] >> n & 1)) n++;
+        if (n >= 64 || cc < 0 || cc >= 64) return 1;
+        number[g] = n;
+        taken[s][k] |= (uint64_t)1 << n | (uint64_t)1 << cc;
+    }
     for (int64_t g = 0; g <= last; g++) irr[g] = 1;
     for (int64_t g = 0, used = 0; g < last; g++) {
         int64_t s = section_int(&sg, g);
