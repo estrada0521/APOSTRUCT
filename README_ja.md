@@ -16,7 +16,7 @@ Local implementation of ISODISTORT
 
 ## Overview
 
-親構造のCIFと、変位・磁気・strainの選択、k点と既約表現から、OPD一覧と、選択OPDの部分群・子構造・mode詳細を計算する。ラベルと、数学的に一意に決まらない選択（既約表現の基底、設定、代表の方向など）は ISOTROPY Software Suite の規約に従う。
+親構造のCIFと、変位・磁気・strainの選択、k点と既約表現から、OPD一覧と、選択OPDの部分群・子構造・mode詳細を計算する。ラベルと、数学的に一意に決まらない選択（既約表現の基底、設定、代表の方向など）は、ISOTROPY Software Suite のデータが記録する規約（標準の結晶学の資料と、ISOTROPY 自身の選択）に従う。
 
 ## How to use
 
@@ -50,7 +50,7 @@ apo serve --open-browser
 | `core/` | 計算本体(C言語) |
 | `cli/` | command line |
 | `gui/` | `apo serve` とbrowser画面 |
-| `source/` | apoが計算できない表（構造と、ISOTROPYの規約）と、blob生成器 |
+| `source/` | apoが計算できない規約の表と、blob生成器 |
 | `verification/` | 検証器（Python）。Web版ISODISTORTの出力との比較と、Webから独立した数学検査。結果は[Validation.ja.md](Validation.ja.md) |
 | `branches/` `assets/` | 判定記録とそのCIF |
 

@@ -3,10 +3,12 @@ NOTICE
 LICENSE (0BSD) applies to the source code of this repository. It does not
 apply to the bundled source/ tables described below, which are the
 distributed BYU ISOTROPY data, reorganized by entity, with the parts that apo
-computes left out; they are governed by this NOTICE. The tables under
-source/conventions/ are the choices of the ISOTROPY Software Suite; the
-others hold standard crystallographic data and labels (International Tables,
-CDML, Kovalev, Mulliken, OG, BNS), here as transcribed from its distribution.
+computes left out; they are governed by this NOTICE. They hold the
+conventions apo's output is written in: standard crystallographic data and
+labels (International Tables for Crystallography Vol. A; Cracknell, Davies,
+Miller and Love; Kovalev; Bradley and Cracknell; the OG and BNS magnetic
+space-group notations) together with the choices of the ISOTROPY Software
+Suite, all as transcribed from its distribution.
 
 APOSTRUCT is an independent program built on the group-theoretical
 method and data tables originally distributed with ISODISTORT, part of the

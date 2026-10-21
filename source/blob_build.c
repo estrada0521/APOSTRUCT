@@ -860,21 +860,6 @@ static void render_section(const char *dir, char *line)
     free(b.data);
 }
 
-/* a table with columns under conventions/ keeps the records of its plain counterpart, keyed by the first column */
-static void check_split_keys(void)
-{
-    for (int i = 0; i < etable_count; i++) {
-        if (strncmp(etables[i].path, "conventions/", 12)) continue;
-        for (int j = 0; j < etable_count; j++) {
-            if (strcmp(etables[j].path, etables[i].path + 12)) continue;
-            if (etables[i].rows != etables[j].rows || strcmp(etables[i].names[0], etables[j].names[0]))
-                die("split table sides differ", etables[i].path);
-            for (int r = 0; r < etables[i].rows; r++)
-                if (strcmp(etables[i].fields[r][0], etables[j].fields[r][0])) die("split table keys differ", etables[i].path);
-        }
-    }
-}
-
 /* every section of layout.txt; returns the table files it reads */
 static int load_layout(const char *dir)
 {
@@ -934,7 +919,6 @@ int main(int argc, char **argv)
 {
     if (argc != 3) die("usage: source_blob_build <Source dir> <output file>", 0);
     int tables = load_layout(argv[1]);
-    check_split_keys();
     text_buf names = {0};
     put(&names, "", 0);
     for (size_t at = 0; at < byu_used; at += strlen(byu_names + at) + 1) {
