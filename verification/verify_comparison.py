@@ -36,22 +36,12 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from verification.compare import compare_local_to_web  # noqa: E402
+from verification.local_output import comparison_preview, request_selections  # noqa: E402
 from verification.result import (  # noqa: E402
     DEFAULT_TOLERANCE,
     result_for_comparison,
 )
 from verification.version import comparator_version  # noqa: E402
-
-
-def _request_selections(input_payload: dict[str, Any]) -> list[dict[str, Any]]:
-    return [
-        {
-            "k_label": slot["label"],
-            "k_params": dict(slot.get("params") or {}),
-            "irrep": slot["ir"],
-        }
-        for slot in input_payload["k"]
-    ]
 
 
 def verify(
@@ -68,18 +58,18 @@ def verify(
         raise ValueError(
             f"local mode details are not complete (status={mode_details.get('status')!r})"
         )
-    preview = {
+    preview = comparison_preview({
         "space_group": local_apo_output.get("space_group") or {},
         "input": local_apo_output.get("input") or {},
         "selected": local_apo_output["selected"],
-    }
+    })
 
     opd, comparison = compare_local_to_web(
         opd_exists=True,
         preview=preview,
         mode_text=web_text,
         opd_label=opd_label,
-        k_selections=_request_selections(input_payload),
+        k_selections=request_selections(input_payload),
         case_label=input_id,
         cif_label=str(input_payload.get("cif", "unknown.cif")),
         comparison_source="verify_comparison",

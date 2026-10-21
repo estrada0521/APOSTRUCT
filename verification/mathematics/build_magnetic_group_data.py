@@ -27,7 +27,8 @@ HALL_PATH = UPSTREAM_DIR / "magnetic_hall_symbols.yaml"
 NUMBERS_PATH = UPSTREAM_DIR / "msg_numbers.csv"
 LICENSE_PATH = DATA_DIR / "SPGLIB-LICENSE.txt"
 OUTPUT_PATH = DATA_DIR / "magnetic_group_generators.json.gz"
-SOURCE_SPACE_PATH = ROOT / "Source/data_space.txt"
+# the Source space-group tables the presentation sets are read from
+SOURCE_SPACE_TABLES = ("group/point_ops.txt", "group/lattices.txt", "group/space_groups.txt", "settings/inter_settings.txt")
 
 SPGLIB_VERSION = "2.7.0"
 SPGLIB_COMMIT = "12355c77fb7c505a55f52cae36341d73b781a065"
@@ -38,7 +39,7 @@ OFFICIAL_ISO_MAG_SHA256 = (
     "2b11217ae10687b0836d8151846db2fad57b0d77211da90bb138ccd123a7b1fc"
 )
 SPGLIB_SETTING_VERSION = "2.7.0"
-SOURCE_SPACE_SHA256 = "47d8de79c643ad2f6c8e57424e179cd5702ddad669f02032296c0e3f8c2e594a"
+SOURCE_SPACE_SHA256 = "632825f69a5af1982629a03682759949225972e3a092498e8f879c287c9bf51b"
 
 # These prime placements are the unique Hall variants whose exact closures
 # equal the pinned ISO-MAG operation table.  ``audit_official_iso_mag`` checks
@@ -144,6 +145,17 @@ def sha256_file(path: Path) -> str:
 def require_source(path: Path, expected_sha256: str) -> None:
     if not path.is_file() or sha256_file(path) != expected_sha256:
         raise ValueError(f"pinned authority source differs: {path}")
+
+
+def require_tables(names: Sequence[str], expected_sha256: str) -> None:
+    digest = hashlib.sha256()
+    for name in names:
+        path = ROOT / "source" / name
+        if not path.is_file():
+            raise ValueError(f"pinned authority source missing: {path}")
+        digest.update(name.encode() + b"\0" + path.read_bytes() + b"\0")
+    if digest.hexdigest() != expected_sha256:
+        raise ValueError(f"pinned authority source differs: {', '.join(names)}")
 
 
 def matrix_vector(matrix: Matrix, vector: Vector) -> Vector:
@@ -552,7 +564,7 @@ def _source_setting_rows() -> dict[int, tuple[dict[str, Any], ...]]:
     )
     from verification.backend.source.tables import source_tables
 
-    require_source(SOURCE_SPACE_PATH, SOURCE_SPACE_SHA256)
+    require_tables(SOURCE_SPACE_TABLES, SOURCE_SPACE_SHA256)
     tables = source_tables()
     centering = {
         "P": (ZERO_VECTOR,),
@@ -856,7 +868,7 @@ def build_document() -> tuple[dict[str, Any], dict[str, frozenset[Operation]]]:
                 "spglib_setting_version": SPGLIB_SETTING_VERSION,
                 "official_iso_mag_sha256": OFFICIAL_ISO_MAG_SHA256,
                 "official_parity_overrides": OFFICIAL_PARITY_OVERRIDES,
-                "source_data_space_sha256": SOURCE_SPACE_SHA256,
+                "source_space_tables_sha256": SOURCE_SPACE_SHA256,
             },
             "group_count": len(entries),
             "total_operation_count": total_operations,
