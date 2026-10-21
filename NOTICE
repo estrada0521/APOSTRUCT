@@ -1,10 +1,11 @@
 NOTICE
 
 LICENSE (0BSD) applies to the source code of this repository. It does not
-apply to the bundled Source/ tables described below, which remain the
-distributed BYU ISOTROPY data and are governed by this NOTICE.
+apply to the bundled source/ tables described below, which are the
+distributed BYU ISOTROPY data, reorganized by entity, with the parts that apo
+computes left out; they are governed by this NOTICE.
 
-APOSTRUCT is an independent, pure-Python package built on the group-theoretical
+APOSTRUCT is an independent program built on the group-theoretical
 method and data tables originally distributed with ISODISTORT, part of the
 ISOTROPY Software Suite. It is not the original ISOTROPY Software Suite and is
 not affiliated with or endorsed by its authors.

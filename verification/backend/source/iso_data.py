@@ -1,9 +1,8 @@
 """
 Decoder for selected ISOTROPY/ISO-IR Source data tables.
 
-This module decodes
-  data_space.txt, data_irreps.txt, data_little.txt, data_wyckoff.txt, const.dat
-directly from the repository Source files.
+This module reads the compiled Source (bin/source.blob, built from source/ by
+build.sh) by the blob section names.
 
 All data pointers in the ISOTROPY tables are Fortran 1-based and are converted
 locally where used.
@@ -178,14 +177,7 @@ class ISOData:
             self.images = self._compiled_source.table("images")
             self.magnetic = self._compiled_source.table("magnetic")
         else:
-            # Explicit custom Source directories remain a text-decoding surface.
-            self.space = _load_table(self._find("data_space.txt", "data_space(1).txt"))
-            self.irreps = _load_table(self._find("data_irreps.txt", "data_irreps(1).txt"))
-            self.little = _load_table(self._find("data_little.txt"))
-            self.isotropy = _load_table(self._find("data_isotropy.txt"))
-            self.wyckoff = _load_table(self._find("data_wyckoff.txt", "data_wyckoff(1).txt"))
-            self.images = _load_table(self._find("data_images.txt", "data_images(1).txt"))
-            self.magnetic = _load_table(self._find("data_magnetic.txt"))
+            raise ValueError(f"only the distributed Source is supported: {self.data_dir}")
         self.const = _load_constants(self._find("const.dat", "const(1).dat"))
 
 

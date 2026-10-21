@@ -1,0 +1,113 @@
+# How the Source tables become the blob sections apo reads.  One section per line:
+#   SECTION  FILE  COLUMN  MODE  [OPTIONS]
+# Modes: each (one number per record), text (one string per record), flat (the records' lists in order), start (the 1-based start of each record's
+# list in flat), count (each record's list length), group_start / group_count (per key 1..K of COLUMN: the 1-based
+# first record and the number of records), records (the number of records).
+# Options: pad=W (each list padded with 0 to W), total=N (the whole section padded with 0 to N), div=W (counts and
+# starts in units of W items), zero_empty (start 0 for an empty list), sentinel (one more start after the last),
+# keys=K, first=N (only the first N records), lead=N (N zeros before the first list, counted by start).
+space.ipoint_op                       group/point_ops.txt matrix flat
+space.ipoint_op_code                  group/point_ops.txt code each
+space.point_group_label_inter         group/point_groups.txt label text
+space.ipoint_group_order              group/point_groups.txt order each
+space.ipoint_group_gen_count          group/point_groups.txt generator_count each
+space.ipoint_group_gen                group/point_groups.txt generators flat
+space.ipoint_group_code               group/point_groups.txt code each
+space.lattice_label                   group/lattices.txt label text
+space.k_points                        group/lattices.txt k_points flat
+space.lattice_ml                      group/lattices.txt ml flat
+space.lattice_ml_denom                group/lattices.txt ml_denom flat
+space.space_label_bc                  group/space_groups.txt label_bc text
+space.ispace_point_group              group/space_groups.txt point_group each
+space.ispace_lattice                  group/space_groups.txt lattice each
+space.ispace_generators_cml           group/space_groups.txt generators flat
+space.ispace_inter_number             settings/inter_settings.txt number each
+space.ispace_inter_version            settings/inter_settings.txt version each
+space.space_inter_label_short         settings/inter_settings.txt short text
+space.space_inter_label_full          settings/inter_settings.txt full text
+space.ispace_inter_origin             settings/inter_settings.txt origin each
+space.space_inter_axis                settings/inter_settings.txt axis text
+space.space_inter_abc                 settings/inter_settings.txt abc text
+space.ispace_inter_cell               settings/inter_settings.txt cell each
+space.ispace_inter_choice             group/space_groups.txt inter_choice each
+space.ispace_settings                 group/space_groups.txt settings flat
+space.ispace_settings_inter           settings/inter_settings.txt inter flat
+space.ispace_inter_wyckoff_pointer    settings/inter_settings.txt wyckoff start div=16 zero_empty
+space.ispace_inter_wyckoff_fract      settings/inter_settings.txt wyckoff flat
+wyckoff.iwyckoff_count                settings/wyckoff.txt sg group_count keys=230
+wyckoff.iwyckoff_pointer              settings/wyckoff.txt sg group_start keys=230
+wyckoff.wyckoff_label                 settings/wyckoff.txt label text
+wyckoff.iwyckoff_fract                settings/wyckoff.txt fract flat
+wyckoff.iwyckoff_pg                   settings/wyckoff.txt site_pg each
+wyckoff.iwyckoff_pg_settings_count    settings/site_settings.txt pg group_count keys=32
+wyckoff.iwyckoff_pg_elements_pointer  settings/site_settings.txt pg group_start keys=32
+wyckoff.iwyckoff_pg_elements          settings/site_settings.txt elements flat
+wyckoff.iwyckoff_pg_irrep             settings/site_point_groups.txt irrep flat
+wyckoff.iwyckoff_pg_vector_reps       settings/site_point_groups.txt vector_reps flat
+wyckoff.iwyckoff_pg_vector_basis      settings/site_settings.txt vector_basis flat
+little.little_k_count                 group/lattices.txt k_count each
+little.little_k_label                 k/slots.txt label text
+little.little_k_kov                   k/space_group_slots.txt kov each
+little.little_k                       k/slots.txt vector flat
+little.little_k_dim                   k/slots.txt dim each
+little.little_irr_space_group         irreps/little.txt sg each
+little.little_irr_k                   irreps/little.txt k each
+little.little_irr_cc                  irreps/little.txt partner each
+little.little_irr_full_kov_label      irreps/little.txt kovalev text
+little.little_irr_full_matrices       irreps/little.txt matrices flat
+little.little_irr_real2_pointer       irreps/little.txt real_form start zero_empty lead=1
+little.little_irr_real2               irreps/little.txt real_form flat lead=1
+little.little_k_star_flip             k/star_flips.txt flip flat
+little.little_k_star_order            k/star_orders.txt order flat
+little.little_k_conv2ml               k/conv2ml.txt matrix flat
+little.little_k_conv2ml_index         k/space_group_slots.txt conv2ml each
+irreps.irrep_label_pg                 irreps/old.txt mulliken text
+irreps.irrep_space_group_pointer      irreps/old.txt sg group_start keys=230 sentinel
+irreps.irrep_image                    irreps/old.txt image each
+isotropy.isotropy_irrep_pointer       isotropy/ordinary.txt old group_start keys=4777 sentinel
+isotropy.isotropy_orderparam_label    isotropy/ordinary.txt label text
+isotropy.isotropy_orderparam_pointer  isotropy/ordinary.txt direction_codes start
+isotropy.isotropy_orderparam          isotropy/ordinary.txt direction_codes flat total=144000
+isotropy.isotropy_direction           isotropy/ordinary.txt image_direction each
+isotropy.isotropy_basis               isotropy/ordinary.txt basis flat
+isotropy.isotropy_origin              isotropy/ordinary.txt origin flat
+magnetic.mag_count                    group/magnetic_groups.txt group records
+magnetic.mag_nlabel                   group/magnetic_groups.txt og text
+magnetic.mag_bns_label                group/magnetic_groups.txt bns text
+magnetic.mag_space_group_pointer      group/magnetic_groups.txt sg group_start keys=230 sentinel
+magnetic.mag_gen_count                group/magnetic_groups.txt generators count div=5
+magnetic.mag_gen                      group/magnetic_groups.txt generators flat pad=20
+magnetic.mag_point_op_r               group/magnetic_ops.txt reversed each
+magnetic.mag_point_op_mag2nonmag      group/magnetic_ops.txt ordinary each
+magnetic.mag_point_op_nonmag2mag      group/magnetic_ops.txt from_ordinary each
+magnetic.mag_point_op_code            group/magnetic_ops.txt code each
+magnetic.mag_point_group_code         group/magnetic_point_groups.txt code each
+magnetic.mag_type4_pointer            group/magnetic_groups.txt type4 each
+magnetic.mag_type4_supergroup         group/type4_supergroups.txt supergroup each
+magnetic.mag_type4_supergroup_basis   group/type4_supergroups.txt basis flat
+magnetic.mag_type4_supergroup_origin  group/type4_supergroups.txt origin flat
+magnetic.mag_iso_irrep_pointer        isotropy/magnetic.txt old group_start keys=4777 sentinel
+magnetic.mag_iso_basis                isotropy/magnetic.txt basis flat
+magnetic.mag_iso_origin               isotropy/magnetic.txt origin flat
+magnetic.mag_iso_orderparam_label     isotropy/magnetic.txt label text
+magnetic.mag_iso_orderparam_pointer   isotropy/magnetic.txt direction_codes start
+magnetic.mag_iso_orderparam           isotropy/magnetic.txt direction_codes flat total=163000
+images.image_label                    images/images.txt label text
+images.image_label2                   images/images.txt label2 text first=132
+images.image_dimension                images/images.txt dimension each
+images.image_order                    images/images.txt order each
+images.image_type                     images/images.txt type each first=132
+images.image_landau                   images/images.txt landau each
+images.image_generator_count          images/images.txt generator_count each first=132
+images.image_diagonalize_pointer      images/images.txt diagonalize each first=132
+images.image_subgroup_count           images/images.txt subgroup_count each
+images.image_subgroup_pointer         images/images.txt subgroup_start each
+images.image_subgroup_maximal         images/image_subgroups.txt maximal each
+images.image_subgroup_min             images/image_subgroups.txt minimal each
+images.image_subgroup_rg              images/image_subgroups.txt rg each
+images.image_subgroup                 images/image_subgroups.txt subgroup each
+images.image_dir_label                images/image_directions.txt label text
+images.image_dir_dimension            images/image_directions.txt dimension each
+images.image_dir_subduction           images/image_directions.txt subduction each
+images.image_dir                      images/image_directions.txt vector flat
+images.image_dir_pointer              images/image_directions.txt vector start zero_empty

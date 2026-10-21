@@ -1,13 +1,10 @@
-/* Bake the Source text authority into one blob (source_blob.h).
+/* Bake the Source tables into one blob (source_blob.h).
  *
  *   source_blob_build <Source dir> <output file>
  *
- * Section rules follow the distributed text: a line holding only
- * [a-z][a-z0-9_]* opens a section; a later section of the same name replaces
- * the earlier one's values but keeps its position.  A block of quoted strings
- * only is a string section; any number outside quotes makes it numeric
- * (real when a number has '.', 'e' or 'E'); bare T/F tokens make it boolean;
- * otherwise its quoted strings (possibly none). */
+ * layout.txt names each blob section and how it is rendered from a table column; the rendered items are then typed
+ * as a block of text: quoted strings only make a string section; any number outside quotes makes it numeric (real
+ * when a number has '.', 'e' or 'E'); bare T/F tokens make it boolean; otherwise its quoted strings (possibly none). */
 
 #include <ctype.h>
 #include <math.h>
@@ -142,19 +139,6 @@ static section *add_section(const char *name)
     if (strlen(name) >= BLOB_NAME_SIZE) die("section name too long", name);
     strcpy(s->name, name);
     return s;
-}
-
-static int is_header(const char *line, size_t length)
-{
-    size_t start = 0, end = length;
-    while (start < end && isspace((unsigned char)line[start])) start++;
-    while (end > start && isspace((unsigned char)line[end - 1])) end--;
-    if (start == end || !(line[start] >= 'a' && line[start] <= 'z')) return 0;
-    for (size_t i = start; i < end; i++) {
-        char c = line[i];
-        if (!((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_')) return 0;
-    }
-    return 1;
 }
 
 /* Python re [-+]?\d+(?:\.\d*)?(?:[Ee][-+]?\d+)? scanned left to right. */
@@ -335,38 +319,6 @@ static void parse_block(const char *table, const char *name, const char *block, 
     s->bytes = bytes;
     free(rest);
 }
-
-static void load_table(const char *dir, const char *table, const char *file)
-{
-    char path[4096];
-    snprintf(path, sizeof path, "%s/%s", dir, file);
-    size_t size;
-    char *text = read_file(path, &size);
-    char name[BLOB_NAME_SIZE] = {0};
-    size_t block_start = 0;
-    int have = 0;
-    size_t line_start = 0;
-    while (line_start <= size) {
-        size_t line_end = line_start;
-        while (line_end < size && text[line_end] != '\n') line_end++;
-        size_t next = line_end < size ? line_end + 1 : size + 1;
-        if (is_header(text + line_start, line_end - line_start)) {
-            if (have) parse_block(table, name, text + block_start, line_start - block_start);
-            size_t a = line_start, b = line_end;
-            while (a < b && isspace((unsigned char)text[a])) a++;
-            while (b > a && isspace((unsigned char)text[b - 1])) b--;
-            if (b - a >= BLOB_NAME_SIZE) die("section name too long", table);
-            memcpy(name, text + a, b - a);
-            name[b - a] = 0;
-            have = 1;
-            block_start = next <= size ? next : size;
-        }
-        line_start = next;
-    }
-    if (have) parse_block(table, name, text + block_start, size - block_start);
-    free(text);
-}
-
 
 /* Exact constants: a + b sqrt2 + c sqrt3 + d sqrt6 with rational parts, parsed
  * from the symbolic column of const.dat. Forms outside that field (nested
@@ -703,10 +655,222 @@ static void load_constants(const char *dir)
     s->bytes = (uint64_t)n;
 }
 
+
+/* ---- entity tables and layout.txt ---- */
+
+/* A table file: a header of tab-separated column names, then one record per line with tab-separated fields; a
+ * numeric field is a space-separated list, a text field is the text itself. */
+typedef struct {
+    char path[512];
+    int columns, rows;
+    char **names;
+    char ***fields; /* rows x columns, each a pointer into text */
+    char *text;
+} entity_table;
+
+static entity_table *etables;
+static int etable_count;
+
+static entity_table *table_of(const char *dir, const char *file)
+{
+    for (int i = 0; i < etable_count; i++)
+        if (!strcmp(etables[i].path, file)) return &etables[i];
+    etables = xrealloc(etables, sizeof *etables * (size_t)(etable_count + 1));
+    entity_table *t = &etables[etable_count++];
+    memset(t, 0, sizeof *t);
+    snprintf(t->path, sizeof t->path, "%s", file);
+    char path[4096];
+    snprintf(path, sizeof path, "%s/%s", dir, file);
+    size_t size;
+    t->text = read_file(path, &size);
+    char *line = t->text, *end = t->text + size;
+    int header = 1;
+    while (line < end) {
+        char *next = memchr(line, '\n', (size_t)(end - line));
+        if (!next) next = end;
+        *next = 0;
+        if (*line != '#') {
+            int n = 1;
+            for (char *c = line; *c; c++) n += *c == '\t';
+            char **cells = xmalloc(sizeof *cells * (size_t)n);
+            int k = 0;
+            cells[k++] = line;
+            for (char *c = line; *c; c++)
+                if (*c == '\t') *c = 0, cells[k++] = c + 1;
+            if (header) {
+                t->names = cells;
+                t->columns = n;
+                header = 0;
+            } else {
+                if (n != t->columns) die("wrong field count in", file);
+                t->fields = xrealloc(t->fields, sizeof *t->fields * (size_t)(t->rows + 1));
+                t->fields[t->rows++] = cells;
+            }
+        }
+        line = next + 1;
+    }
+    return t;
+}
+
+static int column_of(const entity_table *t, const char *name)
+{
+    for (int i = 0; i < t->columns; i++)
+        if (!strcmp(t->names[i], name)) return i;
+    die("no such column", name);
+    return -1;
+}
+
+typedef struct {
+    char *data;
+    size_t used, capacity;
+} text_buf;
+
+static void put(text_buf *b, const char *s, size_t n)
+{
+    if (b->used + n + 2 > b->capacity) {
+        b->capacity = 2 * (b->used + n + 2);
+        b->data = xrealloc(b->data, b->capacity);
+    }
+    memcpy(b->data + b->used, s, n);
+    b->used += n;
+}
+
+static void put_token(text_buf *b, const char *s, size_t n)
+{
+    put(b, s, n);
+    put(b, (b->used % 1024) > 960 ? "\n" : " ", 1);
+}
+
+static void put_int(text_buf *b, long long v)
+{
+    char x[32];
+    int n = snprintf(x, sizeof x, "%lld", v);
+    put_token(b, x, (size_t)n);
+}
+
+/* the space-separated tokens of a numeric field */
+static int field_tokens(const char *field, const char **starts, size_t *lengths, int capacity)
+{
+    int n = 0;
+    for (const char *c = field; *c;) {
+        while (*c == ' ') c++;
+        if (!*c) break;
+        const char *a = c;
+        while (*c && *c != ' ') c++;
+        if (n == capacity) die("field too long", field);
+        starts[n] = a, lengths[n] = (size_t)(c - a), n++;
+    }
+    return n;
+}
+
+static long long option(const char *options, const char *key, long long fallback)
+{
+    size_t k = strlen(key);
+    for (const char *c = options; c && *c; c++)
+        if ((c == options || c[-1] == ' ') && !strncmp(c, key, k) && (c[k] == '=' || c[k] == ' ' || !c[k]))
+            return c[k] == '=' ? atoll(c + k + 1) : 1;
+    return fallback;
+}
+
+enum { MAX_TOKENS = 1 << 16 };
+
+/* one blob section from its layout line: SECTION FILE COLUMN MODE [OPTIONS] */
+static void render_section(const char *dir, char *line)
+{
+    char section[BLOB_NAME_SIZE], file[512], column[128], mode[32];
+    int consumed = 0;
+    if (sscanf(line, "%63s %511s %127s %31s %n", section, file, column, mode, &consumed) < 4) die("bad layout line", line);
+    const char *options = line + consumed;
+    char *dot = strchr(section, '.');
+    if (!dot) die("section without table", section);
+    *dot = 0;
+    entity_table *t = table_of(dir, file);
+    int c = column_of(t, column);
+    long long first = option(options, "first", t->rows), unit = option(options, "div", 1), lead = option(options, "lead", 0);
+    long long pad = option(options, "pad", 0), total = option(options, "total", 0), keys = option(options, "keys", 0);
+    int zero_empty = option(options, "zero_empty", 0) > 0, sentinel = option(options, "sentinel", 0) > 0;
+    int rows = (int)(first < t->rows ? first : t->rows);
+    static const char *starts[MAX_TOKENS];
+    static size_t lengths[MAX_TOKENS];
+    text_buf b = {0};
+    put(&b, "", 0);
+    if (!strcmp(mode, "text")) {
+        for (int r = 0; r < rows; r++) {
+            put(&b, "\"", 1);
+            put(&b, t->fields[r][c], strlen(t->fields[r][c]));
+            put_token(&b, "\"", 1);
+        }
+    } else if (!strcmp(mode, "each")) {
+        for (int r = 0; r < rows; r++) {
+            int n = field_tokens(t->fields[r][c], starts, lengths, MAX_TOKENS);
+            if (n) put_token(&b, starts[0], lengths[0]);
+            else put_int(&b, 0);
+        }
+    } else if (!strcmp(mode, "flat")) {
+        long long written = 0;
+        for (long long i = 0; i < lead; i++, written++) put_int(&b, 0);
+        for (int r = 0; r < rows; r++) {
+            int n = field_tokens(t->fields[r][c], starts, lengths, MAX_TOKENS);
+            for (int i = 0; i < n; i++, written++) put_token(&b, starts[i], lengths[i]);
+            for (long long i = n; i < pad; i++, written++) put_int(&b, 0);
+        }
+        for (; written < total; written++) put_int(&b, 0);
+    } else if (!strcmp(mode, "start") || !strcmp(mode, "count")) {
+        long long at = 1 + lead;
+        for (int r = 0; r < rows; r++) {
+            int n = field_tokens(t->fields[r][c], starts, lengths, MAX_TOKENS);
+            if (mode[0] == 'c') put_int(&b, n / unit);
+            else put_int(&b, n == 0 && zero_empty ? 0 : (at - 1) / unit + 1);
+            at += n;
+        }
+        if (sentinel && mode[0] == 's') put_int(&b, (at - 1) / unit + 1);
+    } else if (!strcmp(mode, "group_start") || !strcmp(mode, "group_count")) {
+        long long previous = 1;
+        for (long long k = 1; k <= keys; k++) {
+            long long start = 0, count = 0;
+            for (int r = 0; r < rows; r++)
+                if (atoll(t->fields[r][c]) == k) {
+                    if (!count) start = r + 1;
+                    count++;
+                }
+            if (!count) start = previous;
+            previous = start;
+            put_int(&b, mode[6] == 'c' ? count : start);
+        }
+        if (sentinel) put_int(&b, rows + 1);
+    } else if (!strcmp(mode, "records")) {
+        put_int(&b, rows);
+    } else {
+        die("unknown layout mode", mode);
+    }
+    parse_block(section, dot + 1, b.data, b.used);
+    free(b.data);
+}
+
+/* every section of layout.txt; returns the table files it reads */
+static int load_layout(const char *dir)
+{
+    char path[4096];
+    snprintf(path, sizeof path, "%s/layout.txt", dir);
+    size_t size;
+    char *text = read_file(path, &size);
+    for (char *line = text; line < text + size;) {
+        char *next = memchr(line, '\n', (size_t)(text + size - line));
+        if (!next) next = text + size;
+        *next = 0;
+        char *a = line;
+        while (*a == ' ') a++;
+        if (*a && *a != '#') render_section(dir, a);
+        line = next + 1;
+    }
+    free(text);
+    return etable_count;
+}
+
 static void add_hashes(const char *dir, const char *const *files, int file_count)
 {
     size_t total = 0;
-    char lines[16][256];
+    char lines[64][256];
     for (int i = 0; i < file_count; i++) {
         char path[4096];
         snprintf(path, sizeof path, "%s/%s", dir, files[i]);
@@ -741,18 +905,14 @@ static uint64_t align64(uint64_t value) { return (value + 63) & ~(uint64_t)63; }
 int main(int argc, char **argv)
 {
     if (argc != 3) die("usage: source_blob_build <Source dir> <output file>", 0);
-    static const char *const tables[][2] = {
-        {"space", "data_space.txt"},     {"irreps", "data_irreps.txt"},   {"little", "data_little.txt"},
-        {"isotropy", "data_isotropy.txt"}, {"wyckoff", "data_wyckoff.txt"}, {"images", "data_images.txt"},
-        {"magnetic", "data_magnetic.txt"},
-    };
-    static const char *const files[] = {
-        "data_space.txt", "data_irreps.txt", "data_little.txt", "data_isotropy.txt",
-        "data_wyckoff.txt", "data_images.txt", "data_magnetic.txt", "const.dat",
-    };
-    add_hashes(argv[1], files, 8);
-    for (int i = 0; i < 7; i++) load_table(argv[1], tables[i][0], tables[i][1]);
+    int tables = load_layout(argv[1]);
     load_constants(argv[1]);
+    const char *files[64];
+    int file_count = 0;
+    files[file_count++] = "layout.txt";
+    files[file_count++] = "const.dat";
+    for (int i = 0; i < tables && file_count < 64; i++) files[file_count++] = etables[i].path;
+    add_hashes(argv[1], files, file_count);
 
     uint64_t index_offset = align64(sizeof(blob_header));
     uint64_t offset = align64(index_offset + sizeof(blob_section) * (uint64_t)section_count);

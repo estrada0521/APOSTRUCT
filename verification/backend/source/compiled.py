@@ -13,16 +13,8 @@ import numpy as np
 
 
 TABLE_NAMES = ("space", "irreps", "little", "isotropy", "wyckoff", "images", "magnetic")
-AUTHORITY_FILES = (
-    "data_space.txt",
-    "data_irreps.txt",
-    "data_little.txt",
-    "data_isotropy.txt",
-    "data_wyckoff.txt",
-    "data_images.txt",
-    "data_magnetic.txt",
-    "const.dat",
-)
+# the files the blob records hashes of always include these; the entity tables are the ones layout.txt names
+AUTHORITY_FILES = ("layout.txt", "const.dat")
 _KINDS = {1: "<i1", 2: "<i2", 3: "<i4", 4: "<i8", 5: "<f8", 6: "|b1"}
 
 
@@ -160,7 +152,7 @@ class CompiledSource:
         self.source = Path(source)
         self.blob = SourceBlob(blob)
         recorded = dict(line.split("=", 1) for line in self.blob.section("source.sha256"))
-        if set(recorded) != set(AUTHORITY_FILES):
+        if not set(AUTHORITY_FILES) <= set(recorded):
             raise ValueError("Source blob records an unexpected authority set")
         for name, digest in recorded.items():
             if file_sha256(self.source / name) != digest:
