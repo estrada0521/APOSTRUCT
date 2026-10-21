@@ -16,14 +16,14 @@ int vector_mode_total(int sg, int gid, int row_count, const int *row_ids, int ax
 int strain_irrep(int sg, int gid);
 
 static struct {
-    section_view k_dim, ops_count, mag_pointer;
+    section_view k_dim, mag_pointer;
     int ready;
 } T;
 
 static int load(void)
 {
     if (T.ready) return 0;
-    if (sel_tables() || section_find("little.little_k_dim", &T.k_dim) || section_find("little.little_ops_count", &T.ops_count) ||
+    if (sel_tables() || section_find("little.little_k_dim", &T.k_dim) ||
         section_find("magnetic.mag_iso_irrep_pointer", &T.mag_pointer))
         return md_fail(MDE_VALUE, "k-point Source tables are inconsistent");
     T.ready = 1;
@@ -133,10 +133,12 @@ static int miller_love(jbuf *b, int sg, const jvalue *selected, const sel_params
                 words[2 * i] = (int64_t)values[i].n;
                 words[2 * i + 1] = (int64_t)values[i].d;
             }
-            int64_t expected = section_int(&T.ops_count, (int64_t)(sg - 1) * 27 + kslot - 1);
             if (dim > 0) {
-                int order = 0;
+                /* the little-group order of the family at a generic parameter */
+                static const int64_t generic[6] = {1, 1009, 1, 1013, 1, 1019};
+                int order = 0, expected = 0;
                 int code = k_source_little_order(sg, (int)kslot, (int)dimension, words, &order);
+                if (!code) code = k_source_little_order(sg, (int)kslot, (int)dimension, generic, &expected);
                 if (code == -3) return md_fail(MDE_VALUE, "K-family parameter count does not match its Source slot");
                 if (code) return md_fail(code == -2 ? MDE_ARITH : MDE_VALUE, "k-vector Source tables are inconsistent");
                 if (order > expected) {

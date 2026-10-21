@@ -9,6 +9,7 @@
 #include <string.h>
 
 #include "geometry.h"
+#include "irreps.h"
 #include "tables.h"
 int isotropy_row_subgroup(int64_t row_id);
 
@@ -60,7 +61,7 @@ static int fail(int kind, const char *message)
 
 static struct {
     section_view w_pointer, w_count, w_label, w_pg, vector_reps, irr_sg, irr_old, full_dim, irr_type, irr_k, k_label,
-        irr_count, iso_irrep_pointer, iso_direction, iso_basis, iso_origin,
+        iso_irrep_pointer, iso_direction, iso_basis, iso_origin,
         iso_op_pointer, iso_op, const_values, sg_point_group, pg_order, pg_gen_count, pg_gen, lattice;
     int ready;
 } T;
@@ -74,7 +75,7 @@ static int load(void)
         section_find("little.little_irr_space_group", &T.irr_sg) || section_find("little.little_irr_old", &T.irr_old) ||
         section_find("little.little_irr_full_dim", &T.full_dim) ||
         section_find("little.little_irr_type", &T.irr_type) || section_find("little.little_irr_k", &T.irr_k) ||
-        section_find("little.little_k_label", &T.k_label) || section_find("little.little_irr_count", &T.irr_count) ||
+        section_find("little.little_k_label", &T.k_label) ||
         section_find("isotropy.isotropy_irrep_pointer", &T.iso_irrep_pointer) ||
         
         section_find("isotropy.isotropy_direction", &T.iso_direction) || section_find("isotropy.isotropy_basis", &T.iso_basis) ||
@@ -618,7 +619,7 @@ int mode_frame(int sg, const char *wyckoff, int64_t wyckoff_length, const char *
     if (nparams) {
         int lattice = (int)section_int(&T.lattice, sg - 1), kslot = 0, kmatches = 0;
         for (int slot = 1; slot <= 27; slot++)
-            if (section_int(&T.irr_count, (int64_t)(sg - 1) * 27 + slot - 1) > 0 &&
+            if (little_k_has_irreps(sg, slot) &&
                 str_eq(strip(&T.k_label, (int64_t)(lattice - 1) * 27 + slot - 1), k_label, k_label_length)) {
                 kslot = slot;
                 kmatches++;
@@ -626,7 +627,7 @@ int mode_frame(int sg, const char *wyckoff, int64_t wyckoff_length, const char *
         if (kmatches != 1) {
             char list[120] = "";
             for (int slot = 1, at = 0; slot <= 27; slot++)
-                if (section_int(&T.irr_count, (int64_t)(sg - 1) * 27 + slot - 1) > 0 &&
+                if (little_k_has_irreps(sg, slot) &&
                     str_eq(strip(&T.k_label, (int64_t)(lattice - 1) * 27 + slot - 1), k_label, k_label_length))
                     at += snprintf(list + at, sizeof list - (size_t)at, at ? ", %d" : "%d", slot);
                 free(entries);

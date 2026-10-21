@@ -10,6 +10,7 @@
 
 #include "geometry.h"
 #include "pyconv.h"
+#include "irreps.h"
 #include "tables.h"
 
 int case_display_kvector(int sg, int kslot, int param_count, const int64_t *params, int64_t *out);
@@ -470,7 +471,7 @@ const char *direction_matrix_text(int rows, const int64_t *row_lengths, const do
 /* ------------------------------------------------------------ Source rows */
 
 static struct {
-    section_view irr_sg, irr_k, irr_old, irr_type, full_dim, irr_count, k_dim, k_label, star, star_count, conv2ml;
+    section_view irr_sg, irr_k, irr_old, irr_type, full_dim, k_dim, k_label, star, star_count, conv2ml;
     int ready;
 } T;
 
@@ -479,7 +480,7 @@ static int load(void)
     if (T.ready) return 0;
     if (geo_load() || section_find("little.little_irr_space_group", &T.irr_sg) || section_find("little.little_irr_k", &T.irr_k) ||
         section_find("little.little_irr_old", &T.irr_old) || section_find("little.little_irr_type", &T.irr_type) ||
-        section_find("little.little_irr_full_dim", &T.full_dim) || section_find("little.little_irr_count", &T.irr_count) ||
+        section_find("little.little_irr_full_dim", &T.full_dim) ||
         section_find("little.little_k_dim", &T.k_dim) || section_find("little.little_k_label", &T.k_label) ||
         section_find("little.little_k_star", &T.star) || section_find("little.little_k_star_count", &T.star_count) ||
         section_find("little.little_k_star_conv2ml_pointer", &T.conv2ml))
@@ -654,7 +655,7 @@ static int case_vector(int sg, const char *label, int64_t label_length, const pa
 {
     int lattice = geo_sg_lattice(sg), kslot = 0, matches = 0;
     for (int slot = 1; slot <= 27; slot++)
-        if (section_int(&T.irr_count, (int64_t)(sg - 1) * 27 + slot - 1) > 0 && label_is(lattice, slot, label, label_length)) {
+        if (little_k_has_irreps(sg, slot) && label_is(lattice, slot, label, label_length)) {
             kslot = slot;
             matches++;
         }

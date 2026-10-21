@@ -50,6 +50,22 @@ static int load(void)
     return 0;
 }
 
+/* 1 when the tables list a little irrep of sg at k slot kslot */
+int little_k_has_irreps(int sg, int kslot)
+{
+    static unsigned char present[231][28];
+    static int ready;
+    if (load() || sg < 1 || sg > 230 || kslot < 1 || kslot > 27) return 0;
+    if (!ready) {
+        for (int g = 0; g < L.count; g++) {
+            int64_t s = section_int(&L.sg, g), k = section_int(&L.kslot, g);
+            if (s >= 1 && s <= 230 && k >= 1 && k <= 27) present[s][k] = 1;
+        }
+        ready = 1;
+    }
+    return present[sg][kslot];
+}
+
 int irrep_space_group(int gid)
 {
     if (load() || gid < 1 || gid > L.count) return 0;
