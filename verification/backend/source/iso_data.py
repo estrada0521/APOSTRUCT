@@ -17,7 +17,6 @@ import math
 import re
 from typing import Any, Dict, Iterable, List, Mapping, Sequence, Tuple
 
-import numpy as np
 
 from verification.backend.exactmath import (
     fraction_identity3,
@@ -31,7 +30,6 @@ _SECTION = re.compile(r"^[a-z][a-z0-9_]*$")
 _NUMBER = re.compile(r"[-+]?\d+(?:\.\d*)?(?:[Ee][-+]?\d+)?")
 
 Frac3 = Tuple[Fraction, Fraction, Fraction]
-SpaceOp = Tuple[int, Frac3]  # 1-based point-op index, fractional translation tau
 Matrix3 = tuple[tuple[Fraction, Fraction, Fraction], ...]
 
 
@@ -190,14 +188,6 @@ class ISOData:
             self.magnetic = _load_table(self._find("data_magnetic.txt"))
         self.const = _load_constants(self._find("const.dat", "const(1).dat"))
 
-        self.point_labels = [s.strip() for s in self.space["point_op_label"]]
-        self.point_ops = [
-            np.array(self.space["ipoint_op"][9 * i:9 * (i + 1)], dtype=int).reshape(3, 3)
-            for i in range(72)
-        ]
-        self._matrix_to_point_indices: Dict[Tuple[int, ...], List[int]] = {}
-        for i, R in enumerate(self.point_ops, start=1):
-            self._matrix_to_point_indices.setdefault(tuple(R.flatten()), []).append(i)
 
     def _find(self, *names: str) -> Path:
         for name in names:
@@ -223,82 +213,6 @@ class ISOData:
             if oid == old_id:
                 return native.little_full_dim(i + 1)
         raise KeyError(f"dimension for old irrep id {old_id} not found")
-
-    # ------------------------------------------------------------------
-    # data_space: generate finite coset representatives {R|tau}
-    # ------------------------------------------------------------------
-    def _point_index_from_matrix(self, R: np.ndarray, sg: int) -> int:
-        candidates = self._matrix_to_point_indices[tuple(np.array(R, dtype=int).flatten())]
-        lattice = self.space["ispace_lattice"][sg - 1]
-        # The first 48 labels are the orthorhombic/tetragonal/cubic set.
-        # The final 24 labels are the hexagonal/trigonal set.  Some matrices
-        # are duplicated between these two sets, so choose the appropriate family.
-        if lattice in (10, 11):  # HR, HP in data_space lattice list
-            good = [i for i in candidates if i >= 49]
-        else:
-            good = [i for i in candidates if i <= 48]
-        return good[0] if good else candidates[0]
-
-    def _compose(self, g: SpaceOp, h: SpaceOp, sg: int) -> SpaceOp:
-        # Active convention: {Rg|tg} after {Rh|th} = {Rg Rh | Rg th + tg}.
-        ig, tg = g
-        ih, th = h
-        Rg = self.point_ops[ig - 1]
-        Rh = self.point_ops[ih - 1]
-        R = Rg @ Rh
-        idx = self._point_index_from_matrix(R, sg)
-        tau = tuple(
-            (sum(Fraction(int(Rg[i, j])) * th[j] for j in range(3)) + tg[i]) % 1
-            for i in range(3)
-        )
-        return idx, tau  # type: ignore[return-value]
-
-    def space_generators_conv(self, sg: int) -> List[SpaceOp]:
-        choice = self.space["ispace_inter_choice"][sg - 1]  # 1-based inter-setting id
-        count = self.space["ispace_generators_conv_count"][choice - 1]
-        raw = self.space["ispace_generators_conv"][20 * (choice - 1):20 * choice]
-        gens = []
-        for k in range(count):
-            x, y, z, den, op = raw[5 * k:5 * k + 5]
-            gens.append((op, (Fraction(x, den), Fraction(y, den), Fraction(z, den))))
-        return gens
-
-    def space_ops(self, sg: int) -> List[SpaceOp]:
-        """Return finite coset representatives derived from static ``data_space``.
-
-        The reps come from the generator closure of the conventional
-        space-group generators (``_space_ops_from_generators``); no separate
-        precomputed coset table is consulted.
-
-        Known limitation: the mod-1 closure over-generates for centered
-        lattices (it counts centering translations / high-order screw powers as
-        distinct cosets), so for centered space groups ``len(...)`` can exceed
-        ``ipoint_group_order``.  The authoritative coset count is the point
-        group order in ``data_space`` (see ``generate_space_group_records``).
-        """
-        ops_cache = getattr(self, "_space_ops_cache", None)
-        if ops_cache is None:
-            ops_cache = {}
-            object.__setattr__(self, "_space_ops_cache", ops_cache)
-        if sg not in ops_cache:
-            ops_cache[sg] = self._space_ops_from_generators(sg)
-        return ops_cache[sg]
-
-    def _space_ops_from_generators(self, sg: int) -> List[SpaceOp]:
-        lattice = self.space["ispace_lattice"][sg - 1]
-        identity_op = 49 if lattice in (10, 11) else 1
-        E: SpaceOp = (identity_op, (Fraction(0), Fraction(0), Fraction(0)))
-        gens = self.space_generators_conv(sg)
-        seen = {E}
-        queue = [E]
-        while queue:
-            a = queue.pop(0)
-            for g in gens:
-                for prod in (self._compose(g, a, sg), self._compose(a, g, sg)):
-                    if prod not in seen:
-                        seen.add(prod)
-                        queue.append(prod)
-        return sorted(seen, key=lambda x: (x[0], x[1]))
 
     # ------------------------------------------------------------------
     # Source operation and Wyckoff geometry authority
