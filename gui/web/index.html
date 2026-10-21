@@ -791,7 +791,7 @@
       const parts = [];
       const basis = iso.basis_text || fmtBasis(iso.basis);
       const origin = fmtOrigin(iso.origin);
-      const size = iso.s ?? iso.arms ?? iso.det;
+      const size = iso.s ?? iso.det;
       const index = iso.i ?? iso.index;
       const kActive = iso.k_active ?? iso.k_active_text ?? (
         Array.isArray(iso.k_active_vectors) ? iso.k_active_vectors.join(",") : ""

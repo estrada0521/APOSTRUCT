@@ -421,9 +421,7 @@ static int subgroup_line(jbuf *b, const jvalue *row)
         put_py_str(b, origin);
     }
     jb_lit(b, ", s=");
-    const jvalue *s = member(iso, "s");
-    if (!s) s = member(iso, "arms");
-    put_number_text(b, s);
+    put_number_text(b, member(iso, "s"));
     jb_lit(b, ", i=");
     put_number_text(b, member(iso, "i"));
     jb_lit(b, ", k-active= ");

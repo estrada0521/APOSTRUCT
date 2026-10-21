@@ -203,7 +203,7 @@ typedef struct {
     char **text_kvector, **text_direction;
     /* selected isotropy for subgroup_details */
     int site_isotropy;
-    int64_t iso_row_id, iso_subgroup, iso_arms, iso_direction, iso_basis[9], iso_origin[4];
+    int64_t iso_row_id, iso_subgroup, iso_direction, iso_basis[9], iso_origin[4];
     int iso_has_origin;
 } md_state;
 
@@ -474,7 +474,7 @@ typedef struct {
     int empty, adopted, lanes, site_pg, atom_count, source_count, source_stride;
     int64_t gid;
     int has_selected;
-    int64_t row_id, subgroup, arms, direction, basis[9], origin[4];
+    int64_t row_id, subgroup, direction, basis[9], origin[4];
     int has_origin;
     int64_t *points;  /* atom_count x 12 words */
     int *records;     /* atom_count x 5 */
@@ -576,24 +576,23 @@ static int run_frame(md_request *r, const md_site *site, const md_spec *spec, co
     free(lengths);
     free(rows);
     if (status) return frame_error(status);
-    int64_t header[29];
+    int64_t header[28];
     mode_frame_result(header);
     f->site_pg = (int)header[0];
     f->gid = header[1];
     f->has_selected = (int)header[2];
     f->row_id = header[3];
     f->subgroup = header[4];
-    f->arms = header[5];
-    f->direction = header[6];
-    f->has_origin = (int)header[7];
-    memcpy(f->origin, header + 8, sizeof f->origin);
-    memcpy(f->basis, header + 12, sizeof f->basis);
-    f->empty = (int)header[21];
-    f->adopted = (int)header[22];
-    f->lanes = (int)header[23];
-    f->atom_count = (int)header[24];
-    f->source_count = (int)header[25];
-    f->source_stride = (int)header[26];
+    f->direction = header[5];
+    f->has_origin = (int)header[6];
+    memcpy(f->origin, header + 7, sizeof f->origin);
+    memcpy(f->basis, header + 11, sizeof f->basis);
+    f->empty = (int)header[20];
+    f->adopted = (int)header[21];
+    f->lanes = (int)header[22];
+    f->atom_count = (int)header[23];
+    f->source_count = (int)header[24];
+    f->source_stride = (int)header[25];
     if (f->empty) return 0;
     f->points = malloc(sizeof(int64_t) * 12 * (size_t)(f->atom_count + 1));
     f->records = malloc(sizeof(int) * 5 * (size_t)(f->atom_count + 1));
@@ -995,7 +994,6 @@ static int site_loop(md_request *r, md_state *st, md_aliases *al)
                 st->site_isotropy = 1;
                 st->iso_row_id = f.row_id;
                 st->iso_subgroup = f.subgroup;
-                st->iso_arms = f.arms;
                 st->iso_direction = f.direction;
                 memcpy(st->iso_basis, f.basis, sizeof f.basis);
                 memcpy(st->iso_origin, f.origin, sizeof f.origin);
@@ -1698,8 +1696,6 @@ static int subgroup_details(jbuf *b, const md_request *r, const md_state *st)
         jb_int(b, st->iso_row_id);
         jb_lit(b, ", \"subgroup\": ");
         jb_int(b, st->iso_subgroup);
-        jb_lit(b, ", \"arms\": ");
-        jb_int(b, st->iso_arms);
         jb_lit(b, ", \"direction\": ");
         jb_int(b, st->iso_direction);
         jb_lit(b, ", \"basis\": [");
@@ -1710,8 +1706,8 @@ static int subgroup_details(jbuf *b, const md_request *r, const md_state *st)
         jb_lit(b, "]");
     } else {
         put_value_or_null(b, jget(r->iso, "row_id"));
-        const char *keys[4] = {"subgroup", "arms", "direction", "basis"};
-        for (int i = 0; i < 4; i++) {
+        const char *keys[3] = {"subgroup", "direction", "basis"};
+        for (int i = 0; i < 3; i++) {
             jb_lit(b, ", ");
             jb_cstring(b, keys[i]);
             jb_lit(b, ": ");

@@ -60,7 +60,7 @@ static int fail(int kind, const char *message)
 
 static struct {
     section_view w_pointer, w_count, w_label, w_pg, vector_reps, irr_sg, irr_old, full_dim, irr_type, irr_k, k_label,
-        irr_count, iso_irrep_pointer, iso_arms, iso_direction, iso_basis, iso_origin,
+        irr_count, iso_irrep_pointer, iso_direction, iso_basis, iso_origin,
         iso_op_pointer, iso_op, const_values, sg_point_group, pg_order, pg_gen_count, pg_gen, lattice;
     int ready;
 } T;
@@ -76,7 +76,7 @@ static int load(void)
         section_find("little.little_irr_type", &T.irr_type) || section_find("little.little_irr_k", &T.irr_k) ||
         section_find("little.little_k_label", &T.k_label) || section_find("little.little_irr_count", &T.irr_count) ||
         section_find("isotropy.isotropy_irrep_pointer", &T.iso_irrep_pointer) ||
-        section_find("isotropy.isotropy_arms", &T.iso_arms) ||
+        
         section_find("isotropy.isotropy_direction", &T.iso_direction) || section_find("isotropy.isotropy_basis", &T.iso_basis) ||
         section_find("isotropy.isotropy_origin", &T.iso_origin) ||
         section_find("isotropy.isotropy_orderparam_pointer", &T.iso_op_pointer) ||
@@ -117,7 +117,7 @@ static int k_prefix(str label, str *out)
 }
 
 typedef struct {
-    int row_id, subgroup, arms, direction;
+    int row_id, subgroup, direction;
     int64_t basis[9], origin[4];
 } iso_row;
 
@@ -141,7 +141,6 @@ static int iso_rows(int gid, iso_row **out, int *count)
         int64_t idx = row_id - 1;
         r->row_id = row_id;
         r->subgroup = isotropy_row_subgroup(row_id);
-        r->arms = (int)section_int(&T.iso_arms, idx);
         r->direction = (int)section_int(&T.iso_direction, idx);
         for (int i = 0; i < 9; i++) r->basis[i] = section_int(&T.iso_basis, idx * 9 + i);
         for (int i = 0; i < 4; i++) r->origin[i] = section_int(&T.iso_origin, idx * 4 + i);
@@ -499,7 +498,7 @@ static int find_isotropy_basis(int sg, int kslot, int nparams, const int64_t *pa
 /* ------------------------------------------------------------ results */
 
 static struct {
-    int site_pg, gid, has_selected, row_id, subgroup, arms, direction, has_origin, empty, adopted, lanes, source_rows, source_row_id;
+    int site_pg, gid, has_selected, row_id, subgroup, direction, has_origin, empty, adopted, lanes, source_rows, source_row_id;
     int64_t basis[9], origin[4];
     layout atoms;
     double *rows;
@@ -513,12 +512,12 @@ static void reset_result(void)
     memset(&R, 0, sizeof R);
 }
 
-/* out: site_pg, gid, has_selected, row_id, subgroup, arms, direction,
+/* out: site_pg, gid, has_selected, row_id, subgroup, direction,
  * has_origin, origin[4], basis[9], empty, adopted, lanes, atom count,
  * source row count, source row stride, source row id. */
 void mode_frame_result(int64_t *out)
 {
-    int64_t values[] = {R.site_pg, R.gid, R.has_selected, R.row_id, R.subgroup, R.arms, R.direction, R.has_origin, R.origin[0],
+    int64_t values[] = {R.site_pg, R.gid, R.has_selected, R.row_id, R.subgroup, R.direction, R.has_origin, R.origin[0],
                         R.origin[1], R.origin[2], R.origin[3], R.basis[0], R.basis[1], R.basis[2], R.basis[3], R.basis[4],
                         R.basis[5], R.basis[6], R.basis[7], R.basis[8], R.empty, R.adopted, R.lanes, R.atoms.count,
                         R.source_rows, R.row_stride, R.source_row_id, R.atoms.serial};
@@ -703,7 +702,6 @@ int mode_frame(int sg, const char *wyckoff, int64_t wyckoff_length, const char *
         if (selected >= 0) {
             R.row_id = rows[selected].row_id;
             R.subgroup = rows[selected].subgroup;
-            R.arms = rows[selected].arms;
             R.direction = rows[selected].direction;
             R.has_origin = 1;
             memcpy(R.origin, rows[selected].origin, sizeof R.origin);
