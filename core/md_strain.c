@@ -89,7 +89,7 @@ static int rank_of(const nd *a, double tol, int *rank)
 
 static struct {
     section_view lattice, psettings, full_dim, irr_type, irr_sg, irr_k, star_count, star_ml_pointer, star_special, irr_pointer, matrices_pointer,
-        matrices, constants, elements_pointer, elements, point_group, group_order;
+        matrices, constants;
     int ready;
 } T;
 
@@ -101,8 +101,7 @@ static int tables(void)
         section_find("little.little_irr_space_group", &T.irr_sg) || section_find("little.little_irr_k", &T.irr_k) ||
         section_find("little.little_k_star_count", &T.star_count) || section_find("little.little_k_star_ml_pointer", &T.star_ml_pointer) ||
         section_find("little.little_k_star_special", &T.star_special) ||
-        section_find("space.ispace_elements_pointer", &T.elements_pointer) || section_find("space.ispace_elements", &T.elements) ||
-        section_find("space.ispace_point_group", &T.point_group) || section_find("space.ipoint_group_order", &T.group_order))
+        geo_load())
         return 1;
     T.ready = 1;
     return 0;
@@ -347,13 +346,12 @@ static int rank2_tensor_copies(int sg, int64_t gid, copies *out)
     out->items = 0;
     out->count = 0;
     int dim = (int)section_int(&T.full_dim, gid - 1);
-    int64_t pg = section_int(&T.point_group, sg - 1), order_count = section_int(&T.group_order, pg - 1);
-    int64_t pointer = section_int(&T.elements_pointer, sg - 1);
-    int nops = (int)order_count;
+    int64_t records[GEO_MAX_OPS][5];
+    int nops = geo_sg_records(sg, records);
     nd *tensors = calloc((size_t)nops + 1, sizeof(nd)), *irreps = calloc((size_t)nops + 1, sizeof(nd));
     if (!tensors || !irreps) return md_fail(MDE_MEMORY, "out of memory");
     for (int i = 0; i < nops; i++) {
-        int op = (int)section_int(&T.elements, 5 * (pointer - 1 + i) + 4);
+        int op = (int)records[i][4];
         nd rotation;
         MD_TRY(cartesian_point_matrix(sg, op, &rotation));
         MD_TRY(rank2_representation(&rotation, &tensors[i]));

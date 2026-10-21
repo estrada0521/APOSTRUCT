@@ -8,14 +8,15 @@
 #include "tables.h"
 
 static struct {
-    section_view sg_point_group, point_group_order, elements_pointer, elements, lattice, lattice_ml,
+    section_view sg_point_group, point_group_order, generators, lattice, lattice_ml,
         lattice_ml_denom, point_op, point_op_mlt, inter_choice, settings_inter, label_bc, inter_label_short,
         point_op_code, point_group_code, wyckoff_pointer, wyckoff_count, wyckoff_pg, wyckoff_fract,
         inter_wyckoff_pointer, inter_wyckoff_fract,
-        pg_elements_pointer, pg_settings_count, pg_elements, settings, gen_pointer, gen_setting_label,
+        pg_elements_pointer, pg_settings_count, pg_elements, settings,
         group_gen_count, group_gen, inter_number, psettings;
-    int64_t *op_codes, *group_codes;
-    int ready;
+    int64_t *op_codes, *group_codes, gen_start[231];
+    int ready, order[231];
+    int64_t (*records)[GEO_MAX_OPS][5];
 } G;
 
 int geo_load(void)
@@ -28,8 +29,7 @@ int geo_load(void)
     } items[] = {
         {"space.ispace_point_group", &G.sg_point_group, 0},
         {"space.ipoint_group_order", &G.point_group_order, 0},
-        {"space.ispace_elements_pointer", &G.elements_pointer, 0},
-        {"space.ispace_elements", &G.elements, 0},
+        {"space.ispace_generators_cml", &G.generators, 0},
         {"space.ispace_lattice", &G.lattice, 0},
         {"space.lattice_ml", &G.lattice_ml, 0},
         {"space.lattice_ml_denom", &G.lattice_ml_denom, 0},
@@ -46,8 +46,6 @@ int geo_load(void)
         {"space.ispace_settings", &G.settings, 0},
         {"space.ispace_inter_number", &G.inter_number, 0},
         {"space.ipoint_op_psettings", &G.psettings, 0},
-        {"space.ispace_gen_pointer", &G.gen_pointer, 0},
-        {"space.space_gen_setting_label", &G.gen_setting_label, 1},
         {"space.ipoint_group_gen_count", &G.group_gen_count, 0},
         {"space.ipoint_group_gen", &G.group_gen, 0},
         {"wyckoff.iwyckoff_pointer", &G.wyckoff_pointer, 0},
@@ -68,6 +66,10 @@ int geo_load(void)
     if (!G.op_codes || !G.group_codes) return GEO_TABLES;
     for (int64_t i = 0; i < ops; i++) G.op_codes[i] = section_int(&G.point_op_code, i);
     for (int64_t i = 0; i < groups; i++) G.group_codes[i] = section_int(&G.point_group_code, i);
+    G.records = calloc(231, sizeof *G.records);
+    if (!G.records) return GEO_TABLES;
+    for (int sg = 1; sg < 230; sg++)
+        G.gen_start[sg + 1] = G.gen_start[sg] + section_int(&G.group_gen_count, section_int(&G.sg_point_group, sg - 1) - 1);
     G.ready = 1;
     return 0;
 }
@@ -208,17 +210,6 @@ static int reduce_record(int64_t *record)
 
 int geo_pml_generators(int sg, int64_t (*out)[5])
 {
-    int64_t slot = 0, labels = section_count(&G.gen_setting_label);
-    for (int64_t i = 0; i < labels && !slot; i++) {
-        const char *text;
-        int64_t length;
-        if (!section_string(&G.gen_setting_label, i, &text, &length) && length == 3 && !memcmp(text, "cml", 3))
-            slot = i + 1;
-    }
-    if (!slot) {
-        if (!geo_bad) geo_bad = GEO_TABLES;
-        return 0;
-    }
     int point_group = geo_sg_point_group(sg);
     int count = (int)at(&G.group_gen_count, point_group - 1);
     if (count < 0 || count > 5) {
@@ -229,9 +220,8 @@ int geo_pml_generators(int sg, int64_t (*out)[5])
     for (int i = 0; i < 32; i++)
         if (at(&G.settings, 29408 + (int64_t)sg * 32 + i) != ((i % 16) % 5 == 0)) identity = 0;
     if (identity) {
-        int64_t pointer = at(&G.gen_pointer, (slot - 1) * 230 + sg - 1);
         for (int index = 0; index < count; index++) {
-            for (int part = 0; part < 5; part++) out[index][part] = at(&G.elements, (pointer - 1 + index) * 5 + part);
+            for (int part = 0; part < 5; part++) out[index][part] = at(&G.generators, (G.gen_start[sg] + index) * 5 + part);
             reduce_record(out[index]);
         }
         return count;
@@ -259,18 +249,75 @@ int geo_pml_generators(int sg, int64_t (*out)[5])
     return count;
 }
 
+static void vmlt(const int64_t *m, const rat *v, rat *out);
+
+/* The elements of a space group: the closure of its cml generators, by ascending point operation, the translations
+ * written in the ml basis and reduced into [0, 1). */
+static int build_records(int sg)
+{
+    int point_group = (int)at(&G.sg_point_group, sg - 1), count = (int)geo_point_group_order(point_group);
+    int ng = (int)at(&G.group_gen_count, point_group - 1);
+    if (count < 1 || count > GEO_MAX_OPS || ng < 0 || ng > 5) return 1;
+    int op[GEO_MAX_OPS], gop[5], m = 1;
+    rat t[GEO_MAX_OPS][3], gt[5][3];
+    op[0] = 1;
+    for (int g = 0; g < ng; g++) {
+        int64_t r[5];
+        for (int k = 0; k < 5; k++) r[k] = at(&G.generators, (G.gen_start[sg] + g) * 5 + k);
+        gop[g] = (int)r[4];
+        for (int a = 0; a < 3; a++) gt[g][a] = rat_mod1(rat_make(r[a], r[3]));
+        if (gop[g] > 48) op[0] = 49;
+    }
+    for (int a = 0; a < 3; a++) t[0][a] = rat_int(0);
+    for (int i = 0; i < m; i++)
+        for (int g = 0; g < ng; g++) {
+            int product = (int)geo_point_product(gop[g], op[i]), seen = 0;
+            for (int j = 0; j < m && !seen; j++) seen = op[j] == product;
+            if (seen) continue;
+            if (m == count) return 1;
+            int64_t point[9];
+            geo_point_op_matrix(op[i], point);
+            vmlt(point, gt[g], t[m]);
+            for (int a = 0; a < 3; a++) t[m][a] = rat_mod1(rat_add(t[m][a], t[i][a]));
+            op[m++] = product;
+        }
+    if (m != count) return 1;
+    int64_t ml[36];
+    geo_ml_setting((int)at(&G.lattice, sg - 1), ml);
+    for (int i = 1; i < m; i++)
+        for (int j = i; j > 0 && op[j - 1] > op[j]; j--) {
+            int o = op[j];
+            op[j] = op[j - 1], op[j - 1] = o;
+            for (int a = 0; a < 3; a++) {
+                rat x = t[j][a];
+                t[j][a] = t[j - 1][a], t[j - 1][a] = x;
+            }
+        }
+    for (int i = 0; i < m; i++) {
+        rat v[3];
+        vmlt(ml, t[i], v);
+        i128 den = 1;
+        for (int a = 0; a < 3; a++) {
+            v[a] = rat_mod1(v[a]);
+            den = den / rat_gcd(den, v[a].d) * v[a].d;
+        }
+        int64_t *record = G.records[sg][i];
+        for (int a = 0; a < 3; a++) record[a] = (int64_t)(v[a].n * (den / v[a].d));
+        record[3] = (int64_t)den;
+        record[4] = op[i];
+    }
+    G.order[sg] = m;
+    return 0;
+}
+
 int geo_sg_records(int sg, int64_t (*out)[5])
 {
-    int64_t point_group = at(&G.sg_point_group, sg - 1);
-    int64_t count = geo_point_group_order((int)point_group);
-    int64_t pointer = at(&G.elements_pointer, sg - 1);
-    if (count < 0 || count > GEO_MAX_OPS) {
+    if (geo_load() || sg < 1 || sg > 230 || (!G.order[sg] && build_records(sg))) {
         if (!geo_bad) geo_bad = GEO_TABLES;
         return 0;
     }
-    for (int64_t index = 0; index < count; index++)
-        for (int part = 0; part < 5; part++) out[index][part] = at(&G.elements, 5 * (pointer - 1 + index) + part);
-    return (int)count;
+    memcpy(out, G.records[sg], sizeof(int64_t) * 5 * (size_t)G.order[sg]);
+    return G.order[sg];
 }
 
 /* vmlt_ with a column-major integer matrix. */

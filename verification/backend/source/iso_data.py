@@ -106,24 +106,6 @@ def setting_change_matrix_from_table(
     )
 
 
-def generate_space_group_records_from_table(
-    space: Mapping[str, Sequence[Any]],
-    sg: int,
-) -> tuple[tuple[int, int, int, int, int], ...]:
-    """Decode the Source operation records for one ordinary space group."""
-
-    sg = int(sg)
-    point_group = int(space["ispace_point_group"][sg - 1])
-    count = int(space["ipoint_group_order"][point_group - 1])
-    pointer = int(space["ispace_elements_pointer"][sg - 1])
-    out: list[tuple[int, int, int, int, int]] = []
-    for index in range(count):
-        raw = space["ispace_elements"][5 * (pointer - 1 + index):5 * (pointer + index)]
-        if len(raw) == 5:
-            out.append(tuple(int(value) for value in raw))  # type: ignore[arg-type]
-    return tuple(out)
-
-
 def _split_sections(path: Path):
     sections = []
     name = None
@@ -324,7 +306,7 @@ class ISOData:
     # ------------------------------------------------------------------
     @lru_cache(maxsize=None)
     def generate_space_group_records(self, sg: int) -> tuple[tuple[int, int, int, int, int], ...]:
-        return generate_space_group_records_from_table(self.space, int(sg))
+        return native.space_group_records(int(sg))
 
     @lru_cache(maxsize=None)
     def site_pg_element_settings(self, site_pg: int) -> tuple[tuple[int, ...], ...]:

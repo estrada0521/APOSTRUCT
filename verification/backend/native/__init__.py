@@ -86,6 +86,8 @@ def _load() -> ctypes.CDLL:
         ctypes.c_int, ctypes.c_int, f64, f64, ctypes.c_int, ctypes.c_double, i32, f64, i32, f64,
     )
     library.match_inter_wyckoff.restype = ctypes.c_int
+    library.geo_sg_records.argtypes = (ctypes.c_int, i64)
+    library.geo_sg_records.restype = ctypes.c_int
     library.irrep_full_label.argtypes = (ctypes.c_int,)
     library.irrep_full_label.restype = ctypes.c_char_p
     library.irrep_old_label.argtypes = (ctypes.c_int,)
@@ -94,6 +96,13 @@ def _load() -> ctypes.CDLL:
 
 
 _LIBRARY = _load()
+
+
+def space_group_records(sg: int) -> tuple[tuple[int, int, int, int, int], ...]:
+    """The elements (x, y, z, den, point op) of a space group, built by apo from its generators."""
+    out = (ctypes.c_int64 * (48 * 5))()
+    count = _LIBRARY.geo_sg_records(int(sg), out)
+    return tuple(tuple(int(v) for v in out[5 * i:5 * i + 5]) for i in range(count))
 
 
 def irrep_full_label(gid: int) -> str:

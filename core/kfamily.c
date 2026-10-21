@@ -10,6 +10,7 @@
 #include <string.h>
 
 #include "intmath.h"
+#include "geometry.h"
 #include "tables.h"
 
 typedef struct {
@@ -135,7 +136,7 @@ static int cinter_cmp(const q64 *a, const q64 *b)
 static struct {
     section_view irr_sg, irr_k, k_label, k_dim, star_count, star_pointer, star, star_special, little_k;
     section_view lattice, lattice_ml, lattice_ml_denom, point_op, point_op_mlt;
-    section_view sg_point_group, point_group_order, elements_pointer, elements, inter_choice, settings_inter;
+    section_view sg_point_group, point_group_order, inter_choice, settings_inter;
     int ready;
 } T;
 
@@ -162,8 +163,6 @@ static int load_tables(void)
         {"space.ipoint_op_mlt", &T.point_op_mlt},
         {"space.ispace_point_group", &T.sg_point_group},
         {"space.ipoint_group_order", &T.point_group_order},
-        {"space.ispace_elements_pointer", &T.elements_pointer},
-        {"space.ispace_elements", &T.elements},
         {"space.ispace_inter_choice", &T.inter_choice},
         {"space.ispace_settings_inter", &T.settings_inter},
     };
@@ -276,17 +275,15 @@ typedef struct {
 
 static int sg_records(int sg, int (*records)[5])
 {
-    int64_t point_group = at(&T.sg_point_group, sg - 1);
-    int64_t count = at(&T.point_group_order, point_group - 1);
-    int64_t pointer = at(&T.elements_pointer, sg - 1);
-    if (count < 0 || count > MAX_OPS) {
+    int64_t generated[GEO_MAX_OPS][5];
+    int count = geo_load() ? 0 : geo_sg_records(sg, generated);
+    if (count <= 0 || count > MAX_OPS) {
         fail(KF_TABLES);
         return 0;
     }
-    for (int64_t index = 0; index < count; index++)
-        for (int part = 0; part < 5; part++)
-            records[index][part] = (int)at(&T.elements, 5 * (pointer - 1 + index) + part);
-    return (int)count;
+    for (int index = 0; index < count; index++)
+        for (int part = 0; part < 5; part++) records[index][part] = (int)generated[index][part];
+    return count;
 }
 
 static void point_matrix(int op, int64_t *out)

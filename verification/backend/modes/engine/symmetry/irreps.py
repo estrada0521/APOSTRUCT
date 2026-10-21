@@ -22,16 +22,11 @@ class IrrepMixin:
         `irrep_matrices_with_ops`.
         """
 
-        pointer = int(self.iso.space["ispace_elements_pointer"][sg - 1])
-        count = len(self.iso.generate_space_group_records(sg))
-        raw = self.iso.space["ispace_elements"][(pointer - 1) * 5:(pointer - 1 + count) * 5]
         out: dict[int, int] = {}
-        for index in range(count):
-            record = raw[5 * index:5 * index + 5]
-            if len(record) == 5:
-                # The Fortran map is overwritten if a point op appears more
-                # than once; mirror that behavior.
-                out[int(record[4])] = index + 1
+        for index, record in enumerate(self.iso.generate_space_group_records(sg)):
+            # The Fortran map is overwritten if a point op appears more
+            # than once; mirror that behavior.
+            out[int(record[4])] = index + 1
         return out
 
     def generated_space_operation_position(self, sg: int, record: tuple[int, int, int, int, int]) -> int:
@@ -47,14 +42,7 @@ class IrrepMixin:
         table = tables.get(int(sg))
         if table is None:
             table = tables[int(sg)] = {}
-            pointer = int(self.iso.space["ispace_elements_pointer"][sg - 1])
-            for index in range(len(self.iso.generate_space_group_records(sg))):
-                x, y, z, den, op = (
-                    int(value)
-                    for value in self.iso.space["ispace_elements"][
-                        5 * (pointer - 1 + index):5 * (pointer - 1 + index + 1)
-                    ]
-                )
+            for index, (x, y, z, den, op) in enumerate(self.iso.generate_space_group_records(sg)):
                 table.setdefault((op, _translation_mod_one(x, y, z, den)), index + 1)
         key = (int(record[4]), _translation_mod_one(*(int(value) for value in record[:4])))
         position = table.get(key)
@@ -71,16 +59,7 @@ class IrrepMixin:
         return cache[sg]
 
     def _space_operation_records(self, sg: int) -> tuple[tuple[int, int, int, int, int], ...]:
-        pointer = int(self.iso.space["ispace_elements_pointer"][sg - 1])
-        count = len(self.iso.generate_space_group_records(sg))
-        out: list[tuple[int, int, int, int, int]] = []
-        for index in range(count):
-            raw = self.iso.space["ispace_elements"][
-                5 * (pointer - 1 + index):5 * (pointer - 1 + index + 1)
-            ]
-            if len(raw) == 5:
-                out.append(tuple(int(x) for x in raw))  # type: ignore[arg-type]
-        return tuple(out)
+        return tuple(self.iso.generate_space_group_records(sg))
 
     def generated_space_tau(self, sg: int, point_op: int) -> tuple[Fraction, Fraction, Fraction]:
         """Return the generated operation translation for a point operation.
