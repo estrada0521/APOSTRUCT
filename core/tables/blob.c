@@ -1,13 +1,10 @@
 /* The baked Source blob (source_blob.h), mmapped once per process and read
  * by the kernels through typed section views. */
 
-#include <fcntl.h>
 #include <stdint.h>
 #include <string.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <unistd.h>
 
+#include "platform.h"
 #include "tables.h"
 
 static const unsigned char *blob;
@@ -19,25 +16,18 @@ static uint32_t blob_count;
 int tables_open(const char *path)
 {
     if (blob) return 0;
-    int fd = open(path, O_RDONLY);
-    if (fd < 0) return 1;
-    struct stat st;
-    if (fstat(fd, &st) || st.st_size < (off_t)sizeof(blob_header)) {
-        close(fd);
-        return 1;
-    }
-    void *map = mmap(0, (size_t)st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-    close(fd);
-    if (map == MAP_FAILED) return 1;
-    const blob_header *header = map;
-    if (memcmp(header->magic, BLOB_MAGIC, 8) || header->version != BLOB_VERSION
-        || header->file_size != (uint64_t)st.st_size
-        || header->index_offset + (uint64_t)header->section_count * sizeof(blob_section) > header->file_size) {
-        munmap(map, (size_t)st.st_size);
+    size_t size = 0;
+    const unsigned char *map = plat_map_file(path, &size);
+    if (!map) return 1;
+    const blob_header *header = (const blob_header *)map;
+    if (size < sizeof(blob_header) || memcmp(header->magic, BLOB_MAGIC, 8) || header->version != BLOB_VERSION ||
+        header->file_size != (uint64_t)size ||
+        header->index_offset + (uint64_t)header->section_count * sizeof(blob_section) > header->file_size) {
+        plat_unmap_file(map, size);
         return 1;
     }
     blob = map;
-    blob_size = (size_t)st.st_size;
+    blob_size = size;
     blob_index = (const blob_section *)(blob + header->index_offset);
     blob_count = header->section_count;
     return 0;

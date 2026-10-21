@@ -13,6 +13,7 @@
 #include <mach-o/dyld.h>
 #endif
 
+#include "platform.h"
 #include "json.h"
 #include "pyconv.h"
 #include "rational.h"
@@ -112,9 +113,18 @@ static void rational_value(const jvalue *v, const char *field, jbuf *out)
 
 /* ------------------------------------------------------------ paths */
 
+static int is_absolute(const char *path)
+{
+#ifdef _WIN32
+    if (((path[0] >= 'A' && path[0] <= 'Z') || (path[0] >= 'a' && path[0] <= 'z')) && path[1] == ':') return 1;
+    if (path[0] == '\\') return 1;
+#endif
+    return path[0] == '/';
+}
+
 static void join(char *out, size_t size, const char *a, const char *b)
 {
-    if (b[0] == '/') snprintf(out, size, "%s", b);
+    if (is_absolute(b)) snprintf(out, size, "%s", b);
     else snprintf(out, size, "%s/%s", a, b);
 }
 
@@ -122,8 +132,18 @@ static void join(char *out, size_t size, const char *a, const char *b)
 static void resolve(const char *raw, const char *base, char *out)
 {
     char path[PATH_MAX * 2];
-    if (raw[0] == '~' && (raw[1] == '/' || !raw[1])) snprintf(path, sizeof path, "%s%s", getenv("HOME") ? getenv("HOME") : "", raw + 1);
+    const char *home = getenv("HOME");
+#ifdef _WIN32
+    if (!home) home = getenv("USERPROFILE");
+#endif
+    if (raw[0] == '~' && (raw[1] == '/' || !raw[1])) snprintf(path, sizeof path, "%s%s", home ? home : "", raw + 1);
     else join(path, sizeof path, base, raw);
+#ifdef _WIN32
+    if (!_fullpath(out, path, PATH_MAX)) snprintf(out, PATH_MAX, "%s", path);
+    for (char *c = out; *c; c++)
+        if (*c == '\\') *c = '/';
+    return;
+#else
     if (realpath(path, out)) return;
     char parts[PATH_MAX * 2], *stack[512];
     int depth = 0;
@@ -148,7 +168,7 @@ static void resolve(const char *raw, const char *base, char *out)
             strcat(prefix, "/");
             strcat(prefix, stack[i]);
         }
-        if (realpath(prefix, real)) {
+        if (plat_realpath(prefix, real)) {
             snprintf(out, PATH_MAX, "%s", real);
             for (int i = keep; i < depth; i++) {
                 strncat(out, "/", PATH_MAX - strlen(out) - 1);
@@ -158,6 +178,7 @@ static void resolve(const char *raw, const char *base, char *out)
         }
     }
     snprintf(out, PATH_MAX, "%s", lexical);
+#endif
 }
 
 static int is_file(const char *path)
@@ -166,12 +187,13 @@ static int is_file(const char *path)
     return !stat(path, &st) && S_ISREG(st.st_mode);
 }
 
-static void parent_of(char *path)
+static int parent_of(char *path)
 {
     char *slash = strrchr(path, '/');
-    if (!slash) return;
+    if (!slash || !strcmp(path, "/")) return 0;
     if (slash == path) path[1] = 0;
     else *slash = 0;
+    return 1;
 }
 
 static char exe_dir[PATH_MAX];
@@ -205,8 +227,7 @@ static void cif_asset(const jvalue *v, const char *base, char *out)
                     return;
                 }
             }
-            if (!strcmp(root, "/")) break;
-            parent_of(root);
+            if (!parent_of(root)) break;
         }
     }
     char message[128];
@@ -759,10 +780,10 @@ static void write_result(const char *output, const char *data, size_t n)
     for (char *p = partial + 1; *p; p++)
         if (*p == '/') {
             *p = 0;
-            mkdir(partial, 0777);
+            plat_mkdir(partial);
             *p = '/';
         }
-    mkdir(partial, 0777);
+    plat_mkdir(partial);
     FILE *f = fopen(path, "wb");
     if (!f) usage_errorf("[Errno %s] could not write output: '%s'", strerror(errno), path);
     fwrite(data, 1, n, f);
@@ -778,7 +799,7 @@ static int report_error(const char *result)
         py_int_of(jget(error, "kind"), &kind);
         py_int_of(jget(error, "status"), &code);
         const jvalue *message = jget(error, "message");
-        char *text = strndup(message ? message->u.s : "", message ? (size_t)message->count : 0);
+        char *text = plat_strndup(message ? message->u.s : "", message ? (size_t)message->count : 0);
         jbuf what = {0};
         jb_reset(&what);
         const char *type = apo_error((int)kind, (int)code, text, &what);
@@ -998,7 +1019,9 @@ static const char *usage_text =
 static void locate(const char *argv0)
 {
     char raw[PATH_MAX] = "";
-#ifdef __APPLE__
+#if defined(_WIN32)
+    if (plat_exe_path(raw, sizeof raw)) raw[0] = 0;
+#elif defined(__APPLE__)
     uint32_t size = sizeof raw;
     if (_NSGetExecutablePath(raw, &size)) raw[0] = 0;
 #else
@@ -1007,6 +1030,10 @@ static void locate(const char *argv0)
 #endif
     if (!raw[0]) snprintf(raw, sizeof raw, "%s", argv0);
     if (!getcwd(cwd, sizeof cwd)) strcpy(cwd, "/");
+#ifdef _WIN32
+    for (char *c = cwd; *c; c++)
+        if (*c == '\\') *c = '/';
+#endif
     resolve(raw, cwd, exe_dir);
     parent_of(exe_dir);
 }

@@ -6,7 +6,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/mman.h>
+
+#include "platform.h"
 
 /* ------------------------------------------------------------------ big blocks */
 
@@ -16,16 +17,14 @@ enum { BIG = 8 << 20 };
 
 static void *big_alloc(size_t size)
 {
-    if (size < BIG) return malloc(size);
-    void *p = mmap(0, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
-    return p == MAP_FAILED ? 0 : p;
+    return size < BIG ? malloc(size) : plat_map_anon(size);
 }
 
 static void big_free(void *p, size_t size)
 {
     if (!p) return;
     if (size < BIG) free(p);
-    else munmap(p, size);
+    else plat_unmap_anon(p, size);
 }
 
 /* ------------------------------------------------------------------ arena */

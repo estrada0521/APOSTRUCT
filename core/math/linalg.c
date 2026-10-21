@@ -7,6 +7,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifndef CMPLX
+#define CMPLX(x, y) __builtin_complex((double)(x), (double)(y))
+#endif
+
 void la_dgemm(int trans_a, int trans_b, int m, int n, int k, const double *a, int lda, const double *b, int ldb, double *c, int ldc)
 {
     for (int i = 0; i < m; i++) {

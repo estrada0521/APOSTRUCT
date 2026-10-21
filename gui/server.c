@@ -1,10 +1,7 @@
 /* apo serve and apo show: the local GUI server and its launch client. */
 
-#include <arpa/inet.h>
 #include <errno.h>
 #include <limits.h>
-#include <netdb.h>
-#include <netinet/in.h>
 #include <pthread.h>
 #include <signal.h>
 #include <stdarg.h>
@@ -12,10 +9,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
-#include <sys/socket.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "net.h"
+#include "platform.h"
 #include "json.h"
 #include "md.h"
 #include "pyconv.h"
@@ -103,7 +101,7 @@ static int positive_index(const jvalue *v, const char *field, api_error *e)
     return jis(v, J_INT) && v->u.i >= 1 ? 0 : api_fail(e, "%s must be a positive integer", field);
 }
 
-static int boolean(const jvalue *v, const char *field, api_error *e)
+static int bool_field(const jvalue *v, const char *field, api_error *e)
 {
     return jis(v, J_TRUE) || jis(v, J_FALSE) ? 0 : api_fail(e, "%s must be boolean", field);
 }
@@ -188,7 +186,7 @@ static int distortion_selection(const jvalue *v, jbuf *b, api_error *e)
     int first = 1;
     const jvalue *strain = jget(v, "strain");
     if (strain) {
-        if (boolean(strain, "distortion_selection.strain", e)) return 1;
+        if (bool_field(strain, "distortion_selection.strain", e)) return 1;
         jb_lit(b, "\"strain\": ");
         jb_value(b, strain);
         first = 0;
@@ -289,10 +287,10 @@ static int state_request(const jvalue *payload, int allow_empty, jbuf *request, 
     const jvalue *include_opd = jget(payload, "include_opd");
     static const jvalue truth = {J_TRUE, 0, {0}};
     if (!include_opd) include_opd = &truth;
-    if (boolean(include_opd, "include_opd", e)) return 1;
+    if (bool_field(include_opd, "include_opd", e)) return 1;
     const jvalue *include_modes = jget(payload, "include_mode_details");
     if (!include_modes) include_modes = include_opd;
-    if (boolean(include_modes, "include_mode_details", e)) return 1;
+    if (bool_field(include_modes, "include_mode_details", e)) return 1;
     if (jis(include_modes, J_TRUE) && !jis(include_opd, J_TRUE)) return api_fail(e, "include_mode_details requires include_opd");
     jbuf distortion = {0}, k_params = {0};
     jb_reset(&distortion);
@@ -649,7 +647,7 @@ static int publish(const jvalue *launch, jbuf *out, api_error *e)
     jb_free(&state);
     pthread_mutex_lock(&mailbox_lock);
     free(launch_json);
-    launch_json = strndup(prepared.data, prepared.used);
+    launch_json = plat_strndup(prepared.data, prepared.used);
     int64_t current = ++revision;
     pthread_mutex_unlock(&mailbox_lock);
     jb_free(&prepared);
@@ -677,13 +675,13 @@ static void read_mailbox(int64_t after, jbuf *out)
 
 static char frontend[PATH_MAX];
 static volatile sig_atomic_t stopping;
-static int listener = -1;
+static net_socket listener = NET_INVALID;
 
 typedef struct {
-    int fd;
+    net_socket fd;
 } connection;
 
-static void send_all(int fd, const char *data, size_t n)
+static void send_all(net_socket fd, const char *data, size_t n)
 {
     while (n) {
         ssize_t sent = send(fd, data, n, 0);
@@ -693,7 +691,7 @@ static void send_all(int fd, const char *data, size_t n)
     }
 }
 
-static void respond(int fd, int status, const char *type, const char *body, size_t n)
+static void respond(net_socket fd, int status, const char *type, const char *body, size_t n)
 {
     const char *reason = status == 200 ? "OK" : status == 400 ? "Bad Request" : status == 404 ? "Not Found" : status == 413 ? "Payload Too Large" : "Internal Server Error";
     char head[512];
@@ -704,9 +702,9 @@ static void respond(int fd, int status, const char *type, const char *body, size
     send_all(fd, body, n);
 }
 
-static void respond_json(int fd, int status, const jbuf *body) { respond(fd, status, "application/json; charset=utf-8", body->data, body->used); }
+static void respond_json(net_socket fd, int status, const jbuf *body) { respond(fd, status, "application/json; charset=utf-8", body->data, body->used); }
 
-static void respond_error(int fd, const api_error *e)
+static void respond_error(net_socket fd, const api_error *e)
 {
     jbuf body = {0}, text = {0};
     jb_reset(&body);
@@ -739,7 +737,7 @@ static const char *content_type(const char *path)
 }
 
 /* server._asset_path */
-static int serve_asset(int fd, const char *path)
+static int serve_asset(net_socket fd, const char *path)
 {
     const char *relative;
     if (!strcmp(path, "/") || !strcmp(path, "/index.html") || !strcmp(path, "/tools/APOSTRUCT") || !strcmp(path, "/tools/APOSTRUCT/")) relative = "index.html";
@@ -748,7 +746,7 @@ static int serve_asset(int fd, const char *path)
     char joined[PATH_MAX * 2], real[PATH_MAX];
     snprintf(joined, sizeof joined, "%s/%s", frontend, relative);
     struct stat st;
-    if (!realpath(joined, real) || strncmp(real, frontend, strlen(frontend)) || (real[strlen(frontend)] && real[strlen(frontend)] != '/') ||
+    if (!plat_realpath(joined, real) || strncmp(real, frontend, strlen(frontend)) || (real[strlen(frontend)] && real[strlen(frontend)] != '/') ||
         stat(real, &st) || !S_ISREG(st.st_mode))
         return 0;
     FILE *f = fopen(real, "rb");
@@ -779,7 +777,7 @@ static int query_after(const char *query, int64_t *after, api_error *e)
     return 0;
 }
 
-static void handle(int fd)
+static void handle(net_socket fd)
 {
     jbuf in = {0};
     jb_reset(&in);
@@ -854,7 +852,7 @@ static void handle(int fd)
         else respond_json(fd, 200, &out);
     } else if (!strcmp(method, "POST") && !strcmp(target, "/shutdown")) {
         respond(fd, 200, "text/plain; charset=utf-8", "ok", 2);
-        close(fd);
+        net_close(fd);
         jb_free(&in);
         _exit(0);
     } else if (!strcmp(method, "GET") && serve_asset(fd, target)) {
@@ -867,10 +865,10 @@ static void handle(int fd)
 
 static void *connection_main(void *arg)
 {
-    int fd = ((connection *)arg)->fd;
+    net_socket fd = ((connection *)arg)->fd;
     free(arg);
     handle(fd);
-    close(fd);
+    net_close(fd);
     return 0;
 }
 
@@ -880,11 +878,14 @@ int apo_serve(const char *host, int port, int open_browser, const char *frontend
         snprintf(error, error_size, "port must be an integer from 0 through 65535");
         return 1;
     }
-    if (!realpath(frontend_dir, frontend)) {
+    if (!plat_realpath(frontend_dir, frontend)) {
         snprintf(error, error_size, "the frontend is missing: %s", frontend_dir);
         return 1;
     }
-    signal(SIGPIPE, SIG_IGN);
+    if (net_init()) {
+        snprintf(error, error_size, "cannot start the network library");
+        return 1;
+    }
     struct addrinfo hints = {0}, *address;
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
@@ -897,8 +898,8 @@ int apo_serve(const char *host, int port, int open_browser, const char *frontend
     }
     listener = socket(address->ai_family, SOCK_STREAM, 0);
     int yes = 1;
-    setsockopt(listener, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof yes);
-    if (listener < 0 || bind(listener, address->ai_addr, address->ai_addrlen) || listen(listener, 64)) {
+    setsockopt(listener, SOL_SOCKET, SO_REUSEADDR, (const char *)&yes, sizeof yes);
+    if (listener == NET_INVALID || bind(listener, address->ai_addr, address->ai_addrlen) || listen(listener, 64)) {
         snprintf(error, error_size, "[Errno %d] %s", errno, strerror(errno));
         freeaddrinfo(address);
         return 1;
@@ -915,13 +916,17 @@ int apo_serve(const char *host, int port, int open_browser, const char *frontend
     fflush(stdout);
     if (open_browser) {
         char command[600];
+#ifdef _WIN32
+        snprintf(command, sizeof command, "start \"\" \"%s\"", url);
+#else
         snprintf(command, sizeof command, "(open '%s' || xdg-open '%s') >/dev/null 2>&1 &", url, url);
+#endif
         if (system(command)) {
         }
     }
     while (!stopping) {
-        int fd = accept(listener, 0, 0);
-        if (fd < 0) {
+        net_socket fd = accept(listener, 0, 0);
+        if (fd == NET_INVALID) {
             if (stopping) break;
             if (errno == EINTR) continue;
             break;
@@ -930,13 +935,13 @@ int apo_serve(const char *host, int port, int open_browser, const char *frontend
         c->fd = fd;
         pthread_t thread;
         if (pthread_create(&thread, 0, connection_main, c)) {
-            close(fd);
+            net_close(fd);
             free(c);
             continue;
         }
         pthread_detach(thread);
     }
-    close(listener);
+    net_close(listener);
     return 0;
 }
 
@@ -969,18 +974,18 @@ int apo_post(const char *server, const char *path, const jbuf *body, jbuf *reply
     struct addrinfo hints = {0}, *address;
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
-    int fd = -1;
-    if (!getaddrinfo(host, port, &hints, &address)) {
-        for (struct addrinfo *a = address; a && fd < 0; a = a->ai_next) {
+    net_socket fd = NET_INVALID;
+    if (!net_init() && !getaddrinfo(host, port, &hints, &address)) {
+        for (struct addrinfo *a = address; a && fd == NET_INVALID; a = a->ai_next) {
             fd = socket(a->ai_family, SOCK_STREAM, 0);
-            if (fd >= 0 && connect(fd, a->ai_addr, a->ai_addrlen)) {
-                close(fd);
-                fd = -1;
+            if (fd != NET_INVALID && connect(fd, a->ai_addr, a->ai_addrlen)) {
+                net_close(fd);
+                fd = NET_INVALID;
             }
         }
         freeaddrinfo(address);
     }
-    if (fd < 0) {
+    if (fd == NET_INVALID) {
         snprintf(error, error_size, "could not reach APOSTRUCT GUI server at %s", base);
         return 1;
     }
@@ -997,7 +1002,7 @@ int apo_post(const char *server, const char *path, const jbuf *body, jbuf *reply
         if (got <= 0) break;
         jb_raw(&in, chunk, (size_t)got);
     }
-    close(fd);
+    net_close(fd);
     int code = 0;
     sscanf(in.data ? in.data : "", "HTTP/%*s %d", &code);
     char *mark = in.data ? strstr(in.data, "\r\n\r\n") : 0;

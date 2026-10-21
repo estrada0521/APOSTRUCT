@@ -20,7 +20,7 @@ From a parent CIF, a choice of displacive, magnetic and strain degrees of freedo
 
 ## How to use
 
-Requires a C compiler (macOS, Linux). The build writes `bin/apo` and `bin/source.blob`, which holds the tables.
+Requires a C compiler (macOS, Linux). The build writes `bin/apo` and `bin/source.blob`, which holds the tables. For Windows, build with MinGW-w64 (`CC=x86_64-w64-mingw32-gcc sh build.sh`, from MSYS2 or as a cross build) and keep `bin/apo.exe` next to `bin/source.blob`.
 
 ```sh
 sh build.sh

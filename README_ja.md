@@ -20,7 +20,7 @@ Local implementation of ISODISTORT
 
 ## How to use
 
-C compilerが必要（macOS・Linux）。buildすると `bin/apo` と、tableをまとめた `bin/source.blob` が作られる。
+C compilerが必要（macOS・Linux）。buildすると `bin/apo` と、tableをまとめた `bin/source.blob` が作られる。WindowsはMinGW-w64でbuildする（MSYS2上またはcross buildで `CC=x86_64-w64-mingw32-gcc sh build.sh`）。`bin/apo.exe` は `bin/source.blob` と同じ場所に置く。
 
 ```sh
 sh build.sh
