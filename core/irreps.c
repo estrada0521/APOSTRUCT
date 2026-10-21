@@ -50,6 +50,32 @@ static int load(void)
     return 0;
 }
 
+/* the space group of an old (data_irreps) irrep: old ids run by space group (irrep_space_group_pointer) */
+int old_irrep_space_group(int old_id)
+{
+    static section_view pointer;
+    static int ready;
+    if (!ready) {
+        if (section_find("irreps.irrep_space_group_pointer", &pointer) || section_count(&pointer) < 231) return 0;
+        ready = 1;
+    }
+    if (old_id < 1 || old_id >= section_int(&pointer, 230)) return 0;
+    int lo = 1, hi = 230;
+    while (lo < hi) {
+        int mid = (lo + hi + 1) / 2;
+        if (section_int(&pointer, mid - 1) <= old_id) lo = mid;
+        else hi = mid - 1;
+    }
+    return lo;
+}
+
+/* the number of old irreps */
+int old_irrep_count(void)
+{
+    section_view pointer;
+    return section_find("irreps.irrep_space_group_pointer", &pointer) || section_count(&pointer) < 231 ? 0 : (int)section_int(&pointer, 230) - 1;
+}
+
 /* 1 when the tables list a little irrep of sg at k slot kslot */
 int little_k_has_irreps(int sg, int kslot)
 {
@@ -66,7 +92,7 @@ int little_k_has_irreps(int sg, int kslot)
     return present[sg][kslot];
 }
 
-int irrep_space_group(int gid)
+int little_irrep_sg(int gid)
 {
     if (load() || gid < 1 || gid > L.count) return 0;
     return (int)section_int(&L.sg, gid - 1);

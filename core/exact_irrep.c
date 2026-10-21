@@ -468,7 +468,7 @@ static int derive_positions(int gid, const int64_t *kparam, derived_t *out, int 
     memset(out, 0, sizeof *out);
     irrep_context c;
     if (irrep_context_current(gid, &c) && irrep_context_k(gid, 4, kparam, &c)) return 1;
-    int sg = irrep_space_group(gid), n = c.element_count, dim = c.dim;
+    int sg = little_irrep_sg(gid), n = c.element_count, dim = c.dim;
     rat (*rot)[3][3] = malloc(sizeof(rat[3][3]) * (size_t)n);
     for (int p = 0; p < n; p++) position_rotation(sg, c.elements[5 * p + 4], rot[p]);
     /* products of positions by rotation */
@@ -685,7 +685,7 @@ static int derive_codes(int gid, const int64_t *kparam, int **codes_out, unsigne
 {
     irrep_context c;
     if (irrep_context_current(gid, &c) && irrep_context_k(gid, 4, kparam, &c)) return 1;
-    int sg = irrep_space_group(gid), n = c.element_count, dim = c.dim;
+    int sg = little_irrep_sg(gid), n = c.element_count, dim = c.dim;
     rat (*rot)[3][3] = malloc(sizeof(rat[3][3]) * (size_t)n);
     for (int q = 0; q < n; q++) position_rotation(sg, c.elements[5 * q + 4], rot[q]);
     int *product = malloc(sizeof(int) * (size_t)n * n);

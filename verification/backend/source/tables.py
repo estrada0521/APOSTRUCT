@@ -509,7 +509,7 @@ class SourceTables:
     def irrep_label_for_old_id(self, old_id: int) -> tuple[int, str]:
         old_id = int(old_id)
         return (
-            int(self.iso.irreps["irrep_space_group"][old_id - 1]),
+            native.old_irrep_space_group(old_id),
             native.irrep_old_label(old_id),
         )
 

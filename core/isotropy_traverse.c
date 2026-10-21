@@ -1241,7 +1241,7 @@ int isotropy_rows_for(int gid, int param_count, const int64_t *kparam, int magne
     irrep_context c;
     int status = irrep_context_for(gid, param_count, kparam, &c);
     if (status) return status == IR_RANGE ? IF_RANGE : status == IR_NO_TABLES ? 106 : IF_TABLES;
-    int sg = irrep_space_group(gid), dim = c.dim, lattice = geo_sg_lattice(sg);
+    int sg = little_irrep_sg(gid), dim = c.dim, lattice = geo_sg_lattice(sg);
     if (!sg || (magnetic && mag_tables())) return IF_TABLES;
     int64_t records[192][5];
     int space_count = magnetic ? magnetic_records_iso(mag_orderparam_group(sg), 192, &records[0][0])

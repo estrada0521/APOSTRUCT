@@ -8,6 +8,7 @@
 #include "geometry.h"
 #include "magnetic.h"
 #include "sel.h"
+#include "irreps.h"
 #include "tables.h"
 
 int mag_isotropy_row_dim(int64_t row_id);
@@ -26,7 +27,7 @@ int id_subgroup_magnetic_identify(int parent, const int64_t *basis, int op_count
 int mag_isotropy_row_subgroup(int64_t row_id);
 
 static struct {
-    section_view op_r, mag2nonmag, bns, nlabel, iso_pointer, iso_basis, iso_origin, iso_label, iso_op_pointer, iso_op, point_op, const_values, irr_sg, old_sg;
+    section_view op_r, mag2nonmag, bns, nlabel, iso_pointer, iso_basis, iso_origin, iso_label, iso_op_pointer, iso_op, point_op, const_values, irr_sg;
     int ready;
 } T;
 
@@ -48,8 +49,7 @@ int sel_mag_tables(void)
                 {"magnetic.mag_iso_orderparam", &T.iso_op},
                 {"space.ipoint_op", &T.point_op},
                 {"const.values", &T.const_values},
-                {"little.little_irr_space_group", &T.irr_sg},
-                {"irreps.irrep_space_group", &T.old_sg}};
+                {"little.little_irr_space_group", &T.irr_sg}};
     if (sel_tables() || mag_tables()) return 1;
     for (size_t i = 0; i < sizeof list / sizeof list[0]; i++)
         if (section_find(list[i].name, list[i].view)) return 1;
@@ -270,7 +270,7 @@ static int magnetic_row(jbuf *b, int64_t old_id, int64_t row_id, int canonical, 
     int64_t basis[9], origin[4];
     for (int i = 0; i < 9; i++) basis[i] = section_int(&T.iso_basis, idx * 9 + i);
     for (int i = 0; i < 4; i++) origin[i] = section_int(&T.iso_origin, idx * 4 + i);
-    int parent_group = mag_orderparam_group((int)section_int(&T.old_sg, old_id - 1)), sub_group = mag_isotropy_row_subgroup(row_id);
+    int parent_group = mag_orderparam_group(old_irrep_space_group((int)old_id)), sub_group = mag_isotropy_row_subgroup(row_id);
     int ordinary_parent = sel_mag_ordinary(parent_group), ordinary_sub = sel_mag_ordinary(sub_group);
     int64_t s0 = basis[0] * (basis[4] * basis[8] - basis[5] * basis[7]) - basis[1] * (basis[3] * basis[8] - basis[5] * basis[6]) +
                  basis[2] * (basis[3] * basis[7] - basis[4] * basis[6]);

@@ -8,6 +8,7 @@
 
 #include "geometry.h"
 #include "sel.h"
+#include "irreps.h"
 #include "tables.h"
 int isotropy_row_subgroup(int64_t row_id);
 
@@ -24,7 +25,7 @@ int k_coordinate_map_words(int sg, int kslot, int64_t *out);
 
 static struct {
     section_view image_label, image_dimension, image_subgroup, image_subgroup_count, image_subgroup_pointer, image_subgroup_maximal,
-        image_subgroup_min, image_subgroup_rg, dir_label, dir_dimension, dir_subduction, dir_pointer, dir, irrep_image, irrep_sg,
+        image_subgroup_min, image_subgroup_rg, dir_label, dir_dimension, dir_subduction, dir_pointer, dir, irrep_image,
         iso_pointer, iso_basis, iso_origin, iso_direction, iso_label, iso_op_pointer, iso_op, const_values, point_group, group_order, gen_count, gen,
         irr_old, irr_sg, irr_k, k_dim;
     int ready;
@@ -50,7 +51,6 @@ int sel_tables(void)
                 {"images.image_dir_pointer", &T.dir_pointer},
                 {"images.image_dir", &T.dir},
                 {"irreps.irrep_image", &T.irrep_image},
-                {"irreps.irrep_space_group", &T.irrep_sg},
                 {"isotropy.isotropy_irrep_pointer", &T.iso_pointer},
                 {"isotropy.isotropy_basis", &T.iso_basis},
                 {"isotropy.isotropy_origin", &T.iso_origin},
@@ -1141,7 +1141,7 @@ int sel_static_rows(int old_id, const sel_params *k_params, const sel_params *di
                     int has_cell, const double *cell, jbuf *out)
 {
     if (sel_tables()) return md_fail(MDE_VALUE, "isotropy Source tables are inconsistent");
-    int parent_sg = (int)section_int(&T.irrep_sg, old_id - 1);
+    int parent_sg = old_irrep_space_group(old_id);
     int64_t image_id = section_int(&T.irrep_image, old_id - 1);
     int64_t full_dim = section_int(&T.image_dimension, image_id - 1);
     int64_t start = 0, end = 0;

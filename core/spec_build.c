@@ -10,6 +10,7 @@
 
 #include "geometry.h"
 #include "spec_core.h"
+#include "irreps.h"
 #include "tables.h"
 int isotropy_row_subgroup(int64_t row_id);
 
@@ -120,7 +121,7 @@ static int caught(int mask)
 #define BIT(kind) (1 << (kind))
 
 static struct {
-    section_view mag2nonmag, iso_basis, iso_origin, irrep_sg,
+    section_view mag2nonmag, iso_basis, iso_origin,
         irr_sg, old;
     int ready;
 } T;
@@ -129,7 +130,6 @@ static int load(void)
 {
     if (T.ready) return 0;
     if (geo_load() || section_find("magnetic.mag_point_op_mag2nonmag", &T.mag2nonmag) ||
-        section_find("irreps.irrep_space_group", &T.irrep_sg) ||
         section_find("little.little_irr_space_group", &T.irr_sg) || section_find("little.little_irr_old", &T.old))
         return sp_fail(PY_VALUE, "spec stage Source tables are missing");
     T.ready = 1;
@@ -1378,7 +1378,7 @@ int spec_static(int sg, int selected_old_id, int selected_row_id, int has_frame,
     result.items = 0;
     result.count = result.cap = 0;
     if (load()) return finish(1);
-    if (selected_old_id < 1 || selected_old_id > section_count(&T.irrep_sg) ||
+    if (selected_old_id < 1 || selected_old_id > old_irrep_count() ||
         selected_row_id < 1 || selected_row_id > isotropy_row_count())
         return finish(sp_fail(PY_INDEX, "selected isotropy row is out of range"));
     int64_t default_basis[9], default_origin[4];
@@ -1396,7 +1396,7 @@ int spec_static(int sg, int selected_old_id, int selected_row_id, int has_frame,
     if (frame_operations(sg, child_sg, basis, origin, &frame)) return finish(1);
     sp_rows rows = {0};
     if (sp_frame_rows(&frame, 0, 0, &rows)) return finish(1);
-    int nold = (int)section_count(&T.irrep_sg);
+    int nold = old_irrep_count();
     const sp_row **last = sp_alloc(sizeof *last * (size_t)(nold + 1));
     if (!last) return finish(1);
     memset(last, 0, sizeof *last * (size_t)(nold + 1));
@@ -1408,7 +1408,7 @@ int spec_static(int sg, int selected_old_id, int selected_row_id, int has_frame,
     for (int pass = 0; pass < 2; pass++)
         for (int old = 1; old <= nold; old++) {
             int primary = old == selected_old_id;
-            if ((pass == 0) != primary || (!primary && !last[old]) || section_int(&T.irrep_sg, old - 1) != sg) continue;
+            if ((pass == 0) != primary || (!primary && !last[old]) || old_irrep_space_group(old) != sg) continue;
             sp_str entry_label = {irrep_old_label(old), (int64_t)strlen(irrep_old_label(old))}, label = entry_label;
             sp_str k_label = k_label_from_irrep_label(entry_label);
             int gid;

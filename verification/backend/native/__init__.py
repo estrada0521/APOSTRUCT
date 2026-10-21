@@ -90,6 +90,8 @@ def _load() -> ctypes.CDLL:
     library.geo_point_product.restype = ctypes.c_int64
     library.mag_point_product.argtypes = (ctypes.c_int, ctypes.c_int)
     library.mag_point_product.restype = ctypes.c_int
+    library.old_irrep_space_group.argtypes = (ctypes.c_int,)
+    library.old_irrep_space_group.restype = ctypes.c_int
     library.mag_ordinary_group.argtypes = (ctypes.c_int,)
     library.mag_ordinary_group.restype = ctypes.c_int
     library.mag_group_type.argtypes = (ctypes.c_int,)
@@ -116,6 +118,11 @@ def point_op_product(left: int, right: int) -> int:
 def magnetic_point_op_product(left: int, right: int) -> int:
     """The product of two magnetic point operations."""
     return int(_LIBRARY.mag_point_product(int(left), int(right)))
+
+
+def old_irrep_space_group(old_id: int) -> int:
+    """The space group of an old (data_irreps) irrep."""
+    return int(_LIBRARY.old_irrep_space_group(int(old_id)))
 
 
 def magnetic_ordinary_group(group: int) -> int:

@@ -5,6 +5,7 @@
 
 #include "geometry.h"
 #include "magnetic.h"
+#include "irreps.h"
 #include "tables.h"
 
 int orderparam_to_subgroup_rows(int gid, int param_count, const int64_t *kparam, const double *values, int64_t value_count, int row_count,
@@ -25,7 +26,7 @@ typedef struct {
 } family;
 
 static family ordinary, magnetic = {.magnetic = 1};
-static section_view values, irrep_sg, little_old;
+static section_view values, little_old;
 static int *gid_of_old;
 
 static int load(family *f)
@@ -36,7 +37,7 @@ static int load(family *f)
                                {"magnetic.mag_iso_irrep_pointer", "magnetic.mag_iso_orderparam_pointer", "magnetic.mag_iso_orderparam"}};
     if (geo_load() || (f->magnetic && mag_tables()) || section_find(names[f->magnetic][0], &f->irrep_pointer) ||
         section_find(names[f->magnetic][1], &f->op_pointer) || section_find(names[f->magnetic][2], &f->op) ||
-        section_find("const.values", &values) || section_find("irreps.irrep_space_group", &irrep_sg) ||
+        section_find("const.values", &values) ||
         section_find("little.little_irr_old", &little_old))
         return 1;
     f->rows = section_count(&f->op_pointer);
@@ -44,7 +45,7 @@ static int load(family *f)
     f->subgroup = calloc((size_t)f->rows + 1, sizeof(int));
     if (!f->subgroup) return 1;
     if (!gid_of_old) {
-        int64_t olds = section_count(&irrep_sg);
+        int64_t olds = old_irrep_count();
         if (!(gid_of_old = calloc((size_t)olds + 1, sizeof(int)))) return 1;
         for (int64_t g = section_count(&little_old) - 1; g >= 0; g--) {
             int64_t old = section_int(&little_old, g);
@@ -73,7 +74,7 @@ static int compute(const family *f, int64_t row_id)
     int dim = f->magnetic ? mag_isotropy_row_dim(row_id) : isotropy_row_dim(row_id);
     int nf = f->magnetic ? mag_isotropy_row_free(row_id) : isotropy_row_free(row_id);
     if (!gid || dim <= 0 || dim > 48 || nf <= 0 || nf > 48) return -1;
-    int parent = (int)section_int(&irrep_sg, old - 1);
+    int parent = old_irrep_space_group((int)old);
     static double v[48 * 48];
     static int64_t candidates[192][5], kept[1536][5], out[8192];
     static int ops[192], signs[192], nc, cached = -1;
