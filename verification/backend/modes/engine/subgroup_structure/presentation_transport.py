@@ -115,7 +115,7 @@ def embedded_magnetic_child_operation_records(
 
     table = magnetic_data().table
     magnetic_group = int(child_magnetic_group)
-    child_sg = int(table["mag_space_group"][magnetic_group - 1])
+    child_sg = native.magnetic_ordinary_group(magnetic_group)
     basis: FractionMatrix = tuple(
         tuple(Fraction(basis_values[row * 3 + col]) for col in range(3))
         for row in range(3)

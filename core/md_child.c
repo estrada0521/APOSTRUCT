@@ -8,6 +8,7 @@
 #include <string.h>
 
 #include "geometry.h"
+#include "magnetic.h"
 #include "md.h"
 #include "tables.h"
 
@@ -48,7 +49,7 @@ static int md_kernel(int kind, int status)
 
 static struct {
     section_view inter_number, inter_choice, label_short, wyckoff_label, wyckoff_pointer, wyckoff_count, wyckoff_pg,
-        inter_wyckoff_pointer, inter_wyckoff_fract, mag_type, mag_space_group, mag_type4_pointer, mag_type4_supergroup, mag_nlabel;
+        inter_wyckoff_pointer, inter_wyckoff_fract, mag_type4_pointer, mag_type4_supergroup, mag_nlabel;
     int ready;
 } T;
 
@@ -60,8 +61,7 @@ int md_tables(void)
         section_find("wyckoff.wyckoff_label", &T.wyckoff_label) || section_find("wyckoff.iwyckoff_pointer", &T.wyckoff_pointer) ||
         section_find("wyckoff.iwyckoff_count", &T.wyckoff_count) || section_find("wyckoff.iwyckoff_pg", &T.wyckoff_pg) ||
         section_find("space.ispace_inter_wyckoff_pointer", &T.inter_wyckoff_pointer) ||
-        section_find("space.ispace_inter_wyckoff_fract", &T.inter_wyckoff_fract) || section_find("magnetic.mag_type", &T.mag_type) ||
-        section_find("magnetic.mag_space_group", &T.mag_space_group) ||
+        section_find("space.ispace_inter_wyckoff_fract", &T.inter_wyckoff_fract) || mag_tables() ||
         section_find("magnetic.mag_type4_pointer", &T.mag_type4_pointer) ||
         section_find("magnetic.mag_type4_supergroup", &T.mag_type4_supergroup) || section_find("magnetic.mag_nlabel", &T.mag_nlabel))
         return 1;
@@ -332,8 +332,8 @@ static void selected_magnetic_group(md_request *r)
     if (!number || py_int_of(number, &group)) return;
     int64_t total = section_count(&T.mag_nlabel);
     if (group < 1 || group > total) return;
-    int64_t ordinary_sg = section_int(&T.mag_space_group, group - 1);
-    int64_t type = section_int(&T.mag_type, group - 1);
+    int64_t ordinary_sg = mag_ordinary_group((int)group);
+    int64_t type = mag_group_type((int)group);
     if (type == 4 && section_int(&T.mag_type4_pointer, group - 1) <= 0) return;
     if (!r->has_child_sg || ordinary_sg != r->child_sg) return;
     r->magnetic_group = (int)group;
@@ -341,8 +341,8 @@ static void selected_magnetic_group(md_request *r)
 
 static int reference_space_group(int group)
 {
-    int64_t type = section_int(&T.mag_type, group - 1);
-    int64_t sg = section_int(&T.mag_space_group, group - 1);
+    int64_t type = mag_group_type(group);
+    int64_t sg = mag_ordinary_group(group);
     if (type == 4) sg = section_int(&T.mag_type4_supergroup, section_int(&T.mag_type4_pointer, group - 1) - 1);
     return (int)sg;
 }

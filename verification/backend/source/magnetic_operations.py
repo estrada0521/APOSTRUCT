@@ -190,8 +190,8 @@ def magnetic_group_setting(magnetic_group: int) -> MagneticGroupSetting:
     if group < 1 or group > len(table["mag_nlabel"]):
         raise IndexError(f"magnetic group out of range: {group}")
     index = group - 1
-    magnetic_type = int(table["mag_type"][index])
-    ordinary_sg = int(table["mag_space_group"][index])
+    magnetic_type = native.magnetic_group_type(group)
+    ordinary_sg = native.magnetic_ordinary_group(group)
     reference_sg = ordinary_sg
     basis = (1, 0, 0, 0, 1, 0, 0, 0, 1)
     origin: FractionRecord = (0, 0, 0, 1)

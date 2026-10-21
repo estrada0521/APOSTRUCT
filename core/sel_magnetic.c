@@ -26,7 +26,7 @@ int id_subgroup_magnetic_identify(int parent, const int64_t *basis, int op_count
 int mag_isotropy_row_subgroup(int64_t row_id);
 
 static struct {
-    section_view point_group, point_group_order, op_r, mag2nonmag, bns, nlabel, space_group, iso_pointer, iso_basis, iso_origin, iso_label, iso_op_pointer, iso_op, point_op, const_values, irr_sg, old_sg;
+    section_view point_group, point_group_order, op_r, mag2nonmag, bns, nlabel, iso_pointer, iso_basis, iso_origin, iso_label, iso_op_pointer, iso_op, point_op, const_values, irr_sg, old_sg;
     int ready;
 } T;
 
@@ -42,7 +42,6 @@ int sel_mag_tables(void)
                 {"magnetic.mag_point_op_mag2nonmag", &T.mag2nonmag},
                 {"magnetic.mag_bns_label", &T.bns},
                 {"magnetic.mag_nlabel", &T.nlabel},
-                {"magnetic.mag_space_group", &T.space_group},
                 {"magnetic.mag_iso_irrep_pointer", &T.iso_pointer},
                 {"magnetic.mag_iso_basis", &T.iso_basis},
                 {"magnetic.mag_iso_origin", &T.iso_origin},
@@ -76,7 +75,7 @@ static void put_label(jbuf *b, const section_view *view, int64_t index)
     jb_string(b, s, (size_t)n);
 }
 
-int sel_mag_ordinary(int group) { return (int)section_int(&T.space_group, group - 1); }
+int sel_mag_ordinary(int group) { return mag_ordinary_group(group); }
 
 /* The magnetic subgroup dict {number, symbol, ordinary_number, display_label}. */
 void sel_mag_subgroup_json(jbuf *b, int group)

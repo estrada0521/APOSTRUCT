@@ -39,11 +39,11 @@ enum {
 #define MG_MAX_ROWS 32
 
 static struct {
-    section_view m2n, r, nlabel, type, sg, t4_pointer, t4_sg, t4_basis, t4_origin, gen_count, gen, op_code,
+    section_view m2n, r, nlabel, t4_pointer, t4_sg, t4_basis, t4_origin, gen_count, gen, op_code,
         point_group, point_group_code;
     section_view point_op, lattice, label_bc, sg_pointer;
-    int ready;
-    short products[144 * 144];
+    int ready, groups;
+    short products[144 * 144], *ordinary, *type;
 } M;
 
 static int mag_bad;
@@ -65,8 +65,6 @@ static int load(void)
         {"magnetic.mag_point_op_mag2nonmag", &M.m2n, 0},
         {"magnetic.mag_point_op_r", &M.r, 0},
         {"magnetic.mag_nlabel", &M.nlabel, 1},
-        {"magnetic.mag_type", &M.type, 0},
-        {"magnetic.mag_space_group", &M.sg, 0},
         {"magnetic.mag_type4_pointer", &M.t4_pointer, 0},
         {"magnetic.mag_type4_supergroup", &M.t4_sg, 0},
         {"magnetic.mag_type4_supergroup_basis", &M.t4_basis, 0},
@@ -100,6 +98,30 @@ static int load(void)
             int reversed = (section_int(&M.r, left) != 0) != (section_int(&M.r, right) != 0);
             M.products[right * 144 + left] = ordinary ? of[ordinary][reversed] : 0;
         }
+    /* each group's space group from the family pointer, and its type from the time-reversed generators */
+    M.groups = (int)section_count(&M.gen_count);
+    M.ordinary = calloc((size_t)M.groups + 1, sizeof(short));
+    M.type = calloc((size_t)M.groups + 1, sizeof(short));
+    if (!M.ordinary || !M.type || section_count(&M.sg_pointer) < 230) return MG_TABLES;
+    for (int sg = 1; sg <= 230; sg++) {
+        int64_t first = section_int(&M.sg_pointer, sg - 1), end = sg < 230 ? section_int(&M.sg_pointer, sg) : M.groups + 1;
+        for (int64_t g = first; g < end && g <= M.groups; g++)
+            if (g >= 1) M.ordinary[g] = (short)sg;
+    }
+    for (int g = 1; g <= M.groups; g++) {
+        int count = (int)section_int(&M.gen_count, g - 1), reversed = 0, gray = 0, anti = 0;
+        for (int i = 0; i < count && i < 4; i++) {
+            int64_t x[5];
+            for (int k = 0; k < 5; k++) x[k] = section_int(&M.gen, (int64_t)(g - 1) * 20 + i * 5 + k);
+            if (x[4] < 1 || x[4] > 144 || !section_int(&M.r, x[4] - 1)) continue;
+            reversed = 1;
+            int64_t ordinary = section_int(&M.m2n, x[4] - 1);
+            if (ordinary != 1 && ordinary != 49) continue;
+            if (x[3] && !(x[0] % x[3]) && !(x[1] % x[3]) && !(x[2] % x[3])) gray = 1;
+            else anti = 1;
+        }
+        M.type[g] = (short)(!reversed ? 1 : gray ? 2 : anti ? 4 : 3);
+    }
     M.ready = 1;
     return 0;
 }
@@ -179,10 +201,10 @@ static int64_t centering_count_of(int sg)
 static int load_setting(int group, group_setting *s)
 {
     memset(s, 0, sizeof *s);
-    if (group < 1 || group > section_count(&M.type)) return MG_RANGE;
+    if (group < 1 || group > M.groups) return MG_RANGE;
     s->group = group;
-    s->type = (int)at(&M.type, group - 1);
-    s->sg = (int)at(&M.sg, group - 1);
+    s->type = M.type[group];
+    s->sg = M.ordinary[group];
     s->reference_sg = s->sg;
     for (int i = 0; i < 9; i++) s->basis[i] = i % 4 == 0;
     s->origin[3] = 1;
@@ -269,8 +291,23 @@ int mag_take_error(void)
     return status;
 }
 
-int64_t mag_group_total(void) { return section_count(&M.sg); }
-int mag_ordinary_group(int group) { return (int)at(&M.sg, group - 1); }
+int64_t mag_group_total(void) { return load() ? 0 : M.groups; }
+int mag_ordinary_group(int group)
+{
+    if (load() || group < 1 || group > M.groups) {
+        fail(MG_TABLES);
+        return 0;
+    }
+    return M.ordinary[group];
+}
+int mag_group_type(int group)
+{
+    if (load() || group < 1 || group > M.groups) {
+        fail(MG_TABLES);
+        return 0;
+    }
+    return M.type[group];
+}
 int64_t mag_group_code(int group) { return at(&M.point_group_code, at(&M.point_group, group - 1) - 1); }
 int64_t mag_op_code(int op) { return at(&M.op_code, op - 1); }
 int mag_nonmagnetic_op(int op) { return ordinary_of(op); }
@@ -414,7 +451,7 @@ static group_cache *group_for(int group)
         fail(MG_TABLES);
         return 0;
     }
-    int64_t total = section_count(&M.type);
+    int64_t total = M.groups;
     if (group < 1 || group > total) {
         fail(MG_RANGE);
         return 0;
@@ -1154,7 +1191,7 @@ int magnetic_records_iso(int group, int capacity, int64_t *records_out)
 {
     mag_bad = 0;
     if (load()) return -MG_TABLES;
-    int64_t total = section_count(&M.type);
+    int64_t total = M.groups;
     if (group < 1 || group > total) return -MG_RANGE;
     if (!iso_closures) {
         iso_closures = calloc((size_t)total + 1, sizeof *iso_closures);
@@ -1163,7 +1200,7 @@ int magnetic_records_iso(int group, int capacity, int64_t *records_out)
     }
     if (!iso_counts[group]) {
         int64_t (*records)[5] = iso_closures[group];
-        int sg = (int)at(&M.sg, group - 1);
+        int sg = M.ordinary[group];
         int count = (int)at(&M.gen_count, group - 1);
         int seen[145] = {0};
         for (int i = 0; i < count; i++) {

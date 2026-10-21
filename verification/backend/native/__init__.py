@@ -90,6 +90,10 @@ def _load() -> ctypes.CDLL:
     library.geo_point_product.restype = ctypes.c_int64
     library.mag_point_product.argtypes = (ctypes.c_int, ctypes.c_int)
     library.mag_point_product.restype = ctypes.c_int
+    library.mag_ordinary_group.argtypes = (ctypes.c_int,)
+    library.mag_ordinary_group.restype = ctypes.c_int
+    library.mag_group_type.argtypes = (ctypes.c_int,)
+    library.mag_group_type.restype = ctypes.c_int
     library.geo_pml_point_matrix.argtypes = (ctypes.c_int, ctypes.c_int, i64)
     library.geo_pml_point_matrix.restype = ctypes.c_int
     library.geo_sg_records.argtypes = (ctypes.c_int, i64)
@@ -112,6 +116,16 @@ def point_op_product(left: int, right: int) -> int:
 def magnetic_point_op_product(left: int, right: int) -> int:
     """The product of two magnetic point operations."""
     return int(_LIBRARY.mag_point_product(int(left), int(right)))
+
+
+def magnetic_ordinary_group(group: int) -> int:
+    """The ordinary space group of a magnetic group."""
+    return int(_LIBRARY.mag_ordinary_group(int(group)))
+
+
+def magnetic_group_type(group: int) -> int:
+    """The type (1-4) of a magnetic group."""
+    return int(_LIBRARY.mag_group_type(int(group)))
 
 
 def pml_point_matrix(sg: int, op: int) -> tuple[int, ...] | None:
