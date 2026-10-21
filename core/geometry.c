@@ -231,6 +231,8 @@ int geo_sg_point_group(int sg) { return (int)at(&G.sg_point_group, sg - 1); }
 
 int geo_sg_lattice(int sg) { return (int)at(&G.lattice, sg - 1); }
 
+int geo_point_op_count(void) { return geo_load() ? 0 : (int)(section_count(&G.point_op) / 9); }
+
 int64_t geo_point_op_code(int op) { return at(&G.point_op_code, op - 1); }
 
 void geo_point_op_matrix(int op, int64_t *out)

@@ -47,7 +47,7 @@ static int md_kernel(int kind, int status)
 }
 
 static struct {
-    section_view inter_number, inter_choice, label_short, wyckoff_label, wyckoff_pointer, wyckoff_count, wyckoff_pg, point_inverse,
+    section_view inter_number, inter_choice, label_short, wyckoff_label, wyckoff_pointer, wyckoff_count, wyckoff_pg,
         inter_wyckoff_pointer, inter_wyckoff_fract, mag_type, mag_space_group, mag_type4_pointer, mag_type4_supergroup, mag_nlabel;
     int ready;
 } T;
@@ -59,7 +59,6 @@ int md_tables(void)
         section_find("space.ispace_inter_choice", &T.inter_choice) || section_find("space.space_inter_label_short", &T.label_short) ||
         section_find("wyckoff.wyckoff_label", &T.wyckoff_label) || section_find("wyckoff.iwyckoff_pointer", &T.wyckoff_pointer) ||
         section_find("wyckoff.iwyckoff_count", &T.wyckoff_count) || section_find("wyckoff.iwyckoff_pg", &T.wyckoff_pg) ||
-        section_find("space.ipoint_op_inverse", &T.point_inverse) ||
         section_find("space.ispace_inter_wyckoff_pointer", &T.inter_wyckoff_pointer) ||
         section_find("space.ispace_inter_wyckoff_fract", &T.inter_wyckoff_fract) || section_find("magnetic.mag_type", &T.mag_type) ||
         section_find("magnetic.mag_space_group", &T.mag_space_group) ||
@@ -747,7 +746,7 @@ static int child_layout(md_request *r, md_site *s, const rat *representative)
 
 void md_selected(md_request *r)
 {
-    r->point_operation_count = (int)section_count(&T.point_inverse);
+    r->point_operation_count = geo_point_op_count();
     selected_subgroup_number(r);
     display_basis(r);
     selected_origin(r);

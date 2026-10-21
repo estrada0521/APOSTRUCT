@@ -29,6 +29,7 @@ int64_t geo_site_settings_pointer(int site_pg);
 /* The pml point matrix of an operation; 1 when the lattice's space groups do not use it. */
 int geo_pml_point_matrix(int sg, int op, int64_t *out);
 int geo_sg_lattice(int sg);
+int geo_point_op_count(void);
 int64_t geo_point_op_code(int op);
 void geo_point_op_matrix(int op, int64_t *out);
 /* The 36-value lattice_ml record of a lattice; returns its first denominator. */
