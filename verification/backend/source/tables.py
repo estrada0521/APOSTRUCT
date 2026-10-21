@@ -43,10 +43,6 @@ class LittleIrrep:
     old_id: int
     label: str
     full_dim: int
-    irrep_type: int
-    lif: int
-    real_pointer: int
-    real2_pointer: int
 
 
 @dataclass(frozen=True)
@@ -459,10 +455,6 @@ class SourceTables:
             old_id=int(self.little["little_irr_old"][gid - 1]),
             label=native.irrep_full_label(gid),
             full_dim=int(self.little["little_irr_full_dim"][gid - 1]),
-            irrep_type=int(self.little["little_irr_type"][gid - 1]),
-            lif=int(self.little["little_irr_lif"][gid - 1]),
-            real_pointer=int(self.little["little_irr_real_pointer"][gid - 1]),
-            real2_pointer=int(self.little["little_irr_real2_pointer"][gid - 1]),
         )
 
     def image_record(self, old_id: int) -> dict[str, Any]:
