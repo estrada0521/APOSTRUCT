@@ -26,7 +26,7 @@ int geo_sg_point_group(int sg);
 /* iwyckoff_pg_elements settings of a site point group (zeros dropped). */
 int geo_site_settings(int site_pg, int capacity, int (*out)[48], int *lengths);
 int64_t geo_site_settings_pointer(int site_pg);
-/* The pml point matrix of an operation (ipoint_op_psettings); 1 when Source has none. */
+/* The pml point matrix of an operation; 1 when the lattice's space groups do not use it. */
 int geo_pml_point_matrix(int sg, int op, int64_t *out);
 int geo_sg_lattice(int sg);
 int64_t geo_point_op_code(int op);

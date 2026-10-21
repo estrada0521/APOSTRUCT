@@ -13,7 +13,7 @@ static struct {
         point_op_code, point_group_code, wyckoff_pointer, wyckoff_count, wyckoff_pg, wyckoff_fract,
         inter_wyckoff_pointer, inter_wyckoff_fract,
         pg_elements_pointer, pg_settings_count, pg_elements, settings,
-        group_gen_count, group_gen, inter_number, psettings;
+        group_gen_count, group_gen, inter_number;
     int64_t *op_codes, *group_codes, gen_start[231];
     int ready, order[231];
     short products[72 * 72];
@@ -45,7 +45,6 @@ int geo_load(void)
         {"space.ispace_inter_wyckoff_fract", &G.inter_wyckoff_fract, 0},
         {"space.ispace_settings", &G.settings, 0},
         {"space.ispace_inter_number", &G.inter_number, 0},
-        {"space.ipoint_op_psettings", &G.psettings, 0},
         {"space.ipoint_group_gen_count", &G.group_gen_count, 0},
         {"space.ipoint_group_gen", &G.group_gen, 0},
         {"wyckoff.iwyckoff_pointer", &G.wyckoff_pointer, 0},
@@ -163,15 +162,49 @@ void geo_inter_block(int setting_id, int half, int64_t *out)
     for (int i = 0; i < 16; i++) out[i] = at(&G.settings_inter, (int64_t)(setting_id - 1) * 32 + half * 16 + i);
 }
 
+static signed char pml_matrix[15][72][9], pml_present[15][72], pml_ready[15];
+
+/* The pml point matrices of a lattice: ml . R . ml^-1 for the operations that occur in its space groups. */
+static int pml_matrices(int lattice)
+{
+    if (lattice < 1 || lattice > 14) return 1;
+    if (pml_ready[lattice]) return 0;
+    for (int sg = 1; sg <= 230; sg++) {
+        int64_t records[GEO_MAX_OPS][5];
+        if (at(&G.lattice, sg - 1) != lattice) continue;
+        int n = geo_sg_records(sg, records);
+        for (int i = 0; i < n; i++)
+            if (records[i][4] >= 1 && records[i][4] <= 72) pml_present[lattice][records[i][4] - 1] = 1;
+    }
+    int64_t ml[36], den = geo_ml_setting(lattice, ml);
+    for (int op = 0; op < 72; op++) {
+        if (!pml_present[lattice][op]) continue;
+        int64_t m[9], t[9];
+        geo_point_op_matrix(op + 1, m);
+        for (int i = 0; i < 3; i++)
+            for (int j = 0; j < 3; j++) {
+                t[i + 3 * j] = 0;
+                for (int k = 0; k < 3; k++) t[i + 3 * j] += ml[i + 3 * k] * m[k + 3 * j];
+            }
+        for (int i = 0; i < 3; i++)
+            for (int j = 0; j < 3; j++) {
+                int64_t v = 0;
+                for (int k = 0; k < 3; k++) v += t[i + 3 * k] * ml[9 + k + 3 * j];
+                if (!den || v % den || v / den < -1 || v / den > 1) return 1;
+                pml_matrix[lattice][op][i + 3 * j] = (signed char)(v / den);
+            }
+    }
+    pml_ready[lattice] = 1;
+    return 0;
+}
+
+/* the pml matrix of op in the lattice of sg; 1, with every entry -1, when the lattice's space groups do not use op */
 int geo_pml_point_matrix(int sg, int op, int64_t *out)
 {
-    int64_t code = at(&G.psettings, (int64_t)(at(&G.lattice, sg - 1) - 1) * 72 + op - 1);
-    if (!code) return 1;
-    for (int i = 0; i < 9; i++) {
-        out[i] = code % 3 - 1;
-        code /= 3;
-    }
-    return 0;
+    int lattice = !geo_load() && sg >= 1 && sg <= 230 ? (int)at(&G.lattice, sg - 1) : 0;
+    int found = op >= 1 && op <= 72 && !pml_matrices(lattice) && pml_present[lattice][op - 1];
+    for (int i = 0; i < 9; i++) out[i] = found ? pml_matrix[lattice][op - 1][i] : -1;
+    return !found;
 }
 
 int geo_site_settings(int site_pg, int capacity, int (*out)[48], int *lengths)

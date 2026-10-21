@@ -62,19 +62,11 @@ def _pml_to_cinter_affine(sg: int) -> tuple[FractionMatrix, FractionPoint]:
 
 
 def _pml_point_operation_matrix(sg: int, point_op: int) -> FractionMatrix:
-    data = source_tables()
-    lattice = int(data.space["ispace_lattice"][int(sg) - 1])
-    code = int(
-        data.space["ipoint_op_psettings"][(lattice - 1) * 72 + int(point_op) - 1]
-    )
-    if code == 0:
+    entries = native.pml_point_matrix(int(sg), int(point_op))
+    if entries is None:
         raise KeyError(f"missing PML point operation SG{sg} op{point_op}")
-    entries: list[Fraction] = []
-    for _ in range(9):
-        entries.append(Fraction(code % 3 - 1))
-        code //= 3
     return tuple(
-        tuple(entries[row * 3 + col] for col in range(3))
+        tuple(Fraction(entries[row * 3 + col]) for col in range(3))
         for row in range(3)
     )  # type: ignore[return-value]
 

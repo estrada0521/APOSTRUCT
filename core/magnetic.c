@@ -41,7 +41,7 @@ enum {
 static struct {
     section_view m2n, r, nlabel, type, sg, t4_pointer, t4_sg, t4_basis, t4_origin, gen_count, gen, op_code,
         point_group, point_group_code;
-    section_view psettings, point_op, lattice, label_bc, sg_pointer;
+    section_view point_op, lattice, label_bc, sg_pointer;
     int ready;
     short products[144 * 144];
 } M;
@@ -76,7 +76,6 @@ static int load(void)
         {"magnetic.mag_point_op_code", &M.op_code, 0},
         {"magnetic.mag_point_group", &M.point_group, 0},
         {"magnetic.mag_point_group_code", &M.point_group_code, 0},
-        {"space.ipoint_op_psettings", &M.psettings, 0},
         {"space.ipoint_op", &M.point_op, 0},
         {"space.ispace_lattice", &M.lattice, 0},
         {"space.space_label_bc", &M.label_bc, 1},
@@ -213,13 +212,9 @@ static int load_setting(int group, group_setting *s)
 
 static int pml_rotation(int sg, int op, rat (*out)[3])
 {
-    int64_t lattice = at(&M.lattice, sg - 1);
-    int64_t code = at(&M.psettings, (lattice - 1) * 72 + op - 1);
-    if (!code) return 1;
-    for (int i = 0; i < 9; i++) {
-        out[i / 3][i % 3] = rat_int(code % 3 - 1);
-        code /= 3;
-    }
+    int64_t m[9];
+    if (geo_pml_point_matrix(sg, op, m)) return 1;
+    for (int i = 0; i < 9; i++) out[i / 3][i % 3] = rat_int(m[i]);
     return 0;
 }
 

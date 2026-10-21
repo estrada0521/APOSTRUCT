@@ -90,6 +90,8 @@ def _load() -> ctypes.CDLL:
     library.geo_point_product.restype = ctypes.c_int64
     library.mag_point_product.argtypes = (ctypes.c_int, ctypes.c_int)
     library.mag_point_product.restype = ctypes.c_int
+    library.geo_pml_point_matrix.argtypes = (ctypes.c_int, ctypes.c_int, i64)
+    library.geo_pml_point_matrix.restype = ctypes.c_int
     library.geo_sg_records.argtypes = (ctypes.c_int, i64)
     library.geo_sg_records.restype = ctypes.c_int
     library.irrep_full_label.argtypes = (ctypes.c_int,)
@@ -110,6 +112,12 @@ def point_op_product(left: int, right: int) -> int:
 def magnetic_point_op_product(left: int, right: int) -> int:
     """The product of two magnetic point operations."""
     return int(_LIBRARY.mag_point_product(int(left), int(right)))
+
+
+def pml_point_matrix(sg: int, op: int) -> tuple[int, ...] | None:
+    """The pml matrix of a point operation in the lattice of sg (9 entries), None when the lattice does not use it."""
+    out = (ctypes.c_int64 * 9)()
+    return None if _LIBRARY.geo_pml_point_matrix(int(sg), int(op), out) else tuple(int(v) for v in out)
 
 
 def space_group_records(sg: int) -> tuple[tuple[int, int, int, int, int], ...]:

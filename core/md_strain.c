@@ -88,7 +88,7 @@ static int rank_of(const nd *a, double tol, int *rank)
 /* ------------------------------------------------------------ tables */
 
 static struct {
-    section_view lattice, psettings, full_dim, irr_type, irr_sg, irr_k, star_count, star_ml_pointer, star_special, irr_pointer, matrices_pointer,
+    section_view full_dim, irr_type, irr_sg, irr_k, star_count, star_ml_pointer, star_special, irr_pointer, matrices_pointer,
         matrices, constants;
     int ready;
 } T;
@@ -96,8 +96,7 @@ static struct {
 static int tables(void)
 {
     if (T.ready) return 0;
-    if (section_find("space.ispace_lattice", &T.lattice) || section_find("space.ipoint_op_psettings", &T.psettings) ||
-        section_find("little.little_irr_full_dim", &T.full_dim) || section_find("little.little_irr_type", &T.irr_type) ||
+    if (section_find("little.little_irr_full_dim", &T.full_dim) || section_find("little.little_irr_type", &T.irr_type) ||
         section_find("little.little_irr_space_group", &T.irr_sg) || section_find("little.little_irr_k", &T.irr_k) ||
         section_find("little.little_k_star_count", &T.star_count) || section_find("little.little_k_star_ml_pointer", &T.star_ml_pointer) ||
         section_find("little.little_k_star_special", &T.star_special) ||
@@ -124,16 +123,11 @@ static int cartesian_basis(int sg, nd *out)
 /* tensor._cartesian_point_matrix */
 static int cartesian_point_matrix(int sg, int op, nd *out)
 {
-    int64_t lattice = section_int(&T.lattice, sg - 1);
-    int64_t code = section_int(&T.psettings, (lattice - 1) * 72 + op - 1);
+    int64_t m[9];
+    geo_pml_point_matrix(sg, op, m);
     nd pml, p2c, p2c_inverse, left, conjugated, basis, basis_inverse, product;
     MD_TRY(nd_new(&pml, 3, 3));
-    for (int i = 0; i < 9; i++) {
-        int64_t r = code % 3;
-        if (r < 0) r += 3;
-        pml.v[i] = (double)(r - 1);
-        code = (code - r) / 3;
-    }
+    for (int i = 0; i < 9; i++) pml.v[i] = (double)m[i];
     rat matrix[3][3], origin[3];
     if (geo_setting_to_cinter(sg, 1, 0, matrix, origin)) return md_fail(MDE_VALUE, "parent setting Source tables are inconsistent");
     MD_TRY(nd_new(&p2c, 3, 3));

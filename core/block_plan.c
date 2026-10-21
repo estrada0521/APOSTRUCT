@@ -47,24 +47,10 @@ static int float_inverse3(const double *m, double *out)
     return 0;
 }
 
-static section_view psettings, lattice_of;
-static int tables_ready;
-
 static int negative_determinant(int sg, int op, int *out)
 {
-    if (!tables_ready) {
-        if (section_find("space.ipoint_op_psettings", &psettings) || section_find("space.ispace_lattice", &lattice_of)) return 1;
-        tables_ready = 1;
-    }
-    int64_t lattice = section_int(&lattice_of, sg - 1);
-    int64_t code = section_int(&psettings, (lattice - 1) * 72 + op - 1);
     int64_t m[9];
-    for (int i = 0; i < 9; i++) {
-        int64_t r = code % 3;
-        if (r < 0) r += 3;
-        m[i] = r - 1;
-        code = (code - r) / 3;
-    }
+    geo_pml_point_matrix(sg, op, m);
     int64_t det = m[0] * (m[4] * m[8] - m[5] * m[7]) - m[1] * (m[3] * m[8] - m[5] * m[6]) + m[2] * (m[3] * m[7] - m[4] * m[6]);
     *out = det < 0;
     return 0;
