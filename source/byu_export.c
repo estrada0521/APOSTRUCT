@@ -19,21 +19,15 @@ int little_codes(int gid, int dim, int position, int *codes);
 int little_full_dim(int gid);
 int irrep_context_k(int gid, int param_count, const int64_t *kparam, irrep_context *out);
 
-static const char *const derived[] = {
-    "little.little_k_star", "little.little_k_star_special", "little.little_k_star_ml_pointer", "little.little_k_star_count",
-    "little.little_k_star_minusk", "little.little_k_star_conv2ml_pointer", "little.little_irr_full_dim", "little.little_irr_old",
-    "little.little_irr_full_matrices_pointer", "little.little_irr_full_matrices_position", "little.little_irr_full_matrices_irr_pointer",
-    "little.little_irr_irrnum", "little.little_irr_type",
-};
-
-static void write_section(FILE *out, const char *name)
+/* section `name`, written under its BYU name (`byu` is table.name) */
+static void write_section(FILE *out, const char *name, const char *byu)
 {
     section_view v;
     if (section_find(name, &v)) {
         fprintf(stderr, "byu_export: no section %s\n", name);
         exit(1);
     }
-    fprintf(out, "%s\n", strchr(name, '.') + 1);
+    fprintf(out, "%s\n", strchr(byu, '.') + 1);
     int64_t n = section_count(&v);
     for (int64_t i = 0; i < n; i++) {
         if (v.entry->kind == BLOB_STR) {
@@ -62,7 +56,7 @@ static void put_list(FILE *out, const char *name, const int64_t *v, int64_t n)
 static int full_matrices(const char *dir)
 {
     section_view sg;
-    if (section_find("little.little_irr_space_group", &sg)) return 1;
+    if (section_find("irreps.little.sg", &sg)) return 1;
     int64_t count = section_count(&sg), last = 0;
     for (int64_t g = 0; g < count; g++)
         if (section_int(&sg, g) > 0) last = g + 1;
@@ -112,6 +106,8 @@ int main(int argc, char **argv)
         return 2;
     }
     if (argc > 3 && !strcmp(argv[3], "--full-matrices") && full_matrices(argv[2])) return 1;
+    section_view names;
+    if (section_find("source.byu_names", &names)) return 1;
     static const char *const tables[] = {"space", "irreps", "little", "isotropy", "wyckoff", "images", "magnetic"};
     for (size_t t = 0; t < sizeof tables / sizeof tables[0]; t++) {
         char path[4096], prefix[32];
@@ -119,11 +115,16 @@ int main(int argc, char **argv)
         snprintf(prefix, sizeof prefix, "%s.", tables[t]);
         FILE *out = fopen(path, "w");
         if (!out) return 1;
-        const char *name;
-        for (uint32_t i = 0; (name = section_stored_name(i)); i++)
-            if (!strncmp(name, prefix, strlen(prefix))) write_section(out, name);
-        for (size_t d = 0; d < sizeof derived / sizeof derived[0]; d++)
-            if (!strncmp(derived[d], prefix, strlen(prefix))) write_section(out, derived[d]);
+        for (int64_t i = 0; i < section_count(&names); i++) {
+            const char *text;
+            int64_t length;
+            char pair[256], *eq;
+            section_string(&names, i, &text, &length);
+            snprintf(pair, sizeof pair, "%.*s", (int)length, text);
+            if (!(eq = strchr(pair, '='))) return 1;
+            *eq = 0;
+            if (!strncmp(eq + 1, prefix, strlen(prefix))) write_section(out, pair, eq + 1);
+        }
         fclose(out);
     }
     return 0;

@@ -31,9 +31,9 @@ static struct {
 static int load(void)
 {
     if (T.ready) return 0;
-    if (geo_load() || section_find("little.little_k", &T.k) || section_find("little.little_k_dim", &T.k_dim) ||
-        section_find("little.little_k_label", &T.k_label) || section_find("space.space_label_bc", &T.label_bc) ||
-        section_find("little.little_irr_space_group", &T.irr_sg) || section_find("little.little_irr_k", &T.irr_k))
+    if (geo_load() || section_find("k.slots.vector", &T.k) || section_find("k.slots.dim", &T.k_dim) ||
+        section_find("k.slots.label", &T.k_label) || section_find("group.space_groups.label_bc", &T.label_bc) ||
+        section_find("irreps.little.sg", &T.irr_sg) || section_find("irreps.little.k", &T.irr_k))
         return KC_TABLES;
     T.ready = 1;
     return 0;

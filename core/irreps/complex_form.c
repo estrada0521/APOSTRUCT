@@ -20,10 +20,10 @@ static struct {
 static int load(void)
 {
     if (T.ready) return 0;
-    if (section_find("little.little_irr_space_group", &T.irr_sg) || section_find("little.little_irr_k", &T.irr_k) ||
-        section_find("little.little_k_star_count", &T.star_count) || section_find("little.little_k_star_minusk", &T.minusk) ||
-        section_find("little.little_irr_full_dim", &T.full_dim) || section_find("little.little_irr_type", &T.type) ||
-        section_find("little.little_irr_real2_pointer", &T.real2_pointer) || section_find("little.little_irr_real2", &T.real2) ||
+    if (section_find("irreps.little.sg", &T.irr_sg) || section_find("irreps.little.k", &T.irr_k) ||
+        section_find("k.star.arm_count", &T.star_count) || section_find("k.star.minus_k", &T.minusk) ||
+        section_find("irreps.little.dim", &T.full_dim) || section_find("irreps.little.type", &T.type) ||
+        section_find("irreps.little.real_form_start", &T.real2_pointer) || section_find("irreps.little.real_form", &T.real2) ||
         section_find("const.values", &T.const_values))
         return 1;
     T.ready = 1;

@@ -97,13 +97,13 @@ static struct {
 static int load(void)
 {
     if (T.ready) return 0;
-    if (geo_load() || section_find("little.little_irr_full_dim", &T.full_dim) || section_find("little.little_irr_old", &T.old) ||
-        section_find("little.little_irr_type", &T.type) || section_find("little.little_k_label", &T.k_label) ||
-        section_find("little.little_irr_k", &T.irr_k) || section_find("little.little_irr_space_group", &T.irr_sg) ||
-        section_find("little.little_k_star", &T.star) || section_find("little.little_k_star_count", &T.star_count) ||
-        section_find("little.little_k_star_ml_pointer", &T.star_pointer) || section_find("space.ipoint_op", &T.point_op) ||
-        section_find("space.lattice_ml", &T.lattice_ml) || section_find("space.lattice_ml_denom", &T.lattice_ml_denom) ||
-        section_find("magnetic.mag_point_op_nonmag2mag", &T.nonmag2mag))
+    if (geo_load() || section_find("irreps.little.dim", &T.full_dim) || section_find("irreps.little.old", &T.old) ||
+        section_find("irreps.little.type", &T.type) || section_find("k.slots.label", &T.k_label) ||
+        section_find("irreps.little.k", &T.irr_k) || section_find("irreps.little.sg", &T.irr_sg) ||
+        section_find("k.star.arms", &T.star) || section_find("k.star.arm_count", &T.star_count) ||
+        section_find("k.star.arm_start", &T.star_pointer) || section_find("group.point_ops.matrix", &T.point_op) ||
+        section_find("group.lattices.ml", &T.lattice_ml) || section_find("group.lattices.ml_denom", &T.lattice_ml_denom) ||
+        section_find("group.magnetic_ops.from_ordinary", &T.nonmag2mag))
         return sp_fail(PY_VALUE, "spec stage Source tables are missing");
     T.ready = 1;
     return 0;

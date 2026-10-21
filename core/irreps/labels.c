@@ -25,10 +25,10 @@ static struct {
 static int load(void)
 {
     if (L.ready) return 0;
-    if (geo_load() || section_find("little.little_irr_space_group", &L.sg) || section_find("little.little_irr_k", &L.kslot) ||
-        section_find("little.little_irr_irrnum", &L.number) || section_find("little.little_irr_type", &L.type) ||
-        section_find("little.little_irr_cc", &L.partner) || section_find("little.little_irr_old", &L.old) ||
-        section_find("little.little_k_label", &L.k_label))
+    if (geo_load() || section_find("irreps.little.sg", &L.sg) || section_find("irreps.little.k", &L.kslot) ||
+        section_find("irreps.little.number", &L.number) || section_find("irreps.little.type", &L.type) ||
+        section_find("irreps.little.partner", &L.partner) || section_find("irreps.little.old", &L.old) ||
+        section_find("k.slots.label", &L.k_label))
         return 1;
     L.count = (int)section_count(&L.number);
     for (int g = 0; g < L.count; g++)

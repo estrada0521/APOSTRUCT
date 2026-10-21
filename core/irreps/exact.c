@@ -19,8 +19,8 @@ static int little_seed_index(int gid, int position, int64_t *index)
     static section_view irr, positions;
     static int ready;
     if (!ready) {
-        if (section_find("little.little_irr_full_matrices_irr_pointer", &irr)
-            || section_find("little.little_irr_full_matrices_position", &positions)) return 1;
+        if (section_find("irreps.little.position_start", &irr)
+            || section_find("irreps.little.positions", &positions)) return 1;
         ready = 1;
     }
     if (gid < 1 || gid >= section_count(&irr) || position < 1) return 1;
@@ -44,9 +44,9 @@ int little_table_codes(int gid, int dim, int position, int *codes)
     static section_view irr_pointer, pointer, matrices;
     static int ready;
     if (!ready) {
-        if (section_find("little.little_irr_full_matrices_irr_pointer", &irr_pointer)
-            || section_find("little.little_irr_full_matrices_pointer", &pointer)
-            || section_find("little.little_irr_full_matrices", &matrices))
+        if (section_find("irreps.little.position_start", &irr_pointer)
+            || section_find("irreps.little.matrix_start", &pointer)
+            || section_find("irreps.little.matrices", &matrices))
             return 1;
         ready = 1;
     }
@@ -103,9 +103,9 @@ static int little_table_words(int gid, int dim, int position, int64_t *words)
     static section_view irr_pointer, pointer, matrices, exact;
     static int ready;
     if (!ready) {
-        if (section_find("little.little_irr_full_matrices_irr_pointer", &irr_pointer)
-            || section_find("little.little_irr_full_matrices_pointer", &pointer)
-            || section_find("little.little_irr_full_matrices", &matrices) || section_find("const.exact", &exact)
+        if (section_find("irreps.little.position_start", &irr_pointer)
+            || section_find("irreps.little.matrix_start", &pointer)
+            || section_find("irreps.little.matrices", &matrices) || section_find("const.exact", &exact)
             || !section_is_int(&exact))
             return 1;
         ready = 1;

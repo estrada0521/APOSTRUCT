@@ -477,12 +477,12 @@ static struct {
 static int load(void)
 {
     if (T.ready) return 0;
-    if (geo_load() || section_find("little.little_irr_space_group", &T.irr_sg) || section_find("little.little_irr_k", &T.irr_k) ||
-        section_find("little.little_irr_old", &T.irr_old) || section_find("little.little_irr_type", &T.irr_type) ||
-        section_find("little.little_irr_full_dim", &T.full_dim) ||
-        section_find("little.little_k_dim", &T.k_dim) || section_find("little.little_k_label", &T.k_label) ||
-        section_find("little.little_k_star", &T.star) || section_find("little.little_k_star_count", &T.star_count) ||
-        section_find("little.little_k_star_conv2ml_pointer", &T.conv2ml))
+    if (geo_load() || section_find("irreps.little.sg", &T.irr_sg) || section_find("irreps.little.k", &T.irr_k) ||
+        section_find("irreps.little.old", &T.irr_old) || section_find("irreps.little.type", &T.irr_type) ||
+        section_find("irreps.little.dim", &T.full_dim) ||
+        section_find("k.slots.dim", &T.k_dim) || section_find("k.slots.label", &T.k_label) ||
+        section_find("k.star.arms", &T.star) || section_find("k.star.arm_count", &T.star_count) ||
+        section_find("k.star.conv2ml_start", &T.conv2ml))
         return 1;
     T.ready = 1;
     return 0;

@@ -26,20 +26,20 @@ int par_tables(void)
     struct {
         const char *name;
         section_view *view;
-    } list[] = {{"space.space_label_bc", &T.label_bc},
-                {"wyckoff.wyckoff_label", &T.wyckoff_label},
-                {"space.point_group_label_inter", &T.pg_label},
-                {"space.ispace_inter_number", &T.inter_number},
-                {"space.ispace_inter_version", &T.inter_version},
-                {"space.ispace_inter_origin", &T.inter_origin},
-                {"space.ispace_inter_cell", &T.inter_cell},
-                {"space.space_inter_axis", &T.inter_axis},
-                {"space.space_inter_abc", &T.inter_abc},
-                {"space.space_inter_label_full", &T.inter_label_full},
-                {"space.space_inter_label_short", &T.inter_label_short},
-                {"space.lattice_label", &T.lattice_label},
-                {"space.ispace_point_group", &T.point_group},
-                {"space.ipoint_group_order", &T.group_order}};
+    } list[] = {{"group.space_groups.label_bc", &T.label_bc},
+                {"settings.wyckoff.label", &T.wyckoff_label},
+                {"group.point_groups.label", &T.pg_label},
+                {"settings.inter_settings.number", &T.inter_number},
+                {"settings.inter_settings.version", &T.inter_version},
+                {"settings.inter_settings.origin", &T.inter_origin},
+                {"settings.inter_settings.cell", &T.inter_cell},
+                {"settings.inter_settings.axis", &T.inter_axis},
+                {"settings.inter_settings.abc", &T.inter_abc},
+                {"settings.inter_settings.full", &T.inter_label_full},
+                {"settings.inter_settings.short", &T.inter_label_short},
+                {"group.lattices.label", &T.lattice_label},
+                {"group.space_groups.point_group", &T.point_group},
+                {"group.point_groups.order", &T.group_order}};
     if (geo_load()) return 1;
     for (size_t i = 0; i < sizeof list / sizeof list[0]; i++)
         if (section_find(list[i].name, list[i].view)) return 1;

@@ -1605,8 +1605,8 @@ static int meet_fixed(uint64_t *x, int r, const uint64_t *mat, int D)
 static int table_rows(int gid, int magnetic)
 {
     section_view old, pointer;
-    if (section_find("little.little_irr_old", &old) ||
-        section_find(magnetic ? "magnetic.mag_iso_irrep_pointer" : "isotropy.isotropy_irrep_pointer", &pointer))
+    if (section_find("irreps.little.old", &old) ||
+        section_find(magnetic ? "isotropy.magnetic.by_old_start" : "isotropy.ordinary.by_old_start", &pointer))
         return 0;
     int64_t old_id = section_int(&old, gid - 1);
     if (old_id <= 0) return 0;
@@ -1620,9 +1620,9 @@ static int table_labels(const sp_induced *c, int gid, const pset *seen, const in
     static section_view old, pointer, basis, origin, label;
     static int ready;
     if (!ready) {
-        if (section_find("little.little_irr_old", &old) || section_find("isotropy.isotropy_irrep_pointer", &pointer) ||
-            section_find("isotropy.isotropy_basis", &basis) ||
-            section_find("isotropy.isotropy_origin", &origin) || section_find("isotropy.isotropy_orderparam_label", &label))
+        if (section_find("irreps.little.old", &old) || section_find("isotropy.ordinary.by_old_start", &pointer) ||
+            section_find("isotropy.ordinary.basis", &basis) ||
+            section_find("isotropy.ordinary.origin", &origin) || section_find("isotropy.ordinary.label", &label))
             return spfail("isotropy tables are missing");
         ready = 1;
     }
@@ -1913,9 +1913,9 @@ static int mag_table_labels(const sp_induced *c, int gid, const pset *seen, cons
     static section_view old, pointer, opptr, ops, label, consts;
     static int ready;
     if (!ready) {
-        if (mag_tables() || section_find("little.little_irr_old", &old) || section_find("magnetic.mag_iso_irrep_pointer", &pointer) ||
-            section_find("magnetic.mag_iso_orderparam_pointer", &opptr) || section_find("magnetic.mag_iso_orderparam", &ops) ||
-            section_find("magnetic.mag_iso_orderparam_label", &label) || section_find("const.values", &consts))
+        if (mag_tables() || section_find("irreps.little.old", &old) || section_find("isotropy.magnetic.by_old_start", &pointer) ||
+            section_find("isotropy.magnetic.direction_codes_start", &opptr) || section_find("isotropy.magnetic.direction_codes", &ops) ||
+            section_find("isotropy.magnetic.label", &label) || section_find("const.values", &consts))
             return spfail("magnetic isotropy tables are missing");
         ready = 1;
     }

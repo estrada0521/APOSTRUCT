@@ -21,17 +21,17 @@ static struct {
 static int load(void)
 {
     if (T.ready) return 0;
-    if (geo_load() || section_find("little.little_k", &T.k) || section_find("little.little_k_dim", &T.k_dim) ||
-        section_find("little.little_k_label", &T.k_label) || section_find("little.little_k_kov", &T.k_kov) ||
-        section_find("little.little_k_count", &T.k_count) || section_find("space.space_label_bc", &T.label_bc) ||
-        section_find("space.lattice_label", &T.lattice_label) || section_find("space.ispace_point_group", &T.sg_point_group) ||
-        section_find("little.little_k_star_count", &T.star_count) ||
-        section_find("little.little_k_star_ml_pointer", &T.star_pointer) || section_find("little.little_k_star", &T.star) ||
-        section_find("little.little_k_star_special", &T.star_special) ||
-        section_find("little.little_irr_space_group", &T.irr_sg) || section_find("little.little_irr_k", &T.irr_k) ||
-        section_find("little.little_irr_old", &T.irr_old) ||
-        section_find("little.little_irr_full_kov_label", &T.full_kov_label) ||
-        section_find("little.little_irr_full_dim", &T.full_dim) || section_find("little.little_irr_type", &T.irr_type))
+    if (geo_load() || section_find("k.slots.vector", &T.k) || section_find("k.slots.dim", &T.k_dim) ||
+        section_find("k.slots.label", &T.k_label) || section_find("k.space_group_slots.kov", &T.k_kov) ||
+        section_find("group.lattices.k_count", &T.k_count) || section_find("group.space_groups.label_bc", &T.label_bc) ||
+        section_find("group.lattices.label", &T.lattice_label) || section_find("group.space_groups.point_group", &T.sg_point_group) ||
+        section_find("k.star.arm_count", &T.star_count) ||
+        section_find("k.star.arm_start", &T.star_pointer) || section_find("k.star.arms", &T.star) ||
+        section_find("k.star.special_arms", &T.star_special) ||
+        section_find("irreps.little.sg", &T.irr_sg) || section_find("irreps.little.k", &T.irr_k) ||
+        section_find("irreps.little.old", &T.irr_old) ||
+        section_find("irreps.little.kovalev", &T.full_kov_label) ||
+        section_find("irreps.little.dim", &T.full_dim) || section_find("irreps.little.type", &T.irr_type))
         return 1;
     T.ready = 1;
     return 0;
@@ -432,7 +432,7 @@ int k_source_kparam_of_visible(int sg, int kslot, const int64_t *visible_words, 
 {
     if (load()) return -1;
     if (!conv2ml_ready) {
-        if (section_find("little.little_k_star_conv2ml_pointer", &conv2ml)) return -1;
+        if (section_find("k.star.conv2ml_start", &conv2ml)) return -1;
         conv2ml_ready = 1;
     }
     int lattice = geo_sg_lattice(sg);

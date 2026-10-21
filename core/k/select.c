@@ -23,8 +23,8 @@ static struct {
 static int load(void)
 {
     if (T.ready) return 0;
-    if (sel_tables() || section_find("little.little_k_dim", &T.k_dim) ||
-        section_find("magnetic.mag_iso_irrep_pointer", &T.mag_pointer))
+    if (sel_tables() || section_find("k.slots.dim", &T.k_dim) ||
+        section_find("isotropy.magnetic.by_old_start", &T.mag_pointer))
         return md_fail(MDE_VALUE, "k-point Source tables are inconsistent");
     T.ready = 1;
     return 0;

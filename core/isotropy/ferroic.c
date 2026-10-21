@@ -45,8 +45,8 @@ static int fixed(const int64_t (*ops)[5], int n, int64_t *polar, int64_t *strain
 static int load(void)
 {
     if (ready) return 0;
-    if (geo_load() || section_find("space.ipoint_op", &point_op) || section_find("little.little_irr_k", &little_k) ||
-        section_find("little.little_irr_full_dim", &full_dim) || section_find("little.little_k_dim", &k_dim))
+    if (geo_load() || section_find("group.point_ops.matrix", &point_op) || section_find("irreps.little.k", &little_k) ||
+        section_find("irreps.little.dim", &full_dim) || section_find("k.slots.dim", &k_dim))
         return 1;
     ready = 1;
     return 0;

@@ -39,17 +39,17 @@ static int load(void)
         const char *name;
         section_view *view;
     } items[] = {
-        {"little.little_irr_space_group", &T.sg},
-        {"little.little_irr_full_dim", &T.dim},
-        {"little.little_irr_type", &T.type},
-        {"little.little_irr_old", &T.old},
-        {"little.little_irr_k", &T.kslot},
-        {"little.little_k_star_count", &T.star_count},
-        {"wyckoff.iwyckoff_pg_irrep", &T.pg_irrep},
-        {"irreps.irrep_image", &T.irrep_image},
-        {"images.image_type", &T.image_type},
-        {"images.image_dimension", &T.image_dimension},
-        {"wyckoff.iwyckoff_pg_vector_reps", &T.vector_reps},
+        {"irreps.little.sg", &T.sg},
+        {"irreps.little.dim", &T.dim},
+        {"irreps.little.type", &T.type},
+        {"irreps.little.old", &T.old},
+        {"irreps.little.k", &T.kslot},
+        {"k.star.arm_count", &T.star_count},
+        {"settings.site_point_groups.irrep", &T.pg_irrep},
+        {"irreps.old.image", &T.irrep_image},
+        {"images.images.type", &T.image_type},
+        {"images.images.dimension", &T.image_dimension},
+        {"settings.site_point_groups.vector_reps", &T.vector_reps},
     };
     for (size_t i = 0; i < sizeof items / sizeof items[0]; i++)
         if (section_find(items[i].name, items[i].view) || !section_is_int(items[i].view)) return PE_TABLES;

@@ -36,19 +36,19 @@ int sel_mag_tables(void)
     struct {
         const char *name;
         section_view *view;
-    } list[] = {{"magnetic.mag_point_op_r", &T.op_r},
-                {"magnetic.mag_point_op_mag2nonmag", &T.mag2nonmag},
-                {"magnetic.mag_bns_label", &T.bns},
-                {"magnetic.mag_nlabel", &T.nlabel},
-                {"magnetic.mag_iso_irrep_pointer", &T.iso_pointer},
-                {"magnetic.mag_iso_basis", &T.iso_basis},
-                {"magnetic.mag_iso_origin", &T.iso_origin},
-                {"magnetic.mag_iso_orderparam_label", &T.iso_label},
-                {"magnetic.mag_iso_orderparam_pointer", &T.iso_op_pointer},
-                {"magnetic.mag_iso_orderparam", &T.iso_op},
-                {"space.ipoint_op", &T.point_op},
+    } list[] = {{"group.magnetic_ops.reversed", &T.op_r},
+                {"group.magnetic_ops.ordinary", &T.mag2nonmag},
+                {"group.magnetic_groups.bns", &T.bns},
+                {"group.magnetic_groups.og", &T.nlabel},
+                {"isotropy.magnetic.by_old_start", &T.iso_pointer},
+                {"isotropy.magnetic.basis", &T.iso_basis},
+                {"isotropy.magnetic.origin", &T.iso_origin},
+                {"isotropy.magnetic.label", &T.iso_label},
+                {"isotropy.magnetic.direction_codes_start", &T.iso_op_pointer},
+                {"isotropy.magnetic.direction_codes", &T.iso_op},
+                {"group.point_ops.matrix", &T.point_op},
                 {"const.values", &T.const_values},
-                {"little.little_irr_space_group", &T.irr_sg}};
+                {"irreps.little.sg", &T.irr_sg}};
     if (sel_tables() || mag_tables()) return 1;
     for (size_t i = 0; i < sizeof list / sizeof list[0]; i++)
         if (section_find(list[i].name, list[i].view)) return 1;

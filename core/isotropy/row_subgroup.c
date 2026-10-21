@@ -33,12 +33,12 @@ static int load(family *f)
 {
     if (f->ready) return f->ready < 0;
     f->ready = -1;
-    const char *names[2][3] = {{"isotropy.isotropy_irrep_pointer", "isotropy.isotropy_orderparam_pointer", "isotropy.isotropy_orderparam"},
-                               {"magnetic.mag_iso_irrep_pointer", "magnetic.mag_iso_orderparam_pointer", "magnetic.mag_iso_orderparam"}};
+    const char *names[2][3] = {{"isotropy.ordinary.by_old_start", "isotropy.ordinary.direction_codes_start", "isotropy.ordinary.direction_codes"},
+                               {"isotropy.magnetic.by_old_start", "isotropy.magnetic.direction_codes_start", "isotropy.magnetic.direction_codes"}};
     if (geo_load() || (f->magnetic && mag_tables()) || section_find(names[f->magnetic][0], &f->irrep_pointer) ||
         section_find(names[f->magnetic][1], &f->op_pointer) || section_find(names[f->magnetic][2], &f->op) ||
         section_find("const.values", &values) ||
-        section_find("little.little_irr_old", &little_old))
+        section_find("irreps.little.old", &little_old))
         return 1;
     f->rows = section_count(&f->op_pointer);
     f->olds = section_count(&f->irrep_pointer);

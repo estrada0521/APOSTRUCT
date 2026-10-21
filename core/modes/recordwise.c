@@ -48,9 +48,9 @@ static int projection_tables(int site_pg, int vector_basis_id, int vector_settin
     static section_view reps_table, basis_codes, point_table, values;
     static int ready;
     if (!ready) {
-        if (section_find("wyckoff.iwyckoff_pg_vector_reps", &reps_table) ||
-            section_find("wyckoff.iwyckoff_pg_vector_basis", &basis_codes) ||
-            section_find("space.ipoint_op", &point_table) || section_find("const.values", &values))
+        if (section_find("settings.site_point_groups.vector_reps", &reps_table) ||
+            section_find("settings.site_settings.vector_basis", &basis_codes) ||
+            section_find("group.point_ops.matrix", &point_table) || section_find("const.values", &values))
             return RW_TABLES;
         ready = 1;
     }

@@ -95,10 +95,10 @@ static struct {
 static int tables(void)
 {
     if (T.ready) return 0;
-    if (section_find("little.little_irr_full_dim", &T.full_dim) || section_find("little.little_irr_type", &T.irr_type) ||
-        section_find("little.little_irr_space_group", &T.irr_sg) || section_find("little.little_irr_k", &T.irr_k) ||
-        section_find("little.little_k_star_count", &T.star_count) || section_find("little.little_k_star_ml_pointer", &T.star_ml_pointer) ||
-        section_find("little.little_k_star_special", &T.star_special) ||
+    if (section_find("irreps.little.dim", &T.full_dim) || section_find("irreps.little.type", &T.irr_type) ||
+        section_find("irreps.little.sg", &T.irr_sg) || section_find("irreps.little.k", &T.irr_k) ||
+        section_find("k.star.arm_count", &T.star_count) || section_find("k.star.arm_start", &T.star_ml_pointer) ||
+        section_find("k.star.special_arms", &T.star_special) ||
         geo_load())
         return 1;
     T.ready = 1;

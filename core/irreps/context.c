@@ -36,10 +36,10 @@ static int load(void)
         const char *name;
         section_view *view;
     } items[] = {
-        {"little.little_irr_space_group", &L.sg},     {"little.little_irr_full_dim", &L.dim},
-        {"little.little_irr_k", &L.kslot},            {"little.little_k_star_count", &L.star_count},
-        {"little.little_k_star_ml_pointer", &L.star_pointer}, {"little.little_k_dim", &L.k_dim},
-        {"little.little_k_star_special", &L.star_special},   {"little.little_k_star", &L.star},
+        {"irreps.little.sg", &L.sg},     {"irreps.little.dim", &L.dim},
+        {"irreps.little.k", &L.kslot},            {"k.star.arm_count", &L.star_count},
+        {"k.star.arm_start", &L.star_pointer}, {"k.slots.dim", &L.k_dim},
+        {"k.star.special_arms", &L.star_special},   {"k.star.arms", &L.star},
     };
     for (size_t i = 0; i < sizeof items / sizeof items[0]; i++)
         if (section_find(items[i].name, items[i].view) || !section_is_int(items[i].view)) return IR_TABLES;
@@ -56,7 +56,7 @@ int old_irrep_space_group(int old_id)
     static section_view pointer;
     static int ready;
     if (!ready) {
-        if (section_find("irreps.irrep_space_group_pointer", &pointer) || section_count(&pointer) < 231) return 0;
+        if (section_find("irreps.old.by_sg_start", &pointer) || section_count(&pointer) < 231) return 0;
         ready = 1;
     }
     if (old_id < 1 || old_id >= section_int(&pointer, 230)) return 0;
@@ -73,7 +73,7 @@ int old_irrep_space_group(int old_id)
 int old_irrep_count(void)
 {
     section_view pointer;
-    return section_find("irreps.irrep_space_group_pointer", &pointer) || section_count(&pointer) < 231 ? 0 : (int)section_int(&pointer, 230) - 1;
+    return section_find("irreps.old.by_sg_start", &pointer) || section_count(&pointer) < 231 ? 0 : (int)section_int(&pointer, 230) - 1;
 }
 
 /* 1 when the tables list a little irrep of sg at k slot kslot */

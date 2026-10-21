@@ -133,10 +133,10 @@ static void encode_row(const int64_t *row, int64_t den, int64_t *w)
 static int build(void)
 {
     section_view little_k, k_dim, irr_sg, irr_k, flips, orders, matrices, matrix_index;
-    if (geo_load() || section_find_stored("little.little_k", &little_k) || section_find_stored("little.little_k_dim", &k_dim) ||
-        section_find_stored("little.little_irr_space_group", &irr_sg) || section_find_stored("little.little_irr_k", &irr_k) ||
-        section_find_stored("little.little_k_star_flip", &flips) || section_find_stored("little.little_k_star_order", &orders) ||
-        section_find_stored("little.little_k_conv2ml", &matrices) || section_find_stored("little.little_k_conv2ml_index", &matrix_index))
+    if (geo_load() || section_find_stored("k.slots.vector", &little_k) || section_find_stored("k.slots.dim", &k_dim) ||
+        section_find_stored("irreps.little.sg", &irr_sg) || section_find_stored("irreps.little.k", &irr_k) ||
+        section_find_stored("k.star_flips.flip", &flips) || section_find_stored("k.star_orders.order", &orders) ||
+        section_find_stored("k.conv2ml.matrix", &matrices) || section_find_stored("k.space_group_slots.conv2ml", &matrix_index))
         return 1;
     static unsigned char present[SLOTS];
     for (int64_t g = 0; g < section_count(&irr_sg); g++) {
@@ -221,12 +221,12 @@ static int build(void)
     struct {
         const char *name;
         int64_t *data, count;
-    } made[6] = {{"little.little_k_star", K.star, K.nstar * 16},
-                 {"little.little_k_star_special", K.special, K.nspecial * 4},
-                 {"little.little_k_star_ml_pointer", K.pointer, SLOTS},
-                 {"little.little_k_star_count", K.count, SLOTS},
-                 {"little.little_k_star_minusk", K.minusk, SLOTS},
-                 {"little.little_k_star_conv2ml_pointer", K.conv2ml, SLOTS}};
+    } made[6] = {{"k.star.arms", K.star, K.nstar * 16},
+                 {"k.star.special_arms", K.special, K.nspecial * 4},
+                 {"k.star.arm_start", K.pointer, SLOTS},
+                 {"k.star.arm_count", K.count, SLOTS},
+                 {"k.star.minus_k", K.minusk, SLOTS},
+                 {"k.star.conv2ml_start", K.conv2ml, SLOTS}};
     for (int i = 0; i < 6; i++) {
         blob_section *e = &K.entries[i];
         strncpy(e->name, made[i].name, BLOB_NAME_SIZE - 1);
@@ -240,9 +240,9 @@ static int build(void)
 /* section_find for the star sections; 1 when name is not one of them */
 int star_rule_section(const char *name, section_view *view, int *handled)
 {
-    static const char *const names[6] = {"little.little_k_star",        "little.little_k_star_special",
-                                         "little.little_k_star_ml_pointer", "little.little_k_star_count",
-                                         "little.little_k_star_minusk", "little.little_k_star_conv2ml_pointer"};
+    static const char *const names[6] = {"k.star.arms",        "k.star.special_arms",
+                                         "k.star.arm_start", "k.star.arm_count",
+                                         "k.star.minus_k", "k.star.conv2ml_start"};
     int64_t *data[6];
     *handled = 0;
     for (int i = 0; i < 6; i++)

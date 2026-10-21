@@ -1033,8 +1033,8 @@ static int emit_tuple(const int32_t *domains, const int64_t *kept_basis, const r
 static int load_tables(void)
 {
     if (T.ready) return 0;
-    if (sel_tables() || sel_mag_tables() || geo_load() || section_find("little.little_irr_space_group", &T.irr_sg) ||
-        section_find("space.ipoint_op", &T.point_op) || section_find("magnetic.mag_point_op_mag2nonmag", &T.mag2nonmag))
+    if (sel_tables() || sel_mag_tables() || geo_load() || section_find("irreps.little.sg", &T.irr_sg) ||
+        section_find("group.point_ops.matrix", &T.point_op) || section_find("group.magnetic_ops.ordinary", &T.mag2nonmag))
         return md_fail(MDE_VALUE, "coupled Source tables are inconsistent");
     T.ready = 1;
     return 0;

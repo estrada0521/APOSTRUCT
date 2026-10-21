@@ -24,8 +24,8 @@ static struct {
 static int tables(void)
 {
     if (T.ready) return 0;
-    if (sel_tables() || sel_mag_tables() || section_find("little.little_irr_space_group", &T.irr_sg) || section_find("little.little_irr_k", &T.irr_k) ||
-        section_find("little.little_irr_full_dim", &T.irr_full_dim) || section_find("little.little_k_dim", &T.k_dim))
+    if (sel_tables() || sel_mag_tables() || section_find("irreps.little.sg", &T.irr_sg) || section_find("irreps.little.k", &T.irr_k) ||
+        section_find("irreps.little.dim", &T.irr_full_dim) || section_find("k.slots.dim", &T.k_dim))
         return 1;
     T.ready = 1;
     return 0;

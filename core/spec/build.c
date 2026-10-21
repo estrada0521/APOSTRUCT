@@ -128,8 +128,8 @@ static struct {
 static int load(void)
 {
     if (T.ready) return 0;
-    if (geo_load() || section_find("magnetic.mag_point_op_mag2nonmag", &T.mag2nonmag) ||
-        section_find("little.little_irr_space_group", &T.irr_sg) || section_find("little.little_irr_old", &T.old))
+    if (geo_load() || section_find("group.magnetic_ops.ordinary", &T.mag2nonmag) ||
+        section_find("irreps.little.sg", &T.irr_sg) || section_find("irreps.little.old", &T.old))
         return sp_fail(PY_VALUE, "spec stage Source tables are missing");
     T.ready = 1;
     return 0;
@@ -1382,8 +1382,8 @@ int spec_static(int sg, int selected_old_id, int selected_row_id, int has_frame,
         return finish(sp_fail(PY_INDEX, "selected isotropy row is out of range"));
     int64_t default_basis[9], default_origin[4];
     if (!has_frame) {
-        if (section_find("isotropy.isotropy_basis", &T.iso_basis) ||
-            section_find("isotropy.isotropy_origin", &T.iso_origin))
+        if (section_find("isotropy.ordinary.basis", &T.iso_basis) ||
+            section_find("isotropy.ordinary.origin", &T.iso_origin))
             return finish(sp_fail(PY_VALUE, "selected isotropy frame is missing"));
         child_sg = isotropy_row_subgroup(selected_row_id);
         for (int j = 0; j < 9; j++) default_basis[j] = section_int(&T.iso_basis, 9 * (selected_row_id - 1) + j);

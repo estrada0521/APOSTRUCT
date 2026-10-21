@@ -16,7 +16,7 @@ static int load(family *f, const char *irrep_pointer, const char *op_pointer, co
 {
     if (f->ready) return 0;
     if (section_find(irrep_pointer, &f->irrep_pointer) || section_find(op_pointer, &f->op_pointer) || section_find(op, &f->op) ||
-        section_find("little.little_irr_old", &f->little_old) || section_find("little.little_irr_full_dim", &f->full_dim))
+        section_find("irreps.little.old", &f->little_old) || section_find("irreps.little.dim", &f->full_dim))
         return 1;
     f->last_code = section_count(&f->op);
     while (f->last_code > 0 && section_int(&f->op, f->last_code - 1) == 0) f->last_code--;
@@ -27,10 +27,10 @@ static int load(family *f, const char *irrep_pointer, const char *op_pointer, co
 static family *of(int is_magnetic)
 {
     if (is_magnetic)
-        return load(&magnetic, "magnetic.mag_iso_irrep_pointer", "magnetic.mag_iso_orderparam_pointer", "magnetic.mag_iso_orderparam")
+        return load(&magnetic, "isotropy.magnetic.by_old_start", "isotropy.magnetic.direction_codes_start", "isotropy.magnetic.direction_codes")
                    ? 0
                    : &magnetic;
-    return load(&ordinary, "isotropy.isotropy_irrep_pointer", "isotropy.isotropy_orderparam_pointer", "isotropy.isotropy_orderparam")
+    return load(&ordinary, "isotropy.ordinary.by_old_start", "isotropy.ordinary.direction_codes_start", "isotropy.ordinary.direction_codes")
                ? 0
                : &ordinary;
 }

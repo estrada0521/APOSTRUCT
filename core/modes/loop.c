@@ -66,10 +66,10 @@ static struct {
 static int tables(void)
 {
     if (T.ready) return 0;
-    if (section_find("little.little_irr_type", &T.irr_type) || section_find("little.little_irr_space_group", &T.irr_sg) ||
-        section_find("little.little_irr_k", &T.irr_k) || section_find("little.little_k_star_count", &T.star_count) ||
-        section_find("little.little_irr_full_dim", &T.full_dim) || section_find("wyckoff.iwyckoff_pg_irrep", &T.pg_irrep) ||
-        section_find("irreps.irrep_label_pg", &T.irrep_label_pg))
+    if (section_find("irreps.little.type", &T.irr_type) || section_find("irreps.little.sg", &T.irr_sg) ||
+        section_find("irreps.little.k", &T.irr_k) || section_find("k.star.arm_count", &T.star_count) ||
+        section_find("irreps.little.dim", &T.full_dim) || section_find("settings.site_point_groups.irrep", &T.pg_irrep) ||
+        section_find("irreps.old.mulliken", &T.irrep_label_pg))
         return 1;
     T.ready = 1;
     return 0;
@@ -1757,8 +1757,8 @@ static struct {
 static int64_t little_gid_of_label(int sg, const char *label)
 {
     if (!S.ready) {
-        if (section_find("irreps.irrep_space_group_pointer", &S.irrep_pointer) ||
-            section_find("little.little_irr_old", &S.irr_old) || section_find("little.little_irr_space_group", &S.irr_sg))
+        if (section_find("irreps.old.by_sg_start", &S.irrep_pointer) ||
+            section_find("irreps.little.old", &S.irr_old) || section_find("irreps.little.sg", &S.irr_sg))
             return 0;
         S.ready = 1;
     }

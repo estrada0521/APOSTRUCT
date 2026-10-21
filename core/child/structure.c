@@ -55,14 +55,14 @@ static struct {
 int md_tables(void)
 {
     if (T.ready) return 0;
-    if (geo_load() || section_find("space.ispace_inter_number", &T.inter_number) ||
-        section_find("space.ispace_inter_choice", &T.inter_choice) || section_find("space.space_inter_label_short", &T.label_short) ||
-        section_find("wyckoff.wyckoff_label", &T.wyckoff_label) || section_find("wyckoff.iwyckoff_pointer", &T.wyckoff_pointer) ||
-        section_find("wyckoff.iwyckoff_count", &T.wyckoff_count) || section_find("wyckoff.iwyckoff_pg", &T.wyckoff_pg) ||
-        section_find("space.ispace_inter_wyckoff_pointer", &T.inter_wyckoff_pointer) ||
-        section_find("space.ispace_inter_wyckoff_fract", &T.inter_wyckoff_fract) || mag_tables() ||
-        section_find("magnetic.mag_type4_pointer", &T.mag_type4_pointer) ||
-        section_find("magnetic.mag_type4_supergroup", &T.mag_type4_supergroup) || section_find("magnetic.mag_nlabel", &T.mag_nlabel))
+    if (geo_load() || section_find("settings.inter_settings.number", &T.inter_number) ||
+        section_find("group.space_groups.inter_choice", &T.inter_choice) || section_find("settings.inter_settings.short", &T.label_short) ||
+        section_find("settings.wyckoff.label", &T.wyckoff_label) || section_find("settings.wyckoff.by_sg_start", &T.wyckoff_pointer) ||
+        section_find("settings.wyckoff.by_sg_count", &T.wyckoff_count) || section_find("settings.wyckoff.site_pg", &T.wyckoff_pg) ||
+        section_find("settings.inter_settings.wyckoff_start", &T.inter_wyckoff_pointer) ||
+        section_find("settings.inter_settings.wyckoff", &T.inter_wyckoff_fract) || mag_tables() ||
+        section_find("group.magnetic_groups.type4", &T.mag_type4_pointer) ||
+        section_find("group.type4_supergroups.supergroup", &T.mag_type4_supergroup) || section_find("group.magnetic_groups.og", &T.mag_nlabel))
         return 1;
     T.ready = 1;
     return 0;

@@ -775,12 +775,25 @@ static long long option(const char *options, const char *key, long long fallback
 enum { MAX_TOKENS = 1 << 16 };
 
 /* one blob section from its layout line: SECTION FILE COLUMN MODE [OPTIONS] */
+static char byu_names[1 << 16];
+static size_t byu_used;
+static int byu_count;
+
 static void render_section(const char *dir, char *line)
 {
     char section[BLOB_NAME_SIZE], file[512], column[128], mode[32];
     int consumed = 0;
-    if (sscanf(line, "%63s %511s %127s %31s %n", section, file, column, mode, &consumed) < 4) die("bad layout line", line);
+    if (sscanf(line, "%95s %511s %127s %31s %n", section, file, column, mode, &consumed) < 4) die("bad layout line", line);
     const char *options = line + consumed;
+    const char *byu = strstr(options, "byu=");
+    if (byu) {
+        size_t n = strcspn(byu + 4, " \t");
+        int w = snprintf(byu_names + byu_used, sizeof byu_names - byu_used, "%s=%.*s", section, (int)n, byu + 4);
+        if (w < 0 || (size_t)w >= sizeof byu_names - byu_used) die("too many BYU names", section);
+        byu_used += (size_t)w + 1;
+        byu_count++;
+    }
+    if (!strcmp(mode, "derived")) return;
     char *dot = strchr(section, '.');
     if (!dot) die("section without table", section);
     *dot = 0;
@@ -906,6 +919,15 @@ int main(int argc, char **argv)
 {
     if (argc != 3) die("usage: source_blob_build <Source dir> <output file>", 0);
     int tables = load_layout(argv[1]);
+    text_buf names = {0};
+    put(&names, "", 0);
+    for (size_t at = 0; at < byu_used; at += strlen(byu_names + at) + 1) {
+        put(&names, "\"", 1);
+        put(&names, byu_names + at, strlen(byu_names + at));
+        put_token(&names, "\"", 1);
+    }
+    parse_block("source", "byu_names", names.data, names.used);
+    free(names.data);
     load_constants(argv[1]);
     const char *files[64];
     int file_count = 0;

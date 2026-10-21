@@ -36,9 +36,9 @@ static struct {
 static int load(void)
 {
     if (T.ready) return 0;
-    if (section_find("wyckoff.iwyckoff_pg_irrep", &T.pg_irrep) || section_find("irreps.irrep_image", &T.irrep_image) ||
-        section_find("images.image_dimension", &T.image_dimension) ||
-        section_find("irreps.irrep_label_pg", &T.label_pg))
+    if (section_find("settings.site_point_groups.irrep", &T.pg_irrep) || section_find("irreps.old.image", &T.irrep_image) ||
+        section_find("images.images.dimension", &T.image_dimension) ||
+        section_find("irreps.old.mulliken", &T.label_pg))
         return BL_TABLES;
     T.ready = 1;
     return 0;

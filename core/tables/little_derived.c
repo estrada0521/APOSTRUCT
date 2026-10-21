@@ -20,9 +20,9 @@
 int section_find_stored(const char *name, section_view *view);
 
 enum { NAMES = 7 };
-static const char *const names[NAMES] = {"little.little_irr_full_dim", "little.little_irr_old", "little.little_irr_full_matrices_pointer",
-                                         "little.little_irr_full_matrices_position", "little.little_irr_full_matrices_irr_pointer",
-                                         "little.little_irr_irrnum", "little.little_irr_type"};
+static const char *const names[NAMES] = {"irreps.little.dim", "irreps.little.old", "irreps.little.matrix_start",
+                                         "irreps.little.positions", "irreps.little.position_start",
+                                         "irreps.little.number", "irreps.little.type"};
 
 static struct {
     int ready, failed;
@@ -58,10 +58,10 @@ static int seed_positions(int sg, int *out)
 static int build(void)
 {
     section_view sg, kslot, k_dim, lattice, triples, partner, real2;
-    if (geo_load() || section_find_stored("little.little_irr_space_group", &sg) || section_find_stored("little.little_irr_k", &kslot) ||
-        section_find_stored("little.little_irr_cc", &partner) || section_find_stored("little.little_irr_real2_pointer", &real2) ||
-        section_find_stored("little.little_k_dim", &k_dim) || section_find_stored("space.ispace_lattice", &lattice) ||
-        section_find_stored("little.little_irr_full_matrices", &triples))
+    if (geo_load() || section_find_stored("irreps.little.sg", &sg) || section_find_stored("irreps.little.k", &kslot) ||
+        section_find_stored("irreps.little.partner", &partner) || section_find_stored("irreps.little.real_form_start", &real2) ||
+        section_find_stored("k.slots.dim", &k_dim) || section_find_stored("group.space_groups.lattice", &lattice) ||
+        section_find_stored("irreps.little.matrices", &triples))
         return 1;
     int64_t count = section_count(&sg), entries = section_count(&triples) / 3, last = 0, positions = 0, olds = 0;
     int seeds[231][GEO_MAX_OPS], nseeds[231] = {0};
@@ -141,7 +141,7 @@ int little_derived_section(const char *name, section_view *view, int *handled)
 int little_full_dim(int gid)
 {
     section_view view;
-    if (section_find("little.little_irr_full_dim", &view) || gid < 1 || gid > section_count(&view)) return 0;
+    if (section_find("irreps.little.dim", &view) || gid < 1 || gid > section_count(&view)) return 0;
     return (int)section_int(&view, gid - 1);
 }
 
@@ -149,6 +149,6 @@ int little_full_dim(int gid)
 int little_old_id(int gid)
 {
     section_view view;
-    if (section_find("little.little_irr_old", &view) || gid < 1 || gid > section_count(&view)) return 0;
+    if (section_find("irreps.little.old", &view) || gid < 1 || gid > section_count(&view)) return 0;
     return (int)section_int(&view, gid - 1);
 }

@@ -35,9 +35,9 @@ static int64_t failed_gid, failed_status;
 static int load(void)
 {
     if (T.ready) return 0;
-    if (geo_load() || section_find("little.little_irr_space_group", &T.sg) || section_find("little.little_irr_k", &T.kslot) ||
-        section_find("little.little_irr_full_dim", &T.full_dim) || section_find("little.little_k_label", &T.k_label) ||
-        section_find("little.little_k_dim", &T.k_dim))
+    if (geo_load() || section_find("irreps.little.sg", &T.sg) || section_find("irreps.little.k", &T.kslot) ||
+        section_find("irreps.little.dim", &T.full_dim) || section_find("k.slots.label", &T.k_label) ||
+        section_find("k.slots.dim", &T.k_dim))
         return SR_TABLES;
     T.ready = 1;
     return 0;

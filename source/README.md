@@ -6,6 +6,10 @@ computes from it (group elements and products, isotropy subgroups, irrep dimensi
 the pointers between tables, ...) is left out. `build.sh` compiles the tables into `bin/source.blob`
 (`blob_build.c`), and `layout.txt` says how each table column becomes a blob section.
 
+A blob section is named `directory.table.column` (with `_start` and `_count` for the pointers the build renders, and
+`by_COLUMN_start` / `by_COLUMN_count` for the records grouped by a key); `layout.txt` also records each section's name in
+the BYU tables (`byu=`), which `byu_export` and the verifier use.
+
 Each table file starts with a tab-separated header; every later line is one entity, with tab-separated fields. A
 number field is a space-separated list, a text field is the text.
 

@@ -128,12 +128,18 @@ class SourceBlob:
                 "<96sIIQQQ", self._data, index_offset + 128 * position
             )
             self._index[name.split(b"\0")[0].decode()] = (kind, length, offset)
+        # the verifier reads the Source in BYU's vocabulary: layout.txt records each section's BYU name
+        self._byu = dict(reversed(pair.split("=", 1)) for pair in self._section("source.byu_names"))
 
     def names(self, table: str) -> tuple[str, ...]:
+        """the BYU names of the stored sections of a BYU table"""
         prefix = table + "."
-        return tuple(name[len(prefix):] for name in self._index if name.startswith(prefix))
+        return tuple(byu[len(prefix):] for byu, name in self._byu.items() if byu.startswith(prefix) and name in self._index)
 
     def section(self, name: str) -> tuple[Any, ...]:
+        return self._section(self._byu.get(name, name))
+
+    def _section(self, name: str) -> tuple[Any, ...]:
         kind, length, offset = self._index[name]
         if kind == 7:
             offsets = np.frombuffer(self._data, "<i8", length + 1, offset).tolist()

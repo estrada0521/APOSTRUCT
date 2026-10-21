@@ -62,21 +62,21 @@ static int load(void)
         section_view *view;
         int text;
     } items[] = {
-        {"magnetic.mag_point_op_mag2nonmag", &M.m2n, 0},
-        {"magnetic.mag_point_op_r", &M.r, 0},
-        {"magnetic.mag_nlabel", &M.nlabel, 1},
-        {"magnetic.mag_type4_pointer", &M.t4_pointer, 0},
-        {"magnetic.mag_type4_supergroup", &M.t4_sg, 0},
-        {"magnetic.mag_type4_supergroup_basis", &M.t4_basis, 0},
-        {"magnetic.mag_type4_supergroup_origin", &M.t4_origin, 0},
-        {"magnetic.mag_gen_count", &M.gen_count, 0},
-        {"magnetic.mag_gen", &M.gen, 0},
-        {"magnetic.mag_point_op_code", &M.op_code, 0},
-        {"magnetic.mag_point_group_code", &M.point_group_code, 0},
-        {"space.ipoint_op", &M.point_op, 0},
-        {"space.ispace_lattice", &M.lattice, 0},
-        {"space.space_label_bc", &M.label_bc, 1},
-        {"magnetic.mag_space_group_pointer", &M.sg_pointer, 0},
+        {"group.magnetic_ops.ordinary", &M.m2n, 0},
+        {"group.magnetic_ops.reversed", &M.r, 0},
+        {"group.magnetic_groups.og", &M.nlabel, 1},
+        {"group.magnetic_groups.type4", &M.t4_pointer, 0},
+        {"group.type4_supergroups.supergroup", &M.t4_sg, 0},
+        {"group.type4_supergroups.basis", &M.t4_basis, 0},
+        {"group.type4_supergroups.origin", &M.t4_origin, 0},
+        {"group.magnetic_groups.generator_count", &M.gen_count, 0},
+        {"group.magnetic_groups.generators", &M.gen, 0},
+        {"group.magnetic_ops.code", &M.op_code, 0},
+        {"group.magnetic_point_groups.code", &M.point_group_code, 0},
+        {"group.point_ops.matrix", &M.point_op, 0},
+        {"group.space_groups.lattice", &M.lattice, 0},
+        {"group.space_groups.label_bc", &M.label_bc, 1},
+        {"group.magnetic_groups.by_sg_start", &M.sg_pointer, 0},
     };
     for (size_t i = 0; i < sizeof items / sizeof items[0]; i++) {
         if (section_find(items[i].name, items[i].view)) return MG_TABLES;
@@ -1187,7 +1187,7 @@ static int compose_iso(int sg, const int64_t *left, const int64_t *right, int64_
     int64_t lattice = at(&M.lattice, sg - 1);
     int64_t backward[9], forward[9], point[9];
     section_view lattice_ml, lattice_den;
-    if (section_find("space.lattice_ml", &lattice_ml) || section_find("space.lattice_ml_denom", &lattice_den)) return 1;
+    if (section_find("group.lattices.ml", &lattice_ml) || section_find("group.lattices.ml_denom", &lattice_den)) return 1;
     for (int i = 0; i < 9; i++) {
         backward[i] = at(&lattice_ml, (lattice - 1) * 36 + i);
         forward[i] = at(&lattice_ml, (lattice - 1) * 36 + 9 + i);

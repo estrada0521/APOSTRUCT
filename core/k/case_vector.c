@@ -48,9 +48,9 @@ int case_k_records(int sg, int kslot, int param_count, const int64_t *params, in
     static section_view little_k, k_dim, star, conv2ml;
     static int ready;
     if (!ready) {
-        if (geo_load() || section_find("little.little_k", &little_k) || section_find("little.little_k_dim", &k_dim) ||
-            section_find("little.little_k_star", &star) ||
-            section_find("little.little_k_star_conv2ml_pointer", &conv2ml))
+        if (geo_load() || section_find("k.slots.vector", &little_k) || section_find("k.slots.dim", &k_dim) ||
+            section_find("k.star.arms", &star) ||
+            section_find("k.star.conv2ml_start", &conv2ml))
             return KV_TABLES;
         ready = 1;
     }
@@ -183,11 +183,11 @@ int case_display_kvector(int sg, int kslot, int param_count, const int64_t *para
     static section_view little_sg, little_kslot, star, special, star_count, star_pointer, k_dim;
     static int ready;
     if (!ready) {
-        if (geo_load() || section_find("little.little_irr_space_group", &little_sg) ||
-            section_find("little.little_irr_k", &little_kslot) || section_find("little.little_k_star", &star) ||
-            section_find("little.little_k_star_special", &special) ||
-            section_find("little.little_k_star_count", &star_count) ||
-            section_find("little.little_k_star_ml_pointer", &star_pointer) || section_find("little.little_k_dim", &k_dim))
+        if (geo_load() || section_find("irreps.little.sg", &little_sg) ||
+            section_find("irreps.little.k", &little_kslot) || section_find("k.star.arms", &star) ||
+            section_find("k.star.special_arms", &special) ||
+            section_find("k.star.arm_count", &star_count) ||
+            section_find("k.star.arm_start", &star_pointer) || section_find("k.slots.dim", &k_dim))
             return KV_TABLES;
         ready = 1;
     }

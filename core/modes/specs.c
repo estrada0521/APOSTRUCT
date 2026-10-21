@@ -40,7 +40,7 @@ static struct {
 static int little_tables(void)
 {
     if (L.ready) return 0;
-    if (section_find("little.little_irr_old", &L.old) || section_find("little.little_irr_full_dim", &L.full_dim)) return 1;
+    if (section_find("irreps.little.old", &L.old) || section_find("irreps.little.dim", &L.full_dim)) return 1;
     L.ready = 1;
     return 0;
 }
@@ -624,7 +624,7 @@ static int build_magnetic_frame(md_request *r, int require_gid_first, magnetic_f
         }
     }
     if (!G.ready) {
-        if (section_find("little.little_irr_space_group", &G.irr_sg)) {
+        if (section_find("irreps.little.sg", &G.irr_sg)) {
             free(orderparam);
             return md_fail(MDE_VALUE, "mode Source tables are inconsistent");
         }

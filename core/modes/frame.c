@@ -67,22 +67,22 @@ static struct {
 static int load(void)
 {
     if (T.ready) return 0;
-    if (geo_load() || section_find("wyckoff.iwyckoff_pointer", &T.w_pointer) || section_find("wyckoff.iwyckoff_count", &T.w_count) ||
-        section_find("wyckoff.wyckoff_label", &T.w_label) || section_find("wyckoff.iwyckoff_pg", &T.w_pg) ||
-        section_find("wyckoff.iwyckoff_pg_vector_reps", &T.vector_reps) ||
-        section_find("little.little_irr_space_group", &T.irr_sg) || section_find("little.little_irr_old", &T.irr_old) ||
-        section_find("little.little_irr_full_dim", &T.full_dim) ||
-        section_find("little.little_irr_type", &T.irr_type) || section_find("little.little_irr_k", &T.irr_k) ||
-        section_find("little.little_k_label", &T.k_label) ||
-        section_find("isotropy.isotropy_irrep_pointer", &T.iso_irrep_pointer) ||
+    if (geo_load() || section_find("settings.wyckoff.by_sg_start", &T.w_pointer) || section_find("settings.wyckoff.by_sg_count", &T.w_count) ||
+        section_find("settings.wyckoff.label", &T.w_label) || section_find("settings.wyckoff.site_pg", &T.w_pg) ||
+        section_find("settings.site_point_groups.vector_reps", &T.vector_reps) ||
+        section_find("irreps.little.sg", &T.irr_sg) || section_find("irreps.little.old", &T.irr_old) ||
+        section_find("irreps.little.dim", &T.full_dim) ||
+        section_find("irreps.little.type", &T.irr_type) || section_find("irreps.little.k", &T.irr_k) ||
+        section_find("k.slots.label", &T.k_label) ||
+        section_find("isotropy.ordinary.by_old_start", &T.iso_irrep_pointer) ||
         
-        section_find("isotropy.isotropy_direction", &T.iso_direction) || section_find("isotropy.isotropy_basis", &T.iso_basis) ||
-        section_find("isotropy.isotropy_origin", &T.iso_origin) ||
-        section_find("isotropy.isotropy_orderparam_pointer", &T.iso_op_pointer) ||
-        section_find("isotropy.isotropy_orderparam", &T.iso_op) || section_find("const.values", &T.const_values) ||
-        section_find("space.ispace_point_group", &T.sg_point_group) || section_find("space.ipoint_group_order", &T.pg_order) ||
-        section_find("space.ipoint_group_gen_count", &T.pg_gen_count) || section_find("space.ipoint_group_gen", &T.pg_gen) ||
-        section_find("space.ispace_lattice", &T.lattice))
+        section_find("isotropy.ordinary.image_direction", &T.iso_direction) || section_find("isotropy.ordinary.basis", &T.iso_basis) ||
+        section_find("isotropy.ordinary.origin", &T.iso_origin) ||
+        section_find("isotropy.ordinary.direction_codes_start", &T.iso_op_pointer) ||
+        section_find("isotropy.ordinary.direction_codes", &T.iso_op) || section_find("const.values", &T.const_values) ||
+        section_find("group.space_groups.point_group", &T.sg_point_group) || section_find("group.point_groups.order", &T.pg_order) ||
+        section_find("group.point_groups.generator_count", &T.pg_gen_count) || section_find("group.point_groups.generators", &T.pg_gen) ||
+        section_find("group.space_groups.lattice", &T.lattice))
         return fail(PY_VALUE, "mode frame Source tables are missing");
     T.ready = 1;
     return 0;

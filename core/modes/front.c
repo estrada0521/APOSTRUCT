@@ -30,7 +30,7 @@ static struct {
 static int tables(void)
 {
     if (T.ready) return 0;
-    if (section_find("space.ispace_inter_choice", &T.inter_choice) || section_find("space.space_inter_label_short", &T.label_short))
+    if (section_find("group.space_groups.inter_choice", &T.inter_choice) || section_find("settings.inter_settings.short", &T.label_short))
         return 1;
     T.ready = 1;
     return 0;
