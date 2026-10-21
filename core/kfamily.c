@@ -135,7 +135,7 @@ static int cinter_cmp(const q64 *a, const q64 *b)
 
 static struct {
     section_view irr_sg, irr_k, k_label, k_dim, star_count, star_pointer, star, star_special, little_k;
-    section_view lattice, lattice_ml, lattice_ml_denom, point_op, point_op_mlt;
+    section_view lattice, lattice_ml, lattice_ml_denom, point_op;
     section_view sg_point_group, point_group_order, inter_choice, settings_inter;
     int ready;
 } T;
@@ -160,7 +160,6 @@ static int load_tables(void)
         {"space.lattice_ml", &T.lattice_ml},
         {"space.lattice_ml_denom", &T.lattice_ml_denom},
         {"space.ipoint_op", &T.point_op},
-        {"space.ipoint_op_mlt", &T.point_op_mlt},
         {"space.ispace_point_group", &T.sg_point_group},
         {"space.ipoint_group_order", &T.point_group_order},
         {"space.ispace_inter_choice", &T.inter_choice},
@@ -372,7 +371,7 @@ static int load_sg_context(int sg, sg_context *ctx)
     if (!has_inversion) {
         int original = ctx->standard_count;
         for (int j = 0; j < original; j++) {
-            int mate = (int)at(&T.point_op_mlt, (inversion - 1) * 72 + ctx->standard_op[j] - 1), seen = 0;
+            int mate = (int)geo_point_product(inversion, ctx->standard_op[j]), seen = 0;
             for (int i = 0; i < ctx->standard_count; i++) seen |= ctx->standard_op[i] == mate;
             if (!seen) {
                 if (ctx->standard_count >= MAX_OPS) return KF_TABLES;

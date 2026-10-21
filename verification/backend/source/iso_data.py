@@ -460,7 +460,7 @@ class ISOData:
         return tuple(records)
 
     def point_op_product(self, left: int, right: int) -> int:
-        return int(self.space["ipoint_op_mlt"][(int(left) - 1) * 72 + int(right) - 1])
+        return native.point_op_product(int(left), int(right))
 
     @lru_cache(maxsize=None)
     def wyc_pg_cosets_records(

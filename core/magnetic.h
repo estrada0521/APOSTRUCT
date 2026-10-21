@@ -17,7 +17,7 @@ int mag_time_reversed(int op);
 /* The matrix point operation and time-reversal sign of a point operation:
  * mode 0 ordinary, 1 magnetic irrep, 2 magnetic ignoring time reversal. */
 int mag_point_action(int mode, int op, int *sign);
-/* mag_point_op_mlt indexed by (right, left). */
+/* The product of two magnetic point operations, from their ordinary parts and time reversals. */
 int mag_point_product(int left, int right);
 int64_t mag_point_product_count(void);
 /* The magnetic group of orderparam_to_subgroup_magnetic_ for a parent space group. */

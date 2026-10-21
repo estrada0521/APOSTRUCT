@@ -86,6 +86,10 @@ def _load() -> ctypes.CDLL:
         ctypes.c_int, ctypes.c_int, f64, f64, ctypes.c_int, ctypes.c_double, i32, f64, i32, f64,
     )
     library.match_inter_wyckoff.restype = ctypes.c_int
+    library.geo_point_product.argtypes = (ctypes.c_int, ctypes.c_int)
+    library.geo_point_product.restype = ctypes.c_int64
+    library.mag_point_product.argtypes = (ctypes.c_int, ctypes.c_int)
+    library.mag_point_product.restype = ctypes.c_int
     library.geo_sg_records.argtypes = (ctypes.c_int, i64)
     library.geo_sg_records.restype = ctypes.c_int
     library.irrep_full_label.argtypes = (ctypes.c_int,)
@@ -96,6 +100,16 @@ def _load() -> ctypes.CDLL:
 
 
 _LIBRARY = _load()
+
+
+def point_op_product(left: int, right: int) -> int:
+    """The product of two point operations (0 across the cubic and hexagonal families)."""
+    return int(_LIBRARY.geo_point_product(int(left), int(right)))
+
+
+def magnetic_point_op_product(left: int, right: int) -> int:
+    """The product of two magnetic point operations."""
+    return int(_LIBRARY.mag_point_product(int(left), int(right)))
 
 
 def space_group_records(sg: int) -> tuple[tuple[int, int, int, int, int], ...]:

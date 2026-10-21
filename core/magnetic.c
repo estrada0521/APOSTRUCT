@@ -39,10 +39,11 @@ enum {
 #define MG_MAX_ROWS 32
 
 static struct {
-    section_view m2n, r, mlt, nlabel, type, sg, t4_pointer, t4_sg, t4_basis, t4_origin, gen_count, gen, op_code,
+    section_view m2n, r, nlabel, type, sg, t4_pointer, t4_sg, t4_basis, t4_origin, gen_count, gen, op_code,
         point_group, point_group_code;
     section_view psettings, point_op, lattice, label_bc, sg_pointer;
     int ready;
+    short products[144 * 144];
 } M;
 
 static int mag_bad;
@@ -63,7 +64,6 @@ static int load(void)
     } items[] = {
         {"magnetic.mag_point_op_mag2nonmag", &M.m2n, 0},
         {"magnetic.mag_point_op_r", &M.r, 0},
-        {"magnetic.mag_point_op_mlt", &M.mlt, 0},
         {"magnetic.mag_nlabel", &M.nlabel, 1},
         {"magnetic.mag_type", &M.type, 0},
         {"magnetic.mag_space_group", &M.sg, 0},
@@ -86,6 +86,21 @@ static int load(void)
         if (section_find(items[i].name, items[i].view)) return MG_TABLES;
         if (!items[i].text && !section_is_int(items[i].view)) return MG_TABLES;
     }
+    int64_t count = section_count(&M.m2n);
+    if (count != 144 || section_count(&M.r) != 144) return MG_TABLES;
+    short of[73][2] = {{0}};
+    for (int i = 0; i < 144; i++) {
+        int64_t ordinary = section_int(&M.m2n, i);
+        if (ordinary < 1 || ordinary > 72) return MG_TABLES;
+        of[ordinary][section_int(&M.r, i) != 0] = (short)(i + 1);
+    }
+    /* products by the ordinary parts and the time reversals */
+    for (int left = 0; left < 144; left++)
+        for (int right = 0; right < 144; right++) {
+            int ordinary = (int)geo_point_product((int)section_int(&M.m2n, right), (int)section_int(&M.m2n, left));
+            int reversed = (section_int(&M.r, left) != 0) != (section_int(&M.r, right) != 0);
+            M.products[right * 144 + left] = ordinary ? of[ordinary][reversed] : 0;
+        }
     M.ready = 1;
     return 0;
 }
@@ -271,8 +286,15 @@ int mag_point_action(int mode, int op, int *sign)
     *sign = mode == 1 && mag_time_reversed(op) ? -1 : 1;
     return mode ? mag_nonmagnetic_op(op) : op;
 }
-int mag_point_product(int left, int right) { return (int)at(&M.mlt, (int64_t)(right - 1) * 144 + left - 1); }
-int64_t mag_point_product_count(void) { return section_count(&M.mlt); }
+int mag_point_product(int left, int right)
+{
+    if (load() || left < 1 || left > 144 || right < 1 || right > 144) {
+        fail(MG_TABLES);
+        return 0;
+    }
+    return M.products[(right - 1) * 144 + left - 1];
+}
+int64_t mag_point_product_count(void) { return 144 * 144; }
 int mag_orderparam_group(int sg) { return (int)at(&M.sg_pointer, sg - 1) + 1; }
 
 int mag_generators(int group, int64_t (*out)[5])
@@ -349,7 +371,7 @@ static void compose(const group_setting *s, const int64_t *left, const int64_t *
     for (int axis = 0; axis < 3; axis++) t[axis] = rat_add(l[axis], rotated[axis]);
     fold3(t);
     record_of(t, out);
-    out[4] = at(&M.mlt, (right[4] - 1) * 144 + left[4] - 1);
+    out[4] = mag_point_product((int)left[4], (int)right[4]);
 }
 
 typedef struct {
@@ -1124,7 +1146,7 @@ static int compose_iso(int sg, const int64_t *left, const int64_t *right, int64_
     v[3] = den;
     if (reduce_vector(v)) return 1;
     for (int i = 0; i < 4; i++) out[i] = v[i];
-    out[4] = at(&M.mlt, (right[4] - 1) * 144 + left[4] - 1);
+    out[4] = mag_point_product((int)left[4], (int)right[4]);
     return reduce_operation(out);
 }
 

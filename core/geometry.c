@@ -9,13 +9,14 @@
 
 static struct {
     section_view sg_point_group, point_group_order, generators, lattice, lattice_ml,
-        lattice_ml_denom, point_op, point_op_mlt, inter_choice, settings_inter, label_bc, inter_label_short,
+        lattice_ml_denom, point_op, inter_choice, settings_inter, label_bc, inter_label_short,
         point_op_code, point_group_code, wyckoff_pointer, wyckoff_count, wyckoff_pg, wyckoff_fract,
         inter_wyckoff_pointer, inter_wyckoff_fract,
         pg_elements_pointer, pg_settings_count, pg_elements, settings,
         group_gen_count, group_gen, inter_number, psettings;
     int64_t *op_codes, *group_codes, gen_start[231];
     int ready, order[231];
+    short products[72 * 72];
     int64_t (*records)[GEO_MAX_OPS][5];
 } G;
 
@@ -34,7 +35,6 @@ int geo_load(void)
         {"space.lattice_ml", &G.lattice_ml, 0},
         {"space.lattice_ml_denom", &G.lattice_ml_denom, 0},
         {"space.ipoint_op", &G.point_op, 0},
-        {"space.ipoint_op_mlt", &G.point_op_mlt, 0},
         {"space.ispace_inter_choice", &G.inter_choice, 0},
         {"space.ispace_settings_inter", &G.settings_inter, 0},
         {"space.space_label_bc", &G.label_bc, 1},
@@ -66,6 +66,26 @@ int geo_load(void)
     if (!G.op_codes || !G.group_codes) return GEO_TABLES;
     for (int64_t i = 0; i < ops; i++) G.op_codes[i] = section_int(&G.point_op_code, i);
     for (int64_t i = 0; i < groups; i++) G.group_codes[i] = section_int(&G.point_group_code, i);
+    /* products of the point operations by their matrices, within the cubic (1-48) and the hexagonal (49-72) family */
+    if (section_count(&G.point_op) != 72 * 9) return GEO_TABLES;
+    for (int a = 0; a < 72; a++)
+        for (int b = 0; b < 72; b++) {
+            int family = a >= 48, product = 0;
+            if ((b >= 48) == family) {
+                int64_t m[9];
+                for (int i = 0; i < 3; i++)
+                    for (int j = 0; j < 3; j++) {
+                        m[3 * i + j] = 0;
+                        for (int k = 0; k < 3; k++) m[3 * i + j] += section_int(&G.point_op, 9 * a + 3 * i + k) * section_int(&G.point_op, 9 * b + 3 * k + j);
+                    }
+                for (int c = family ? 48 : 0; c < (family ? 72 : 48) && !product; c++) {
+                    int same = 1;
+                    for (int i = 0; i < 9 && same; i++) same = section_int(&G.point_op, 9 * c + i) == m[i];
+                    if (same) product = c + 1;
+                }
+            }
+            G.products[72 * a + b] = (short)product;
+        }
     G.records = calloc(231, sizeof *G.records);
     if (!G.records) return GEO_TABLES;
     for (int sg = 1; sg < 230; sg++)
@@ -107,7 +127,14 @@ const int64_t *geo_point_group_codes(int64_t *count)
 
 int64_t geo_point_group_order(int point_group) { return at(&G.point_group_order, point_group - 1); }
 
-int64_t geo_point_product(int left, int right) { return at(&G.point_op_mlt, (int64_t)(left - 1) * 72 + right - 1); }
+int64_t geo_point_product(int left, int right)
+{
+    if (geo_load() || left < 1 || left > 72 || right < 1 || right > 72) {
+        if (!geo_bad) geo_bad = GEO_TABLES;
+        return 0;
+    }
+    return G.products[72 * (left - 1) + right - 1];
+}
 
 int geo_inter_setting_ids(int sg, int capacity, int *out)
 {

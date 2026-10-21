@@ -13,6 +13,7 @@ from verification.backend.exactmath import (
     fraction_record3 as fraction_record,
     fraction_row_multiply3,
 )
+from verification.backend import native
 from verification.backend.source.magnetic import data as magnetic_data
 from verification.backend.source.tables import source_tables
 
@@ -245,9 +246,7 @@ def _compose_operations(
     translation = tuple(
         left_translation[axis] + rotated_right[axis] for axis in range(3)
     )
-    point_op = int(
-        table["mag_point_op_mlt"][(int(right[4]) - 1) * 144 + int(left[4]) - 1]
-    )
+    point_op = native.magnetic_point_op_product(int(left[4]), int(right[4]))
     x, y, z, denominator = fraction_record(_fold_point(translation))
     return x, y, z, denominator, point_op
 
