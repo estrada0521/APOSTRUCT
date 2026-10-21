@@ -8,121 +8,121 @@
 # starts in units of W items), zero_empty (start 0 for an empty list), sentinel (one more start after the last),
 # keys=K, first=N (only the first N records), lead=N (N zeros before the first list, counted by start), byu=NAME
 # (the section's name in the BYU tables).
-group.point_ops.matrix                       crystallography/group/point_ops.txt              matrix flat byu=space.ipoint_op
-group.point_ops.code                         crystallography/group/point_ops.txt              code each byu=space.ipoint_op_code
-group.point_groups.label                     crystallography/group/point_groups.txt           label text byu=space.point_group_label_inter
-group.point_groups.order                     crystallography/group/point_groups.txt           order each byu=space.ipoint_group_order
-group.point_groups.generator_count           crystallography/group/point_groups.txt           generator_count each byu=space.ipoint_group_gen_count
-group.point_groups.generators                crystallography/group/point_groups.txt           generators flat byu=space.ipoint_group_gen
-group.point_groups.code                      crystallography/group/point_groups.txt           code each byu=space.ipoint_group_code
-group.lattices.label                         crystallography/group/lattices.txt               label text byu=space.lattice_label
-group.lattices.k_points                      crystallography/group/lattices.txt               k_points flat byu=space.k_points
-group.lattices.ml                            crystallography/group/lattices.txt               ml flat byu=space.lattice_ml
-group.lattices.ml_denom                      crystallography/group/lattices.txt               ml_denom flat byu=space.lattice_ml_denom
-group.space_groups.label_bc                  crystallography/group/space_groups.txt           label_bc text byu=space.space_label_bc
-group.space_groups.point_group               crystallography/group/space_groups.txt           point_group each byu=space.ispace_point_group
-group.space_groups.lattice                   crystallography/group/space_groups.txt           lattice each byu=space.ispace_lattice
-group.space_groups.generators                crystallography/group/space_groups.txt           generators flat byu=space.ispace_generators_cml
-settings.inter_settings.number               crystallography/settings/inter_settings.txt      number each byu=space.ispace_inter_number
-settings.inter_settings.version              crystallography/settings/inter_settings.txt      version each byu=space.ispace_inter_version
-settings.inter_settings.short                crystallography/settings/inter_settings.txt      short text byu=space.space_inter_label_short
-settings.inter_settings.full                 crystallography/settings/inter_settings.txt      full text byu=space.space_inter_label_full
-settings.inter_settings.origin               crystallography/settings/inter_settings.txt      origin each byu=space.ispace_inter_origin
-settings.inter_settings.axis                 crystallography/settings/inter_settings.txt      axis text byu=space.space_inter_axis
-settings.inter_settings.abc                  crystallography/settings/inter_settings.txt      abc text byu=space.space_inter_abc
-settings.inter_settings.cell                 crystallography/settings/inter_settings.txt      cell each byu=space.ispace_inter_cell
-group.space_groups.inter_choice              byu/group/space_groups.txt                       inter_choice each byu=space.ispace_inter_choice
-group.space_groups.settings                  crystallography/group/space_groups.txt           settings flat byu=space.ispace_settings
-settings.inter_settings.inter                crystallography/settings/inter_settings.txt      inter flat byu=space.ispace_settings_inter
-settings.inter_settings.wyckoff_start        crystallography/settings/inter_settings.txt      wyckoff start div=16 zero_empty byu=space.ispace_inter_wyckoff_pointer
-settings.inter_settings.wyckoff              crystallography/settings/inter_settings.txt      wyckoff flat byu=space.ispace_inter_wyckoff_fract
-settings.wyckoff.by_sg_count                 crystallography/settings/wyckoff.txt             sg group_count keys=230 byu=wyckoff.iwyckoff_count
-settings.wyckoff.by_sg_start                 crystallography/settings/wyckoff.txt             sg group_start keys=230 byu=wyckoff.iwyckoff_pointer
-settings.wyckoff.label                       crystallography/settings/wyckoff.txt             label text byu=wyckoff.wyckoff_label
-settings.wyckoff.fract                       crystallography/settings/wyckoff.txt             fract flat byu=wyckoff.iwyckoff_fract
-settings.wyckoff.site_pg                     crystallography/settings/wyckoff.txt             site_pg each byu=wyckoff.iwyckoff_pg
-settings.site_settings.by_pg_count           crystallography/settings/site_settings.txt       pg group_count keys=32 byu=wyckoff.iwyckoff_pg_settings_count
-settings.site_settings.by_pg_start           crystallography/settings/site_settings.txt       pg group_start keys=32 byu=wyckoff.iwyckoff_pg_elements_pointer
-settings.site_settings.elements              crystallography/settings/site_settings.txt       elements flat byu=wyckoff.iwyckoff_pg_elements
-settings.site_point_groups.irrep             crystallography/settings/site_point_groups.txt   irrep flat byu=wyckoff.iwyckoff_pg_irrep
-settings.site_point_groups.vector_reps       crystallography/settings/site_point_groups.txt   vector_reps flat byu=wyckoff.iwyckoff_pg_vector_reps
-settings.site_settings.vector_basis          byu/settings/site_settings.txt                   vector_basis flat byu=wyckoff.iwyckoff_pg_vector_basis
-group.lattices.k_count                       crystallography/group/lattices.txt               k_count each byu=little.little_k_count
-k.slots.label                                crystallography/k/slots.txt                      label text byu=little.little_k_label
-k.space_group_slots.kov                      crystallography/k/space_group_slots.txt          kov each byu=little.little_k_kov
-k.slots.vector                               crystallography/k/slots.txt                      vector flat byu=little.little_k
-k.slots.dim                                  crystallography/k/slots.txt                      dim each byu=little.little_k_dim
-irreps.little.sg                             crystallography/irreps/little.txt                sg each byu=little.little_irr_space_group
-irreps.little.k                              crystallography/irreps/little.txt                k each byu=little.little_irr_k
-irreps.little.partner                        byu/irreps/little.txt                            partner each byu=little.little_irr_cc
-irreps.little.kovalev                        crystallography/irreps/little.txt                kovalev text byu=little.little_irr_full_kov_label
-irreps.little.matrices                       byu/irreps/little.txt                            matrices flat byu=little.little_irr_full_matrices
-irreps.little.real_form_start                byu/irreps/little.txt                            real_form start zero_empty lead=1 byu=little.little_irr_real2_pointer
-irreps.little.real_form                      byu/irreps/little.txt                            real_form flat lead=1 byu=little.little_irr_real2
-k.star_flips.flip                            byu/k/star_flips.txt                             flip flat byu=little.little_k_star_flip
-k.star_orders.order                          byu/k/star_orders.txt                            order flat byu=little.little_k_star_order
-k.conv2ml.matrix                             byu/k/conv2ml.txt                                matrix flat byu=little.little_k_conv2ml
-k.space_group_slots.conv2ml                  byu/k/space_group_slots.txt                      conv2ml each byu=little.little_k_conv2ml_index
-irreps.old.mulliken                          crystallography/irreps/old.txt                   mulliken text byu=irreps.irrep_label_pg
-irreps.old.by_sg_start                       crystallography/irreps/old.txt                   sg group_start keys=230 sentinel byu=irreps.irrep_space_group_pointer
-irreps.old.image                             byu/irreps/old.txt                               image each byu=irreps.irrep_image
-isotropy.ordinary.by_old_start               byu/isotropy/ordinary.txt                        old group_start keys=4777 sentinel byu=isotropy.isotropy_irrep_pointer
-isotropy.ordinary.label                      byu/isotropy/ordinary.txt                        label text byu=isotropy.isotropy_orderparam_label
-isotropy.ordinary.direction_codes_start      byu/isotropy/ordinary.txt                        direction_codes start byu=isotropy.isotropy_orderparam_pointer
-isotropy.ordinary.direction_codes            byu/isotropy/ordinary.txt                        direction_codes flat total=144000 byu=isotropy.isotropy_orderparam
-isotropy.ordinary.image_direction            byu/isotropy/ordinary.txt                        image_direction each byu=isotropy.isotropy_direction
-isotropy.ordinary.basis                      byu/isotropy/ordinary.txt                        basis flat byu=isotropy.isotropy_basis
-isotropy.ordinary.origin                     byu/isotropy/ordinary.txt                        origin flat byu=isotropy.isotropy_origin
-group.magnetic_groups.count                  crystallography/group/magnetic_groups.txt        group records byu=magnetic.mag_count
-group.magnetic_groups.og                     crystallography/group/magnetic_groups.txt        og text byu=magnetic.mag_nlabel
-group.magnetic_groups.bns                    crystallography/group/magnetic_groups.txt        bns text byu=magnetic.mag_bns_label
-group.magnetic_groups.by_sg_start            crystallography/group/magnetic_groups.txt        sg group_start keys=230 sentinel byu=magnetic.mag_space_group_pointer
-group.magnetic_groups.generator_count        crystallography/group/magnetic_groups.txt        generators count div=5 byu=magnetic.mag_gen_count
-group.magnetic_groups.generators             crystallography/group/magnetic_groups.txt        generators flat pad=20 byu=magnetic.mag_gen
-group.magnetic_ops.reversed                  crystallography/group/magnetic_ops.txt           reversed each byu=magnetic.mag_point_op_r
-group.magnetic_ops.ordinary                  crystallography/group/magnetic_ops.txt           ordinary each byu=magnetic.mag_point_op_mag2nonmag
-group.magnetic_ops.from_ordinary             crystallography/group/magnetic_ops.txt           from_ordinary each byu=magnetic.mag_point_op_nonmag2mag
-group.magnetic_ops.code                      crystallography/group/magnetic_ops.txt           code each byu=magnetic.mag_point_op_code
-group.magnetic_point_groups.code             crystallography/group/magnetic_point_groups.txt  code each byu=magnetic.mag_point_group_code
-group.magnetic_groups.type4                  crystallography/group/magnetic_groups.txt        type4 each byu=magnetic.mag_type4_pointer
-group.type4_supergroups.supergroup           crystallography/group/type4_supergroups.txt      supergroup each byu=magnetic.mag_type4_supergroup
-group.type4_supergroups.basis                crystallography/group/type4_supergroups.txt      basis flat byu=magnetic.mag_type4_supergroup_basis
-group.type4_supergroups.origin               crystallography/group/type4_supergroups.txt      origin flat byu=magnetic.mag_type4_supergroup_origin
-isotropy.magnetic.by_old_start               byu/isotropy/magnetic.txt                        old group_start keys=4777 sentinel byu=magnetic.mag_iso_irrep_pointer
-isotropy.magnetic.basis                      byu/isotropy/magnetic.txt                        basis flat byu=magnetic.mag_iso_basis
-isotropy.magnetic.origin                     byu/isotropy/magnetic.txt                        origin flat byu=magnetic.mag_iso_origin
-isotropy.magnetic.label                      byu/isotropy/magnetic.txt                        label text byu=magnetic.mag_iso_orderparam_label
-isotropy.magnetic.direction_codes_start      byu/isotropy/magnetic.txt                        direction_codes start byu=magnetic.mag_iso_orderparam_pointer
-isotropy.magnetic.direction_codes            byu/isotropy/magnetic.txt                        direction_codes flat total=163000 byu=magnetic.mag_iso_orderparam
-images.images.label                          byu/images/images.txt                            label text byu=images.image_label
-images.images.label2                         byu/images/images.txt                            label2 text first=132 byu=images.image_label2
-images.images.dimension                      byu/images/images.txt                            dimension each byu=images.image_dimension
-images.images.order                          byu/images/images.txt                            order each byu=images.image_order
-images.images.type                           byu/images/images.txt                            type each first=132 byu=images.image_type
-images.images.landau                         byu/images/images.txt                            landau each byu=images.image_landau
-images.images.generator_count                byu/images/images.txt                            generator_count each first=132 byu=images.image_generator_count
-images.images.diagonalize                    byu/images/images.txt                            diagonalize each first=132 byu=images.image_diagonalize_pointer
-images.images.subgroup_count                 byu/images/images.txt                            subgroup_count each byu=images.image_subgroup_count
-images.images.subgroup_start                 byu/images/images.txt                            subgroup_start each byu=images.image_subgroup_pointer
-images.image_subgroups.maximal               byu/images/image_subgroups.txt                   maximal each byu=images.image_subgroup_maximal
-images.image_subgroups.minimal               byu/images/image_subgroups.txt                   minimal each byu=images.image_subgroup_min
-images.image_subgroups.rg                    byu/images/image_subgroups.txt                   rg each byu=images.image_subgroup_rg
-images.image_subgroups.subgroup              byu/images/image_subgroups.txt                   subgroup each byu=images.image_subgroup
-images.image_directions.label                byu/images/image_directions.txt                  label text byu=images.image_dir_label
-images.image_directions.dimension            byu/images/image_directions.txt                  dimension each byu=images.image_dir_dimension
-images.image_directions.subduction           byu/images/image_directions.txt                  subduction each byu=images.image_dir_subduction
-images.image_directions.vector               byu/images/image_directions.txt                  vector flat byu=images.image_dir
-images.image_directions.vector_start         byu/images/image_directions.txt                  vector start zero_empty byu=images.image_dir_pointer
-k.star.arms                                  -                                                - derived byu=little.little_k_star
-k.star.special_arms                          -                                                - derived byu=little.little_k_star_special
-k.star.arm_start                             -                                                - derived byu=little.little_k_star_ml_pointer
-k.star.arm_count                             -                                                - derived byu=little.little_k_star_count
-k.star.minus_k                               -                                                - derived byu=little.little_k_star_minusk
-k.star.conv2ml_start                         -                                                - derived byu=little.little_k_star_conv2ml_pointer
-irreps.little.dim                            -                                                - derived byu=little.little_irr_full_dim
-irreps.little.old                            -                                                - derived byu=little.little_irr_old
-irreps.little.matrix_start                   -                                                - derived byu=little.little_irr_full_matrices_pointer
-irreps.little.positions                      -                                                - derived byu=little.little_irr_full_matrices_position
-irreps.little.position_start                 -                                                - derived byu=little.little_irr_full_matrices_irr_pointer
-irreps.little.number                         -                                                - derived byu=little.little_irr_irrnum
-irreps.little.type                           -                                                - derived byu=little.little_irr_type
+group.point_ops.matrix                       group/point_ops.txt                          matrix flat byu=space.ipoint_op
+group.point_ops.code                         group/point_ops.txt                          code each byu=space.ipoint_op_code
+group.point_groups.label                     group/point_groups.txt                       label text byu=space.point_group_label_inter
+group.point_groups.order                     group/point_groups.txt                       order each byu=space.ipoint_group_order
+group.point_groups.generator_count           group/point_groups.txt                       generator_count each byu=space.ipoint_group_gen_count
+group.point_groups.generators                group/point_groups.txt                       generators flat byu=space.ipoint_group_gen
+group.point_groups.code                      group/point_groups.txt                       code each byu=space.ipoint_group_code
+group.lattices.label                         group/lattices.txt                           label text byu=space.lattice_label
+group.lattices.k_points                      group/lattices.txt                           k_points flat byu=space.k_points
+group.lattices.ml                            group/lattices.txt                           ml flat byu=space.lattice_ml
+group.lattices.ml_denom                      group/lattices.txt                           ml_denom flat byu=space.lattice_ml_denom
+group.space_groups.label_bc                  group/space_groups.txt                       label_bc text byu=space.space_label_bc
+group.space_groups.point_group               group/space_groups.txt                       point_group each byu=space.ispace_point_group
+group.space_groups.lattice                   group/space_groups.txt                       lattice each byu=space.ispace_lattice
+group.space_groups.generators                group/space_groups.txt                       generators flat byu=space.ispace_generators_cml
+settings.inter_settings.number               settings/inter_settings.txt                  number each byu=space.ispace_inter_number
+settings.inter_settings.version              settings/inter_settings.txt                  version each byu=space.ispace_inter_version
+settings.inter_settings.short                settings/inter_settings.txt                  short text byu=space.space_inter_label_short
+settings.inter_settings.full                 settings/inter_settings.txt                  full text byu=space.space_inter_label_full
+settings.inter_settings.origin               settings/inter_settings.txt                  origin each byu=space.ispace_inter_origin
+settings.inter_settings.axis                 settings/inter_settings.txt                  axis text byu=space.space_inter_axis
+settings.inter_settings.abc                  settings/inter_settings.txt                  abc text byu=space.space_inter_abc
+settings.inter_settings.cell                 settings/inter_settings.txt                  cell each byu=space.ispace_inter_cell
+group.space_groups.inter_choice              conventions/group/space_groups.txt           inter_choice each byu=space.ispace_inter_choice
+group.space_groups.settings                  group/space_groups.txt                       settings flat byu=space.ispace_settings
+settings.inter_settings.inter                settings/inter_settings.txt                  inter flat byu=space.ispace_settings_inter
+settings.inter_settings.wyckoff_start        settings/inter_settings.txt                  wyckoff start div=16 zero_empty byu=space.ispace_inter_wyckoff_pointer
+settings.inter_settings.wyckoff              settings/inter_settings.txt                  wyckoff flat byu=space.ispace_inter_wyckoff_fract
+settings.wyckoff.by_sg_count                 settings/wyckoff.txt                         sg group_count keys=230 byu=wyckoff.iwyckoff_count
+settings.wyckoff.by_sg_start                 settings/wyckoff.txt                         sg group_start keys=230 byu=wyckoff.iwyckoff_pointer
+settings.wyckoff.label                       settings/wyckoff.txt                         label text byu=wyckoff.wyckoff_label
+settings.wyckoff.fract                       settings/wyckoff.txt                         fract flat byu=wyckoff.iwyckoff_fract
+settings.wyckoff.site_pg                     settings/wyckoff.txt                         site_pg each byu=wyckoff.iwyckoff_pg
+settings.site_settings.by_pg_count           settings/site_settings.txt                   pg group_count keys=32 byu=wyckoff.iwyckoff_pg_settings_count
+settings.site_settings.by_pg_start           settings/site_settings.txt                   pg group_start keys=32 byu=wyckoff.iwyckoff_pg_elements_pointer
+settings.site_settings.elements              settings/site_settings.txt                   elements flat byu=wyckoff.iwyckoff_pg_elements
+settings.site_point_groups.irrep             settings/site_point_groups.txt               irrep flat byu=wyckoff.iwyckoff_pg_irrep
+settings.site_point_groups.vector_reps       settings/site_point_groups.txt               vector_reps flat byu=wyckoff.iwyckoff_pg_vector_reps
+settings.site_settings.vector_basis          conventions/settings/site_settings.txt       vector_basis flat byu=wyckoff.iwyckoff_pg_vector_basis
+group.lattices.k_count                       group/lattices.txt                           k_count each byu=little.little_k_count
+k.slots.label                                k/slots.txt                                  label text byu=little.little_k_label
+k.space_group_slots.kov                      k/space_group_slots.txt                      kov each byu=little.little_k_kov
+k.slots.vector                               k/slots.txt                                  vector flat byu=little.little_k
+k.slots.dim                                  k/slots.txt                                  dim each byu=little.little_k_dim
+irreps.little.sg                             irreps/little.txt                            sg each byu=little.little_irr_space_group
+irreps.little.k                              irreps/little.txt                            k each byu=little.little_irr_k
+irreps.little.partner                        conventions/irreps/little.txt                partner each byu=little.little_irr_cc
+irreps.little.kovalev                        irreps/little.txt                            kovalev text byu=little.little_irr_full_kov_label
+irreps.little.matrices                       conventions/irreps/little.txt                matrices flat byu=little.little_irr_full_matrices
+irreps.little.real_form_start                conventions/irreps/little.txt                real_form start zero_empty lead=1 byu=little.little_irr_real2_pointer
+irreps.little.real_form                      conventions/irreps/little.txt                real_form flat lead=1 byu=little.little_irr_real2
+k.star_flips.flip                            conventions/k/star_flips.txt                 flip flat byu=little.little_k_star_flip
+k.star_orders.order                          conventions/k/star_orders.txt                order flat byu=little.little_k_star_order
+k.conv2ml.matrix                             conventions/k/conv2ml.txt                    matrix flat byu=little.little_k_conv2ml
+k.space_group_slots.conv2ml                  conventions/k/space_group_slots.txt          conv2ml each byu=little.little_k_conv2ml_index
+irreps.old.mulliken                          irreps/old.txt                               mulliken text byu=irreps.irrep_label_pg
+irreps.old.by_sg_start                       irreps/old.txt                               sg group_start keys=230 sentinel byu=irreps.irrep_space_group_pointer
+irreps.old.image                             conventions/irreps/old.txt                   image each byu=irreps.irrep_image
+isotropy.ordinary.by_old_start               conventions/isotropy/ordinary.txt            old group_start keys=4777 sentinel byu=isotropy.isotropy_irrep_pointer
+isotropy.ordinary.label                      conventions/isotropy/ordinary.txt            label text byu=isotropy.isotropy_orderparam_label
+isotropy.ordinary.direction_codes_start      conventions/isotropy/ordinary.txt            direction_codes start byu=isotropy.isotropy_orderparam_pointer
+isotropy.ordinary.direction_codes            conventions/isotropy/ordinary.txt            direction_codes flat total=144000 byu=isotropy.isotropy_orderparam
+isotropy.ordinary.image_direction            conventions/isotropy/ordinary.txt            image_direction each byu=isotropy.isotropy_direction
+isotropy.ordinary.basis                      conventions/isotropy/ordinary.txt            basis flat byu=isotropy.isotropy_basis
+isotropy.ordinary.origin                     conventions/isotropy/ordinary.txt            origin flat byu=isotropy.isotropy_origin
+group.magnetic_groups.count                  group/magnetic_groups.txt                    group records byu=magnetic.mag_count
+group.magnetic_groups.og                     group/magnetic_groups.txt                    og text byu=magnetic.mag_nlabel
+group.magnetic_groups.bns                    group/magnetic_groups.txt                    bns text byu=magnetic.mag_bns_label
+group.magnetic_groups.by_sg_start            group/magnetic_groups.txt                    sg group_start keys=230 sentinel byu=magnetic.mag_space_group_pointer
+group.magnetic_groups.generator_count        group/magnetic_groups.txt                    generators count div=5 byu=magnetic.mag_gen_count
+group.magnetic_groups.generators             group/magnetic_groups.txt                    generators flat pad=20 byu=magnetic.mag_gen
+group.magnetic_ops.reversed                  group/magnetic_ops.txt                       reversed each byu=magnetic.mag_point_op_r
+group.magnetic_ops.ordinary                  group/magnetic_ops.txt                       ordinary each byu=magnetic.mag_point_op_mag2nonmag
+group.magnetic_ops.from_ordinary             group/magnetic_ops.txt                       from_ordinary each byu=magnetic.mag_point_op_nonmag2mag
+group.magnetic_ops.code                      group/magnetic_ops.txt                       code each byu=magnetic.mag_point_op_code
+group.magnetic_point_groups.code             group/magnetic_point_groups.txt              code each byu=magnetic.mag_point_group_code
+group.magnetic_groups.type4                  group/magnetic_groups.txt                    type4 each byu=magnetic.mag_type4_pointer
+group.type4_supergroups.supergroup           group/type4_supergroups.txt                  supergroup each byu=magnetic.mag_type4_supergroup
+group.type4_supergroups.basis                group/type4_supergroups.txt                  basis flat byu=magnetic.mag_type4_supergroup_basis
+group.type4_supergroups.origin               group/type4_supergroups.txt                  origin flat byu=magnetic.mag_type4_supergroup_origin
+isotropy.magnetic.by_old_start               conventions/isotropy/magnetic.txt            old group_start keys=4777 sentinel byu=magnetic.mag_iso_irrep_pointer
+isotropy.magnetic.basis                      conventions/isotropy/magnetic.txt            basis flat byu=magnetic.mag_iso_basis
+isotropy.magnetic.origin                     conventions/isotropy/magnetic.txt            origin flat byu=magnetic.mag_iso_origin
+isotropy.magnetic.label                      conventions/isotropy/magnetic.txt            label text byu=magnetic.mag_iso_orderparam_label
+isotropy.magnetic.direction_codes_start      conventions/isotropy/magnetic.txt            direction_codes start byu=magnetic.mag_iso_orderparam_pointer
+isotropy.magnetic.direction_codes            conventions/isotropy/magnetic.txt            direction_codes flat total=163000 byu=magnetic.mag_iso_orderparam
+images.images.label                          conventions/images/images.txt                label text byu=images.image_label
+images.images.label2                         conventions/images/images.txt                label2 text first=132 byu=images.image_label2
+images.images.dimension                      conventions/images/images.txt                dimension each byu=images.image_dimension
+images.images.order                          conventions/images/images.txt                order each byu=images.image_order
+images.images.type                           conventions/images/images.txt                type each first=132 byu=images.image_type
+images.images.landau                         conventions/images/images.txt                landau each byu=images.image_landau
+images.images.generator_count                conventions/images/images.txt                generator_count each first=132 byu=images.image_generator_count
+images.images.diagonalize                    conventions/images/images.txt                diagonalize each first=132 byu=images.image_diagonalize_pointer
+images.images.subgroup_count                 conventions/images/images.txt                subgroup_count each byu=images.image_subgroup_count
+images.images.subgroup_start                 conventions/images/images.txt                subgroup_start each byu=images.image_subgroup_pointer
+images.image_subgroups.maximal               conventions/images/image_subgroups.txt       maximal each byu=images.image_subgroup_maximal
+images.image_subgroups.minimal               conventions/images/image_subgroups.txt       minimal each byu=images.image_subgroup_min
+images.image_subgroups.rg                    conventions/images/image_subgroups.txt       rg each byu=images.image_subgroup_rg
+images.image_subgroups.subgroup              conventions/images/image_subgroups.txt       subgroup each byu=images.image_subgroup
+images.image_directions.label                conventions/images/image_directions.txt      label text byu=images.image_dir_label
+images.image_directions.dimension            conventions/images/image_directions.txt      dimension each byu=images.image_dir_dimension
+images.image_directions.subduction           conventions/images/image_directions.txt      subduction each byu=images.image_dir_subduction
+images.image_directions.vector               conventions/images/image_directions.txt      vector flat byu=images.image_dir
+images.image_directions.vector_start         conventions/images/image_directions.txt      vector start zero_empty byu=images.image_dir_pointer
+k.star.arms                                  -                                            - derived byu=little.little_k_star
+k.star.special_arms                          -                                            - derived byu=little.little_k_star_special
+k.star.arm_start                             -                                            - derived byu=little.little_k_star_ml_pointer
+k.star.arm_count                             -                                            - derived byu=little.little_k_star_count
+k.star.minus_k                               -                                            - derived byu=little.little_k_star_minusk
+k.star.conv2ml_start                         -                                            - derived byu=little.little_k_star_conv2ml_pointer
+irreps.little.dim                            -                                            - derived byu=little.little_irr_full_dim
+irreps.little.old                            -                                            - derived byu=little.little_irr_old
+irreps.little.matrix_start                   -                                            - derived byu=little.little_irr_full_matrices_pointer
+irreps.little.positions                      -                                            - derived byu=little.little_irr_full_matrices_position
+irreps.little.position_start                 -                                            - derived byu=little.little_irr_full_matrices_irr_pointer
+irreps.little.number                         -                                            - derived byu=little.little_irr_irrnum
+irreps.little.type                           -                                            - derived byu=little.little_irr_type

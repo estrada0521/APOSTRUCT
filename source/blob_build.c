@@ -860,14 +860,13 @@ static void render_section(const char *dir, char *line)
     free(b.data);
 }
 
-/* a table split between crystallography/ and byu/ keeps one record per line on both sides, keyed by the first column */
+/* a table with columns under conventions/ keeps the records of its plain counterpart, keyed by the first column */
 static void check_split_keys(void)
 {
     for (int i = 0; i < etable_count; i++) {
-        if (strncmp(etables[i].path, "byu/", 4)) continue;
+        if (strncmp(etables[i].path, "conventions/", 12)) continue;
         for (int j = 0; j < etable_count; j++) {
-            const char *p = etables[j].path;
-            if (strncmp(p, "crystallography/", 16) || strcmp(p + 16, etables[i].path + 4)) continue;
+            if (strcmp(etables[j].path, etables[i].path + 12)) continue;
             if (etables[i].rows != etables[j].rows || strcmp(etables[i].names[0], etables[j].names[0]))
                 die("split table sides differ", etables[i].path);
             for (int r = 0; r < etables[i].rows; r++)

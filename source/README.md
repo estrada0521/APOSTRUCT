@@ -1,16 +1,12 @@
 # Source
 
-The information apo cannot compute, in two parts:
-
-- `crystallography/`: the mathematics and the labels of the crystallographic literature, which do not depend on BYU's
-  choices: point operations and groups, lattices, space-group operations, magnetic groups with their OG and BNS symbols,
-  the International Tables settings and Wyckoff positions, the k families (CDML names, Kovalev numbers) and the Kovalev
-  and Mulliken irrep labels.
-- `byu/`: the conventions of the BYU ISOTROPY Software Suite (see [NOTICE](../NOTICE)), where one of several equivalent
-  answers is chosen: the basis of each little irrep and its real form, the complex-conjugate partner numbering, the
-  default setting of each space group, the orientation bases of the site point groups, the choices among equivalent star
-  arms and ML matrices, the image catalog, and the presentation of each isotropy subgroup (OPD label, basis and origin,
-  representative direction).
+The information apo cannot compute. The tables in `group/`, `settings/`, `k/` and `irreps/` hold the structure: point
+operations and groups, lattices, space and magnetic groups, settings and Wyckoff positions, k families, and the standard
+labels of these (International Tables, CDML, Kovalev, Mulliken, OG, BNS). `conventions/` holds the choices among
+equivalent answers, here those of the ISOTROPY Software Suite (see [NOTICE](../NOTICE)): the basis of each little irrep
+and its real form, the complex-conjugate partner numbering, the default setting of each space group, the orientation
+bases of the site point groups, the choices among equivalent star arms and ML matrices, the image catalog, and the
+presentation of each isotropy subgroup (OPD label, basis and origin, representative direction).
 
 What apo computes from these (group elements and products, isotropy subgroups, irrep dimensions and types, the star of k,
 labels, the pointers between tables, ...) is left out. Nothing here is a cache: derivations run at startup. A cache of
@@ -20,19 +16,19 @@ directory.
 One mixture remains: the subgroup identification (`core/group/id_subgroup.c`) tries the generators of
 `group/space_groups.txt` and `group/magnetic_groups.txt` in their listed order and keeps the first basis that fits, so
 the choice and order of the generators also decide which of the equivalent settings of a child structure is shown (with
-the space-group generators reversed, 15 of 4,141 outputs change). Beyond the group they generate, they carry a BYU
-choice.
+the space-group generators reversed, 15 of 4,141 outputs change). Beyond the group they generate, they carry a
+convention.
 
 `build.sh` compiles the tables into `bin/source.blob` (`blob_build.c`), and `layout.txt` says how each table column
-becomes a blob section. A table found under both parts holds different columns of the same records, with the same key in
-its first column. A blob section is named `directory.table.column` (with `_start` and `_count` for the pointers the build
+becomes a blob section. A table under `conventions/` with the same path as a structure table holds other columns of the same
+records, with the same key in its first column. A blob section is named `directory.table.column` (with `_start` and `_count` for the pointers the build
 renders, and `by_COLUMN_start` / `by_COLUMN_count` for the records grouped by a key); `layout.txt` also records each
 section's name in the BYU tables (`byu=`), which `byu_export` and the verifier use.
 
 Each table file starts with a tab-separated header; every later line is one entity, with tab-separated fields. A
 number field is a space-separated list, a text field is the text.
 
-| Table | Rows | `crystallography/` | `byu/` |
+| Table | Rows | structure | `conventions/` |
 | --- | --- | --- | --- |
 | `group/point_ops.txt` | 72 | matrix, class code | |
 | `group/point_groups.txt` | 32 | symbol, order, class code, generators | |

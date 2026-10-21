@@ -29,11 +29,11 @@ LICENSE_PATH = DATA_DIR / "SPGLIB-LICENSE.txt"
 OUTPUT_PATH = DATA_DIR / "magnetic_group_generators.json.gz"
 # the Source space-group tables the presentation sets are read from
 SOURCE_SPACE_TABLES = (
-    "crystallography/group/point_ops.txt",
-    "crystallography/group/lattices.txt",
-    "crystallography/group/space_groups.txt",
-    "byu/group/space_groups.txt",
-    "crystallography/settings/inter_settings.txt",
+    "group/point_ops.txt",
+    "group/lattices.txt",
+    "group/space_groups.txt",
+    "conventions/group/space_groups.txt",
+    "settings/inter_settings.txt",
 )
 
 SPGLIB_VERSION = "2.7.0"
@@ -45,7 +45,7 @@ OFFICIAL_ISO_MAG_SHA256 = (
     "2b11217ae10687b0836d8151846db2fad57b0d77211da90bb138ccd123a7b1fc"
 )
 SPGLIB_SETTING_VERSION = "2.7.0"
-SOURCE_SPACE_SHA256 = "606b7950fc4cc8b373c45f83e1eab6dfd521568ec7d393ccf56ea567981d69b4"
+SOURCE_SPACE_SHA256 = "92c24de997dda048f57cbbcb8b8d1df0d64510a542a5fa54daa795ed2bc2adbe"
 
 # These prime placements are the unique Hall variants whose exact closures
 # equal the pinned ISO-MAG operation table.  ``audit_official_iso_mag`` checks
