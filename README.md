@@ -16,7 +16,7 @@ Local implementation of ISODISTORT
 
 ## Overview
 
-From a parent CIF, a choice of displacive, magnetic and strain degrees of freedom, and k points with irreps, it computes the OPD list and, for a selected OPD, the subgroup, child structure and mode details.
+From a parent CIF, a choice of displacive, magnetic and strain degrees of freedom, and k points with irreps, it computes the OPD list and, for a selected OPD, the subgroup, child structure and mode details. Labels and the choices that mathematics leaves open (irrep bases, settings, representative directions, ...) follow the conventions of the ISOTROPY Software Suite.
 
 ## How to use
 
@@ -50,7 +50,7 @@ apo serve --open-browser
 | `core/` | Computation (C) |
 | `cli/` | Command line |
 | `gui/` | `apo serve` and the browser interface |
-| `source/` | BYU ISOTROPY tables and the blob generator |
+| `source/` | the tables apo cannot compute (structure, and ISOTROPY's conventions) and the blob generator |
 | `verification/` | Verifier (Python): comparison with the ISODISTORT Web application and mathematical checks independent of the Web. Results in [Validation.md](Validation.md) |
 | `branches/` `assets/` | Judgement records and their CIFs |
 
