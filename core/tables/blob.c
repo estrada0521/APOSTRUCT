@@ -62,8 +62,8 @@ int section_find_stored(const char *name, section_view *view)
 /* the name of stored section i (0-based), 0 past the last */
 const char *section_stored_name(uint32_t i) { return i < blob_count ? blob_index[i].name : 0; }
 
-/* a section by name; the star of k sections are built from their rule (star_rule.c), the irrep dimensions and old ids from
- * other tables (little_derived.c) */
+/* a section by name; the star of k sections are built from their rule (k/star.c), the irrep dimensions and old ids from
+ * other tables (tables/little_derived.c) */
 int section_find(const char *name, section_view *view)
 {
     int handled, status = star_rule_section(name, view, &handled);

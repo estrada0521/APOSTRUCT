@@ -1,5 +1,5 @@
 /* modes.subduction_specs: the render specs of one request from the C spec
- * stage (spec_build.c), decoded into md_spec as _specs builds its dicts. */
+ * stage (spec/build.c), decoded into md_spec as _specs builds its dicts. */
 
 #include <ctype.h>
 #include <math.h>

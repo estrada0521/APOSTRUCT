@@ -1,4 +1,4 @@
-/* get_new_wyckoff_ Formula15 provenance for child_sites.c: transform the
+/* get_new_wyckoff_ Formula15 provenance for child/sites.c: transform the
  * parent Wyckoff branches into the child cell, group them into child orbits,
  * match each orbit to its first Source child row and solve Formula15.  All
  * arithmetic is on exact i128 rationals; overflow is a range error. */

@@ -1,6 +1,6 @@
 /* definition_presentation._strain_mode_definitions with modes.engine.tensor:
  * the rank-2 tensor copies of a GM irrep and the strain definitions they
- * give, in numpy's operation order (linalg.c in place of BLAS / LAPACK, with the
+ * give, in numpy's operation order (math/linalg.c in place of BLAS / LAPACK, with the
  * transpose flags numpy passes for each operand layout). */
 
 

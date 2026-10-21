@@ -1,4 +1,4 @@
-/* A small JSON document model (json.c): parsed values live in one arena per
+/* A small JSON document model (io/json.c): parsed values live in one arena per
  * document; the writer appends to a growable buffer and prints floats the
  * way Python's repr (and so json.dumps) does. */
 

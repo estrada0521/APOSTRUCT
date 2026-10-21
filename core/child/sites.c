@@ -1,6 +1,6 @@
 /* The child Wyckoff sites of one parent Wyckoff orbit (get_new_wyckoff_):
  * the parent branches split by the subgroup basis/origin into child orbits
- * with their Formula15 rows (wyckoff_split.c), each occurrence evaluated at
+ * with their Formula15 rows (child/wyckoff_split.c), each occurrence evaluated at
  * the parent parameters and expanded by the child centering into the atoms
  * of the selected child cell. */
 

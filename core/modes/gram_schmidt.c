@@ -139,7 +139,7 @@ int family_presentation_order(int count, const int64_t *modes, int *perm);
 /* One (spec, parent site) block of mode definitions: Gram-Schmidt within
  * the print families keyed by (site pg, pg irrep, direction component),
  * numbered by first appearance, then the Source family presentation order
- * (family_order.c rows).  dxyz: mode_count x rows x 3, orthogonalized in
+ * (k/family_order.c rows).  dxyz: mode_count x rows x 3, orthogonalized in
  * place; perm[target] = the mode the target presents. */
 int present_block(int mode_count, int64_t rows, double *dxyz, const int64_t *keys, const int64_t *family_rows,
                   const double *basis, int has_centering, double centering, double *normfactor,

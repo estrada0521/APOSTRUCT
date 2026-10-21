@@ -1,4 +1,4 @@
-/* Shared state of the mode-subduction spec stage (spec_rows.c, spec_build.c). */
+/* Shared state of the mode-subduction spec stage (spec/rows.c, spec/build.c). */
 
 #ifndef APOSTRUCT_SPEC_CORE_H
 #define APOSTRUCT_SPEC_CORE_H

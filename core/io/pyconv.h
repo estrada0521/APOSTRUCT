@@ -1,4 +1,4 @@
-/* Python and gemmi value conversions the mode stage reproduces (pyconv.c). */
+/* Python and gemmi value conversions the mode stage reproduces (io/pyconv.c). */
 
 #ifndef APOSTRUCT_PYCONV_H
 #define APOSTRUCT_PYCONV_H

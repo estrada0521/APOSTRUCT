@@ -34,7 +34,7 @@ PUBLIC = Path(__file__).resolve().parents[3]
 
 
 def _sources() -> list[Path]:
-    paths = [*(PUBLIC / "core").glob("*.c"), *(PUBLIC / "core").glob("*.h"), PUBLIC / "source" / "blob_build.c"]
+    paths = [*(PUBLIC / "core").rglob("*.c"), *(PUBLIC / "core").rglob("*.h"), PUBLIC / "source" / "blob_build.c"]
     return sorted(paths, key=lambda path: path.relative_to(PUBLIC).as_posix())
 
 
@@ -766,7 +766,7 @@ def match_inter_wyckoff(
 
 
 def k_catalog(sg: int) -> dict:
-    """The k-point catalog of a space group (k_catalog.c)."""
+    """The k-point catalog of a space group (k/catalog.c)."""
 
     _LIBRARY.k_catalog_json.restype = ctypes.c_char_p
     text = _LIBRARY.k_catalog_json(int(sg))
@@ -805,7 +805,7 @@ def k_source_kparam_of_visible(sg: int, kslot: int, visible: Sequence[Fraction])
 def k_numeric_star(
     parent_sg: int, gid: int, visible: Sequence[Fraction] | None, source_visible: Sequence[Fraction] | None
 ) -> list[str]:
-    """The numeric displayed star arms of a parametric gid at a visible k (k_catalog.c)."""
+    """The numeric displayed star arms of a parametric gid at a visible k (k/catalog.c)."""
 
     def words(values: Sequence[Fraction] | None) -> np.ndarray:
         return np.array([part for value in (values or ())[:3] for part in (Fraction(value).numerator, Fraction(value).denominator)] or [0], dtype=np.int64)
@@ -931,7 +931,7 @@ def _selection_call(request: dict) -> dict:
 
 
 def k_points_state(parent_state: dict, **options) -> dict:
-    """select_k_points of one parent state (sel_kpoints.c)."""
+    """select_k_points of one parent state (k/select.c)."""
 
     return _selection_call({"call": "k_points", "state": parent_state, "options": options})
 
@@ -962,7 +962,7 @@ def _cif_summary(data: bytes, from_file: bool) -> dict:
 
 
 def read_cif_summary(cif: os.PathLike | str) -> dict:
-    """The parent-stage CIF summary of one file (par_cif.c)."""
+    """The parent-stage CIF summary of one file (parent/cif.c)."""
 
     return _cif_summary(str(cif).encode(), True)
 
@@ -972,7 +972,7 @@ def read_cif_summary_from_text(cif_text: str) -> dict:
 
 
 def build_parent_state_from_cif_info(cif_info: dict) -> dict:
-    """The parent International setting and every site's Wyckoff position (par_state.c)."""
+    """The parent International setting and every site's Wyckoff position (parent/state.c)."""
 
     return _parent_call({"call": "parent_state", "cif_info": cif_info})
 

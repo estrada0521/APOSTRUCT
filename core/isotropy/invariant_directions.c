@@ -1,6 +1,6 @@
 /* subgroup_to_orderparam_ for a little irrep over a list of operations: the
  * invariant directions from the reduced D - I rows (columns reversed),
- * computed exactly (exact_irrep.c). */
+ * computed exactly (irreps/exact.c). */
 
 #include <math.h>
 #include <stdlib.h>

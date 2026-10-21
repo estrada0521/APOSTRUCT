@@ -43,7 +43,7 @@ int cy_inv(const cy_field *f, const cy *a, cy *out);
 int cy_to_double(const cy_field *f, const cy *a, double *out);
 /* The sign of a real element; nonzero when undecidable. */
 int cy_sign(const cy_field *f, const cy *a, int *sign);
-/* a^{-1} certified by exact multiplication (exact_kernel.c); nonzero for 0 or failure. */
+/* a^{-1} certified by exact multiplication (math/exact_kernel.c); nonzero for 0 or failure. */
 int exact_inverse(const cy_field *f, const cy *a, cy *out);
 /* The value under z -> exp(2 pi i / m). */
 void cy_value(const cy_field *f, const cy *a, double *re, double *im);

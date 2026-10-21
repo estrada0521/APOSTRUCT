@@ -1,4 +1,4 @@
-/* The displayed K-family form shared by case_kparams.c and k_catalog.c. */
+/* The displayed K-family form shared by k/case_params.c and k/catalog.c. */
 
 #ifndef APOSTRUCT_K_DISPLAY_H
 #define APOSTRUCT_K_DISPLAY_H

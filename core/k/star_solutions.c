@@ -2,7 +2,7 @@
  *
  * Each arm is origin + params . directions; its system is pre-eliminated into
  * integer left-inverse rows and consistency rows over one scale
- * (kfamily.c, solver_for). For every reciprocal shift in
+ * (k/families.c, solver_for). For every reciprocal shift in
  * (-1, 0, 1)^3, x-major, the rhs target + shift - origin either fails the
  * consistency rows or yields params = left . rhs / scale. All arithmetic is
  * exact; fractions are returned reduced with positive denominators. */

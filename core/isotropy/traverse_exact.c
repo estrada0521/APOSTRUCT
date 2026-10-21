@@ -1,4 +1,4 @@
-/* The isotropy-subspace traversal of isotropy_traverse.c over Q(zeta_m).
+/* The isotropy-subspace traversal of isotropy/traverse.c over Q(zeta_m).
  *
  * The same breadth-first walk, equation keys, orbit representatives,
  * projective classes and child flags, with every test exact: a value is

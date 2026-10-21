@@ -61,7 +61,7 @@ static inline uint64_t minv(uint64_t a)
 }
 
 
-/* (exact_kernel.c) the attempt-th prime p = 1 mod m for f with a primitive
+/* (math/exact_kernel.c) the attempt-th prime p = 1 mod m for f with a primitive
  * m-th root w, the field's units (exponents of the embeddings), and the
  * Montgomery-form inverse Vandermonde matrix vinv[i][e] of x_e = w^units[e];
  * cached. Nonzero when none is available. */

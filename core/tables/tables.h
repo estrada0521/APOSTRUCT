@@ -1,4 +1,4 @@
-/* Typed views of the mmapped Source blob (tables.c). */
+/* Typed views of the mmapped Source blob (tables/blob.c). */
 
 #ifndef APOSTRUCT_TABLES_H
 #define APOSTRUCT_TABLES_H

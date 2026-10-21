@@ -1,4 +1,4 @@
-/* The get_irreps_ context of a little irrep at a k parameter (irreps.c). */
+/* The get_irreps_ context of a little irrep at a k parameter (irreps/context.c). */
 
 #ifndef APOSTRUCT_IRREPS_H
 #define APOSTRUCT_IRREPS_H

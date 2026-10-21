@@ -1,7 +1,7 @@
 /* The first Wyckoff row of an inter setting holding a fractional point
  * (SourceTables.match_inter_wyckoff_site): the modular integer solve of the
  * formula through its Smith normal form, else the least-squares solve
- * (minimum-norm least squares, linalg.c), then the Source-branch parameters of
+ * (minimum-norm least squares, math/linalg.c), then the Source-branch parameters of
  * the original coordinates.  Float arithmetic follows the original order. */
 
 #include "linalg.h"

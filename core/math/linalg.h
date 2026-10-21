@@ -1,4 +1,4 @@
-/* Small dense linear algebra in place of BLAS/LAPACK (linalg.c): the same
+/* Small dense linear algebra in place of BLAS/LAPACK (math/linalg.c): the same
  * results on every platform. Matrices are row-major. */
 
 #ifndef APOSTRUCT_LINALG_H
