@@ -745,6 +745,60 @@ static void selection_rows(jbuf *b, const jvalue *slots, const char *irrep_key, 
 }
 
 /* The public mode details with definition ids and the selected subgroup. */
+static void put_field(jbuf *b, const char *key, const jvalue *value, const expand_t *x)
+{
+    jb_lit(b, "\"");
+    jb_lit(b, key);
+    jb_lit(b, "\": ");
+    if (value) put_copy(b, value, 1, x);
+    else jb_lit(b, "null");
+}
+
+/* one mode definition: what identifies the mode apart from the choices (irrep basis, star arm, signs, the basis inside
+ * a degenerate space) that present it */
+static void definition_result(jbuf *b, const jvalue *definition, const char *kind, int64_t number, const expand_t *x)
+{
+    const jvalue *mode = member(definition, "mode"), *factor = member(definition, "factor");
+    char id[64];
+    snprintf(id, sizeof id, "{\"definition_id\": \"%s-%lld\", ", kind, (long long)number);
+    jb_lit(b, id);
+    put_field(b, "role", member(definition, "role"), x);
+    jb_lit(b, ", ");
+    put_field(b, "slot", member(factor, "slot"), x);
+    jb_lit(b, ", ");
+    put_field(b, "atom_block", member(definition, "atom_block"), x);
+    jb_lit(b, ", \"invariants\": {");
+    static const char *const invariant[] = {"kind", "k", "irrep", "site_label", "site_type", "wyckoff"};
+    for (size_t i = 0; i < sizeof invariant / sizeof invariant[0]; i++) {
+        if (i) jb_lit(b, ", ");
+        put_field(b, invariant[i], member(mode, invariant[i]), x);
+    }
+    jb_lit(b, ", \"site_irrep\": ");
+    const jvalue *site_irrep = member(mode, "site_irrep");
+    if (jis(site_irrep, J_STRING)) {
+        size_t n = 0;
+        while (n < (size_t)site_irrep->count && site_irrep->u.s[n] != '(') n++;
+        jb_string(b, site_irrep->u.s, n);
+    } else {
+        jb_lit(b, "null");
+    }
+    jb_lit(b, "}, \"setting\": {");
+    put_field(b, "label", member(definition, "label"), x);
+    jb_lit(b, ", ");
+    put_field(b, "direction", member(mode, "direction"), x);
+    jb_lit(b, ", ");
+    put_field(b, "kvector", member(mode, "kvector"), x);
+    jb_lit(b, ", ");
+    put_field(b, "site_irrep", site_irrep, x);
+    jb_lit(b, ", ");
+    put_field(b, "parameters", member(factor, "parameters"), x);
+    jb_lit(b, ", ");
+    put_field(b, "normfactor", member(definition, "normfactor"), x);
+    jb_lit(b, ", ");
+    put_field(b, "vectors", member(definition, "vectors"), x);
+    jb_lit(b, "}}");
+}
+
 static void mode_details_result(jbuf *b, const jvalue *details, const jvalue *orderparam, const expand_t *x)
 {
     jb_lit(b, "{");
@@ -767,35 +821,19 @@ static void mode_details_result(jbuf *b, const jvalue *details, const jvalue *or
                     put_copy(b, definition, 1, x);
                     continue;
                 }
-                jbuf one = {0};
-                jb_reset(&one);
-                put_copy(&one, definition, 1, x);
-                size_t body = one.used ? one.used - 1 : 0;
-                jb_raw(b, one.data, body);
-                char id[64];
-                snprintf(id, sizeof id, "%s\"definition_id\": \"%s-%lld\"}", body > 1 ? ", " : "", kind, (long long)d + 1);
-                jb_lit(b, id);
-                jb_free(&one);
+                definition_result(b, definition, kind, d + 1, x);
             }
             jb_lit(b, "]");
         } else if (jstr_is(key, "subgroup_details") && jis(value, J_OBJECT)) {
-            jb_lit(b, "{");
-            int f = 1;
-            for (int64_t k = 0; k < value->count; k++) {
-                const jvalue *sk = value->u.members + 2 * k;
-                if ((sk->count && sk->u.s[0] == '_') || jstr_is(sk, "subgroup") || jstr_is(sk, "magnetic_subgroup") ||
-                    jstr_is(sk, "selected_subgroup"))
-                    continue;
-                if (!f) jb_lit(b, ", ");
-                f = 0;
-                jb_value(b, sk);
-                jb_lit(b, ": ");
-                put_copy(b, sk + 1, 1, x);
-            }
-            if (!f) jb_lit(b, ", ");
-            jb_lit(b, "\"selected_subgroup\": ");
+            jb_lit(b, "{\"subgroup\": ");
             subgroup_result(b, member(member(orderparam, "isotropy"), "subgroup"));
-            jb_lit(b, "}");
+            jb_lit(b, ", \"setting\": {");
+            put_field(b, "basis", member(member(orderparam, "isotropy"), "basis_text"), x);
+            jb_lit(b, ", ");
+            put_field(b, "origin", member(value, "origin"), x);
+            jb_lit(b, ", ");
+            put_field(b, "parent_setting", member(value, "parent_inter_setting_id"), x);
+            jb_lit(b, "}}");
         } else {
             put_copy(b, value, 1, x);
         }

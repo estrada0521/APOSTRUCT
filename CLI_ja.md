@@ -67,7 +67,7 @@ OPD の各行は、取り方に依らないものと依るものを分けて持�
 
 ## Modes
 
-各modeは `definition_id`（そのpayload内でのID）と、kind・k点・irrep・direction・site・Wyckoff位置・site irrepからなるidentityを持つ。`role` はprimaryと誘起されたsecondaryを分ける。
+各 mode は `definition_id`（その payload 内での ID）、`role`（primary か、誘起された secondary か）、k 点の `slot` を持つ。`invariants` は取り方に依らずに mode を特定する：kind、k 点、irrep、site、Wyckoff 位置、site irrep。`setting` はその一つの見せ方：ラベル、BYU の既約表現の基底での方向、成分のある腕 `kvector`、パラメータの名前、`normfactor`、変位や磁気モーメントの `vectors`。`vectors` の符号と、複数の mode が張る空間の中での基底は、基底とドメインの取り方に従う。`subgroup_details` は子の胞の `subgroup` と `setting`（basis、origin、親の設定）を分ける。
 `--format text` はmode表を出す（`modes` と `run --upto modes` のみ）。
 
 ## Case

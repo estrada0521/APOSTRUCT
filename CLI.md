@@ -67,7 +67,7 @@ Each OPD row separates what does not depend on choices from what does. `invarian
 
 ## Modes
 
-Each mode has a `definition_id` (an ID within that payload) and an identity made of kind, k point, irrep, direction, site, Wyckoff position and site irrep. `role` separates primary modes from induced secondary ones.
+Each mode has a `definition_id` (an ID within that payload), a `role` (primary or induced secondary) and the `slot` of its k point. `invariants` identifies it apart from any choice: kind, k point, irrep, site, Wyckoff position and site irrep. `setting` holds one presentation: the label, the direction in the BYU irrep basis, the active arm `kvector`, the parameter names, `normfactor` and the displacement or moment `vectors`, whose signs and, in a space with several modes, whose basis follow the choices of basis and domain. `subgroup_details` separates the `subgroup` from the `setting` (basis, origin, parent setting) of the child cell.
 `--format text` prints the mode table (`modes` and `run --upto modes` only).
 
 ## Case
