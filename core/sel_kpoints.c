@@ -13,9 +13,10 @@ int k_coordinate_map_words(int sg, int kslot, int64_t *out);
 int k_source_kparam_of_visible(int sg, int kslot, const int64_t *visible_words, int64_t *out);
 int k_source_little_order(int sg, int kslot, int count, const int64_t *parameter_words, int *order_out);
 int vector_mode_total(int sg, int gid, int row_count, const int *row_ids, int axial, int64_t *total);
+int strain_irrep(int sg, int gid);
 
 static struct {
-    section_view k_dim, ops_count, iso_pointer, ferroelastic, mag_pointer;
+    section_view k_dim, ops_count, mag_pointer;
     int ready;
 } T;
 
@@ -23,8 +24,7 @@ static int load(void)
 {
     if (T.ready) return 0;
     if (sel_tables() || section_find("little.little_k_dim", &T.k_dim) || section_find("little.little_ops_count", &T.ops_count) ||
-        section_find("isotropy.isotropy_irrep_pointer", &T.iso_pointer) ||
-        section_find("isotropy.isotropy_ferroelastic", &T.ferroelastic) || section_find("magnetic.mag_iso_irrep_pointer", &T.mag_pointer))
+        section_find("magnetic.mag_iso_irrep_pointer", &T.mag_pointer))
         return md_fail(MDE_VALUE, "k-point Source tables are inconsistent");
     T.ready = 1;
     return 0;
@@ -335,7 +335,7 @@ int sel_k_points(const jvalue *state, const jvalue *opts, jbuf *out)
 
 /* ------------------------------------------------------------ irreps */
 
-static int strain_visible(const jvalue *kpoint, const jvalue *candidate)
+static int strain_visible(int sg, const jvalue *kpoint, const jvalue *candidate)
 {
     const jvalue *label = member(kpoint, "label");
     if (!jstr_is(label, "GM")) return 0;
@@ -346,10 +346,7 @@ static int strain_visible(const jvalue *kpoint, const jvalue *candidate)
     jb_free(&symbol);
     if (gm1) return 1;
     int64_t old_id = member_int(candidate, "old_id");
-    if (old_id <= 0 || old_id >= section_count(&T.iso_pointer)) return 0;
-    for (int64_t row = section_int(&T.iso_pointer, old_id - 1); row < section_int(&T.iso_pointer, old_id); row++)
-        if (section_int(&T.ferroelastic, row - 1) == 1) return 1;
-    return 0;
+    return old_id > 0 && strain_irrep(sg, (int)member_int(candidate, "gid"));
 }
 
 static int has_magnetic_variant(const jvalue *candidate)
@@ -422,7 +419,7 @@ int sel_irreps(const jvalue *state, jbuf *out)
             int64_t total = 0;
             status = mode_total(sg, candidate, displacive, nd, 0, &total);
             if (status) break;
-            int strain = include_strain && strain_visible(kpoint, candidate);
+            int strain = include_strain && strain_visible(sg, kpoint, candidate);
             if (total <= 0 && !strain) continue;
             char number[32];
             snprintf(number, sizeof number, "%lld", (long long)total);

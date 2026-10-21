@@ -42,46 +42,71 @@ static int fixed(const int64_t (*ops)[5], int n, int64_t *polar, int64_t *strain
     return 0;
 }
 
+static int load(void)
+{
+    if (ready) return 0;
+    if (geo_load() || section_find("space.ipoint_op", &point_op) || section_find("little.little_irr_k", &little_k) ||
+        section_find("little.little_irr_full_dim", &full_dim) || section_find("little.little_k_dim", &k_dim))
+        return 1;
+    ready = 1;
+    return 0;
+}
+
+/* multiplicities of irrep gid in the polar vector and the symmetric strain, by characters; zero away from Gamma */
+static int multiplicities(int sg, int gid, const int64_t (*G)[5], int ng, double *mv, double *ms, double *mt)
+{
+    double norm = 0;
+    *mv = *ms = *mt = 0;
+    int kslot = gid > 0 ? (int)section_int(&little_k, gid - 1) : 0;
+    if (kslot != 1 || section_int(&k_dim, (int64_t)(geo_sg_lattice(sg) - 1) * 27) != 0) return 0;
+    int dim = (int)section_int(&full_dim, gid - 1);
+    double *m = malloc(sizeof(double) * (size_t)dim * dim);
+    if (!m) return 1;
+    for (int q = 0; q < ng; q++) {
+        if (little_sparse_matrix(gid, dim, q + 1, m)) {
+            free(m);
+            return 1;
+        }
+        double chi = 0, squared = 0;
+        for (int a = 0; a < dim; a++) chi += m[a * dim + a];
+        int64_t r[9];
+        point_matrix((int)G[q][4], r);
+        double trace = (double)(r[0] + r[4] + r[8]);
+        for (int x = 0; x < 3; x++)
+            for (int y = 0; y < 3; y++) squared += (double)(r[3 * x + y] * r[3 * y + x]);
+        *mt += chi;
+        *mv += chi * trace;
+        *ms += chi * (trace * trace + squared) / 2;
+        norm += chi * chi;
+    }
+    free(m);
+    if (norm > 0) *mv /= norm, *ms /= norm;
+    *mt /= ng;
+    return 0;
+}
+
 int ferroic_codes(int sg, int subgroup, const int64_t *basis, const int64_t *origin, int gid, int *fe, int *fa)
 {
     *fe = *fa = 0;
-    if (!ready) {
-        if (geo_load() || section_find("space.ipoint_op", &point_op) || section_find("little.little_irr_k", &little_k) ||
-            section_find("little.little_irr_full_dim", &full_dim) || section_find("little.little_k_dim", &k_dim))
-            return 1;
-        ready = 1;
-    }
+    if (load()) return 1;
     int64_t G[GEO_MAX_OPS][5], H[GEO_MAX_OPS * 4][5], gp, gs, hp, hs;
     int ng = geo_sg_records(sg, G), nh = parent_operation_records(sg, subgroup, basis, origin, H);
     if (ng <= 0 || nh <= 0 || fixed((const int64_t (*)[5])G, ng, &gp, &gs) || fixed((const int64_t (*)[5])H, nh, &hp, &hs)) return 1;
     if (hp <= gp && hs <= gs) return 0;
-    /* multiplicities of the primary irrep in the two representations, by characters, at Gamma */
-    double mv = 0, ms = 0, norm = 0;
-    int kslot = gid > 0 ? (int)section_int(&little_k, gid - 1) : 0;
-    if (kslot == 1 && section_int(&k_dim, (int64_t)(geo_sg_lattice(sg) - 1) * 27) == 0) {
-        int dim = (int)section_int(&full_dim, gid - 1);
-        double *m = malloc(sizeof(double) * (size_t)dim * dim);
-        if (!m) return 1;
-        for (int q = 0; q < ng; q++) {
-            if (little_sparse_matrix(gid, dim, q + 1, m)) {
-                free(m);
-                return 1;
-            }
-            double chi = 0, squared = 0;
-            for (int a = 0; a < dim; a++) chi += m[a * dim + a];
-            int64_t r[9];
-            point_matrix((int)G[q][4], r);
-            double trace = (double)(r[0] + r[4] + r[8]);
-            for (int x = 0; x < 3; x++)
-                for (int y = 0; y < 3; y++) squared += (double)(r[3 * x + y] * r[3 * y + x]);
-            mv += chi * trace;
-            ms += chi * (trace * trace + squared) / 2;
-            norm += chi * chi;
-        }
-        free(m);
-        if (norm > 0) mv /= norm, ms /= norm;
-    }
+    double mv, ms, mt;
+    if (multiplicities(sg, gid, (const int64_t (*)[5])G, ng, &mv, &ms, &mt)) return 1;
     if (hp > gp) *fe = mv > 0.5 ? 1 : 2;
     if (hs > gs) *fa = ms > 0.5 ? 1 : 2;
     return 0;
+}
+
+/* 1 when irrep gid of sg is not the identity and occurs in the symmetric strain, so that its isotropy subgroups are
+ * proper ferroelastic */
+int strain_irrep(int sg, int gid)
+{
+    int64_t G[GEO_MAX_OPS][5];
+    double mv, ms, mt;
+    int ng;
+    if (load() || (ng = geo_sg_records(sg, G)) <= 0 || multiplicities(sg, gid, (const int64_t (*)[5])G, ng, &mv, &ms, &mt)) return 0;
+    return ms > 0.5 && mt < 0.5;
 }
