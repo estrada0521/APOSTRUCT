@@ -211,7 +211,7 @@ class ISOData:
     def irrep_dim(self, old_id: int) -> int:
         for i, oid in enumerate(self.little["little_irr_old"]):
             if oid == old_id:
-                return native.little_full_dim(i + 1)
+                return int(self.little["little_irr_full_dim"][i])
         raise KeyError(f"dimension for old irrep id {old_id} not found")
 
     # ------------------------------------------------------------------

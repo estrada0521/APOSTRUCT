@@ -90,6 +90,8 @@ def _load() -> ctypes.CDLL:
     library.geo_point_product.restype = ctypes.c_int64
     library.mag_point_product.argtypes = (ctypes.c_int, ctypes.c_int)
     library.mag_point_product.restype = ctypes.c_int
+    library.little_old_id.argtypes = (ctypes.c_int,)
+    library.little_old_id.restype = ctypes.c_int
     library.little_full_dim.argtypes = (ctypes.c_int,)
     library.little_full_dim.restype = ctypes.c_int
     library.old_irrep_space_group.argtypes = (ctypes.c_int,)
@@ -120,6 +122,11 @@ def point_op_product(left: int, right: int) -> int:
 def magnetic_point_op_product(left: int, right: int) -> int:
     """The product of two magnetic point operations."""
     return int(_LIBRARY.mag_point_product(int(left), int(right)))
+
+
+def little_old_id(gid: int) -> int:
+    """The old (data_irreps) id of a little irrep, 0 when it has none."""
+    return int(_LIBRARY.little_old_id(int(gid)))
 
 
 def little_full_dim(gid: int) -> int:

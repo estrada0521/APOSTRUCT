@@ -55,6 +55,10 @@ class CompiledSequence(Sequence[Any]):
         return iter(self._values)
 
 
+# sections apo builds from other tables (public/core/little_derived.c), read through the shared library
+DERIVED = {"little.little_irr_old": "little_old_id", "little.little_irr_full_dim": "little_full_dim"}
+
+
 class CompiledTable(dict[str, Sequence[Any]]):
     """Decode individual table sections only when first requested."""
 
@@ -65,6 +69,14 @@ class CompiledTable(dict[str, Sequence[Any]]):
         super().__init__()
 
     def __missing__(self, key: str) -> Sequence[Any]:
+        derived = DERIVED.get(f"{self._table}.{key}")
+        if derived:
+            from verification.backend import native
+
+            count = len(self["little_irr_space_group"])
+            values = tuple(getattr(native, derived)(gid) for gid in range(1, count + 1))
+            dict.__setitem__(self, key, values)
+            return values
         if key not in self._names:
             raise KeyError(key)
         sequence = CompiledSequence(self._blob.section(f"{self._table}.{key}"))
