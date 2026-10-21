@@ -142,14 +142,14 @@
       const headingPattern = /^(Parent structure|Subgroup details|Undistorted superstructure|Displacive mode definitions|Magnetic mode definitions|Parent-cell strain mode definitions)$/gm;
       let cursor = 0;
       for (const match of source.matchAll(headingPattern)) {
-        fragment.append(document.createTextNode(source.slice(cursor, match.index)));
+        appendModeText(fragment, source.slice(cursor, match.index));
         const heading = document.createElement("span");
         heading.className = "mode-details-section-heading";
         heading.textContent = match[0];
         fragment.append(heading);
         cursor = match.index + match[0].length;
       }
-      fragment.append(document.createTextNode(source.slice(cursor)));
+      appendModeText(fragment, source.slice(cursor));
       output.replaceChildren(fragment);
     }
 
@@ -770,13 +770,15 @@
         const subgroup = iso.subgroup || {};
         const subgroupNumber = subgroup.display_label || subgroup.number;
         const checked = index + 1 === state.orderparamIndex ? " checked" : "";
-        const label = [
-          dir.label ?? iso.direction_label ?? "",
-          iso.display_opd ?? iso.source_opd ?? dir.opd ?? iso.direction_opd ?? "",
-          subgroupNumber ? `#${subgroupNumber} ${subgroup.symbol}` : "",
-          opdMetadataSuffix(iso),
-        ].filter(Boolean).join(" ");
-        return `<label><input type="radio" name="orderparam" value="${index + 1}"${checked}>${esc(label)}</label><br>`;
+        const vector = iso.display_opd ?? iso.source_opd ?? dir.opd ?? iso.direction_opd ?? "";
+        const [invariant, chosen] = opdParts(iso);
+        const first = [
+          esc(dir.label ?? iso.direction_label ?? ""),
+          subgroupNumber ? esc(`#${subgroupNumber} ${subgroup.symbol}`) : "",
+        ].filter(Boolean).join(" ") + (invariant.length ? `, ${invariant.join(", ")}` : "");
+        const second = [vector, ...chosen].filter(Boolean).join(", ");
+        return `<label class="opd-option"><input type="radio" name="orderparam" value="${index + 1}"${checked}>` +
+          `<span class="opd-lines"><span>${first}</span>${second ? choice(second) : ""}</span></label>`;
       }).join("");
       document.querySelectorAll("input[name='orderparam']").forEach(radio => {
         radio.addEventListener("change", () => {
@@ -786,22 +788,52 @@
       });
     }
 
-    function opdMetadataSuffix(iso) {
-      if (!iso || typeof iso !== "object") return "";
-      const parts = [];
+    // an OPD's invariant facts (s, i, active arms) and the parts that present it by a choice (basis, origin, arms)
+    function opdParts(iso) {
+      if (!iso || typeof iso !== "object") return [[], []];
+      const invariant = [], chosen = [];
       const basis = iso.basis_text || fmtBasis(iso.basis);
       const origin = fmtOrigin(iso.origin);
       const size = iso.s ?? iso.det;
       const index = iso.i ?? iso.index;
-      const kActive = iso.k_active ?? iso.k_active_text ?? (
-        Array.isArray(iso.k_active_vectors) ? iso.k_active_vectors.join(",") : ""
-      );
-      if (basis) parts.push(`basis=${basis}`);
-      if (origin) parts.push(`origin=${origin}`);
-      if (size !== null && size !== undefined && size !== "") parts.push(`s=${size}`);
-      if (index !== null && index !== undefined && index !== "") parts.push(`i=${index}`);
-      if (kActive) parts.push(`k-active= ${kActive}`);
-      return parts.length ? `, ${parts.join(", ")}` : "";
+      const vectors = Array.isArray(iso.k_active_vectors) ? iso.k_active_vectors : null;
+      const kActive = iso.k_active ?? iso.k_active_text ?? (vectors ? vectors.join(",") : "");
+      if (size !== null && size !== undefined && size !== "") invariant.push(esc(`s=${size}`));
+      if (index !== null && index !== undefined && index !== "") invariant.push(esc(`i=${index}`));
+      if (vectors) invariant.push(esc(`${vectors.length} active ${vectors.length === 1 ? "arm" : "arms"}`));
+      if (basis) chosen.push(`basis=${basis}`);
+      if (origin) chosen.push(`origin=${origin}`);
+      if (kActive) chosen.push(`k-active= ${kActive}`);
+      return [invariant, chosen];
+    }
+
+    // the parts that depend on a choice (irrep basis, domain, subgroup frame, star arms) rather than on the subgroup
+    const CHOICE_TITLE = "Depends on a choice (irrep basis, domain, subgroup frame or star arm), not on the subgroup itself";
+    function choice(text) {
+      return `<span class="choice" title="${esc(CHOICE_TITLE)}">${esc(text)}</span>`;
+    }
+
+    function choiceNode(text) {
+      const span = document.createElement("span");
+      span.className = "choice";
+      span.title = CHOICE_TITLE;
+      span.textContent = text;
+      return span;
+    }
+
+    // the subgroup line of the mode details text, with its basis, origin and k-active parts marked as choices
+    function appendModeText(fragment, text) {
+      const line = /^(.*?)(, basis=\{[^}\n]*\})(, origin=\([^)\n]*\))(, s=\d+, i=\d+, )(k-active= [^\n]*)$/m;
+      const match = text.match(line);
+      if (!match) {
+        fragment.append(document.createTextNode(text));
+        return;
+      }
+      fragment.append(document.createTextNode(text.slice(0, match.index) + match[1]));
+      fragment.append(document.createTextNode(", "), choiceNode(match[2].slice(2)));
+      fragment.append(document.createTextNode(", "), choiceNode(match[3].slice(2)));
+      fragment.append(document.createTextNode(match[4]), choiceNode(match[5]));
+      fragment.append(document.createTextNode(text.slice(match.index + match[0].length)));
     }
 
     function fmtBasis(value) {

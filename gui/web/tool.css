@@ -734,3 +734,23 @@ td {
   padding: var(--space-md);
   border-radius: var(--radius);
 }
+
+.choice {
+  color: var(--color-muted);
+}
+
+.opd-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.3em;
+  margin-bottom: 0.35em;
+}
+
+.opd-lines {
+  display: flex;
+  flex-direction: column;
+}
+
+.opd-lines .choice {
+  font-size: 0.9em;
+}

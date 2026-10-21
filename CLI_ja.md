@@ -63,7 +63,7 @@ apo opds structure.cif --k R --irrep R4- --k M --irrep M3+ --displacive O
 apo modes structure.cif --k R --irrep R4- --k M --irrep M3+ --displacive O --opd 'P1(1)P1(2)'
 ```
 
-`index` は群の指数、`cell_index` はsupercellの倍率。`ferroic_classified` が `false` のときは、`ferroic_properties` が空でも未分類を意味する。
+OPD の各行は、取り方に依らないものと依るものを分けて持つ。`invariants` は isotropy の部分群の事実で、`parameter_count`（自由パラメータの数、固定空間の次元）、`index`（群の指数、ドメインの数でもある）、`cell_index`（supercell の倍率）、`k_active_count`（成分のある star の腕の数）、`ferroic_properties`。`setting` はその一つの見せ方で、BYU の既約表現の基底での方向 `opd`、部分群の `basis` と `origin`、成分のある腕 `k_active`。これらは基底、ドメイン、腕の取り方で変わる。`subgroup` とラベルの前置字（P、C、S、nD）は変わらない。
 
 ## Modes
 

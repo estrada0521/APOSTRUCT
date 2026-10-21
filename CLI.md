@@ -63,7 +63,7 @@ With several k points the label carries a domain number per slot (`P1(1)P1(2)`);
 apo modes structure.cif --k R --irrep R4- --k M --irrep M3+ --displacive O --opd 'P1(1)P1(2)'
 ```
 
-`index` is the group index and `cell_index` the supercell factor. When `ferroic_classified` is `false`, an empty `ferroic_properties` means unclassified.
+Each OPD row separates what does not depend on choices from what does. `invariants` holds the facts of the isotropy subgroup: `parameter_count` (free parameters, the dimension of its fixed space), `index` (the group index, also the number of domains), `cell_index` (the supercell factor), `k_active_count` (the number of active star arms) and `ferroic_properties`. `setting` holds one presentation of it: the direction `opd` in the BYU irrep basis, the subgroup `basis` and `origin`, and the active arms `k_active`. These change with the choice of basis, domain or arms; `subgroup` and the label prefix (P, C, S, nD) do not.
 
 ## Modes
 

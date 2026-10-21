@@ -662,30 +662,36 @@ static void subgroup_result(jbuf *b, const jvalue *subgroup)
     jb_lit(b, "}");
 }
 
+/* one OPD row: the invariants of its isotropy subgroup apart from the choices (direction, frame, arms) that present it */
 static void opd_result(jbuf *b, const jvalue *row)
 {
     const jvalue *direction = member(row, "direction"), *iso = member(row, "isotropy");
     jb_lit(b, "{\"label\": ");
     put_or_null(b, member(direction, "label"));
-    jb_lit(b, ", \"opd\": ");
-    put_or_null(b, member(direction, "opd"));
     jb_lit(b, ", \"subgroup\": ");
     subgroup_result(b, member(iso, "subgroup"));
-    static const char *const keys[][2] = {{"basis", "basis_text"}, {"origin", "origin"}, {"index", "i"}, {"cell_index", "s"},
-                                          {"parameter_count", "free"}};
-    for (size_t i = 0; i < sizeof keys / sizeof keys[0]; i++) {
-        jb_lit(b, ", \"");
-        jb_lit(b, keys[i][0]);
-        jb_lit(b, "\": ");
-        put_or_null(b, member(iso, keys[i][1]));
-    }
-    jb_lit(b, ", \"k_active\": ");
+    jb_lit(b, ", \"invariants\": {\"parameter_count\": ");
+    put_or_null(b, member(iso, "free"));
+    jb_lit(b, ", \"index\": ");
+    put_or_null(b, member(iso, "i"));
+    jb_lit(b, ", \"cell_index\": ");
+    put_or_null(b, member(iso, "s"));
     const jvalue *active = member(iso, "k_active_vectors");
-    put_or_null(b, jtruthy(active) ? active : member(iso, "k_active"));
+    jb_lit(b, ", \"k_active_count\": ");
+    if (jis(active, J_ARRAY)) jb_int(b, active->count);
+    else jb_lit(b, "null");
     jb_lit(b, ", \"ferroic_properties\": ");
     const jvalue *ferroic = member(iso, "ferroic_properties");
     if (jtruthy(ferroic)) jb_value(b, ferroic);
     else jb_lit(b, "[]");
+    jb_lit(b, "}, \"setting\": {\"opd\": ");
+    put_or_null(b, member(direction, "opd"));
+    jb_lit(b, ", \"basis\": ");
+    put_or_null(b, member(iso, "basis_text"));
+    jb_lit(b, ", \"origin\": ");
+    put_or_null(b, member(iso, "origin"));
+    jb_lit(b, ", \"k_active\": ");
+    put_or_null(b, jtruthy(active) ? active : member(iso, "k_active"));
     const jvalue *components = member(direction, "components");
     if (components && !jis(components, J_NULL)) {
         jb_lit(b, ", \"components\": [");
@@ -706,7 +712,7 @@ static void opd_result(jbuf *b, const jvalue *row)
         }
         jb_lit(b, "]");
     }
-    jb_lit(b, "}");
+    jb_lit(b, "}}");
 }
 
 static void selection_rows(jbuf *b, const jvalue *slots, const char *irrep_key, int irrep_list)
