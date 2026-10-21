@@ -35,6 +35,7 @@ int tables_open(const char *path)
 
 int star_rule_section(const char *name, section_view *view, int *handled);
 int little_derived_section(const char *name, section_view *view, int *handled);
+int isotropy_derived_section(const char *name, section_view *view, int *handled);
 
 /* a section as stored in the blob */
 int section_find_stored(const char *name, section_view *view)
@@ -52,12 +53,13 @@ int section_find_stored(const char *name, section_view *view)
 /* the name of stored section i (0-based), 0 past the last */
 const char *section_stored_name(uint32_t i) { return i < blob_count ? blob_index[i].name : 0; }
 
-/* a section by name; the star of k sections are built from their rule (k/star.c), the irrep dimensions and old ids from
- * other tables (tables/little_derived.c) */
+/* a section by name; the star of k sections are built from their rule (k/star.c), the irrep dimensions and old ids
+ * and the ordinary OPD labels from other tables (tables/little_derived.c, tables/isotropy_derived.c) */
 int section_find(const char *name, section_view *view)
 {
     int handled, status = star_rule_section(name, view, &handled);
     if (!handled) status = little_derived_section(name, view, &handled);
+    if (!handled) status = isotropy_derived_section(name, view, &handled);
     return handled ? status : section_find_stored(name, view);
 }
 

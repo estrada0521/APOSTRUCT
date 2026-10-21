@@ -67,7 +67,6 @@ irreps.old.mulliken                          irreps/old.txt                     
 irreps.old.by_sg_start                       irreps/old.txt                               sg group_start keys=230 sentinel byu=irreps.irrep_space_group_pointer
 irreps.old.image                             conventions/irreps/old.txt                   image each byu=irreps.irrep_image
 isotropy.ordinary.by_old_start               conventions/isotropy/ordinary.txt            old group_start keys=4777 sentinel byu=isotropy.isotropy_irrep_pointer
-isotropy.ordinary.label                      conventions/isotropy/ordinary.txt            label text byu=isotropy.isotropy_orderparam_label
 isotropy.ordinary.direction_codes_start      conventions/isotropy/ordinary.txt            direction_codes start byu=isotropy.isotropy_orderparam_pointer
 isotropy.ordinary.direction_codes            conventions/isotropy/ordinary.txt            direction_codes flat total=144000 byu=isotropy.isotropy_orderparam
 isotropy.ordinary.image_direction            conventions/isotropy/ordinary.txt            image_direction each byu=isotropy.isotropy_direction
@@ -126,3 +125,4 @@ irreps.little.positions                      -                                  
 irreps.little.position_start                 -                                            - derived byu=little.little_irr_full_matrices_irr_pointer
 irreps.little.number                         -                                            - derived byu=little.little_irr_irrnum
 irreps.little.type                           -                                            - derived byu=little.little_irr_type
+isotropy.ordinary.label                      -                                            - derived byu=isotropy.isotropy_orderparam_label

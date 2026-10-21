@@ -47,7 +47,7 @@ number field is a space-separated list, a text field is the text.
 | `k/star_flips.txt`, `k/star_orders.txt`, `k/conv2ml.txt` | | | choices among equivalent star arms, ML matrices |
 | `irreps/little.txt` | 10300 | space group, k, Kovalev label | partner, real form, matrices at the seed positions |
 | `irreps/old.txt` | 4777 | space group, Mulliken label | image |
-| `isotropy/ordinary.txt`, `isotropy/magnetic.txt` | 15239, 16721 | | OPD label, subgroup basis and origin, representative direction |
+| `isotropy/ordinary.txt`, `isotropy/magnetic.txt` | 15239, 16721 | | OPD label (magnetic; the ordinary one is its image direction's), subgroup basis and origin, representative direction |
 | `images/*.txt` | | | the image catalog: images, their subgroups and directions |
 
 `const.dat` names the constants that matrix and direction entries refer to by number.
