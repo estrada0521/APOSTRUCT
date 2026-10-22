@@ -63,6 +63,8 @@ typedef struct {
     int nocc;
     int has_carrier;
     int64_t carrier[4];
+    int source_gid; /* the represented row's irrep before a relabelling promotion, 0 when none */
+    sp_str source_name;
 } sp_row;
 
 typedef struct {
@@ -96,6 +98,10 @@ int sp_aliases(const sp_frame *frame, const sp_row *row, const int64_t *requeste
 int sp_standard_kparam(int sg, int gid, const int64_t *kp, int64_t *out, int *ok, int *raised_kind);
 /* The message of a kvec_standard class raised by k_family_standard_selection. */
 const char *sp_standard_message(void);
+/* The irrep at the standard k parameter equivalent to gid at kp (gid itself when none is unique). */
+/* row's occurrence as the irrep gid at kp: its subduction directions over the frame. */
+int sp_row_at(const sp_frame *frame, const sp_row *row, int gid, const int64_t *kp, sp_row *out, int *found);
+int sp_equivalent_gid(int sg, int gid, const int64_t *kp, const int64_t *standard);
 
 int sp_little_old_id(int gid);
 int sp_little_type(int gid);

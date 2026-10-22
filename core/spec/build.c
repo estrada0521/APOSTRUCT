@@ -456,8 +456,8 @@ static int stored_alias_specs(const alias_mode *mode, const sp_rows *raw, const 
         const sp_row *row = &represented->items[i];
         if (!row->kp[3]) continue;
         represented_entry *e = &entries[nentries++];
-        e->gid = row->gid;
-        e->irrep_name = row->irrep_name;
+        e->gid = row->source_gid ? row->source_gid : row->gid;
+        e->irrep_name = row->source_gid ? row->source_name : row->irrep_name;
         e->k_label = row->k_label;
         e->occ = row->occ;
         e->nocc = row->nocc;
@@ -831,32 +831,55 @@ static int promote_dynamic(const sp_frame *frame, const sp_rows *rows, const int
     for (int s = 0; s < ncases; s++) {
         if (listed(out, gids[s], kps[s])) continue;
         int snapshot = out->count;
-        for (int r = 0; r < snapshot; r++) {
-            const sp_row row = out->items[r];
-            if (claimed[r] || row.gid != gids[s]) continue;
-            sp_rows aliases = {0};
-            SP_TRY(sp_aliases(frame, &row, 0, &aliases));
-            int found = -1;
-            for (int a = 0; a < aliases.count && found < 0; a++)
-                if (sp_kp_identity_eq(aliases.items[a].kp, kps[s])) found = a;
-            sp_row selected;
-            if (found >= 0) {
-                selected = aliases.items[found];
-            } else {
-                int64_t standard[4];
-                int ok, raised;
-                SP_TRY(sp_standard_kparam(frame->sg, gids[s], kps[s], standard, &ok, &raised));
-                if (!ok && raised && !(BIT(raised) & (BIT(PY_KEY) | BIT(PY_TYPE) | BIT(PY_VALUE))))
-                    return sp_fail(raised, sp_standard_message());
-                if (!ok || !sp_kp_identity_eq(row.kp, standard)) continue;
-                selected = row;
-                memcpy(selected.kp, kps[s], sizeof selected.kp);
+        int64_t standard[4];
+        int ok, raised;
+        SP_TRY(sp_standard_kparam(frame->sg, gids[s], kps[s], standard, &ok, &raised));
+        int fatal = !ok && raised && !(BIT(raised) & (BIT(PY_KEY) | BIT(PY_TYPE) | BIT(PY_VALUE)));
+        int standard_gid = ok && !preserve ? sp_equivalent_gid(frame->sg, gids[s], kps[s], standard) : gids[s];
+        for (int pass = standard_gid != gids[s] ? 0 : 1; pass < 2; pass++) {
+            int found_row = 0;
+            for (int r = 0; r < snapshot && !found_row; r++) {
+                const sp_row row = out->items[r];
+                if (claimed[r]) continue;
+                sp_row selected;
+                if (pass == 0) {
+                    if (row.gid != standard_gid || !sp_kp_identity_eq(row.kp, standard)) continue;
+                    int found;
+                    sp_row relabelled;
+                    SP_TRY(sp_row_at(frame, &row, gids[s], kps[s], &relabelled, &found));
+                    if (!found) continue;
+                    selected = row;
+                    selected.source_gid = row.gid;
+                    selected.source_name = row.irrep_name;
+                    selected.gid = gids[s];
+                    selected.irrep_name = relabelled.irrep_name;
+                    memcpy(selected.kp, kps[s], sizeof selected.kp);
+                    selected.dim = relabelled.dim;
+                    selected.count = relabelled.count;
+                    selected.dir = relabelled.dir;
+                } else {
+                    if (row.gid != gids[s]) continue;
+                    sp_rows aliases = {0};
+                    SP_TRY(sp_aliases(frame, &row, 0, &aliases));
+                    int found = -1;
+                    for (int a = 0; a < aliases.count && found < 0; a++)
+                        if (sp_kp_identity_eq(aliases.items[a].kp, kps[s])) found = a;
+                    if (found >= 0) {
+                        selected = aliases.items[found];
+                    } else {
+                        if (fatal) return sp_fail(raised, sp_standard_message());
+                        if (!ok || !sp_kp_identity_eq(row.kp, standard)) continue;
+                        selected = row;
+                        memcpy(selected.kp, kps[s], sizeof selected.kp);
+                    }
+                }
+                promo_index[npromo] = r;
+                promo_alias[npromo++] = selected;
+                out->items[r] = selected;
+                claimed[r] = 1;
+                found_row = 1;
             }
-            promo_index[npromo] = r;
-            promo_alias[npromo++] = selected;
-            out->items[r] = selected;
-            claimed[r] = 1;
-            break;
+            if (found_row) break;
         }
     }
     int *family_count = sp_alloc(sizeof(int) * (size_t)(npromo + 1));

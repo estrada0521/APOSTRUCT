@@ -10,6 +10,7 @@
 #include <string.h>
 
 #include "geometry.h"
+#include "irreps.h"
 #include "spec_core.h"
 #include "tables.h"
 
@@ -452,6 +453,26 @@ static int append_alias(alias_ctx *c, const int64_t *kp, int occurrence)
     return sp_rows_push(c->out, &alias);
 }
 
+int sp_row_at(const sp_frame *frame, const sp_row *row, int gid, const int64_t *kp, sp_row *out, int *found)
+{
+    *found = 0;
+    SP_TRY(load());
+    sp_row source = *row;
+    source.gid = gid;
+    source.irrep_name = sp_irrep_full_label(gid);
+    sp_rows rows = {0};
+    alias_ctx c = {frame, &source, 0, 0, sp_little_full_dim(gid), 0, 0, &rows};
+    c.ops = constrained_ops(frame, &c.op_count);
+    c.seen = sp_alloc(sizeof(int64_t) * 4);
+    if (!c.ops || !c.seen || !row->nocc) return !c.ops || !c.seen;
+    SP_TRY(append_alias(&c, kp, row->occ[0]));
+    if (rows.count) {
+        *out = rows.items[0];
+        *found = 1;
+    }
+    return 0;
+}
+
 static int occurrence_source_kparam(int sg, int gid, int occurrence, int64_t *out, int *found)
 {
     int64_t words[6];
@@ -684,6 +705,56 @@ int sp_standard_kparam(int sg, int gid, const int64_t *kp, int64_t *out, int *ok
     memcpy(out, selection, 4 * sizeof(int64_t));
     *ok = 1;
     return 0;
+}
+
+static int kp_traces(int gid, const int64_t *kp, int record_count, const int *records, double *traces)
+{
+    int dim = sp_little_full_dim(gid);
+    int64_t params[6];
+    for (int i = 0; i < 3; i++) {
+        params[2 * i] = kp[i];
+        params[2 * i + 1] = kp[3] ? kp[3] : 1;
+    }
+    double *stack = malloc(sizeof(double) * (size_t)record_count * (size_t)dim * (size_t)dim + 1);
+    if (!stack) return 1;
+    int status = case_irrep_stack(gid, 3, params, record_count, records, (int64_t)record_count * dim * dim, stack);
+    for (int r = 0; r < record_count && !status; r++) {
+        double sum = 0;
+        for (int a = 0; a < dim; a++) sum += stack[(size_t)r * dim * dim + (size_t)a * dim + a];
+        traces[r] = sum;
+    }
+    free(stack);
+    return status;
+}
+
+int sp_equivalent_gid(int sg, int gid, const int64_t *kp, const int64_t *standard)
+{
+    if (load()) return gid;
+    int64_t sg_records[GEO_MAX_OPS][5];
+    int n = geo_sg_records(sg, sg_records);
+    if (geo_take_error() || n <= 0) return gid;
+    int records[4 * GEO_MAX_OPS * 5], count = 0;
+    for (int shift = 0; shift < 4; shift++)
+        for (int i = 0; i < n; i++, count++) {
+            for (int j = 0; j < 5; j++) records[5 * count + j] = (int)sg_records[i][j];
+            if (shift) records[5 * count + shift - 1] += (int)sg_records[i][3];
+        }
+    double want[4 * GEO_MAX_OPS], have[4 * GEO_MAX_OPS];
+    if (kp_traces(gid, kp, count, records, want)) return gid;
+    int kslot = (int)section_int(&T.irr_k, gid - 1), dim = sp_little_full_dim(gid), match = 0, matches = 0;
+    int64_t total = section_count(&T.irr_sg);
+    for (int64_t g = 1; g <= total; g++) {
+        if (section_int(&T.irr_sg, g - 1) != sg || section_int(&T.irr_k, g - 1) != kslot || sp_little_full_dim((int)g) != dim)
+            continue;
+        if (kp_traces((int)g, standard, count, records, have)) continue;
+        int same = 1;
+        for (int r = 0; r < count && same; r++) same = fabs(want[r] - have[r]) <= 1e-6;
+        if (same) {
+            match = (int)g;
+            matches++;
+        }
+    }
+    return matches == 1 ? match : gid;
 }
 
 int sp_matrix_rank(const double *m, int rows, int cols, double tol, int *rank)
