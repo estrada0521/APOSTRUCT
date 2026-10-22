@@ -16,7 +16,7 @@ theorem parsers expect; a non-"ok" mode_details.status is rejected.
 Usage:
     apo modes structure.cif --k X --irrep X3- --displacive Li --opd P1 \
         --full-state -o output.json
-    python3 Verification/verify_local_output.py output.json
+    python3 -m verification.verify_local_output output.json
 """
 
 from __future__ import annotations

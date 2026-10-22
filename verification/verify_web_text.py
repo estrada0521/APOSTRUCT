@@ -7,7 +7,7 @@ it. Needs nothing else — no content-addressed store, no Records/, no network
 access of its own; fetching the Web page is left to whoever runs this.
 
 Usage:
-    python3 Verification/verify_web_text.py complete_mode_details.txt
+    python3 -m verification.verify_web_text complete_mode_details.txt
 """
 
 from __future__ import annotations

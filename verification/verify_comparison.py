@@ -19,7 +19,7 @@ Usage:
         --full-state -o local.json
     # Separately obtain web_text.txt: the "Complete Mode Details" text for
     # the same structure/k/irrep/OPD from ISODISTORT's public Web version.
-    python3 Verification/verify_comparison.py local.json web_text.txt \
+    python3 -m verification.verify_comparison local.json web_text.txt \
         --input case.json --opd P1
 """
 

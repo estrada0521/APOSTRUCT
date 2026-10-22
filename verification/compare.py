@@ -4,7 +4,7 @@ Extracted out of Validation/core/validate.py:judge_local_output() so there is
 exactly one implementation of "how do we turn a Local preview and a Web text
 export into an opd/comparison verdict pair." judge_local_output() unwraps
 this monorepo's own provenance-checked ValidationCase/PairedOracleCase/
-LocalArtifact objects and calls this; Verification/verify_comparison.py builds
+LocalArtifact objects and calls this; verification/verify_comparison.py builds
 the same plain arguments directly from an `apo` CLI output and a saved Web
 text export and calls this too. Neither caller reimplements the comparison
 itself — this is the one place it lives. It depends only on the standalone

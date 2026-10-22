@@ -11,7 +11,7 @@ Comparing the output to any particular published document is left to
 whoever runs it.
 
 Usage:
-    python3 Verification/reproduce.py
+    python3 -m verification.reproduce
 """
 
 from __future__ import annotations
@@ -23,10 +23,10 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 def default_results_path() -> Path:
-    checkout_path = Path.cwd() / "Branches" / "results.jsonl.gz"
+    checkout_path = Path.cwd() / "branches" / "results.jsonl.gz"
     if checkout_path.is_file():
         return checkout_path
-    return Path(__file__).resolve().parents[1] / "Branches" / "results.jsonl.gz"
+    return Path(__file__).resolve().parents[1] / "branches" / "results.jsonl.gz"
 
 THEOREMS = (
     "complete_mode_basis_linear_independence.v1",
