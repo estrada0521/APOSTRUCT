@@ -565,6 +565,30 @@ static void star_vectors(int gid, const int64_t *kp, rat (*out)[3], int *count)
     *count = n;
 }
 
+int sp_same_physical_star(int gid, const int64_t *a, const int64_t *b)
+{
+    if (load()) return 0;
+    rat sa[48][3], sb[48][3];
+    int na, nb;
+    star_vectors(gid, a, sa, &na);
+    star_vectors(gid, b, sb, &nb);
+    if (na != nb || na > 48) return 0;
+    for (int i = 0; i < na; i++) {
+        int any = 0;
+        for (int conj = 0; conj < 2 && !any; conj++)
+            for (int j = 0; j < nb && !any; j++) {
+                int integral = 1;
+                for (int axis = 0; axis < 3; axis++) {
+                    rat delta = conj ? rat_add(sa[i][axis], sb[j][axis]) : rat_sub(sa[i][axis], sb[j][axis]);
+                    integral &= delta.d == 1;
+                }
+                any = integral;
+            }
+        if (!any) return 0;
+    }
+    return 1;
+}
+
 static void column_major(const int64_t *values, int64_t (*out)[3])
 {
     for (int row = 0; row < 3; row++)

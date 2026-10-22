@@ -1030,6 +1030,9 @@ static int replay_type3(const sp_frame *frame, sp_rows *rows, int gid, const int
             for (int axis = 0; axis < 3; axis++) physical[axis] = rat_mod1(rat_make(aliases.items[a].kp[axis], aliases.items[a].kp[3]));
             int dup = 0;
             for (int q = 0; q < nseen && !dup; q++) dup = sp_pml_eq(seen[q], physical);
+            for (int q = 0; q < rows->count && !dup; q++)
+                dup = rows->items[q].gid == gid && sp_same_physical_star(gid, rows->items[q].kp, aliases.items[a].kp);
+            if (!dup) dup = sp_same_physical_star(gid, kp, aliases.items[a].kp);
             if (dup) continue;
             ADD_SEEN(physical);
             if (sp_rows_push(rows, &aliases.items[a])) {
@@ -1324,8 +1327,13 @@ int spec_ordinary_dynamic(int sg, int child_sg, const int64_t *basis, const int6
         sp_specs with = {0};
         if (specs_push(&with, fallback)) return finish(1);
         if (canonical.count)
-            for (int i = 0; i < canonical.count; i++)
+            for (int i = 0; i < canonical.count; i++) {
+                const sp_spec *spec = canonical.items[i];
+                if (selected_gid && has_kp && spec->gid == selected_gid && spec->has_kp && spec->kp[3] && !spec->magnetic &&
+                    sp_same_physical_star(selected_gid, spec->kp, selected_kp))
+                    continue;
                 if (specs_push(&with, canonical.items[i])) return finish(1);
+            }
         canonical = with;
     }
     for (int i = 0; i < canonical.count; i++)
