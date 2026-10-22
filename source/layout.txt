@@ -9,12 +9,9 @@
 # keys=K, first=N (only the first N records), lead=N (N zeros before the first list, counted by start), byu=NAME
 # (the section's name in the BYU tables).
 group.point_ops.matrix                       group/point_ops.txt                  matrix flat byu=space.ipoint_op
-group.point_ops.code                         group/point_ops.txt                  code each byu=space.ipoint_op_code
 group.point_groups.label                     group/point_groups.txt               label text byu=space.point_group_label_inter
-group.point_groups.order                     group/point_groups.txt               order each byu=space.ipoint_group_order
 group.point_groups.generator_count           group/point_groups.txt               generator_count each byu=space.ipoint_group_gen_count
 group.point_groups.generators                group/point_groups.txt               generators flat byu=space.ipoint_group_gen
-group.point_groups.code                      group/point_groups.txt               code each byu=space.ipoint_group_code
 group.lattices.label                         group/lattices.txt                   label text byu=space.lattice_label
 group.lattices.k_points                      group/lattices.txt                   k_points flat byu=space.k_points
 group.lattices.ml                            group/lattices.txt                   ml flat byu=space.lattice_ml
@@ -80,7 +77,6 @@ group.magnetic_groups.generators             group/magnetic_groups.txt          
 group.magnetic_ops.reversed                  group/magnetic_ops.txt               reversed each byu=magnetic.mag_point_op_r
 group.magnetic_ops.ordinary                  group/magnetic_ops.txt               ordinary each byu=magnetic.mag_point_op_mag2nonmag
 group.magnetic_ops.from_ordinary             group/magnetic_ops.txt               from_ordinary each byu=magnetic.mag_point_op_nonmag2mag
-group.magnetic_ops.code                      group/magnetic_ops.txt               code each byu=magnetic.mag_point_op_code
 group.magnetic_point_groups.code             group/magnetic_point_groups.txt      code each byu=magnetic.mag_point_group_code
 group.magnetic_groups.type4                  group/magnetic_groups.txt            type4 each byu=magnetic.mag_type4_pointer
 group.type4_supergroups.supergroup           group/type4_supergroups.txt          supergroup each byu=magnetic.mag_type4_supergroup
@@ -126,5 +122,9 @@ irreps.little.number                         -                                  
 irreps.little.type                           -                                    - derived byu=little.little_irr_type
 isotropy.ordinary.label                      -                                    - derived byu=isotropy.isotropy_orderparam_label
 isotropy.magnetic.label                      -                                    - derived byu=magnetic.mag_iso_orderparam_label
+group.magnetic_ops.code                      -                                    - derived byu=magnetic.mag_point_op_code
+group.point_groups.code                      -                                    - derived byu=space.ipoint_group_code
+group.point_groups.order                     -                                    - derived byu=space.ipoint_group_order
+group.point_ops.code                         -                                    - derived byu=space.ipoint_op_code
 settings.inter_settings.wyckoff_start        -                                    - derived byu=space.ispace_inter_wyckoff_pointer
 settings.inter_settings.wyckoff              -                                    - derived byu=space.ispace_inter_wyckoff_fract

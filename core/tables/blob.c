@@ -37,6 +37,7 @@ int star_rule_section(const char *name, section_view *view, int *handled);
 int little_derived_section(const char *name, section_view *view, int *handled);
 int isotropy_derived_section(const char *name, section_view *view, int *handled);
 int settings_derived_section(const char *name, section_view *view, int *handled);
+int group_derived_section(const char *name, section_view *view, int *handled);
 
 /* a section as stored in the blob */
 int section_find_stored(const char *name, section_view *view)
@@ -62,6 +63,7 @@ int section_find(const char *name, section_view *view)
     if (!handled) status = little_derived_section(name, view, &handled);
     if (!handled) status = isotropy_derived_section(name, view, &handled);
     if (!handled) status = settings_derived_section(name, view, &handled);
+    if (!handled) status = group_derived_section(name, view, &handled);
     return handled ? status : section_find_stored(name, view);
 }
 
