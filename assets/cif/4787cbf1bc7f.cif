@@ -1,0 +1,40 @@
+# generated using pymatgen
+data_KZrPdF7
+_symmetry_space_group_name_H-M   Pnna
+_cell_length_a   11.60789000
+_cell_length_b   8.13593600
+_cell_length_c   6.53202100
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   52
+_chemical_formula_structural   KZrPdF7
+_chemical_formula_sum   'K4 Zr4 Pd4 F28'
+_cell_volume   616.89092274
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x+1/2, -y, z'
+  4  'x+1/2, y, -z'
+  5  'x, -y+1/2, -z+1/2'
+  6  '-x, y+1/2, z+1/2'
+  7  '-x+1/2, y+1/2, -z+1/2'
+  8  'x+1/2, -y+1/2, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  K  K0  4  0.25000000  0.00000000  0.73155100  1.0
+  Zr  Zr1  4  0.09208400  0.75000000  0.25000000  1.0
+  Pd  Pd2  4  0.09916100  0.25000000  0.25000000  1.0
+  F  F3  8  0.04594700  0.68055500  0.55167200  1.0
+  F  F4  8  0.10543200  0.51083400  0.14781000  1.0
+  F  F5  8  0.24517300  0.70625100  0.43333000  1.0
+  F  F6  4  0.08239400  0.25000000  0.75000000  1.0

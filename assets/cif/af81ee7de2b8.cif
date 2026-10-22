@@ -1,0 +1,37 @@
+# generated using pymatgen
+data_Ta3SBr7
+_symmetry_space_group_name_H-M   Cm
+_cell_length_a   12.34350483
+_cell_length_b   7.12491694
+_cell_length_c   8.97228303
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   132.89364031
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   8
+_chemical_formula_structural   Ta3SBr7
+_chemical_formula_sum   'Ta6 S2 Br14'
+_cell_volume   578.09486975
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  'x, -y, z'
+  3  'x+1/2, y+1/2, z'
+  4  'x+1/2, -y+1/2, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ta  Ta0  4  0.05354980  0.29999973  0.38714285  1.0
+  Ta  Ta1  2  0.35313799  0.00000000  0.38643000  1.0
+  S  S2  2  0.35603068  0.00000000  0.12200273  1.0
+  Br  Br3  4  0.03047936  0.24777972  0.64580064  1.0
+  Br  Br4  4  0.13036801  0.25257879  0.17031855  1.0
+  Br  Br5  2  0.25815717  0.00000000  0.59841255  1.0
+  Br  Br6  2  0.28331990  0.50000000  0.64714420  1.0
+  Br  Br7  2  0.37815997  0.50000000  0.17088842  1.0

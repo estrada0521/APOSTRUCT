@@ -1,0 +1,41 @@
+# generated using pymatgen
+data_NaCo(CO)4
+_symmetry_space_group_name_H-M   Pbcm
+_cell_length_a   5.64072800
+_cell_length_b   13.93470200
+_cell_length_c   9.31866000
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   57
+_chemical_formula_structural   NaCo(CO)4
+_chemical_formula_sum   'Na4 Co4 C16 O16'
+_cell_volume   732.46404359
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x, -y, z+1/2'
+  4  'x, y, -z+1/2'
+  5  'x, -y+1/2, -z'
+  6  '-x, y+1/2, z'
+  7  '-x, y+1/2, -z+1/2'
+  8  'x, -y+1/2, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Na  Na0  4  0.41322900  0.58420800  0.75000000  1.0
+  Co  Co1  4  0.18768300  0.12264000  0.25000000  1.0
+  C  C2  8  0.36306100  0.12315700  0.09572600  1.0
+  C  C3  4  0.01241200  0.22533900  0.25000000  1.0
+  C  C4  4  0.03000700  0.53448700  0.25000000  1.0
+  O  O5  8  0.47862200  0.12553400  0.50922100  1.0
+  O  O6  4  0.11644300  0.70853200  0.75000000  1.0
+  O  O7  4  0.19180400  0.01877800  0.75000000  1.0

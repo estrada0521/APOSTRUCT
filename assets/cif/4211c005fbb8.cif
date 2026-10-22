@@ -1,0 +1,39 @@
+# generated using pymatgen
+data_TiI2O7
+_symmetry_space_group_name_H-M   Cmc2_1
+_cell_length_a   10.25121924
+_cell_length_b   8.10004866
+_cell_length_c   7.20102523
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   36
+_chemical_formula_structural   TiI2O7
+_chemical_formula_sum   'Ti4 I8 O28'
+_cell_volume   597.93982797
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, z+1/2'
+  3  '-x, y, z'
+  4  'x, -y, z+1/2'
+  5  'x+1/2, y+1/2, z'
+  6  '-x+1/2, -y+1/2, z+1/2'
+  7  '-x+1/2, y+1/2, z'
+  8  'x+1/2, -y+1/2, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ti  Ti0  4  0.00000000  0.00460267  0.44601390  1.0
+  I  I1  8  0.24369140  0.30541524  0.20938427  1.0
+  O  O2  8  0.13677386  0.16780282  0.90074933  1.0
+  O  O3  8  0.13745827  0.16999732  0.51734482  1.0
+  O  O4  8  0.17141816  0.49440412  0.70822277  1.0
+  O  O5  4  0.00000000  0.07340448  0.21017773  1.0

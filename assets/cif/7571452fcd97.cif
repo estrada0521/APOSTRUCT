@@ -1,0 +1,41 @@
+# generated using pymatgen
+data_SbC2N2F5
+_symmetry_space_group_name_H-M   C222_1
+_cell_length_a   7.08560400
+_cell_length_b   16.69206200
+_cell_length_c   6.86678500
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   20
+_chemical_formula_structural   SbC2N2F5
+_chemical_formula_sum   'Sb4 C8 N8 F20'
+_cell_volume   812.15760577
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, z+1/2'
+  3  'x, -y, -z'
+  4  '-x, y, -z+1/2'
+  5  'x+1/2, y+1/2, z'
+  6  '-x+1/2, -y+1/2, z+1/2'
+  7  'x+1/2, -y+1/2, -z'
+  8  '-x+1/2, y+1/2, -z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Sb  Sb0  4  0.00000000  0.13198900  0.75000000  1.0
+  C  C1  4  0.00000000  0.33657000  0.75000000  1.0
+  C  C2  4  0.00000000  0.41833400  0.75000000  1.0
+  N  N3  4  0.00000000  0.26709100  0.75000000  1.0
+  N  N4  4  0.00000000  0.48832700  0.75000000  1.0
+  F  F5  8  0.17855350  0.14454950  0.54506800  1.0
+  F  F6  8  0.19832200  0.14359500  0.93422000  1.0
+  F  F7  4  0.00000000  0.01915300  0.75000000  1.0

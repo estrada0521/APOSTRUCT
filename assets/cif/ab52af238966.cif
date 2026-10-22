@@ -1,0 +1,39 @@
+# generated using pymatgen
+data_Zr5NiSb9
+_symmetry_space_group_name_H-M   P4/n
+_cell_length_a   8.89461000
+_cell_length_b   8.89461000
+_cell_length_c   8.85376900
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   85
+_chemical_formula_structural   Zr5NiSb9
+_chemical_formula_sum   'Zr10 Ni2 Sb18'
+_cell_volume   700.45785141
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y+1/2, x+1/2, z'
+  3  '-x, -y, z'
+  4  'y+1/2, -x+1/2, z'
+  5  '-x+1/2, -y+1/2, -z'
+  6  'y, -x, -z'
+  7  'x+1/2, y+1/2, -z'
+  8  '-y, x, -z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Zr  Zr0  8  0.10336300  0.20394200  0.26622300  1.0
+  Zr  Zr1  2  0.00000000  0.50000000  0.74408500  1.0
+  Ni  Ni2  2  0.00000000  0.00000000  0.00000000  1.0
+  Sb  Sb3  8  0.08408200  0.72681900  0.99895700  1.0
+  Sb  Sb4  8  0.09793100  0.19795300  0.61502500  1.0
+  Sb  Sb5  2  0.00000000  0.50000000  0.39272400  1.0

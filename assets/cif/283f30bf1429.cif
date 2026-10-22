@@ -1,0 +1,39 @@
+# generated using pymatgen
+data_Li5NiO4
+_symmetry_space_group_name_H-M   Aea2
+_cell_length_a   4.77978400
+_cell_length_b   8.68584373
+_cell_length_c   9.43203230
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   41
+_chemical_formula_structural   Li5NiO4
+_chemical_formula_sum   'Li20 Ni4 O16'
+_cell_volume   391.58456228
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, z'
+  3  '-x+1/2, y+1/2, z'
+  4  'x+1/2, -y+1/2, z'
+  5  'x, y+1/2, z+1/2'
+  6  '-x, -y+1/2, z+1/2'
+  7  '-x+1/2, y, z+1/2'
+  8  'x+1/2, -y, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Li  Li0  8  0.02565750  0.20447950  0.75399000  1.0
+  Li  Li1  8  0.05594900  0.21426950  0.00196650  1.0
+  Li  Li2  4  0.00000000  0.00000000  0.51781050  1.0
+  Ni  Ni3  4  0.00000000  0.00000000  0.24430600  1.0
+  O  O4  8  0.16564800  0.13880750  0.37311050  1.0
+  O  O5  8  0.22703700  0.37164550  0.63191350  1.0

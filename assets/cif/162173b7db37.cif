@@ -1,0 +1,39 @@
+# generated using pymatgen
+data_KHCS2N
+_symmetry_space_group_name_H-M   Pbcn
+_cell_length_a   13.08054400
+_cell_length_b   6.74435900
+_cell_length_c   10.97055400
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   60
+_chemical_formula_structural   KHCS2N
+_chemical_formula_sum   'K8 H8 C8 S16 N8'
+_cell_volume   967.82100844
+_cell_formula_units_Z   8
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x+1/2, -y+1/2, z+1/2'
+  4  'x+1/2, y+1/2, -z+1/2'
+  5  'x+1/2, -y+1/2, -z'
+  6  '-x+1/2, y+1/2, z'
+  7  '-x, y, -z+1/2'
+  8  'x, -y, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  K  K0  8  0.14134600  0.20550900  0.05453900  1.0
+  H  H1  8  0.02427800  0.48187700  0.87386900  1.0
+  C  C2  8  0.09592400  0.28560100  0.65362100  1.0
+  S  S3  8  0.11698800  0.28491700  0.49815100  1.0
+  S  S4  8  0.16465200  0.14853200  0.75273100  1.0
+  N  N5  8  0.01911100  0.41051500  0.69137800  1.0

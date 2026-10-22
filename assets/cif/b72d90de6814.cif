@@ -1,0 +1,35 @@
+# generated using pymatgen
+data_As7Rh12
+_symmetry_space_group_name_H-M   P3
+_cell_length_a   9.40699109
+_cell_length_b   9.40699109
+_cell_length_c   3.72707900
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   143
+_chemical_formula_structural   As7Rh12
+_chemical_formula_sum   'As7 Rh12'
+_cell_volume   285.62794531
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y, x-y, z'
+  3  '-x+y, -x, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  As  As0  3  0.15839700  0.44490900  0.74987500  1.0
+  As  As1  3  0.44610400  0.28479200  0.25323800  1.0
+  As  As2  1  0.00000000  0.00000000  0.58766400  1.0
+  Rh  Rh3  3  0.00757100  0.23557500  0.25452600  1.0
+  Rh  Rh4  3  0.13748500  0.62067000  0.24768600  1.0
+  Rh  Rh5  3  0.25146200  0.24164900  0.75549100  1.0
+  Rh  Rh6  3  0.51549700  0.13403900  0.75429700  1.0

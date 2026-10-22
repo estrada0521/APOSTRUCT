@@ -1,0 +1,37 @@
+# generated using pymatgen
+data_LaNi5H6
+_symmetry_space_group_name_H-M   P3m1
+_cell_length_a   5.30136049
+_cell_length_b   5.30136049
+_cell_length_c   4.20129400
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   156
+_chemical_formula_structural   LaNi5H6
+_chemical_formula_sum   'La1 Ni5 H6'
+_cell_volume   102.25590096
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y, x-y, z'
+  3  '-x+y, -x, z'
+  4  '-y, -x, z'
+  5  '-x+y, y, z'
+  6  'x, x-y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  La  La0  1  0.00000000  0.00000000  0.89614900  1.0
+  Ni  Ni1  3  0.51010350  0.02020700  0.49948600  1.0
+  Ni  Ni2  1  0.33333333  0.66666667  0.04944400  1.0
+  Ni  Ni3  1  0.66666667  0.33333333  0.01626300  1.0
+  H  H4  3  0.00812200  0.50406100  0.88694300  1.0
+  H  H5  3  0.17702200  0.35404400  0.36153200  1.0

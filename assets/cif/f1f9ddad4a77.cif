@@ -1,0 +1,36 @@
+# generated using pymatgen
+data_Cs2Sn(H2N)6
+_symmetry_space_group_name_H-M   P-3
+_cell_length_a   7.03636179
+_cell_length_b   7.03636179
+_cell_length_c   6.00198700
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   147
+_chemical_formula_structural   Cs2Sn(H2N)6
+_chemical_formula_sum   'Cs2 Sn1 H12 N6'
+_cell_volume   257.34871572
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-y, x-y, z'
+  4  'y, -x+y, -z'
+  5  '-x+y, -x, z'
+  6  'x-y, x, -z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Cs  Cs0  2  0.33333333  0.66666667  0.27825800  1.0
+  Sn  Sn1  1  0.00000000  0.00000000  0.00000000  1.0
+  H  H2  6  0.10846600  0.25791000  0.62992900  1.0
+  H  H3  6  0.14432600  0.73952600  0.83403000  1.0
+  N  N4  6  0.09973500  0.29713200  0.79306500  1.0

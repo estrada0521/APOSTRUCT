@@ -1,0 +1,38 @@
+# generated using pymatgen
+data_V12P7
+_symmetry_space_group_name_H-M   P-6
+_cell_length_a   9.27554180
+_cell_length_b   9.27554180
+_cell_length_c   3.21755640
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   174
+_chemical_formula_structural   V12P7
+_chemical_formula_sum   'V12 P7'
+_cell_volume   239.73716995
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x+y, -x, -z'
+  3  '-y, x-y, z'
+  4  'x, y, -z'
+  5  '-x+y, -x, z'
+  6  '-y, x-y, -z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  V  V0  3  0.04442504  0.84396177  0.00000000  1.0
+  V  V1  3  0.16961179  0.46363011  0.50000000  1.0
+  V  V2  3  0.41394864  0.34605810  0.50000000  1.0
+  V  V3  3  0.46563749  0.13599685  0.00000000  1.0
+  P  P4  3  0.12953242  0.62577937  0.00000000  1.0
+  P  P5  3  0.22519324  0.04855452  0.50000000  1.0
+  P  P6  1  0.66666667  0.33333333  0.50000000  1.0

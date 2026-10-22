@@ -1,0 +1,45 @@
+# generated using pymatgen
+data_Fe2AgS3
+_symmetry_space_group_name_H-M   Cmce
+_cell_length_a   10.85238800
+_cell_length_b   6.43357200
+_cell_length_c   12.83969900
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   64
+_chemical_formula_structural   Fe2AgS3
+_chemical_formula_sum   'Fe16 Ag8 S24'
+_cell_volume   896.46289957
+_cell_formula_units_Z   8
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x+1/2, -y, z+1/2'
+  4  'x+1/2, y, -z+1/2'
+  5  'x, -y, -z'
+  6  '-x, y, z'
+  7  '-x+1/2, y, -z+1/2'
+  8  'x+1/2, -y, z+1/2'
+  9  'x+1/2, y+1/2, z'
+  10  '-x+1/2, -y+1/2, -z'
+  11  '-x, -y+1/2, z+1/2'
+  12  'x, y+1/2, -z+1/2'
+  13  'x+1/2, -y+1/2, -z'
+  14  '-x+1/2, y+1/2, z'
+  15  '-x, y+1/2, -z+1/2'
+  16  'x, -y+1/2, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Fe  Fe0  16  0.16834300  0.33458100  0.44105900  1.0
+  Ag  Ag1  8  0.00000000  0.14935800  0.70498700  1.0
+  S  S2  16  0.17776250  0.34602550  0.60784000  1.0
+  S  S3  8  0.00000000  0.20119800  0.38529700  1.0

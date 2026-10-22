@@ -1,0 +1,47 @@
+# generated using pymatgen
+data_Y5(FeTe)2
+_symmetry_space_group_name_H-M   Cmcm
+_cell_length_a   4.00487868
+_cell_length_b   15.21630612
+_cell_length_c   15.21384931
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   63
+_chemical_formula_structural   Y5(FeTe)2
+_chemical_formula_sum   'Y20 Fe8 Te8'
+_cell_volume   927.12376099
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x, -y, z+1/2'
+  4  'x, y, -z+1/2'
+  5  'x, -y, -z'
+  6  '-x, y, z'
+  7  '-x, y, -z+1/2'
+  8  'x, -y, z+1/2'
+  9  'x+1/2, y+1/2, z'
+  10  '-x+1/2, -y+1/2, -z'
+  11  '-x+1/2, -y+1/2, z+1/2'
+  12  'x+1/2, y+1/2, -z+1/2'
+  13  'x+1/2, -y+1/2, -z'
+  14  '-x+1/2, y+1/2, z'
+  15  '-x+1/2, y+1/2, -z+1/2'
+  16  'x+1/2, -y+1/2, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Y  Y0  8  0.00000000  0.03634210  0.61839438  1.0
+  Y  Y1  8  0.00000000  0.25558334  0.12756412  1.0
+  Y  Y2  4  0.00000000  0.39651333  0.75000000  1.0
+  Fe  Fe3  4  0.00000000  0.17299257  0.75000000  1.0
+  Fe  Fe4  4  0.00000000  0.40778482  0.25000000  1.0
+  Te  Te5  8  0.00000000  0.38168763  0.53904669  1.0

@@ -1,0 +1,42 @@
+# generated using pymatgen
+data_Ba3Fe3Se7
+_symmetry_space_group_name_H-M   P6_3mc
+_cell_length_a   11.02010822
+_cell_length_b   11.02010822
+_cell_length_c   7.35335900
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   186
+_chemical_formula_structural   Ba3Fe3Se7
+_chemical_formula_sum   'Ba6 Fe6 Se14'
+_cell_volume   773.37142273
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  'x-y, x, z+1/2'
+  3  '-y, x-y, z'
+  4  '-x, -y, z+1/2'
+  5  '-x+y, -x, z'
+  6  'y, -x+y, z+1/2'
+  7  'y, x, z+1/2'
+  8  'x, x-y, z'
+  9  'x-y, -y, z+1/2'
+  10  '-y, -x, z'
+  11  '-x, -x+y, z+1/2'
+  12  '-x+y, y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ba  Ba0  6  0.18592700  0.37185400  0.00402100  1.0
+  Fe  Fe1  6  0.25486500  0.50973000  0.48859100  1.0
+  Se  Se2  6  0.09031400  0.54515700  0.31467500  1.0
+  Se  Se3  6  0.13728300  0.27456600  0.57603400  1.0
+  Se  Se4  2  0.33333333  0.66666667  0.74753600  1.0

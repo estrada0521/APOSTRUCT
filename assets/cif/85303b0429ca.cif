@@ -1,0 +1,41 @@
+# generated using pymatgen
+data_KGaF4
+_symmetry_space_group_name_H-M   Pnma
+_cell_length_a   12.13140172
+_cell_length_b   7.49043534
+_cell_length_c   7.66117070
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   62
+_chemical_formula_structural   KGaF4
+_chemical_formula_sum   'K8 Ga8 F32'
+_cell_volume   696.16659899
+_cell_formula_units_Z   8
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x+1/2, -y, z+1/2'
+  4  'x+1/2, y, -z+1/2'
+  5  'x+1/2, -y+1/2, -z+1/2'
+  6  '-x+1/2, y+1/2, z+1/2'
+  7  '-x, y+1/2, -z'
+  8  'x, -y+1/2, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  K  K0  4  0.01393785  0.75000000  0.62451031  1.0
+  K  K1  4  0.02721158  0.75000000  0.12558933  1.0
+  Ga  Ga2  8  0.24842257  0.00068568  0.87480797  1.0
+  F  F3  8  0.09947104  0.54468171  0.86547326  1.0
+  F  F4  8  0.10294176  0.54737542  0.38494182  1.0
+  F  F5  8  0.24577088  0.54198736  0.12489233  1.0
+  F  F6  4  0.21255187  0.25000000  0.91273534  1.0
+  F  F7  4  0.21713654  0.25000000  0.33741040  1.0

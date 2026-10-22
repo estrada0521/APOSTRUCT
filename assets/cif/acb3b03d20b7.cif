@@ -1,0 +1,39 @@
+# generated using pymatgen
+data_TlPO3
+_symmetry_space_group_name_H-M   P-42_1c
+_cell_length_a   7.58522238
+_cell_length_b   7.58522238
+_cell_length_c   11.10122861
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   114
+_chemical_formula_structural   TlPO3
+_chemical_formula_sum   'Tl8 P8 O24'
+_cell_volume   638.71583276
+_cell_formula_units_Z   8
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  'y, -x, -z'
+  3  '-x, -y, z'
+  4  '-y, x, -z'
+  5  'x+1/2, -y+1/2, -z+1/2'
+  6  'y+1/2, x+1/2, z+1/2'
+  7  '-x+1/2, y+1/2, -z+1/2'
+  8  '-y+1/2, -x+1/2, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Tl  Tl0  4  0.00000000  0.00000000  0.16686021  1.0
+  Tl  Tl1  4  0.00000000  0.50000000  0.27306490  1.0
+  P  P2  8  0.15422167  0.77963819  0.53271719  1.0
+  O  O3  8  0.05560675  0.19885071  0.55240587  1.0
+  O  O4  8  0.11768159  0.69422890  0.96286198  1.0
+  O  O5  8  0.19905039  0.23022929  0.34437406  1.0

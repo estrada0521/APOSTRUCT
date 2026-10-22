@@ -1,7 +1,7 @@
 # 検証状況
 
 公開 Web 版 ISODISTORT の出力との比較と、Web から独立した数学的検査を用いて検証しています。
-本書の数値は **2026 年 10 月 15 日時点**のスナップショットです。
+本書の数値は **2026 年 10 月 23 日時点**のスナップショットです。
 各 Web branch について main へ land 済みの local runtime が生成した最新の Validation 出力を参照しています。
 
 ## 判定
@@ -24,7 +24,7 @@ Validation母集団は、WebとLocalがともに計算済みで、Web出力が�
 ## 再現性
 
 公開checkoutの`branches/`には、各branchのcanonical input、選択OPD、比較結果、数学検査statusを収録します。
-独立した`verification/`には、private monorepo Validation運用と同じparser、数学検査、Strict/Physical comparator、result projectionを収録します。
+独立した`verification/`には、private monorepo Validation運用と同じparser、数学検査、identical/equivalent comparator、result projectionを収録します。
 第三者はbranchを選び、APOSTRUCTを実行し、同じ入力を公開ISODISTORT Webへ自分で投入することで、privateなsweep/store schemaに依存せず両出力を検査できます。
 
 ## 二つの検証母集団
@@ -39,7 +39,7 @@ CIF pool は Materials Project から作成しました。
 同じ空間群で、占有される Wyckoff site の multiplicity・letter の組が同じ構造は同じ topology とみなし、`(space group, occupied Wyckoff pattern)` ごとに1件だけを取得。
 元素の置換だけが異なる構造や、同じ Wyckoff pattern の自由座標だけが異なる構造は、この段階では重複として除きました。
 この方法で得た pool は **19,086 CIF** です。
-以下の Web 母集団で実際に使われたのは、現時点で**2,557 CIF** です。
+以下の Web 母集団で実際に使われたのは、現時点で**5,483 CIF** です。
 
 #### 入力のサンプリング
 
@@ -54,19 +54,22 @@ CIF pool は Materials Project から作成しました。
 6. parametric Kの値はSource domain内かつ分母6以下の既約有理数を列挙し、canonical値を重複除去した集合から選びます。
 7. WebでOPD一覧を取得した後、campaignが明示した1-based ordinalを収集します。1 inputから複数OPDを収集した場合は、それぞれを別branchとして数えます。
 
+2026年10月の拡張campaign（6,662 branch）も同じ手順で、層を固定しています。3,000 inputの各campaignは、Γのみ1,100、固定K 850、parametric K 300、磁気500、結合250で、親は48原子・8 site以下、parametric Kは1変数で分母3以下に限り、それまでに収集したinputはすべて除いています。
+これらの磁気inputはMPの親に対する人工的な選択で、MAGNDATA母集団には数えません。
+
 下記のpass率は、randomサンプリングを中心に、不足している難しい形状を意図的に厚くした**層別ストレス試験の達成率**です。
 
 #### 結果
 
 | 項目 | 件数 |
 |---|---:|
-| 有効Validation母集団 | 3,040 |
-| Identical | 2,599 |
-| Equivalent | 3,035 |
-| Unproven | 5 |
+| 有効Validation母集団 | 9,634 |
+| Identical | 8,844 |
+| Equivalent | 9,630 |
+| Unproven | 4 |
 
-- **Equivalent: 3,035 / 3,040 = 99.84%**
-- **Identical: 2,599 / 3,040 = 85.49%**
+- **Equivalent: 9,630 / 9,634 = 99.96%**
+- **Identical: 8,844 / 9,634 = 91.80%**
 
 #### K-signature 別
 
@@ -75,15 +78,15 @@ CIF pool は Materials Project から作成しました。
 
 | K | Validation母集団 | Equivalent | Identical |
 |---|---:|---:|---:|
-| F | 788 | 788 (100.00%) | 734 (93.15%) |
-| FF | 297 | 297 (100.00%) | 252 (84.85%) |
+| F | 6,233 | 6,233 (100.00%) | 5,913 (94.87%) |
+| FF | 846 | 846 (100.00%) | 742 (87.71%) |
 | FFF | 189 | 189 (100.00%) | 167 (88.36%) |
 | FFFF | 202 | 202 (100.00%) | 186 (92.08%) |
-| P | 687 | 686 (99.85%) | 599 (87.19%) |
+| P | 1,287 | 1,287 (100.00%) | 1,169 (90.83%) |
 | PP | 20 | 18 (90.00%) | 7 (35.00%) |
-| FP | 126 | 126 (100.00%) | 106 (84.13%) |
-| FFP | 453 | 453 (100.00%) | 363 (80.13%) |
-| FFFP | 246 | 246 (100.00%) | 168 (68.29%) |
+| FP | 126 | 126 (100.00%) | 108 (85.71%) |
+| FFP | 453 | 453 (100.00%) | 364 (80.35%) |
+| FFFP | 246 | 246 (100.00%) | 171 (69.51%) |
 | FPP | 31 | 29 (93.55%) | 17 (54.84%) |
 | FFPP | 1 | 1 (100.00%) | 0 (0.00%) |
 
@@ -113,19 +116,19 @@ MAGNDATAのmcifをLocalへ直接入力するのではなく、同じparent構造
 - ある元素のsiteが1つでも磁気momentを持てば、その元素全体をmagnetic onにする
 - primary IRにordinary成分があれば全元素をdisplacive onにし、strainはoffにする
 
-primary IRやBNSの欠落、Source labelの非一意性、または同一のinput・OPDとしてWebへ投入できない不正なmcif記録を除き、最終的なValidation母集団は**927件**です。
-内訳は、zero-K 458、nonzero Type I/III 28、nonzero Type IV 412、two-K 19、three-or-more-K 10 です。
+primary IRやBNSの欠落、Source labelの非一意性、または同一のinput・OPDとしてWebへ投入できない不正なmcif記録を除き、最終的なValidation母集団は**951件**です。
+内訳は、one-K 862、two-K 88、three-K 1 です。
 
 | 項目 | 件数 |
 |---|---:|
-| 母集団 / 入力 / CIF | 927 / 927 / 927 |
-| Validation 済み・Judged | 927 |
-| Identical | 892 |
-| Equivalent | 927 |
+| 母集団 / 入力 / CIF | 951 / 951 / 931 |
+| Validation 済み・Judged | 951 |
+| Identical | 914 |
+| Equivalent | 951 |
 | Unproven | 0 |
 
-- **Equivalent: 927 / 927 = 100.00%**
-- **Identical: 892 / 927 = 96.22%**
+- **Equivalent: 951 / 951 = 100.00%**
+- **Identical: 914 / 951 = 96.11%**
 
 
 #### K-signature 別
@@ -133,19 +136,19 @@ primary IRやBNSの欠落、Source labelの非一意性、または同一のinpu
 
 | K | 母数 | Equivalent | Identical |
 |---|---:|---:|---:|
-| F | 798 | 798 (100.00%) | 767 (96.12%) |
+| F | 821 | 821 (100.00%) | 788 (95.98%) |
 | FF | 84 | 84 (100.00%) | 81 (96.43%) |
-| P | 40 | 40 (100.00%) | 39 (97.50%) |
+| P | 41 | 41 (100.00%) | 40 (97.56%) |
 | PP | 3 | 3 (100.00%) | 3 (100.00%) |
 | FP | 1 | 1 (100.00%) | 1 (100.00%) |
 | FPP | 1 | 1 (100.00%) | 1 (100.00%) |
 
-
 ## 検証限界
 
-successful Web branch 4,141件のうち、Local比較が記録されたbranchは4,139件です（残る2件はLocal側のoperational failure）。
-このうち現行数学検査で**171件**がrefuted、**1件**がindeterminateです。
-この172件はすべて有効母集団から除外します。
+successful Web branch 10,803件のうち、Local比較が記録されたbranchは10,801件です（残る2件はLocal側のoperational failure）。
+このうち現行数学検査で**215件**がrefuted、**1件**がindeterminateです。
+この216件はすべて有効母集団から除外します。
+refutedのWeb出力の大半は、parameterが1/2を超えるparametric Kを持ちます。
 除外されたWeb出力との一致はcorrectness evidenceには数えません。
 
 
@@ -154,16 +157,17 @@ successful Web branch 4,141件のうち、Local比較が記録されたbranchは
 有効Validation母集団のうち、WebとLocalの両方に`wall_s`が記録されているbranchを性能母集団とします。
 Web時間は、successful OPD一覧requestと、選択branchのComplete Mode Details requestの和です。
 Local時間は、ローカルの実行ファイル`apo`を1 branchにつき1プロセスで呼んだwall timeです（起動を含み、6並列のsweep中に計測）。
+Webの時間は2026年10月の拡張より前の収集のものです。拡張の収集器の時間には、収集器自身のpollingの待ちが含まれます。
 実行環境が異なるため、以下は速度の直接比較ではなく参考値です。
 
 | 性能母集団 | Local中央値 | Web中央値 | Local p95 | Web p95 |
 |---:|---:|---:|---:|---:|
-| 2,081 / 3,967 | 0.03 s | 8.27 s | 1.11 s | 30.89 s |
+| 2,081 / 10,585 | 0.08 s | 8.27 s | 0.86 s | 30.89 s |
 
 ```text
           0.01        0.1         1           10          100 s
-Local         [=│=====]------------|
-        p5=0.02  Q1=0.02  median=0.03  Q3=0.11  p95=1.11
+Local           --[==│===]-------|
+        p5=0.03  Q1=0.05  median=0.08  Q3=0.19  p95=0.86
 Web                                         [│]-----|
         p5=7.31  Q1=7.48  median=8.27  Q3=10.44  p95=30.89
 ```
@@ -172,16 +176,16 @@ Web                                         [│]-----|
 
 | K | 性能母集団 | Local中央値 | Web中央値 | Local p95 | Web p95 |
 |---|---:|---:|---:|---:|---:|
-| F | 951 | 0.02 s | 7.48 s | 0.04 s | 7.94 s |
-| FF | 164 | 0.02 s | 8.80 s | 0.09 s | 10.68 s |
-| FFF | 53 | 0.04 s | 9.24 s | 0.31 s | 37.38 s |
-| FFFF | 47 | 0.05 s | 9.30 s | 0.30 s | 20.05 s |
-| P | 235 | 0.06 s | 8.48 s | 1.39 s | 32.51 s |
-| PP | 23 | 0.25 s | 13.47 s | 1.70 s | 37.34 s |
-| FP | 127 | 0.11 s | 10.58 s | 1.82 s | 41.10 s |
-| FFP | 240 | 0.17 s | 11.54 s | 1.97 s | 47.92 s |
-| FFFP | 208 | 0.24 s | 14.03 s | 2.42 s | 50.26 s |
-| FPP | 32 | 0.19 s | 13.41 s | 1.94 s | 53.72 s |
-| FFPP | 1 | 1.67 s | 66.64 s | 1.67 s | 66.64 s |
+| F | 951 | 0.06 s | 7.48 s | 0.26 s | 7.93 s |
+| FF | 164 | 0.07 s | 8.80 s | 0.21 s | 10.68 s |
+| FFF | 53 | 0.12 s | 9.24 s | 0.42 s | 32.38 s |
+| FFFF | 47 | 0.10 s | 9.30 s | 0.44 s | 19.90 s |
+| P | 235 | 0.10 s | 8.48 s | 1.12 s | 31.36 s |
+| PP | 23 | 0.22 s | 13.47 s | 1.19 s | 36.97 s |
+| FP | 127 | 0.13 s | 10.58 s | 1.36 s | 40.91 s |
+| FFP | 240 | 0.19 s | 11.54 s | 1.37 s | 48.21 s |
+| FFFP | 208 | 0.28 s | 14.03 s | 1.65 s | 50.10 s |
+| FPP | 32 | 0.23 s | 13.41 s | 1.15 s | 48.40 s |
+| FFPP | 1 | 1.15 s | 66.64 s | 1.15 s | 66.64 s |
 
-parametric Kとmulti-Kを含むstress caseでも、Localのp95は2.5秒以内です。
+parametric Kとmulti-Kを含むstress caseでも、Localのp95は2秒以内です。

@@ -1,0 +1,39 @@
+# generated using pymatgen
+data_Ca2Al2O5
+_symmetry_space_group_name_H-M   Ima2
+_cell_length_a   14.49220800
+_cell_length_b   5.46463600
+_cell_length_c   5.28545400
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   46
+_chemical_formula_structural   Ca2Al2O5
+_chemical_formula_sum   'Ca8 Al8 O20'
+_cell_volume   418.57963499
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, z'
+  3  '-x+1/2, y, z'
+  4  'x+1/2, -y, z'
+  5  'x+1/2, y+1/2, z+1/2'
+  6  '-x+1/2, -y+1/2, z+1/2'
+  7  '-x, y+1/2, z+1/2'
+  8  'x, -y+1/2, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ca  Ca0  8  0.10762800  0.52557400  0.50394900  1.0
+  Al  Al1  4  0.00000000  0.00000000  0.49708200  1.0
+  Al  Al2  4  0.25000000  0.07484200  0.54553900  1.0
+  O  O3  8  0.01061200  0.24756500  0.74811200  1.0
+  O  O4  8  0.14152100  0.55748400  0.98149800  1.0
+  O  O5  4  0.25000000  0.13696100  0.88155600  1.0

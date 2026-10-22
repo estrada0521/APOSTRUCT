@@ -1,0 +1,36 @@
+# generated using pymatgen
+data_Na(ScI3)2
+_symmetry_space_group_name_H-M   P31c
+_cell_length_a   7.65432695
+_cell_length_b   7.65432695
+_cell_length_c   13.78319004
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   159
+_chemical_formula_structural   Na(ScI3)2
+_chemical_formula_sum   'Na2 Sc4 I12'
+_cell_volume   699.34970199
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y, x-y, z'
+  3  '-x+y, -x, z'
+  4  'y, x, z+1/2'
+  5  'x-y, -y, z+1/2'
+  6  '-x, -x+y, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Na  Na0  2  0.33333333  0.66666667  0.86979339  1.0
+  Sc  Sc1  2  0.00000000  0.00000000  0.12053928  1.0
+  Sc  Sc2  2  0.00000000  0.00000000  0.38154844  1.0
+  I  I3  6  0.00819316  0.68981631  0.50164351  1.0
+  I  I4  6  0.01260541  0.31245158  0.25061285  1.0

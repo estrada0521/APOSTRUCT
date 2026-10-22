@@ -1,0 +1,38 @@
+# generated using pymatgen
+data_MgTe2O5
+_symmetry_space_group_name_H-M   Pbcn
+_cell_length_a   7.28705469
+_cell_length_b   10.67176939
+_cell_length_c   5.96312093
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   60
+_chemical_formula_structural   MgTe2O5
+_chemical_formula_sum   'Mg4 Te8 O20'
+_cell_volume   463.72667393
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x+1/2, -y+1/2, z+1/2'
+  4  'x+1/2, y+1/2, -z+1/2'
+  5  'x+1/2, -y+1/2, -z'
+  6  '-x+1/2, y+1/2, z'
+  7  '-x, y, -z+1/2'
+  8  'x, -y, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Mg  Mg0  4  0.00000000  0.44162557  0.25000000  1.0
+  Te  Te1  8  0.13435150  0.15403461  0.00853348  1.0
+  O  O2  8  0.14907951  0.43485015  0.55081705  1.0
+  O  O3  8  0.18968859  0.29346510  0.18728679  1.0
+  O  O4  4  0.00000000  0.06098148  0.25000000  1.0

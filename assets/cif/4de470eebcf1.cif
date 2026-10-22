@@ -1,0 +1,37 @@
+# generated using pymatgen
+data_Mn6BP
+_symmetry_space_group_name_H-M   C2
+_cell_length_a   12.22516119
+_cell_length_b   4.29610000
+_cell_length_c   8.62699196
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   133.81031366
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   5
+_chemical_formula_structural   Mn6BP
+_chemical_formula_sum   'Mn24 B4 P4'
+_cell_volume   326.96881586
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, y, -z'
+  3  'x+1/2, y+1/2, z'
+  4  '-x+1/2, y+1/2, -z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Mn  Mn0  4  0.03183400  0.00777800  0.38293800  1.0
+  Mn  Mn1  4  0.07264700  0.23332700  0.96124600  1.0
+  Mn  Mn2  4  0.10370450  0.76887350  0.18996900  1.0
+  Mn  Mn3  4  0.13759150  0.48911550  0.66437800  1.0
+  Mn  Mn4  4  0.16349800  0.75284700  0.94302100  1.0
+  Mn  Mn5  4  0.21907800  0.24540000  0.39745400  1.0
+  B  B6  4  0.04409150  0.50815550  0.33649400  1.0
+  P  P7  4  0.20767750  0.99450950  0.74974100  1.0

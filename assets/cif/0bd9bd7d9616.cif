@@ -1,0 +1,45 @@
+# generated using pymatgen
+data_ReH12N3Cl4O3
+_symmetry_space_group_name_H-M   P6_3mc
+_cell_length_a   9.33103794
+_cell_length_b   9.33103794
+_cell_length_c   7.88252800
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   186
+_chemical_formula_structural   ReH12N3Cl4O3
+_chemical_formula_sum   'Re2 H24 N6 Cl8 O6'
+_cell_volume   594.36888236
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  'x-y, x, z+1/2'
+  3  '-y, x-y, z'
+  4  '-x, -y, z+1/2'
+  5  '-x+y, -x, z'
+  6  'y, -x+y, z+1/2'
+  7  'y, x, z+1/2'
+  8  'x, x-y, z'
+  9  'x-y, -y, z+1/2'
+  10  '-y, -x, z'
+  11  '-x, -x+y, z+1/2'
+  12  '-x+y, y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Re  Re0  2  0.33333333  0.66666667  0.49994700  1.0
+  H  H1  12  0.08301000  0.34716600  0.89184200  1.0
+  H  H2  6  0.10762250  0.21524500  0.02434400  1.0
+  H  H3  6  0.21013500  0.42027000  0.06134200  1.0
+  N  N4  6  0.16627500  0.33255000  0.96590900  1.0
+  Cl  Cl5  6  0.09922100  0.54961050  0.27849700  1.0
+  Cl  Cl6  2  0.00000000  0.00000000  0.18018500  1.0
+  O  O7  6  0.23589200  0.47178400  0.59248500  1.0

@@ -1,0 +1,35 @@
+# generated from Materials Project structure API
+data_MP_structure
+_symmetry_space_group_name_H-M   'C2/c'
+_symmetry_Int_Tables_number   15
+_chemical_formula_structural   MnTlF4
+_cell_length_a   13.4646426860
+_cell_length_b   5.4040440800
+_cell_length_c   5.3460718358
+_cell_angle_alpha   90.0000000000
+_cell_angle_beta   112.8942804929
+_cell_angle_gamma   90.0000000000
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+ 1  'x,y,z'
+ 2  '-x,-y,-z'
+ 3  '-x,y,-z+1/2'
+ 4  'x,-y,z+1/2'
+ 5  'x+1/2,y+1/2,z'
+ 6  '-x+1/2,-y+1/2,-z'
+ 7  '-x+1/2,y+1/2,-z+1/2'
+ 8  'x+1/2,-y+1/2,z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_Wyckoff_label
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+ Mn Mn0 4 4c 0.7500000000 0.7500000000 0.0000000000 1.0000000000
+ Tl Tl1 4 4e 0.0000000000 0.7678064800 0.7500000000 1.0000000000
+ F F2 8 8f 0.6084642300 0.8471758700 0.8960489700 1.0000000000
+ F F3 8 8f 0.7115014900 0.4296904300 0.1764137200 1.0000000000

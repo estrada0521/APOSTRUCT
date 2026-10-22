@@ -1,0 +1,37 @@
+# generated using pymatgen
+data_SmAgS2
+_symmetry_space_group_name_H-M   P4_32_12
+_cell_length_a   7.76905589
+_cell_length_b   7.76905589
+_cell_length_c   12.75519940
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   96
+_chemical_formula_structural   SmAgS2
+_chemical_formula_sum   'Sm8 Ag8 S16'
+_cell_volume   769.88125175
+_cell_formula_units_Z   8
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y+1/2, x+1/2, z+3/4'
+  3  '-x, -y, z+1/2'
+  4  'y+1/2, -x+1/2, z+1/4'
+  5  'x+1/2, -y+1/2, -z+1/4'
+  6  '-y, -x, -z+1/2'
+  7  '-x+1/2, y+1/2, -z+3/4'
+  8  'y, x, -z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Sm  Sm0  8  0.00128624  0.75126903  0.37740801  1.0
+  Ag  Ag1  8  0.01434357  0.74345081  0.94474490  1.0
+  S  S2  8  0.02671437  0.77571662  0.59816375  1.0
+  S  S3  8  0.03285472  0.71720867  0.15741898  1.0

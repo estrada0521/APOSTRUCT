@@ -1,0 +1,37 @@
+# generated using pymatgen
+data_KVHSe2O7
+_symmetry_space_group_name_H-M   P2_1/m
+_cell_length_a   4.15925100
+_cell_length_b   10.62278500
+_cell_length_c   7.95907151
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   96.83749997
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   11
+_chemical_formula_structural   KVHSe2O7
+_chemical_formula_sum   'K2 V2 H2 Se4 O14'
+_cell_volume   349.15326083
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x, y+1/2, -z'
+  4  'x, -y+1/2, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  K  K0  2  0.10012300  0.75000000  0.55287700  1.0
+  V  V1  2  0.05045600  0.25000000  0.94257100  1.0
+  H  H2  2  0.50000000  0.00000000  0.50000000  1.0
+  Se  Se3  4  0.29049500  0.01126500  0.18952300  1.0
+  O  O4  4  0.01589200  0.61707700  0.88050200  1.0
+  O  O5  4  0.07286900  0.62078900  0.23946400  1.0
+  O  O6  4  0.38474800  0.07352400  0.39211300  1.0
+  O  O7  2  0.45255300  0.25000000  0.95209400  1.0

@@ -1,0 +1,37 @@
+# generated using pymatgen
+data_SrLiPrTeO6
+_symmetry_space_group_name_H-M   Cm
+_cell_length_a   9.80805200
+_cell_length_b   5.61712200
+_cell_length_c   5.70785016
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   125.18700069
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   8
+_chemical_formula_structural   SrLiPrTeO6
+_chemical_formula_sum   'Sr2 Li2 Pr2 Te2 O12'
+_cell_volume   257.00273456
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  'x, -y, z'
+  3  'x+1/2, y+1/2, z'
+  4  'x+1/2, -y+1/2, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Sr  Sr0  2  0.25063800  0.50000000  0.75522100  1.0
+  Li  Li1  2  0.49920200  0.50000000  0.49533500  1.0
+  Pr  Pr2  2  0.25131700  0.00000000  0.23629700  1.0
+  Te  Te3  2  0.00101300  0.50000000  0.00179600  1.0
+  O  O4  4  0.04450100  0.24991600  0.81792100  1.0
+  O  O5  4  0.45311450  0.23450850  0.19678700  1.0
+  O  O6  2  0.23664300  0.50000000  0.30855200  1.0
+  O  O7  2  0.26595700  0.00000000  0.67338600  1.0

@@ -1,0 +1,36 @@
+# generated using pymatgen
+data_KH4O2F
+_symmetry_space_group_name_H-M   Pmc2_1
+_cell_length_a   4.12651800
+_cell_length_b   5.19357500
+_cell_length_c   8.85596800
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   26
+_chemical_formula_structural   KH4O2F
+_chemical_formula_sum   'K2 H8 O4 F2'
+_cell_volume   189.79562187
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, z+1/2'
+  3  '-x, y, z'
+  4  'x, -y, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  K  K0  2  0.50000000  0.39172200  0.99995700  1.0
+  H  H1  4  0.31013500  0.09918500  0.68006700  1.0
+  H  H2  2  0.00000000  0.13925600  0.46273300  1.0
+  H  H3  2  0.00000000  0.22592600  0.29184600  1.0
+  O  O4  2  0.00000000  0.29209700  0.39630400  1.0
+  O  O5  2  0.50000000  0.20285700  0.71147600  1.0
+  F  F6  2  0.00000000  0.09241600  0.11095000  1.0

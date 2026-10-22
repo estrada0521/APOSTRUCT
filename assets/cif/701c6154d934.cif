@@ -1,0 +1,48 @@
+# generated using pymatgen
+data_AlC2Br5(NO3)2
+_symmetry_space_group_name_H-M   I4/m
+_cell_length_a   5.12855000
+_cell_length_b   5.12855000
+_cell_length_c   19.82286400
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   87
+_chemical_formula_structural   AlC2Br5(NO3)2
+_chemical_formula_sum   'Al2 C4 Br10 N4 O12'
+_cell_volume   521.38146653
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-y, x, z'
+  4  'y, -x, -z'
+  5  '-x, -y, z'
+  6  'x, y, -z'
+  7  'y, -x, z'
+  8  '-y, x, -z'
+  9  'x+1/2, y+1/2, z+1/2'
+  10  '-x+1/2, -y+1/2, -z+1/2'
+  11  '-y+1/2, x+1/2, z+1/2'
+  12  'y+1/2, -x+1/2, -z+1/2'
+  13  '-x+1/2, -y+1/2, z+1/2'
+  14  'x+1/2, y+1/2, -z+1/2'
+  15  'y+1/2, -x+1/2, z+1/2'
+  16  '-y+1/2, x+1/2, -z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Al  Al0  2  0.00000000  0.00000000  0.00000000  1.0
+  C  C1  4  0.00000000  0.00000000  0.25900550  1.0
+  Br  Br2  8  0.00000000  0.50000000  0.13125250  1.0
+  Br  Br3  2  0.00000000  0.00000000  0.50000000  1.0
+  N  N4  4  0.00000000  0.00000000  0.31950000  1.0
+  O  O5  8  0.19001800  0.69211700  0.50000000  1.0
+  O  O6  4  0.00000000  0.00000000  0.10383700  1.0

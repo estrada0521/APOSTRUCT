@@ -1,0 +1,40 @@
+# generated using pymatgen
+data_Ba4LiGa5Se12
+_symmetry_space_group_name_H-M   P-42_1c
+_cell_length_a   13.90086970
+_cell_length_b   13.90086970
+_cell_length_c   6.58024475
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   114
+_chemical_formula_structural   Ba4LiGa5Se12
+_chemical_formula_sum   'Ba8 Li2 Ga10 Se24'
+_cell_volume   1271.52818804
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  'y, -x, -z'
+  3  '-x, -y, z'
+  4  '-y, x, -z'
+  5  'x+1/2, -y+1/2, -z+1/2'
+  6  'y+1/2, x+1/2, z+1/2'
+  7  '-x+1/2, y+1/2, -z+1/2'
+  8  '-y+1/2, -x+1/2, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ba  Ba0  8  0.02116683  0.69685115  0.45185019  1.0
+  Li  Li1  2  0.00000000  0.00000000  0.50000000  1.0
+  Ga  Ga2  8  0.14092751  0.24587635  0.94751563  1.0
+  Ga  Ga3  2  0.00000000  0.00000000  0.00000000  1.0
+  Se  Se4  8  0.01351268  0.35977804  0.95393946  1.0
+  Se  Se5  8  0.09137589  0.09928295  0.76235214  1.0
+  Se  Se6  8  0.19655980  0.20856817  0.29096669  1.0

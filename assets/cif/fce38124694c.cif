@@ -1,0 +1,41 @@
+# generated using pymatgen
+data_K2NaMgVOF5
+_symmetry_space_group_name_H-M   Imm2
+_cell_length_a   5.71016839
+_cell_length_b   6.02041162
+_cell_length_c   10.82829968
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   44
+_chemical_formula_structural   K2NaMgVOF5
+_chemical_formula_sum   'K4 Na2 Mg2 V2 O2 F10'
+_cell_volume   372.25056642
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, z'
+  3  '-x, y, z'
+  4  'x, -y, z'
+  5  'x+1/2, y+1/2, z+1/2'
+  6  '-x+1/2, -y+1/2, z+1/2'
+  7  '-x+1/2, y+1/2, z+1/2'
+  8  'x+1/2, -y+1/2, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  K  K0  2  0.00000000  0.50000000  0.31332314  1.0
+  K  K1  2  0.00000000  0.50000000  0.67504016  1.0
+  Na  Na2  2  0.00000000  0.00000000  0.59150298  1.0
+  Mg  Mg3  2  0.00000000  0.50000000  0.97811629  1.0
+  V  V4  2  0.00000000  0.00000000  0.98210140  1.0
+  O  O5  2  0.00000000  0.00000000  0.79264345  1.0
+  F  F6  8  0.23816920  0.27666698  0.99673362  1.0
+  F  F7  2  0.00000000  0.00000000  0.18036532  1.0

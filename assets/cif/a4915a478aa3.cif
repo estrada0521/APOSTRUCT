@@ -1,0 +1,38 @@
+# generated using pymatgen
+data_Ag2BiO3
+_symmetry_space_group_name_H-M   Pnna
+_cell_length_a   6.13507400
+_cell_length_b   6.33245100
+_cell_length_c   9.84926200
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   52
+_chemical_formula_structural   Ag2BiO3
+_chemical_formula_sum   'Ag8 Bi4 O12'
+_cell_volume   382.64437520
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x+1/2, -y, z'
+  4  'x+1/2, y, -z'
+  5  'x, -y+1/2, -z+1/2'
+  6  '-x, y+1/2, z+1/2'
+  7  '-x+1/2, y+1/2, -z+1/2'
+  8  'x+1/2, -y+1/2, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ag  Ag0  4  0.00000000  0.00000000  0.50000000  1.0
+  Ag  Ag1  4  0.22229400  0.75000000  0.75000000  1.0
+  Bi  Bi2  4  0.25000000  0.00000000  0.10407200  1.0
+  O  O3  8  0.06489500  0.18258100  0.93801600  1.0
+  O  O4  4  0.14517500  0.25000000  0.25000000  1.0

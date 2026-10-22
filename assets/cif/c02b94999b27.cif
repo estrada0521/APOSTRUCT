@@ -1,0 +1,36 @@
+# generated using pymatgen
+data_Cs4Au6S5
+_symmetry_space_group_name_H-M   P31m
+_cell_length_a   10.39863476
+_cell_length_b   10.39863476
+_cell_length_c   5.36729548
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   157
+_chemical_formula_structural   Cs4Au6S5
+_chemical_formula_sum   'Cs4 Au6 S5'
+_cell_volume   502.61886463
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y, x-y, z'
+  3  '-x+y, -x, z'
+  4  'y, x, z'
+  5  'x-y, -y, z'
+  6  '-x, -x+y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Cs  Cs0  3  0.00000000  0.59460662  0.44951003  1.0
+  Cs  Cs1  1  0.00000000  0.00000000  0.16585595  1.0
+  Au  Au2  6  0.17032588  0.45359995  0.92294667  1.0
+  S  S3  3  0.00000000  0.24848193  0.70068801  1.0
+  S  S4  2  0.33333333  0.66666667  0.13892895  1.0

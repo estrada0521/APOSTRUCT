@@ -1,0 +1,36 @@
+# generated using pymatgen
+data_CsNdNb2O7
+_symmetry_space_group_name_H-M   Pmc2_1
+_cell_length_a   11.46714300
+_cell_length_b   5.50021700
+_cell_length_c   5.56824200
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   26
+_chemical_formula_structural   CsNdNb2O7
+_chemical_formula_sum   'Cs2 Nd2 Nb4 O14'
+_cell_volume   351.19890585
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, z+1/2'
+  3  '-x, y, z'
+  4  'x, -y, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Cs  Cs0  2  0.50000000  0.26066500  0.24864800  1.0
+  Nd  Nd1  2  0.00000000  0.25043600  0.28180600  1.0
+  Nb  Nb2  4  0.20031900  0.25113600  0.74157900  1.0
+  O  O3  4  0.14194000  0.03393900  0.01060800  1.0
+  O  O4  4  0.19050900  0.44626800  0.42633400  1.0
+  O  O5  4  0.35500200  0.19842900  0.74750300  1.0
+  O  O6  2  0.00000000  0.32918100  0.70679600  1.0

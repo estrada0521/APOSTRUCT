@@ -1,0 +1,35 @@
+# generated using pymatgen
+data_TiBrO
+_symmetry_space_group_name_H-M   P2/m
+_cell_length_a   7.56566100
+_cell_length_b   3.38439100
+_cell_length_c   10.48944489
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   103.54691993
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   10
+_chemical_formula_structural   TiBrO
+_chemical_formula_sum   'Ti4 Br4 O4'
+_cell_volume   261.11143586
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x, y, -z'
+  4  'x, -y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ti  Ti0  2  0.10944300  0.00000000  0.90328300  1.0
+  Ti  Ti1  2  0.31919800  0.00000000  0.26974500  1.0
+  Br  Br2  2  0.02848900  0.00000000  0.34579800  1.0
+  Br  Br3  2  0.40911600  0.00000000  0.83471500  1.0
+  O  O4  2  0.14807600  0.00000000  0.09055800  1.0
+  O  O5  2  0.45625900  0.00000000  0.43700900  1.0

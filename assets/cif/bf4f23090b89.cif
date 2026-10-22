@@ -1,0 +1,37 @@
+# generated using pymatgen
+data_RbIn(TeMo)6
+_symmetry_space_group_name_H-M   P-6
+_cell_length_a   10.53465462
+_cell_length_b   10.53465462
+_cell_length_c   4.60431000
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   174
+_chemical_formula_structural   RbIn(TeMo)6
+_chemical_formula_sum   'Rb1 In1 Te6 Mo6'
+_cell_volume   442.52294268
+_cell_formula_units_Z   1
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x+y, -x, -z'
+  3  '-y, x-y, z'
+  4  'x, y, -z'
+  5  '-x+y, -x, z'
+  6  '-y, x-y, -z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Rb  Rb0  1  0.66666667  0.33333333  0.00000000  1.0
+  In  In1  1  0.33333333  0.66666667  0.50000000  1.0
+  Te  Te2  3  0.03514667  0.32869633  0.50000000  1.0
+  Te  Te3  3  0.32028067  0.29508933  0.00000000  1.0
+  Mo  Mo4  3  0.01493067  0.15355233  0.00000000  1.0
+  Mo  Mo5  3  0.15266667  0.13856733  0.50000000  1.0

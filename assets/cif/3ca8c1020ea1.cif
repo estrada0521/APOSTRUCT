@@ -1,0 +1,40 @@
+# generated using pymatgen
+data_S7(N3O4)2
+_symmetry_space_group_name_H-M   P-42_1m
+_cell_length_a   12.14905300
+_cell_length_b   12.14905300
+_cell_length_c   5.17107800
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   113
+_chemical_formula_structural   S7(N3O4)2
+_chemical_formula_sum   'S14 N12 O16'
+_cell_volume   763.24846933
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  'y, -x, -z'
+  3  '-x, -y, z'
+  4  '-y, x, -z'
+  5  'x+1/2, -y+1/2, -z'
+  6  'y+1/2, x+1/2, z'
+  7  '-x+1/2, y+1/2, -z'
+  8  '-y+1/2, -x+1/2, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  S  S0  8  0.03802400  0.28858800  0.88430600  1.0
+  S  S1  4  0.24455000  0.74455000  0.29723000  1.0
+  S  S2  2  0.00000000  0.50000000  0.59645100  1.0
+  N  N3  8  0.13490100  0.20965700  0.75711100  1.0
+  N  N4  4  0.07869000  0.42131000  0.79210900  1.0
+  O  O5  8  0.04540700  0.28063600  0.16047100  1.0
+  O  O6  8  0.06271900  0.73376200  0.75262000  1.0

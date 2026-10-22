@@ -1,0 +1,49 @@
+# generated using pymatgen
+data_Ba3Zr2S7
+_symmetry_space_group_name_H-M   P4_2/mnm
+_cell_length_a   7.12790196
+_cell_length_b   7.12790196
+_cell_length_c   25.58530508
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   136
+_chemical_formula_structural   Ba3Zr2S7
+_chemical_formula_sum   'Ba12 Zr8 S28'
+_cell_volume   1299.91224600
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-y+1/2, x+1/2, z+1/2'
+  4  'y+1/2, -x+1/2, -z+1/2'
+  5  '-x, -y, z'
+  6  'x, y, -z'
+  7  'y+1/2, -x+1/2, z+1/2'
+  8  '-y+1/2, x+1/2, -z+1/2'
+  9  'x+1/2, -y+1/2, -z+1/2'
+  10  '-x+1/2, y+1/2, z+1/2'
+  11  '-y, -x, -z'
+  12  'y, x, z'
+  13  '-x+1/2, y+1/2, -z+1/2'
+  14  'x+1/2, -y+1/2, z+1/2'
+  15  'y, x, -z'
+  16  '-y, -x, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ba  Ba0  8  0.23772003  0.76227997  0.31837847  1.0
+  Ba  Ba1  4  0.24659824  0.24659824  0.00000000  1.0
+  Zr  Zr2  8  0.24925490  0.75074510  0.09954545  1.0
+  S  S3  8  0.00000000  0.50000000  0.09560757  1.0
+  S  S4  8  0.21859923  0.21859923  0.30256816  1.0
+  S  S5  4  0.00000000  0.00000000  0.11048858  1.0
+  S  S6  4  0.00000000  0.00000000  0.41700118  1.0
+  S  S7  4  0.21047325  0.78952675  0.00000000  1.0

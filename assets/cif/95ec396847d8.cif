@@ -1,0 +1,51 @@
+# generated using pymatgen
+data_Ba5Al3Cu2
+_symmetry_space_group_name_H-M   R3m
+_cell_length_a   5.64851796
+_cell_length_b   5.64851796
+_cell_length_c   38.34457200
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   160
+_chemical_formula_structural   Ba5Al3Cu2
+_chemical_formula_sum   'Ba15 Al9 Cu6'
+_cell_volume   1059.50632799
+_cell_formula_units_Z   3
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y, x-y, z'
+  3  '-x+y, -x, z'
+  4  '-y, -x, z'
+  5  '-x+y, y, z'
+  6  'x, x-y, z'
+  7  'x+2/3, y+1/3, z+1/3'
+  8  '-y+2/3, x-y+1/3, z+1/3'
+  9  '-x+y+2/3, -x+1/3, z+1/3'
+  10  '-y+2/3, -x+1/3, z+1/3'
+  11  '-x+y+2/3, y+1/3, z+1/3'
+  12  'x+2/3, x-y+1/3, z+1/3'
+  13  'x+1/3, y+2/3, z+2/3'
+  14  '-y+1/3, x-y+2/3, z+2/3'
+  15  '-x+y+1/3, -x+2/3, z+2/3'
+  16  '-y+1/3, -x+2/3, z+2/3'
+  17  '-x+y+1/3, y+2/3, z+2/3'
+  18  'x+1/3, x-y+2/3, z+2/3'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ba  Ba0  3  0.00000000  0.00000000  0.00084733  1.0
+  Ba  Ba1  3  0.00000000  0.00000000  0.17330000  1.0
+  Ba  Ba2  3  0.00000000  0.00000000  0.36723267  1.0
+  Ba  Ba3  3  0.00000000  0.00000000  0.47104033  1.0
+  Ba  Ba4  3  0.00000000  0.00000000  0.90658667  1.0
+  Al  Al5  9  0.16729633  0.33459267  0.75397667  1.0
+  Cu  Cu6  3  0.00000000  0.00000000  0.63860567  1.0
+  Cu  Cu7  3  0.00000000  0.00000000  0.80906100  1.0

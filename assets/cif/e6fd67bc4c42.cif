@@ -1,0 +1,38 @@
+# generated using pymatgen
+data_Tl6Si2O7
+_symmetry_space_group_name_H-M   P-3
+_cell_length_a   9.70738202
+_cell_length_b   9.70738202
+_cell_length_c   7.93140043
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   147
+_chemical_formula_structural   Tl6Si2O7
+_chemical_formula_sum   'Tl12 Si4 O14'
+_cell_volume   647.26891468
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-y, x-y, z'
+  4  'y, -x+y, -z'
+  5  '-x+y, -x, z'
+  6  'x-y, x, -z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Tl  Tl0  6  0.03574108  0.35058822  0.86870801  1.0
+  Tl  Tl1  6  0.05042115  0.35766886  0.37952148  1.0
+  Si  Si2  2  0.33333333  0.66666667  0.66723814  1.0
+  Si  Si3  2  0.33333333  0.66666667  0.08458846  1.0
+  O  O4  6  0.14848057  0.55279935  0.61192512  1.0
+  O  O5  6  0.14903817  0.55115138  0.14074251  1.0
+  O  O6  2  0.33333333  0.66666667  0.87608312  1.0

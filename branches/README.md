@@ -27,4 +27,4 @@ Each branch retains the comparator and mathematics-verifier versions that actual
 A refactor of the shipped tools does not relabel historical observations or force a corpus-wide rejudgement.
 
 To inspect a branch, extract its canonical input, use the referenced CIF under `assets/`, run APOSTRUCT locally, and submit the same request and OPD to the public ISODISTORT Web application yourself.
-See `Verification/README.md` for the single-branch comparison and mathematics commands.
+See `verification/README.md` for the single-branch comparison and mathematics commands.

@@ -1,0 +1,39 @@
+# generated using pymatgen
+data_BaSrPdF6
+_symmetry_space_group_name_H-M   Aea2
+_cell_length_a   6.06589000
+_cell_length_b   6.09348600
+_cell_length_c   17.16273200
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   41
+_chemical_formula_structural   BaSrPdF6
+_chemical_formula_sum   'Ba4 Sr4 Pd4 F24'
+_cell_volume   634.37603632
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, z'
+  3  '-x+1/2, y+1/2, z'
+  4  'x+1/2, -y+1/2, z'
+  5  'x, y+1/2, z+1/2'
+  6  '-x, -y+1/2, z+1/2'
+  7  '-x+1/2, y, z+1/2'
+  8  'x+1/2, -y, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ba  Ba0  4  0.00000000  0.00000000  0.16386600  1.0
+  Sr  Sr1  4  0.00000000  0.00000000  0.83970100  1.0
+  Pd  Pd2  4  0.00000000  0.00000000  0.49585100  1.0
+  F  F3  8  0.15891400  0.16210400  0.58091300  1.0
+  F  F4  8  0.16119600  0.16742650  0.41249250  1.0
+  F  F5  8  0.24722700  0.25414050  0.75688550  1.0

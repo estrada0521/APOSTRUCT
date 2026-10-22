@@ -1,0 +1,39 @@
+# generated using pymatgen
+data_Li3ErCl6
+_symmetry_space_group_name_H-M   P321
+_cell_length_a   11.00959654
+_cell_length_b   11.00959654
+_cell_length_c   6.02400620
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   150
+_chemical_formula_structural   Li3ErCl6
+_chemical_formula_sum   'Li9 Er3 Cl18'
+_cell_volume   632.35193238
+_cell_formula_units_Z   3
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y, x-y, z'
+  3  '-x+y, -x, z'
+  4  'y, x, -z'
+  5  'x-y, -y, -z'
+  6  '-x, -x+y, -z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Li  Li0  3  0.00000000  0.34356556  0.00000000  1.0
+  Li  Li1  3  0.00000000  0.66210287  0.00000000  1.0
+  Li  Li2  3  0.00000000  0.67930426  0.50000000  1.0
+  Er  Er3  2  0.33333333  0.66666667  0.50447175  1.0
+  Er  Er4  1  0.00000000  0.00000000  0.00000000  1.0
+  Cl  Cl5  6  0.10721071  0.56115429  0.75145229  1.0
+  Cl  Cl6  6  0.11404508  0.88397364  0.76770961  1.0
+  Cl  Cl7  6  0.21408226  0.77394757  0.26075586  1.0

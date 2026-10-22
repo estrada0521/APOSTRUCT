@@ -1,0 +1,41 @@
+# generated using pymatgen
+data_Cd3(InSe3)2
+_symmetry_space_group_name_H-M   R3
+_cell_length_a   7.48462802
+_cell_length_b   7.48462802
+_cell_length_c   20.86226075
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   146
+_chemical_formula_structural   Cd3(InSe3)2
+_chemical_formula_sum   'Cd9 In6 Se18'
+_cell_volume   1012.12101704
+_cell_formula_units_Z   3
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y, x-y, z'
+  3  '-x+y, -x, z'
+  4  'x+2/3, y+1/3, z+1/3'
+  5  '-y+2/3, x-y+1/3, z+1/3'
+  6  '-x+y+2/3, -x+1/3, z+1/3'
+  7  'x+1/3, y+2/3, z+2/3'
+  8  '-y+1/3, x-y+2/3, z+2/3'
+  9  '-x+y+1/3, -x+2/3, z+2/3'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Cd  Cd0  9  0.00515767  0.31428533  0.83387433  1.0
+  In  In1  3  0.00000000  0.00000000  0.33357600  1.0
+  In  In2  3  0.00000000  0.00000000  0.99730400  1.0
+  Se  Se3  9  0.01144767  0.34371833  0.29618133  1.0
+  Se  Se4  3  0.00000000  0.00000000  0.12460500  1.0
+  Se  Se5  3  0.00000000  0.00000000  0.46084100  1.0
+  Se  Se6  3  0.00000000  0.00000000  0.77852000  1.0

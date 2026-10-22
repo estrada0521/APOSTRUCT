@@ -1,0 +1,41 @@
+# generated using pymatgen
+data_Ba2ZrO3F2
+_symmetry_space_group_name_H-M   Imm2
+_cell_length_a   4.12625100
+_cell_length_b   4.14931200
+_cell_length_c   16.55545600
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   44
+_chemical_formula_structural   Ba2ZrO3F2
+_chemical_formula_sum   'Ba4 Zr2 O6 F4'
+_cell_volume   283.44766390
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, z'
+  3  '-x, y, z'
+  4  'x, -y, z'
+  5  'x+1/2, y+1/2, z+1/2'
+  6  '-x+1/2, -y+1/2, z+1/2'
+  7  '-x+1/2, y+1/2, z+1/2'
+  8  'x+1/2, -y+1/2, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ba  Ba0  2  0.00000000  0.00000000  0.36974950  1.0
+  Ba  Ba1  2  0.00000000  0.00000000  0.65260900  1.0
+  Zr  Zr2  2  0.00000000  0.00000000  0.00741300  1.0
+  O  O3  2  0.00000000  0.00000000  0.12744650  1.0
+  O  O4  2  0.00000000  0.50000000  0.48331250  1.0
+  O  O5  2  0.00000000  0.50000000  0.99064950  1.0
+  F  F6  2  0.00000000  0.00000000  0.86352300  1.0
+  F  F7  2  0.00000000  0.50000000  0.75530050  1.0

@@ -1,0 +1,57 @@
+# generated using pymatgen
+data_K6BiH3(Cl2F)4
+_symmetry_space_group_name_H-M   P6_3/mmc
+_cell_length_a   9.25259592
+_cell_length_b   9.25259592
+_cell_length_c   14.66797600
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   194
+_chemical_formula_structural   K6BiH3(Cl2F)4
+_chemical_formula_sum   'K12 Bi2 H6 Cl16 F8'
+_cell_volume   1087.49686681
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  'x-y, x, z+1/2'
+  4  '-x+y, -x, -z+1/2'
+  5  '-y, x-y, z'
+  6  'y, -x+y, -z'
+  7  '-x, -y, z+1/2'
+  8  'x, y, -z+1/2'
+  9  '-x+y, -x, z'
+  10  'x-y, x, -z'
+  11  'y, -x+y, z+1/2'
+  12  '-y, x-y, -z+1/2'
+  13  '-y, -x, -z+1/2'
+  14  'y, x, z+1/2'
+  15  '-x, -x+y, -z'
+  16  'x, x-y, z'
+  17  '-x+y, y, -z+1/2'
+  18  'x-y, -y, z+1/2'
+  19  'y, x, -z'
+  20  '-y, -x, z'
+  21  'x, x-y, -z+1/2'
+  22  '-x, -x+y, z+1/2'
+  23  'x-y, -y, -z'
+  24  '-x+y, y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  K  K0  6  0.00000000  0.50000000  0.00000000  1.0
+  K  K1  6  0.17890400  0.35780800  0.25000000  1.0
+  Bi  Bi2  2  0.00000000  0.00000000  0.00000000  1.0
+  H  H3  6  0.15660900  0.57830450  0.75000000  1.0
+  Cl  Cl4  12  0.13989200  0.86010800  0.60735500  1.0
+  Cl  Cl5  4  0.33333333  0.66666667  0.10651000  1.0
+  F  F6  6  0.03121500  0.51560750  0.75000000  1.0
+  F  F7  2  0.33333333  0.66666667  0.75000000  1.0

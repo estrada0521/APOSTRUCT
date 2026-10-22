@@ -1,0 +1,39 @@
+# generated using pymatgen
+data_SbP(Cl2F3)2
+_symmetry_space_group_name_H-M   P4/n
+_cell_length_a   8.71610100
+_cell_length_b   8.71610100
+_cell_length_c   6.94341200
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   85
+_chemical_formula_structural   SbP(Cl2F3)2
+_chemical_formula_sum   'Sb2 P2 Cl8 F12'
+_cell_volume   527.49390256
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y+1/2, x+1/2, z'
+  3  '-x, -y, z'
+  4  'y+1/2, -x+1/2, z'
+  5  '-x+1/2, -y+1/2, -z'
+  6  'y, -x, -z'
+  7  'x+1/2, y+1/2, -z'
+  8  '-y, x, -z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Sb  Sb0  2  0.00000000  0.50000000  0.14671800  1.0
+  P  P1  2  0.00000000  0.00000000  0.50000000  1.0
+  Cl  Cl2  8  0.04687900  0.17697700  0.66235200  1.0
+  F  F3  8  0.06979700  0.29075600  0.14645600  1.0
+  F  F4  2  0.00000000  0.50000000  0.42319600  1.0
+  F  F5  2  0.00000000  0.50000000  0.86878100  1.0

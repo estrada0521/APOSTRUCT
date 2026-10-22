@@ -1,0 +1,41 @@
+# generated using pymatgen
+data_La3W(ClO2)3
+_symmetry_space_group_name_H-M   P6_3/m
+_cell_length_a   9.43426103
+_cell_length_b   9.43426103
+_cell_length_c   5.44421610
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   176
+_chemical_formula_structural   La3W(ClO2)3
+_chemical_formula_sum   'La6 W2 Cl6 O12'
+_cell_volume   419.64472024
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  'x-y, x, z+1/2'
+  4  '-x+y, -x, -z+1/2'
+  5  '-y, x-y, z'
+  6  'y, -x+y, -z'
+  7  '-x, -y, z+1/2'
+  8  'x, y, -z+1/2'
+  9  '-x+y, -x, z'
+  10  'x-y, x, -z'
+  11  'y, -x+y, z+1/2'
+  12  '-y, x-y, -z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  La  La0  6  0.09027429  0.68510671  0.75000000  1.0
+  W  W1  2  0.33333333  0.66666667  0.25000000  1.0
+  Cl  Cl2  6  0.04791732  0.80688659  0.25000000  1.0
+  O  O3  12  0.16277042  0.52652133  0.02167172  1.0

@@ -1,0 +1,38 @@
+# generated using pymatgen
+data_Dy4C5
+_symmetry_space_group_name_H-M   Pbam
+_cell_length_a   6.56592551
+_cell_length_b   11.93767043
+_cell_length_c   3.65183590
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   55
+_chemical_formula_structural   Dy4C5
+_chemical_formula_sum   'Dy8 C10'
+_cell_volume   286.23767129
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x, -y, z'
+  4  'x, y, -z'
+  5  'x+1/2, -y+1/2, -z'
+  6  '-x+1/2, y+1/2, z'
+  7  '-x+1/2, y+1/2, -z'
+  8  'x+1/2, -y+1/2, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Dy  Dy0  4  0.10768288  0.69573613  0.50000000  1.0
+  Dy  Dy1  4  0.24364678  0.45760947  0.00000000  1.0
+  C  C2  4  0.09767814  0.15619717  0.00000000  1.0
+  C  C3  4  0.13783212  0.26518570  0.00000000  1.0
+  C  C4  2  0.00000000  0.50000000  0.50000000  1.0

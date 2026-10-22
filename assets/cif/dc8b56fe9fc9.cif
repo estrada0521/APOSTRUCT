@@ -1,0 +1,38 @@
+# generated using pymatgen
+data_HgPSe3
+_symmetry_space_group_name_H-M   C2/c
+_cell_length_a   6.64094364
+_cell_length_b   11.52476672
+_cell_length_c   14.17399574
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   98.31771377
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   15
+_chemical_formula_structural   HgPSe3
+_chemical_formula_sum   'Hg8 P8 Se24'
+_cell_volume   1073.40037862
+_cell_formula_units_Z   8
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x, y, -z+1/2'
+  4  'x, -y, z+1/2'
+  5  'x+1/2, y+1/2, z'
+  6  '-x+1/2, -y+1/2, -z'
+  7  '-x+1/2, y+1/2, -z+1/2'
+  8  'x+1/2, -y+1/2, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Hg  Hg0  8  0.17272644  0.40410557  0.93346514  1.0
+  P  P1  8  0.20469280  0.26755729  0.41971003  1.0
+  Se  Se2  8  0.12267210  0.91895418  0.11842807  1.0
+  Se  Se3  8  0.12520150  0.30291070  0.10681308  1.0
+  Se  Se4  8  0.21746542  0.38656400  0.65488623  1.0

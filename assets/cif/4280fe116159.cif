@@ -1,0 +1,38 @@
+# generated using pymatgen
+data_Li2Ta2(OF2)3
+_symmetry_space_group_name_H-M   P3_121
+_cell_length_a   5.67194075
+_cell_length_b   5.67194075
+_cell_length_c   21.27847600
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   152
+_chemical_formula_structural   Li2Ta2(OF2)3
+_chemical_formula_sum   'Li6 Ta6 O9 F18'
+_cell_volume   592.83593841
+_cell_formula_units_Z   3
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y, x-y, z+1/3'
+  3  '-x+y, -x, z+2/3'
+  4  'y, x, -z'
+  5  'x-y, -y, -z+2/3'
+  6  '-x, -x+y, -z+1/3'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Li  Li0  6  0.00586433  0.55299667  0.80865967  1.0
+  Ta  Ta1  6  0.11204967  0.78006433  0.95441200  1.0
+  O  O2  6  0.07446233  0.49371567  0.34179567  1.0
+  O  O3  3  0.00000000  0.09795250  0.66666667  1.0
+  F  F4  6  0.12073933  0.27926367  0.09512633  1.0
+  F  F5  6  0.16751767  0.80251333  0.45011833  1.0
+  F  F6  6  0.29385233  0.65689367  0.89132733  1.0

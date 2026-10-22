@@ -1,0 +1,45 @@
+# generated using pymatgen
+data_K2ReH9
+_symmetry_space_group_name_H-M   P-62m
+_cell_length_a   9.50578349
+_cell_length_b   9.50578349
+_cell_length_c   5.53008987
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   189
+_chemical_formula_structural   K2ReH9
+_chemical_formula_sum   'K6 Re3 H27'
+_cell_volume   432.75157548
+_cell_formula_units_Z   3
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x+y, -x, -z'
+  3  '-y, x-y, z'
+  4  'x, y, -z'
+  5  '-x+y, -x, z'
+  6  '-y, x-y, -z'
+  7  'y, x, z'
+  8  '-x, -x+y, -z'
+  9  'x-y, -y, z'
+  10  'y, x, -z'
+  11  '-x, -x+y, z'
+  12  'x-y, -y, -z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  K  K0  3  0.00000000  0.26228262  0.50000000  1.0
+  K  K1  3  0.00000000  0.59150517  0.00000000  1.0
+  Re  Re2  2  0.33333333  0.66666667  0.50000000  1.0
+  Re  Re3  1  0.00000000  0.00000000  0.00000000  1.0
+  H  H4  12  0.22346908  0.53130635  0.27869034  1.0
+  H  H5  6  0.00000000  0.87271090  0.21518014  1.0
+  H  H6  6  0.14234881  0.63142053  0.50000000  1.0
+  H  H7  3  0.00000000  0.17632121  0.00000000  1.0

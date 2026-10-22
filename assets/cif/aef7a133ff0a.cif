@@ -1,0 +1,37 @@
+# generated using pymatgen
+data_Si2Ag6O7
+_symmetry_space_group_name_H-M   P2/c
+_cell_length_a   8.05969200
+_cell_length_b   5.40097700
+_cell_length_c   10.77530043
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   114.66056849
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   13
+_chemical_formula_structural   Si2Ag6O7
+_chemical_formula_sum   'Si4 Ag12 O14'
+_cell_volume   426.27155124
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x, y, -z+1/2'
+  4  'x, -y, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Si  Si0  4  0.20008900  0.27382300  0.86131300  1.0
+  Ag  Ag1  4  0.06405300  0.27113500  0.10669500  1.0
+  Ag  Ag2  4  0.31248500  0.31068800  0.60017400  1.0
+  Ag  Ag3  4  0.44659100  0.23461900  0.36301000  1.0
+  O  O4  4  0.18721500  0.41878700  0.36868400  1.0
+  O  O5  4  0.24519100  0.14915700  0.01232500  1.0
+  O  O6  4  0.35678700  0.19204400  0.80987200  1.0
+  O  O7  2  0.00000000  0.16526300  0.75000000  1.0

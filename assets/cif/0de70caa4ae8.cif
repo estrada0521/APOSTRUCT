@@ -1,0 +1,40 @@
+# generated using pymatgen
+data_Al4CN3O
+_symmetry_space_group_name_H-M   Cmc2_1
+_cell_length_a   6.03296600
+_cell_length_b   8.94974000
+_cell_length_c   9.06709800
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   36
+_chemical_formula_structural   Al4CN3O
+_chemical_formula_sum   'Al16 C4 N12 O4'
+_cell_volume   489.56414849
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, z+1/2'
+  3  '-x, y, z'
+  4  'x, -y, z+1/2'
+  5  'x+1/2, y+1/2, z'
+  6  '-x+1/2, -y+1/2, z+1/2'
+  7  '-x+1/2, y+1/2, z'
+  8  'x+1/2, -y+1/2, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Al  Al0  8  0.22207900  0.32670100  0.10886900  1.0
+  Al  Al1  4  0.00000000  0.04887900  0.32310400  1.0
+  Al  Al2  4  0.00000000  0.40343600  0.40759000  1.0
+  C  C3  4  0.00000000  0.19638700  0.49508400  1.0
+  N  N4  8  0.24517400  0.07601200  0.79235100  1.0
+  N  N5  4  0.00000000  0.18199000  0.16309100  1.0
+  O  O6  4  0.00000000  0.43573700  0.02317000  1.0

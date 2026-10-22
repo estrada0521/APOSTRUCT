@@ -1,0 +1,41 @@
+# generated using pymatgen
+data_TlO
+_symmetry_space_group_name_H-M   Aem2
+_cell_length_a   21.77539566
+_cell_length_b   4.88279129
+_cell_length_c   5.26369200
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   39
+_chemical_formula_structural   TlO
+_chemical_formula_sum   'Tl16 O16'
+_cell_volume   559.66053781
+_cell_formula_units_Z   16
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, z'
+  3  '-x, y+1/2, z'
+  4  'x, -y+1/2, z'
+  5  'x, y+1/2, z+1/2'
+  6  '-x, -y+1/2, z+1/2'
+  7  '-x, y, z+1/2'
+  8  'x, -y, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Tl  Tl0  4  0.06066300  0.25000000  0.36307900  1.0
+  Tl  Tl1  4  0.18843200  0.25000000  0.46833150  1.0
+  Tl  Tl2  4  0.30966200  0.25000000  0.96946000  1.0
+  Tl  Tl3  4  0.43925600  0.25000000  0.03066900  1.0
+  O  O4  4  0.04051900  0.25000000  0.92954650  1.0
+  O  O5  4  0.20865100  0.25000000  0.90532600  1.0
+  O  O6  4  0.28947400  0.25000000  0.41468900  1.0
+  O  O7  4  0.45935100  0.25000000  0.46919950  1.0

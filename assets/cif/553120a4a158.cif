@@ -1,0 +1,39 @@
+# generated using pymatgen
+data_IrSe2
+_symmetry_space_group_name_H-M   Pnma
+_cell_length_a   21.15801080
+_cell_length_b   3.76584221
+_cell_length_c   5.98587002
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   62
+_chemical_formula_structural   IrSe2
+_chemical_formula_sum   'Ir8 Se16'
+_cell_volume   476.94053617
+_cell_formula_units_Z   8
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x+1/2, -y, z+1/2'
+  4  'x+1/2, y, -z+1/2'
+  5  'x+1/2, -y+1/2, -z+1/2'
+  6  '-x+1/2, y+1/2, z+1/2'
+  7  '-x, y+1/2, -z'
+  8  'x, -y+1/2, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ir  Ir0  4  0.07640308  0.25000000  0.56986210  1.0
+  Ir  Ir1  4  0.19510235  0.75000000  0.05838514  1.0
+  Se  Se2  4  0.00886551  0.75000000  0.72371666  1.0
+  Se  Se3  4  0.12208991  0.25000000  0.95116979  1.0
+  Se  Se4  4  0.13866488  0.75000000  0.42779903  1.0
+  Se  Se5  4  0.23815256  0.75000000  0.68261771  1.0

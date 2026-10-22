@@ -1,0 +1,39 @@
+# generated using pymatgen
+data_YB4Mo
+_symmetry_space_group_name_H-M   Pbam
+_cell_length_a   6.02756528
+_cell_length_b   11.64192282
+_cell_length_c   3.62331518
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   55
+_chemical_formula_structural   YB4Mo
+_chemical_formula_sum   'Y4 B16 Mo4'
+_cell_volume   254.25690251
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x, -y, z'
+  4  'x, y, -z'
+  5  'x+1/2, -y+1/2, -z'
+  6  '-x+1/2, y+1/2, z'
+  7  '-x+1/2, y+1/2, -z'
+  8  'x+1/2, -y+1/2, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Y  Y0  4  0.12734584  0.14962918  0.00000000  1.0
+  B  B1  4  0.02366453  0.69323952  0.50000000  1.0
+  B  B2  4  0.11370029  0.54734914  0.50000000  1.0
+  B  B3  4  0.13384037  0.96810759  0.50000000  1.0
+  B  B4  4  0.21374425  0.81413547  0.50000000  1.0
+  Mo  Mo5  4  0.12876385  0.41699664  0.00000000  1.0

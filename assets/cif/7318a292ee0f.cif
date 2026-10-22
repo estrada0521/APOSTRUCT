@@ -1,0 +1,37 @@
+# generated using pymatgen
+data_HoAgS2
+_symmetry_space_group_name_H-M   P4_12_12
+_cell_length_a   7.59791194
+_cell_length_b   7.59791194
+_cell_length_c   12.40063488
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   92
+_chemical_formula_structural   HoAgS2
+_chemical_formula_sum   'Ho8 Ag8 S16'
+_cell_volume   715.86714704
+_cell_formula_units_Z   8
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y+1/2, x+1/2, z+1/4'
+  3  '-x, -y, z+1/2'
+  4  'y+1/2, -x+1/2, z+3/4'
+  5  'x+1/2, -y+1/2, -z+3/4'
+  6  '-y, -x, -z+1/2'
+  7  '-x+1/2, y+1/2, -z+1/4'
+  8  'y, x, -z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ho  Ho0  8  0.00085715  0.74993721  0.62224637  1.0
+  Ag  Ag1  8  0.01566836  0.74030933  0.06390494  1.0
+  S  S2  8  0.01900526  0.76921698  0.40152247  1.0
+  S  S3  8  0.02331398  0.72683633  0.84223214  1.0

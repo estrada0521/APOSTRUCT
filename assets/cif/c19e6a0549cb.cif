@@ -1,0 +1,45 @@
+# generated using pymatgen
+data_Ti2(InCl3)3
+_symmetry_space_group_name_H-M   P6_3mc
+_cell_length_a   7.09865930
+_cell_length_b   7.09865930
+_cell_length_c   17.29821290
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   186
+_chemical_formula_structural   Ti2(InCl3)3
+_chemical_formula_sum   'Ti4 In6 Cl18'
+_cell_volume   754.89149894
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  'x-y, x, z+1/2'
+  3  '-y, x-y, z'
+  4  '-x, -y, z+1/2'
+  5  '-x+y, -x, z'
+  6  'y, -x+y, z+1/2'
+  7  'y, x, z+1/2'
+  8  'x, x-y, z'
+  9  'x-y, -y, z+1/2'
+  10  '-y, -x, z'
+  11  '-x, -x+y, z+1/2'
+  12  '-x+y, y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ti  Ti0  2  0.33333333  0.66666667  0.66181396  1.0
+  Ti  Ti1  2  0.33333333  0.66666667  0.83285324  1.0
+  In  In2  2  0.00000000  0.00000000  0.27967083  1.0
+  In  In3  2  0.33333333  0.66666667  0.05812610  1.0
+  In  In4  2  0.33333333  0.66666667  0.44972735  1.0
+  Cl  Cl5  6  0.01218607  0.50609304  0.74852509  1.0
+  Cl  Cl6  6  0.17274022  0.34548044  0.91013158  1.0
+  Cl  Cl7  6  0.17362954  0.82637046  0.58579259  1.0

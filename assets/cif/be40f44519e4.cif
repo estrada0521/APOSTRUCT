@@ -1,0 +1,34 @@
+# generated using pymatgen
+data_HgCNCl3
+_symmetry_space_group_name_H-M   P3_2
+_cell_length_a   7.97294842
+_cell_length_b   7.97294842
+_cell_length_c   9.81492700
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   145
+_chemical_formula_structural   HgCNCl3
+_chemical_formula_sum   'Hg3 C3 N3 Cl9'
+_cell_volume   540.32568767
+_cell_formula_units_Z   3
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y, x-y, z+2/3'
+  3  '-x+y, -x, z+1/3'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Hg  Hg0  3  0.32865800  0.31052100  0.83190033  1.0
+  C  C1  3  0.28163900  0.27653100  0.29494600  1.0
+  N  N2  3  0.05189200  0.66345800  0.71889033  1.0
+  Cl  Cl3  3  0.02539700  0.22497500  0.64359367  1.0
+  Cl  Cl4  3  0.23213800  0.48485500  0.97053433  1.0
+  Cl  Cl5  3  0.51466200  0.24577700  0.67933833  1.0

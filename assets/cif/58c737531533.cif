@@ -1,0 +1,40 @@
+# generated using pymatgen
+data_RbO2F
+_symmetry_space_group_name_H-M   P-42_1m
+_cell_length_a   12.17326000
+_cell_length_b   12.17326000
+_cell_length_c   4.34308800
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   113
+_chemical_formula_structural   RbO2F
+_chemical_formula_sum   'Rb8 O16 F8'
+_cell_volume   643.59464952
+_cell_formula_units_Z   8
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  'y, -x, -z'
+  3  '-x, -y, z'
+  4  '-y, x, -z'
+  5  'x+1/2, -y+1/2, -z'
+  6  'y+1/2, x+1/2, z'
+  7  '-x+1/2, y+1/2, -z'
+  8  '-y+1/2, -x+1/2, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Rb  Rb0  4  0.23384200  0.73384200  0.24921900  1.0
+  Rb  Rb1  2  0.00000000  0.00000000  0.00000000  1.0
+  Rb  Rb2  2  0.00000000  0.50000000  0.25888500  1.0
+  O  O3  8  0.00213600  0.21507100  0.66839000  1.0
+  O  O4  8  0.00742100  0.20512600  0.38187800  1.0
+  F  F5  4  0.12034600  0.62034600  0.77297000  1.0
+  F  F6  4  0.16924400  0.33075600  0.23703700  1.0

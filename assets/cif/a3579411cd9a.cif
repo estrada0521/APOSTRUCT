@@ -1,0 +1,46 @@
+# generated using pymatgen
+data_KB(SO4)2
+_symmetry_space_group_name_H-M   P4/ncc
+_cell_length_a   9.22610600
+_cell_length_b   9.22610600
+_cell_length_c   7.54276800
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   130
+_chemical_formula_structural   KB(SO4)2
+_chemical_formula_sum   'K4 B4 S8 O32'
+_cell_volume   642.04819572
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y+1/2, x+1/2, z'
+  3  '-x, -y, z'
+  4  'y+1/2, -x+1/2, z'
+  5  'x+1/2, -y+1/2, -z+1/2'
+  6  '-y, -x, -z+1/2'
+  7  '-x+1/2, y+1/2, -z+1/2'
+  8  'y, x, -z+1/2'
+  9  '-x+1/2, -y+1/2, -z'
+  10  'y, -x, -z'
+  11  'x+1/2, y+1/2, -z'
+  12  '-y, x, -z'
+  13  '-x, y, z+1/2'
+  14  'y+1/2, x+1/2, z+1/2'
+  15  'x, -y, z+1/2'
+  16  '-y+1/2, -x+1/2, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  K  K0  4  0.00000000  0.50000000  0.06373800  1.0
+  B  B1  4  0.00000000  0.00000000  0.00000000  1.0
+  S  S2  8  0.15388400  0.15388400  0.75000000  1.0
+  O  O3  16  0.03299500  0.12923100  0.60846800  1.0
+  O  O4  16  0.12596100  0.29566000  0.82193800  1.0

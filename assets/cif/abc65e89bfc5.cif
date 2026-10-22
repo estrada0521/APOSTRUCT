@@ -1,0 +1,38 @@
+# generated using pymatgen
+data_BaSn2S5
+_symmetry_space_group_name_H-M   Pccn
+_cell_length_a   6.70628813
+_cell_length_b   10.75741299
+_cell_length_c   11.60311401
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   56
+_chemical_formula_structural   BaSn2S5
+_chemical_formula_sum   'Ba4 Sn8 S20'
+_cell_volume   837.07545999
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x+1/2, -y+1/2, z'
+  4  'x+1/2, y+1/2, -z'
+  5  'x+1/2, -y, -z+1/2'
+  6  '-x+1/2, y, z+1/2'
+  7  '-x, y+1/2, -z+1/2'
+  8  'x, -y+1/2, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ba  Ba0  4  0.25000000  0.25000000  0.30026255  1.0
+  Sn  Sn1  8  0.24653787  0.55922894  0.52673125  1.0
+  S  S2  8  0.04984699  0.52782547  0.35264698  1.0
+  S  S3  8  0.07079697  0.13369892  0.56424347  1.0
+  S  S4  4  0.25000000  0.75000000  0.15049941  1.0

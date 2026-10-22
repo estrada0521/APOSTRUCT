@@ -1,0 +1,39 @@
+# generated using pymatgen
+data_ZrMn3
+_symmetry_space_group_name_H-M   P3m1
+_cell_length_a   4.87040882
+_cell_length_b   4.87040882
+_cell_length_c   7.98935000
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   156
+_chemical_formula_structural   ZrMn3
+_chemical_formula_sum   'Zr3 Mn9'
+_cell_volume   164.12430997
+_cell_formula_units_Z   3
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-y, x-y, z'
+  3  '-x+y, -x, z'
+  4  '-y, -x, z'
+  5  '-x+y, y, z'
+  6  'x, x-y, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Zr  Zr0  1  0.00000000  0.00000000  0.55345300  1.0
+  Zr  Zr1  1  0.00000000  0.00000000  0.93528100  1.0
+  Zr  Zr2  1  0.33333333  0.66666667  0.07378300  1.0
+  Mn  Mn3  3  0.01039100  0.50519550  0.74296700  1.0
+  Mn  Mn4  3  0.32560100  0.16280050  0.25800400  1.0
+  Mn  Mn5  1  0.33333333  0.66666667  0.43028400  1.0
+  Mn  Mn6  1  0.66666667  0.33333333  0.00329500  1.0
+  Mn  Mn7  1  0.66666667  0.33333333  0.50104200  1.0

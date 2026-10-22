@@ -1,0 +1,48 @@
+# generated using pymatgen
+data_Tl2GeTe5
+_symmetry_space_group_name_H-M   P4/mbm
+_cell_length_a   8.44875779
+_cell_length_b   8.44875779
+_cell_length_c   15.06317285
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   127
+_chemical_formula_structural   Tl2GeTe5
+_chemical_formula_sum   'Tl8 Ge4 Te20'
+_cell_volume   1075.23199622
+_cell_formula_units_Z   4
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-y, x, z'
+  4  'y, -x, -z'
+  5  '-x, -y, z'
+  6  'x, y, -z'
+  7  'y, -x, z'
+  8  '-y, x, -z'
+  9  'x+1/2, -y+1/2, -z'
+  10  '-x+1/2, y+1/2, z'
+  11  '-y+1/2, -x+1/2, -z'
+  12  'y+1/2, x+1/2, z'
+  13  '-x+1/2, y+1/2, -z'
+  14  'x+1/2, -y+1/2, z'
+  15  'y+1/2, x+1/2, -z'
+  16  '-y+1/2, -x+1/2, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Tl  Tl0  4  0.00000000  0.00000000  0.12214267  1.0
+  Tl  Tl1  4  0.00000000  0.00000000  0.37931599  1.0
+  Ge  Ge2  4  0.00000000  0.50000000  0.38157574  1.0
+  Te  Te3  8  0.17667791  0.32332209  0.28079947  1.0
+  Te  Te4  4  0.00000000  0.50000000  0.12800520  1.0
+  Te  Te5  4  0.16485608  0.66485608  0.50000000  1.0
+  Te  Te6  4  0.18617920  0.31382080  0.00000000  1.0

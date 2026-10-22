@@ -1,0 +1,39 @@
+# generated using pymatgen
+data_SbCl4F
+_symmetry_space_group_name_H-M   I-4
+_cell_length_a   13.08186319
+_cell_length_b   13.08186319
+_cell_length_c   7.96262859
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   82
+_chemical_formula_structural   SbCl4F
+_chemical_formula_sum   'Sb8 Cl32 F8'
+_cell_volume   1362.68559495
+_cell_formula_units_Z   8
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  'y, -x, -z'
+  3  '-x, -y, z'
+  4  '-y, x, -z'
+  5  'x+1/2, y+1/2, z+1/2'
+  6  'y+1/2, -x+1/2, -z+1/2'
+  7  '-x+1/2, -y+1/2, z+1/2'
+  8  '-y+1/2, x+1/2, -z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Sb  Sb0  8  0.04620750  0.27948471  0.27609685  1.0
+  Cl  Cl1  8  0.03868094  0.32815319  0.55577860  1.0
+  Cl  Cl2  8  0.04014305  0.27965200  0.98606830  1.0
+  Cl  Cl3  8  0.06065971  0.85976886  0.30605503  1.0
+  Cl  Cl4  8  0.20121887  0.79635711  0.70582438  1.0
+  F  F5  8  0.07908702  0.62081124  0.25449092  1.0

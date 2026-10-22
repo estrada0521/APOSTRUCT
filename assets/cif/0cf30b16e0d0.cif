@@ -1,0 +1,38 @@
+# generated using pymatgen
+data_SeO2
+_symmetry_space_group_name_H-M   Pbam
+_cell_length_a   8.67629200
+_cell_length_b   8.77264900
+_cell_length_c   5.20779000
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   55
+_chemical_formula_structural   SeO2
+_chemical_formula_sum   'Se8 O16'
+_cell_volume   396.38606312
+_cell_formula_units_Z   8
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x, -y, z'
+  4  'x, y, -z'
+  5  'x+1/2, -y+1/2, -z'
+  6  '-x+1/2, y+1/2, z'
+  7  '-x+1/2, y+1/2, -z'
+  8  'x+1/2, -y+1/2, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Se  Se0  4  0.12268300  0.78667600  0.50000000  1.0
+  Se  Se1  4  0.21876400  0.13563900  0.00000000  1.0
+  O  O2  8  0.13014900  0.63946700  0.24976400  1.0
+  O  O3  4  0.06514600  0.18285700  0.50000000  1.0
+  O  O4  4  0.17913300  0.95232500  0.00000000  1.0

@@ -1,0 +1,41 @@
+# generated using pymatgen
+data_Hg2AsCl2
+_symmetry_space_group_name_H-M   C2/m
+_cell_length_a   14.29945200
+_cell_length_b   8.49908400
+_cell_length_c   9.21522407
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   99.15704049
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   12
+_chemical_formula_structural   Hg2AsCl2
+_chemical_formula_sum   'Hg16 As8 Cl16'
+_cell_volume   1105.67410224
+_cell_formula_units_Z   8
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x, y, -z'
+  4  'x, -y, z'
+  5  'x+1/2, y+1/2, z'
+  6  '-x+1/2, -y+1/2, -z'
+  7  '-x+1/2, y+1/2, -z'
+  8  'x+1/2, -y+1/2, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Hg  Hg0  8  0.02151800  0.24595400  0.75750300  1.0
+  Hg  Hg1  4  0.21728700  0.00000000  0.49024900  1.0
+  Hg  Hg2  4  0.22358900  0.50000000  0.04659200  1.0
+  As  As3  4  0.04010700  0.00000000  0.39109500  1.0
+  As  As4  4  0.05432000  0.50000000  0.90947900  1.0
+  Cl  Cl5  8  0.22801300  0.21969400  0.73880700  1.0
+  Cl  Cl6  4  0.11071600  0.50000000  0.48010000  1.0
+  Cl  Cl7  4  0.11103300  0.00000000  0.00952700  1.0

@@ -1,0 +1,35 @@
+# generated using pymatgen
+data_Hg2Mo2O7
+_symmetry_space_group_name_H-M   P2/c
+_cell_length_a   6.03324757
+_cell_length_b   3.97265336
+_cell_length_c   14.44877855
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   104.63077544
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   13
+_chemical_formula_structural   Hg2Mo2O7
+_chemical_formula_sum   'Hg4 Mo4 O14'
+_cell_volume   335.07882233
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x, y, -z+1/2'
+  4  'x, -y, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Hg  Hg0  4  0.14533398  0.33531231  0.06373172  1.0
+  Mo  Mo1  4  0.31061174  0.03529889  0.81554771  1.0
+  O  O2  4  0.29402291  0.02527688  0.43073531  1.0
+  O  O3  4  0.30975381  0.47102669  0.80387152  1.0
+  O  O4  4  0.36572345  0.03146794  0.16883771  1.0
+  O  O5  2  0.00000000  0.04262657  0.25000000  1.0

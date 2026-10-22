@@ -1,0 +1,38 @@
+# generated using pymatgen
+data_LiCaUF8
+_symmetry_space_group_name_H-M   I-4
+_cell_length_a   5.30437200
+_cell_length_b   5.30437200
+_cell_length_c   11.00368600
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   82
+_chemical_formula_structural   LiCaUF8
+_chemical_formula_sum   'Li2 Ca2 U2 F16'
+_cell_volume   309.60369609
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  'y, -x, -z'
+  3  '-x, -y, z'
+  4  '-y, x, -z'
+  5  'x+1/2, y+1/2, z+1/2'
+  6  'y+1/2, -x+1/2, -z+1/2'
+  7  '-x+1/2, -y+1/2, z+1/2'
+  8  '-y+1/2, x+1/2, -z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Li  Li0  2  0.00000000  0.00000000  0.00000000  1.0
+  Ca  Ca1  2  0.00000000  0.50000000  0.75000000  1.0
+  U  U2  2  0.00000000  0.00000000  0.50000000  1.0
+  F  F3  8  0.16488100  0.20748800  0.34824900  1.0
+  F  F4  8  0.17488750  0.71951550  0.92309350  1.0

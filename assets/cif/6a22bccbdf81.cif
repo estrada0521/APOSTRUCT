@@ -1,0 +1,40 @@
+# generated using pymatgen
+data_Ca5(AlSb3)2
+_symmetry_space_group_name_H-M   Pbam
+_cell_length_a   12.11608404
+_cell_length_b   14.10923850
+_cell_length_c   4.48337877
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   90.00000000
+_symmetry_Int_Tables_number   55
+_chemical_formula_structural   Ca5(AlSb3)2
+_chemical_formula_sum   'Ca10 Al4 Sb12'
+_cell_volume   766.42785935
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  '-x, -y, -z'
+  3  '-x, -y, z'
+  4  'x, y, -z'
+  5  'x+1/2, -y+1/2, -z'
+  6  '-x+1/2, y+1/2, z'
+  7  '-x+1/2, y+1/2, -z'
+  8  'x+1/2, -y+1/2, z'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  Ca  Ca0  4  0.09268821  0.74776437  0.50000000  1.0
+  Ca  Ca1  4  0.17423574  0.01285640  0.50000000  1.0
+  Ca  Ca2  2  0.00000000  0.50000000  0.50000000  1.0
+  Al  Al3  4  0.16842621  0.21116050  0.00000000  1.0
+  Sb  Sb4  4  0.02380125  0.90051143  0.00000000  1.0
+  Sb  Sb5  4  0.15716170  0.59414274  0.00000000  1.0
+  Sb  Sb6  4  0.16051808  0.32046005  0.50000000  1.0

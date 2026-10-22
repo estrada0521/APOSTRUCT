@@ -1,0 +1,37 @@
+# generated using pymatgen
+data_La3SiAgSe7
+_symmetry_space_group_name_H-M   P6_3
+_cell_length_a   10.91615159
+_cell_length_b   10.91615159
+_cell_length_c   6.12578400
+_cell_angle_alpha   90.00000000
+_cell_angle_beta   90.00000000
+_cell_angle_gamma   120.00000000
+_symmetry_Int_Tables_number   173
+_chemical_formula_structural   La3SiAgSe7
+_chemical_formula_sum   'La6 Si2 Ag2 Se14'
+_cell_volume   632.16642595
+_cell_formula_units_Z   2
+loop_
+ _symmetry_equiv_pos_site_id
+ _symmetry_equiv_pos_as_xyz
+  1  'x, y, z'
+  2  'x-y, x, z+1/2'
+  3  '-y, x-y, z'
+  4  '-x, -y, z+1/2'
+  5  '-x+y, -x, z'
+  6  'y, -x+y, z+1/2'
+loop_
+ _atom_site_type_symbol
+ _atom_site_label
+ _atom_site_symmetry_multiplicity
+ _atom_site_fract_x
+ _atom_site_fract_y
+ _atom_site_fract_z
+ _atom_site_occupancy
+  La  La0  6  0.12466000  0.35723500  0.74018300  1.0
+  Si  Si1  2  0.33333333  0.66666667  0.32993300  1.0
+  Ag  Ag2  2  0.00000000  0.00000000  0.19381700  1.0
+  Se  Se3  6  0.09251500  0.26777300  0.22615400  1.0
+  Se  Se4  6  0.11127400  0.58813200  0.47739200  1.0
+  Se  Se5  2  0.33333333  0.66666667  0.95891100  1.0
