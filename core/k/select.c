@@ -380,6 +380,23 @@ static int int_list(const jvalue *v, int **out, int *n)
     return 0;
 }
 
+/* the Wyckoff row of each selected site (a row repeats for each site on it), from the site indexes under key */
+static int site_rows(const jvalue *state, const jvalue *internal, const char *key, const char *fallback, int **out, int *n)
+{
+    const jvalue *sites = member(internal, key), *atoms = member(member(state, "input"), "atom_sites");
+    if (!jis(sites, J_ARRAY) || !jis(atoms, J_ARRAY)) return int_list(member(internal, fallback), out, n);
+    *n = 0;
+    *out = calloc((size_t)sites->count + 1, sizeof(int));
+    if (!*out) return md_fail(MDE_MEMORY, "out of memory");
+    for (int64_t i = 0; i < sites->count; i++) {
+        int64_t site;
+        if (py_int_of(jat(sites, i), &site)) return md_fail(MDE_TYPE, "site indexes must be integers");
+        int64_t row = member_int(jat(atoms, site - 1), "wyckoff_row_id");
+        if (row) (*out)[(*n)++] = (int)row;
+    }
+    return 0;
+}
+
 int sel_irreps(const jvalue *state, jbuf *out)
 {
     MD_TRY(load());
@@ -400,8 +417,8 @@ int sel_irreps(const jvalue *state, jbuf *out)
                          (mode_set.used == 3 && !memcmp(mode_set.data, "all", 3));
     }
     int *displacive, *magnetic_rows, nd, nm;
-    MD_TRY(int_list(member(internal, "displacive_row_ids"), &displacive, &nd));
-    MD_TRY(int_list(member(internal, "magnetic_row_ids"), &magnetic_rows, &nm));
+    MD_TRY(site_rows(state, internal, "displacive_site_indexes", "displacive_row_ids", &displacive, &nd));
+    MD_TRY(site_rows(state, internal, "magnetic_site_indexes", "magnetic_row_ids", &magnetic_rows, &nm));
     const jvalue *kpoints = member(catalog, "kpoints");
     int64_t nk = jis(kpoints, J_ARRAY) ? kpoints->count : 0;
     jbuf *irreps = calloc((size_t)nk + 1, sizeof(jbuf)), *kp_json = calloc((size_t)nk + 1, sizeof(jbuf));
