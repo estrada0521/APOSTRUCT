@@ -7,6 +7,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
 typedef enum { J_NULL, J_FALSE, J_TRUE, J_INT, J_FLOAT, J_STRING, J_ARRAY, J_OBJECT } jkind;
 
@@ -46,8 +47,18 @@ typedef struct {
 
 void jb_reset(jbuf *b);
 void jb_free(jbuf *b);
-void jb_raw(jbuf *b, const char *text, size_t length);
-void jb_lit(jbuf *b, const char *text);
+void jb_raw_grow(jbuf *b, const char *text, size_t length);
+static inline void jb_raw(jbuf *b, const char *text, size_t length)
+{
+    if (b->failed || b->used + length + 1 > b->cap) {
+        jb_raw_grow(b, text, length);
+        return;
+    }
+    memcpy(b->data + b->used, text, length);
+    b->used += length;
+    b->data[b->used] = 0;
+}
+static inline void jb_lit(jbuf *b, const char *text) { jb_raw(b, text, strlen(text)); }
 void jb_int(jbuf *b, int64_t value);
 void jb_float(jbuf *b, double value);
 void jb_string(jbuf *b, const char *text, size_t length);

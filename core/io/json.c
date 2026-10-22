@@ -427,7 +427,7 @@ void jb_free(jbuf *b)
     memset(b, 0, sizeof *b);
 }
 
-void jb_raw(jbuf *b, const char *text, size_t length)
+void jb_raw_grow(jbuf *b, const char *text, size_t length)
 {
     if (b->failed) return;
     if (b->used + length + 1 > b->cap) {
@@ -455,7 +455,6 @@ void jb_raw(jbuf *b, const char *text, size_t length)
     b->data[b->used] = 0;
 }
 
-void jb_lit(jbuf *b, const char *text) { jb_raw(b, text, strlen(text)); }
 
 void jb_int(jbuf *b, int64_t value)
 {
