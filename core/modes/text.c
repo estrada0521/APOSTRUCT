@@ -40,13 +40,19 @@ static void put_fixed(jbuf *b, double v, int width, int digits)
     jb_raw(b, text, (size_t)n);
 }
 
+/* a CIF value: a number, or text with an optional uncertainty in parentheses (5.380(1)) */
+static int cif_value(const jvalue *v, double *out)
+{
+    return v && v->kind == J_STRING ? float_cif_number(v, out) : py_float_of(v, out);
+}
+
 static int float_or_zero(const jvalue *v, double *out)
 {
     if (!v) {
         *out = 0.0;
         return 0;
     }
-    return py_float_of(v, out) ? md_fail(MDE_VALUE, "could not convert string to float") : 0;
+    return cif_value(v, out) ? md_fail(MDE_VALUE, "could not convert string to float") : 0;
 }
 
 static int lattice_lines(jbuf *b, const jvalue *lattice, const double *values, int digits)
@@ -77,7 +83,7 @@ static int supercell(const jvalue *parent, const jvalue *basis, double *out)
     double p[6];
     for (int i = 0; i < 6; i++) {
         const jvalue *v = member(parent, keys[i]);
-        if (!v || jis(v, J_NULL) || py_float_of(v, p + i)) return 1;
+        if (!v || jis(v, J_NULL) || cif_value(v, p + i)) return 1;
     }
     double a = p[0], b = p[1], c = p[2];
     double cal = geo_cos_deg(p[3]), cbe = geo_cos_deg(p[4]), cga = geo_cos_deg(p[5]), sga = geo_sin_deg(p[5]);
@@ -292,7 +298,7 @@ static int parent_xyz(const jvalue *site, double *xyz)
     const jvalue *fract = member(site, "fract");
     for (int k = 0; k < 3; k++) {
         double v = 0.0;
-        if (jtruthy(fract) && py_float_of(jat(fract, k), &v)) return md_fail(MDE_VALUE, "could not convert string to float");
+        if (jtruthy(fract) && cif_value(jat(fract, k), &v)) return md_fail(MDE_VALUE, "could not convert string to float");
         xyz[k] = mod1(v);
     }
     return 0;
