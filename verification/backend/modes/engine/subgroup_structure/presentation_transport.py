@@ -12,6 +12,7 @@ from verification.backend.exactmath import (
     fraction_row_multiply3 as _row_multiply,
 )
 from verification.backend.source.magnetic import data as magnetic_data
+from verification import groups
 from verification.backend import native
 from verification.backend.source.magnetic_operations import _magnetic_point_operation
 
@@ -115,7 +116,7 @@ def embedded_magnetic_child_operation_records(
 
     table = magnetic_data().table
     magnetic_group = int(child_magnetic_group)
-    child_sg = native.magnetic_ordinary_group(magnetic_group)
+    child_sg = groups.magnetic_ordinary_group(magnetic_group)
     basis: FractionMatrix = tuple(
         tuple(Fraction(basis_values[row * 3 + col]) for col in range(3))
         for row in range(3)

@@ -22,6 +22,7 @@ from verification.backend.exactmath import (
     fraction_matrix_inverse3,
     fraction_matrix_multiply3,
 )
+from verification import groups
 from verification.backend import native
 from verification.backend.source.compiled import CompiledSource
 
@@ -211,7 +212,7 @@ class ISOData:
     # ------------------------------------------------------------------
     @lru_cache(maxsize=None)
     def generate_space_group_records(self, sg: int) -> tuple[tuple[int, int, int, int, int], ...]:
-        return native.space_group_records(int(sg))
+        return groups.space_group_records(int(sg))
 
     @lru_cache(maxsize=None)
     def site_pg_element_settings(self, site_pg: int) -> tuple[tuple[int, ...], ...]:
@@ -365,7 +366,7 @@ class ISOData:
         return tuple(records)
 
     def point_op_product(self, left: int, right: int) -> int:
-        return native.point_op_product(int(left), int(right))
+        return groups.point_product(int(left), int(right))
 
     @lru_cache(maxsize=None)
     def wyc_pg_cosets_records(

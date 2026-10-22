@@ -13,7 +13,7 @@ from verification.backend.exactmath import (
     fraction_record3 as fraction_record,
     fraction_row_multiply3,
 )
-from verification.backend import native
+from verification import groups
 from verification.backend.source.magnetic import data as magnetic_data
 from verification.backend.source.tables import source_tables
 
@@ -62,7 +62,7 @@ def _pml_to_cinter_affine(sg: int) -> tuple[FractionMatrix, FractionPoint]:
 
 
 def _pml_point_operation_matrix(sg: int, point_op: int) -> FractionMatrix:
-    entries = native.pml_point_matrix(int(sg), int(point_op))
+    entries = groups.pml_point_matrix(int(sg), int(point_op))
     if entries is None:
         raise KeyError(f"missing PML point operation SG{sg} op{point_op}")
     return tuple(
@@ -190,8 +190,8 @@ def magnetic_group_setting(magnetic_group: int) -> MagneticGroupSetting:
     if group < 1 or group > len(table["mag_nlabel"]):
         raise IndexError(f"magnetic group out of range: {group}")
     index = group - 1
-    magnetic_type = native.magnetic_group_type(group)
-    ordinary_sg = native.magnetic_ordinary_group(group)
+    magnetic_type = groups.magnetic_group_type(group)
+    ordinary_sg = groups.magnetic_ordinary_group(group)
     reference_sg = ordinary_sg
     basis = (1, 0, 0, 0, 1, 0, 0, 0, 1)
     origin: FractionRecord = (0, 0, 0, 1)
@@ -238,7 +238,7 @@ def _compose_operations(
     translation = tuple(
         left_translation[axis] + rotated_right[axis] for axis in range(3)
     )
-    point_op = native.magnetic_point_op_product(int(left[4]), int(right[4]))
+    point_op = groups.magnetic_point_op_product(int(left[4]), int(right[4]))
     x, y, z, denominator = fraction_record(_fold_point(translation))
     return x, y, z, denominator, point_op
 
