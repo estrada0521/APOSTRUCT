@@ -7,7 +7,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-double apostruct_builtin_sum3(double a, double b, double c);
+#include "pysum.h"
 
 enum {
     MR_OK = 0,

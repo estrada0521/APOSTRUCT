@@ -11,6 +11,7 @@
 
 #include "geometry.h"
 #include "pynum.h"
+#include "pysum.h"
 
 enum {
     WM_FOUND = 1,
@@ -269,7 +270,6 @@ static double source_param_value(double value, double tol)
     return fabs(n) <= tol ? 0.0 : n;
 }
 
-double apostruct_builtin_sum3(double a, double b, double c);
 
 /* out: row offset (0-based); params[3] with mask[3] of named columns;
  * representative[3].  Returns 1 found, 0 none, negative on error. */

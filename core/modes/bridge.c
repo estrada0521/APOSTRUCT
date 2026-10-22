@@ -5,6 +5,7 @@
 
 #include <math.h>
 #include <stdlib.h>
+#include "pysum.h"
 
 enum {
     BM_OK = 0,
@@ -16,20 +17,6 @@ enum {
 #define BASIS_LENGTH 360
 #define OUTPUT_LENGTH 720
 #define FAMILY_STRIDE 144
-
-/* CPython >= 3.12 sum() of three floats (Neumaier, starting from int 0). */
-double apostruct_builtin_sum3(double a, double b, double c)
-{
-    double total = a + 0.0, compensation = 0.0;
-    double values[2] = {b, c};
-    for (int i = 0; i < 2; i++) {
-        double value = values[i];
-        double step = total + value;
-        compensation = compensation + (fabs(total) >= fabs(value) ? (total - step) + value : (value - step) + total);
-        total = step;
-    }
-    return compensation != 0.0 && isfinite(compensation) ? total + compensation : total;
-}
 
 /* project_vector_ over lanes: basis is lanes x basis_length, output lanes x
  * output_length (pre-zeroed). Returns the emitted count. */

@@ -6,8 +6,9 @@
 #include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
-double apostruct_builtin_sum3(double a, double b, double c);
+#include "pysum.h"
 
 enum {
     GS_OK = 0,
@@ -36,6 +37,18 @@ static void gs_support(const double *d, int64_t rows, unsigned char *support)
 {
     for (int64_t r = 0; r < rows; r++)
         support[r] = d[3 * r] != 0.0 || d[3 * r + 1] != 0.0 || d[3 * r + 2] != 0.0;
+}
+
+/* d -= coefficient * ref; returns whether any bit of d changed */
+static int subtract(double *d, double coefficient, const double *ref, int64_t rows)
+{
+    int changed = 0;
+    for (int64_t e = 0; e < 3 * rows; e++) {
+        double value = d[e] - coefficient * ref[e];
+        changed |= memcmp(&value, &d[e], sizeof value) != 0;
+        d[e] = value;
+    }
+    return changed;
 }
 
 /* groups[i] < 0: only the normfactor; otherwise orthogonalize against the
@@ -76,6 +89,7 @@ int gram_schmidt_modes(int mode_count, const int *groups, const int64_t *offsets
                 }
                 chain[length++] = p;
             }
+            int dirty = 1;
             for (int k = length - 1; k >= 0; k--) {
                 int p = chain[k];
                 int64_t pstart = offsets[p];
@@ -88,14 +102,15 @@ int gram_schmidt_modes(int mode_count, const int *groups, const int64_t *offsets
                 int overlap = 0;
                 for (int64_t r = 0; r < rows && !overlap; r++) overlap = own[r] && ref_support[r];
                 if (!overlap) {
-                    for (int64_t e = 0; e < 3 * rows; e++) d[e] = d[e] - 0.0 * ref[e];
+                    dirty |= subtract(d, 0.0, ref, rows);
                     continue;
                 }
-                gs_cartesian(d, rows, basis, scratch);
+                if (dirty) gs_cartesian(d, rows, basis, scratch);
+                dirty = 0;
                 double numerator = gs_row_dot(scratch, cartesian + 3 * pstart, rows);
                 if (denominators[p] <= 1e-15) continue;
                 double coefficient = numerator / denominators[p];
-                for (int64_t e = 0; e < 3 * rows; e++) d[e] = d[e] - coefficient * ref[e];
+                dirty |= subtract(d, coefficient, ref, rows);
                 if (coefficient != 0.0) gs_support(d, rows, own);
             }
             double scale = 0.0;
