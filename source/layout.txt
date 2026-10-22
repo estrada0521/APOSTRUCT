@@ -89,7 +89,6 @@ group.type4_supergroups.origin               group/type4_supergroups.txt        
 isotropy.magnetic.by_old_start               isotropy/magnetic.txt                old group_start keys=4777 sentinel byu=magnetic.mag_iso_irrep_pointer
 isotropy.magnetic.basis                      isotropy/magnetic.txt                basis flat byu=magnetic.mag_iso_basis
 isotropy.magnetic.origin                     isotropy/magnetic.txt                origin flat byu=magnetic.mag_iso_origin
-isotropy.magnetic.label                      isotropy/magnetic.txt                label text byu=magnetic.mag_iso_orderparam_label
 isotropy.magnetic.direction_codes_start      isotropy/magnetic.txt                direction_codes start byu=magnetic.mag_iso_orderparam_pointer
 isotropy.magnetic.direction_codes            isotropy/magnetic.txt                direction_codes flat total=163000 byu=magnetic.mag_iso_orderparam
 images.images.label                          images/images.txt                    label text byu=images.image_label
@@ -102,6 +101,7 @@ images.images.generator_count                images/images.txt                  
 images.images.diagonalize                    images/images.txt                    diagonalize each first=132 byu=images.image_diagonalize_pointer
 images.images.subgroup_count                 images/images.txt                    subgroup_count each byu=images.image_subgroup_count
 images.images.subgroup_start                 images/images.txt                    subgroup_start each byu=images.image_subgroup_pointer
+images.images.add_r                          images/images.txt                    add_r each byu=magnetic.mag_image_add_r
 images.image_subgroups.maximal               images/image_subgroups.txt           maximal each byu=images.image_subgroup_maximal
 images.image_subgroups.minimal               images/image_subgroups.txt           minimal each byu=images.image_subgroup_min
 images.image_subgroups.rg                    images/image_subgroups.txt           rg each byu=images.image_subgroup_rg
@@ -125,5 +125,6 @@ irreps.little.position_start                 -                                  
 irreps.little.number                         -                                    - derived byu=little.little_irr_irrnum
 irreps.little.type                           -                                    - derived byu=little.little_irr_type
 isotropy.ordinary.label                      -                                    - derived byu=isotropy.isotropy_orderparam_label
+isotropy.magnetic.label                      -                                    - derived byu=magnetic.mag_iso_orderparam_label
 settings.inter_settings.wyckoff_start        -                                    - derived byu=space.ispace_inter_wyckoff_pointer
 settings.inter_settings.wyckoff              -                                    - derived byu=space.ispace_inter_wyckoff_fract
