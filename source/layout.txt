@@ -34,8 +34,7 @@ settings.inter_settings.cell                 settings/inter_settings.txt        
 group.space_groups.inter_choice              group/space_groups.txt               inter_choice each byu=space.ispace_inter_choice
 group.space_groups.settings                  group/space_groups.txt               settings flat byu=space.ispace_settings
 settings.inter_settings.inter                settings/inter_settings.txt          inter flat byu=space.ispace_settings_inter
-settings.inter_settings.wyckoff_start        settings/inter_settings.txt          wyckoff start div=16 zero_empty byu=space.ispace_inter_wyckoff_pointer
-settings.inter_settings.wyckoff              settings/inter_settings.txt          wyckoff flat byu=space.ispace_inter_wyckoff_fract
+settings.wyckoff_exceptions.formula          settings/wyckoff_exceptions.txt      formula flat
 settings.wyckoff.by_sg_count                 settings/wyckoff.txt                 sg group_count keys=230 byu=wyckoff.iwyckoff_count
 settings.wyckoff.by_sg_start                 settings/wyckoff.txt                 sg group_start keys=230 byu=wyckoff.iwyckoff_pointer
 settings.wyckoff.label                       settings/wyckoff.txt                 label text byu=wyckoff.wyckoff_label
@@ -126,3 +125,5 @@ irreps.little.position_start                 -                                  
 irreps.little.number                         -                                    - derived byu=little.little_irr_irrnum
 irreps.little.type                           -                                    - derived byu=little.little_irr_type
 isotropy.ordinary.label                      -                                    - derived byu=isotropy.isotropy_orderparam_label
+settings.inter_settings.wyckoff_start        -                                    - derived byu=space.ispace_inter_wyckoff_pointer
+settings.inter_settings.wyckoff              -                                    - derived byu=space.ispace_inter_wyckoff_fract

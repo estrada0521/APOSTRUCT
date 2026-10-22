@@ -25,7 +25,8 @@ number field is a space-separated list, a text field is the text.
 | `group/magnetic_point_groups.txt` | 122 | magnetic point groups: class code |
 | `group/magnetic_groups.txt` | 1651 | magnetic space groups: space group, OG and BNS symbols, generators, type-4 supergroup row |
 | `group/type4_supergroups.txt` | 520 | type-4 reference supergroups: group, basis, origin |
-| `settings/inter_settings.txt` | 800 | International Tables settings: number, symbols, origin and cell choices, matrices, Wyckoff formulas |
+| `settings/inter_settings.txt` | 800 | International Tables settings: number, symbols, origin and cell choices, matrices |
+| `settings/wyckoff_exceptions.txt` | 107 | Wyckoff formulas in other settings that differ from the ones apo derives from the default setting |
 | `settings/wyckoff.txt` | 1731 | Wyckoff positions: space group, letter, site point group, formula |
 | `settings/site_point_groups.txt` | 32 | site point groups: irreps and vector representations |
 | `settings/site_settings.txt` | 152 | orientations of the site point groups: operations, vector basis |
