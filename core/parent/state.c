@@ -732,15 +732,14 @@ static int setting_keys(int sg, int setting_id, op_key *keys, int capacity)
     return unique_keys(keys, n);
 }
 
-/* The origin choice ('1', '2' or 0) of the inter settings whose operation set
- * equals the CIF's; 0 unless exactly one origin choice matches. */
-static char origin_choice(int sg, const jvalue *ops)
+/* The candidate settings whose operation set equals the CIF's, written to out; returns their number, or -1 when the
+ * CIF gives no operations or they cannot be read. */
+static int matching_settings(int sg, const jvalue *ops, const int *candidates, int ncand, int *out)
 {
     int64_t n = jis(ops, J_ARRAY) ? ops->count : 0;
-    if (!n || n > 4096) return 0;
+    if (!n || n > 4096) return -1;
     op_key *want = calloc((size_t)n, sizeof *want), *have = calloc(4096, sizeof *have);
-    char choice = 0;
-    int ok = want && have, nwant = 0;
+    int ok = want && have, nwant = 0, matches = 0;
     for (int64_t i = 0; ok && i < n; i++) {
         jbuf text = {0};
         jb_reset(&text);
@@ -757,26 +756,16 @@ static char origin_choice(int sg, const jvalue *ops)
     }
     if (ok) {
         nwant = unique_keys(want, nwant);
-        int ids[64], nids = geo_inter_setting_ids(sg, 64, ids), seen = 0;
-        geo_take_error();
-        for (int i = 0; i < nids; i++) {
-            int64_t origin = section_int(&T.inter_origin, ids[i] - 1);
-            if (origin != 1 && origin != 2) continue;
-            int nhave = setting_keys(sg, ids[i], have, 4096);
-            if (nhave != nwant || memcmp(have, want, sizeof *have * (size_t)nwant)) continue;
-            char c = (char)('0' + origin);
-            if (seen && c != choice) {
-                choice = 0;
-                break;
-            }
-            choice = c;
-            seen = 1;
+        for (int c = 0; c < ncand; c++) {
+            int nhave = setting_keys(sg, candidates[c], have, 4096);
+            if (nhave == nwant && !memcmp(have, want, sizeof *have * (size_t)nwant)) out[matches++] = candidates[c];
         }
     }
     free(want);
     free(have);
-    return choice;
+    return ok ? matches : -1;
 }
+
 static int select_setting(int sg, const jvalue *sites, const jvalue *ops, scored_t *chosen)
 {
     int64_t n = sites->count;
@@ -785,26 +774,18 @@ static int select_setting(int sg, const jvalue *sites, const jvalue *ops, scored
     for (int64_t i = 0; i < total && ncand < 64; i++)
         if (section_int(&T.inter_number, i) == sg) candidates[ncand++] = (int)i + 1;
     if (!ncand) candidates[ncand++] = geo_default_setting(sg);
-    char choice = origin_choice(sg, ops);
-    if (choice) {
-        int filtered[64], nf = 0;
-        for (int c = 0; c < ncand; c++)
-            if (section_int(&T.inter_origin, candidates[c] - 1) == choice - '0') filtered[nf++] = candidates[c];
-        if (nf) {
-            memcpy(candidates, filtered, sizeof(int) * (size_t)nf);
-            ncand = nf;
-        }
+    int matched[64], nmatched = matching_settings(sg, ops, candidates, ncand, matched);
+    if (nmatched == 0)
+        return md_fail(MDE_VALUE, "the CIF's symmetry operations match no setting of space group %d in the Source", sg);
+    if (nmatched > 0) {
+        memcpy(candidates, matched, sizeof(int) * (size_t)nmatched);
+        ncand = nmatched;
     }
     images_t *images = calloc((size_t)n + 1, sizeof(images_t));
     if (!images) return md_fail(MDE_MEMORY, "out of memory");
     int status = 0;
-    if (choice) {
-        int matches = 0, operation_setting = 0;
-        for (int c = 0; c < ncand; c++)
-            if (section_int(&T.inter_origin, candidates[c] - 1) == choice - '0') {
-                matches++;
-                operation_setting = candidates[c];
-            }
+    if (nmatched > 0) {
+        int matches = ncand, operation_setting = candidates[0];
         if (matches == 1) {
             for (int64_t i = 0; i < n && !status; i++) status = site_images(jat(sites, i), ops, images + i);
             scored_t s;
