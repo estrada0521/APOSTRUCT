@@ -100,8 +100,14 @@ int bridge_source_modes(int lanes, const double *coefficients, int row_count,
                         int split_row_slots, int transform_count, const double *transforms,
                         int negate, int capacity, double *modes, int *mode_count)
 {
-    double *basis = calloc((size_t)lanes * BASIS_LENGTH, sizeof(double));
-    double *output = calloc((size_t)lanes * OUTPUT_LENGTH, sizeof(double));
+    int most = 3 * (project_count > 1 ? project_count : 1), basis_width = 3 * row_count, output_width;
+    if (basis_width > BASIS_LENGTH) basis_width = BASIS_LENGTH;
+    if (basis_width < 1) basis_width = 1;
+    output_width = (most < 5 ? most - 1 : 4) * FAMILY_STRIDE + 3 * row_count;
+    if (output_width > OUTPUT_LENGTH) output_width = OUTPUT_LENGTH;
+    if (output_width < 1) output_width = 1;
+    double *basis = calloc((size_t)lanes * basis_width, sizeof(double));
+    double *output = calloc((size_t)lanes * output_width, sizeof(double));
     if (!basis || !output) {
         free(basis);
         free(output);
@@ -120,13 +126,13 @@ int bridge_source_modes(int lanes, const double *coefficients, int row_count,
                     value = value + source * coefficient;
                 }
                 int output_index = row * 3 + vector;
-                if (output_index < BASIS_LENGTH) basis[lane * BASIS_LENGTH + output_index] = value;
+                if (output_index < basis_width) basis[(size_t)lane * basis_width + output_index] = value;
             }
     }
 
-    int emitted = project_vector_lanes(lanes, basis, BASIS_LENGTH, row_count, reps, target_rep,
+    int emitted = project_vector_lanes(lanes, basis, basis_width, row_count, reps, target_rep,
                                        vector_dim, constants, points, project_count, output,
-                                       OUTPUT_LENGTH);
+                                       output_width);
 
     int count = 0;
     int per_emitted = split_row_slots ? row_count : 1;
@@ -145,7 +151,7 @@ int bridge_source_modes(int lanes, const double *coefficients, int row_count,
                 double v[3];
                 for (int axis = 0; axis < 3; axis++) {
                     int index = offset + axis;
-                    v[axis] = index < OUTPUT_LENGTH ? output[lane * OUTPUT_LENGTH + index] : 0.0;
+                    v[axis] = index < output_width ? output[(size_t)lane * output_width + index] : 0.0;
                 }
                 for (int t = 0; t < transform_count; t++) {
                     const double *m = transforms + 9 * t;
