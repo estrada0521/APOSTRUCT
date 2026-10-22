@@ -47,6 +47,7 @@ class ModeSourceCatalogMixin:
     wyc_pg_elements_records = SourceTables.wyc_pg_elements_records
 
     space_group_has_inversion = SourceTables.space_group_has_inversion
+    point_group_order = SourceTables.point_group_order
     space_group_point_group_order = SourceTables.space_group_point_group_order
 
     def image_record(self, old_id: int) -> ImageRecord:

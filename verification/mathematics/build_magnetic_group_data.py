@@ -39,7 +39,7 @@ OFFICIAL_ISO_MAG_SHA256 = (
     "2b11217ae10687b0836d8151846db2fad57b0d77211da90bb138ccd123a7b1fc"
 )
 SPGLIB_SETTING_VERSION = "2.7.0"
-SOURCE_SPACE_SHA256 = "66c2c06ca2b3934898d8e915082062dd4d70410e8fcfacc5440e117afeacb9dc"
+SOURCE_SPACE_SHA256 = "8c22d2a1eac7f5b8a845bcd730c3e0d87cd2784fc711d915293bfce26ad39167"
 
 # These prime placements are the unique Hall variants whose exact closures
 # equal the pinned ISO-MAG operation table.  ``audit_official_iso_mag`` checks
