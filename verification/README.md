@@ -22,9 +22,10 @@ python3 -m verification.verify_comparison \
 - invariance of displayed mode fields under the reported subgroup operations, allowing only the uncertainty implied by printed rounding cells.
 
 `verify_comparison.py` is the same comparator called by the private Validation harness.
-A Strict pass requires the displayed setting, structure, labels, normalizations, ordering, and vectors to agree.
-A Physical pass admits only the explicit crystallographic and mode-space equivalences implemented under `verification/comparison/`.
-A Physical fail means those checks did not prove equivalence; it is deliberately fail-closed.
+An identical verdict requires the displayed setting, structure, labels, normalizations, ordering, and vectors to agree.
+An equivalent verdict admits only the explicit crystallographic and mode-space equivalences implemented under `verification/comparison/`.
+An unproven verdict means those checks did not prove equivalence; it is deliberately fail-closed and does not say which side is wrong.
+Records written before 2026-10-23 name these strict_pass, physical_pass and physical_fail; `verification.result.canonical_verdict` reads both.
 
 The verifier needs these Python packages:
 

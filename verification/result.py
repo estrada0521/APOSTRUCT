@@ -699,6 +699,18 @@ def _opd_result(opd: Mapping[str, Any]) -> dict[str, Any]:
     return result
 
 
+VERDICTS = ("identical", "equivalent", "unproven")
+_FORMER_VERDICTS = {"strict_pass": "identical", "physical_pass": "equivalent", "physical_fail": "unproven"}
+
+
+def canonical_verdict(verdict: object) -> str:
+    """The verdict name, reading records written before the rename; a missing verdict is an error."""
+
+    if verdict is None:
+        return "error"
+    return _FORMER_VERDICTS.get(str(verdict), str(verdict))
+
+
 def result_for_comparison(
     opd: Mapping[str, Any],
     comparison: Mapping[str, Any] | None,
@@ -717,9 +729,9 @@ def result_for_comparison(
         "mode": None,
     }
     if opd.get("exist") is not True:
-        return {**base, "verdict": "physical_fail"}
+        return {**base, "verdict": "unproven"}
     if opd.get("level") not in {"physical", "strict"}:
-        return {**base, "verdict": "physical_fail"}
+        return {**base, "verdict": "unproven"}
     if not isinstance(comparison, Mapping):
         raise ValueError("present OPD has no mode comparison payload")
     if comparison.get("status") in {"unsupported", "context_mismatch", "error", "timeout"}:
@@ -738,9 +750,9 @@ def result_for_comparison(
     opd_physical = opd.get("level") in {"physical", "strict"}
     opd_strict = opd.get("level") == "strict"
     if opd_physical and mode_physical:
-        verdict = "strict_pass" if opd_strict and mode_strict else "physical_pass"
+        verdict = "identical" if opd_strict and mode_strict else "equivalent"
     else:
-        verdict = "physical_fail"
+        verdict = "unproven"
     return {
         **base,
         "verdict": verdict,
@@ -755,6 +767,8 @@ def result_for_comparison(
 __all__ = [
     "COMPARATOR_VERSION",
     "DEFAULT_TOLERANCE",
+    "VERDICTS",
+    "canonical_verdict",
     "ModeIdentity",
     "parse_mode_identity",
     "physical_k_label",

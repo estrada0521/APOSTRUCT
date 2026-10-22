@@ -22,6 +22,9 @@ import json
 from collections import Counter, defaultdict
 from pathlib import Path
 
+from verification.result import canonical_verdict
+
+
 def default_results_path() -> Path:
     checkout_path = Path.cwd() / "branches" / "results.jsonl.gz"
     if checkout_path.is_file():
@@ -60,9 +63,9 @@ def summarize(records: list[dict]) -> dict[str, dict]:
 
     summary: dict[str, dict] = {}
     for pool, rows in by_pool.items():
-        verdicts = Counter(r["verdict"] for r in rows)
-        strict = verdicts.get("strict_pass", 0)
-        physical = strict + verdicts.get("physical_pass", 0)
+        verdicts = Counter(canonical_verdict(r["verdict"]) for r in rows)
+        identical = verdicts.get("identical", 0)
+        equivalent = identical + verdicts.get("equivalent", 0)
         population = len(rows)
 
         by_k: dict[str, tuple[int, int, int]] = {}
@@ -70,15 +73,15 @@ def summarize(records: list[dict]) -> dict[str, dict]:
         for r in rows:
             rows_by_k[r["k_signature"]].append(r)
         for k_sig, k_rows in rows_by_k.items():
-            k_verdicts = Counter(r["verdict"] for r in k_rows)
-            k_strict = k_verdicts.get("strict_pass", 0)
-            k_physical = k_strict + k_verdicts.get("physical_pass", 0)
-            by_k[k_sig] = (len(k_rows), k_physical, k_strict)
+            k_verdicts = Counter(canonical_verdict(r["verdict"]) for r in k_rows)
+            k_identical = k_verdicts.get("identical", 0)
+            k_equivalent = k_identical + k_verdicts.get("equivalent", 0)
+            by_k[k_sig] = (len(k_rows), k_equivalent, k_identical)
 
         summary[pool] = {
             "population": population,
-            "physical_pass": physical,
-            "strict_pass": strict,
+            "equivalent": equivalent,
+            "identical": identical,
             "by_k": by_k,
         }
     return summary
@@ -98,15 +101,15 @@ def print_report(summary: dict[str, dict]) -> None:
         pop = s["population"]
         print(f"\n=== {pool} pool ===")
         print(f"Valid Validation population: {pop}")
-        print(f"Physical pass: {s['physical_pass']} / {pop} = {_fmt_pct(s['physical_pass'], pop)}")
-        print(f"Strict pass:   {s['strict_pass']} / {pop} = {_fmt_pct(s['strict_pass'], pop)}")
+        print(f"Equivalent (incl. identical): {s['equivalent']} / {pop} = {_fmt_pct(s['equivalent'], pop)}")
+        print(f"Identical:                    {s['identical']} / {pop} = {_fmt_pct(s['identical'], pop)}")
         print("\nBy K-signature:")
         for k_sig in sorted(s["by_k"], key=lambda k: (len(k), k)):
-            total, physical, strict = s["by_k"][k_sig]
+            total, equivalent, identical = s["by_k"][k_sig]
             print(
                 f"  {k_sig:<6} population={total:<5} "
-                f"physical={physical} ({_fmt_pct(physical, total)})  "
-                f"strict={strict} ({_fmt_pct(strict, total)})"
+                f"equivalent={equivalent} ({_fmt_pct(equivalent, total)})  "
+                f"identical={identical} ({_fmt_pct(identical, total)})"
             )
 
 

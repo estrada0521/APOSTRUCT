@@ -1,10 +1,10 @@
-"""Independently reproduce a strict_pass/physical_pass/physical_fail verdict.
+"""Independently reproduce an identical/equivalent/unproven verdict.
 
-This is the actual comparator this project's Strict-pass and Physical-pass
+This is the actual comparator this project's identical and equivalent
 figures come from — not the independent math check verify_local_output.py
 and verify_web_text.py run, but the Local-vs-Web equivalence judgment
 itself. Without this, a third party can only see the published percentages,
-never what "physical pass" concretely means for one branch; this makes that
+never what "equivalent" concretely means for one branch; this makes that
 opaque.
 
 This calls the same `verification.compare.compare_local_to_web` and
@@ -104,7 +104,7 @@ def main() -> int:
         tol=args.tol,
     )
     print(json.dumps(result, indent=2, sort_keys=True))
-    return 0 if result.get("verdict") in ("strict_pass", "physical_pass") else 1
+    return 0 if result.get("verdict") in ("identical", "equivalent") else 1
 
 
 if __name__ == "__main__":

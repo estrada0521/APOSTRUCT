@@ -8,9 +8,9 @@
 
 検証単位は、1つの入力構造と1つの order-parameter direction（OPD）の組です。
 
-- **Strict pass**: OPD の表示 setting、子構造、mode の種類・本数・原子対応・正規化係数・vector が、順序まで含め Web 出力と完全に一致します。
-- **Physical pass**: 表示上の mode 順序、符号、同じ mode 空間内の基底選択、等価な crystallographic setting などに違いがあっても、子構造と張られる物理的 mode 空間が等価であり、基底の取り方など、純粋な規約差のみを含むものです。Strict pass はすべて Physical pass に含まれます。
-- **Physical fail**: OPD が存在しない、子構造が物理的に異なる、必要な mode が欠ける、または mode vector が同じ物理空間を張らない、本家とは物理的に異なる場合です。本家・ローカル共に数学違反がなく、非自明な物理同値を判定しきれていない潜在的な candidate Physical Pass も保守的に fail として扱います。
+- **Identical**: OPD の表示 setting、子構造、mode の種類・本数・原子対応・正規化係数・vector が、順序まで含め Web 出力と完全に一致します。
+- **Equivalent**: 比較器が持つ明示的な結晶学的・mode 空間の同値（mode の順序、符号、同じ mode 空間内の基底、等価な setting）によって、子構造と張られる mode 空間が Web 出力と同値であると証明できたものです。Identical はすべて Equivalent に含まれます。
+- **Unproven**: 比較器が同値を証明できなかったものです。物理的に異なる出力のほか、比較器が同値を判定しきれない出力や、Web 出力そのものが数学検査で反証される出力も含みます。ローカル出力が誤りであるという判定ではありません。
 
 ## 有効母集団の定義
 
@@ -61,19 +61,19 @@ CIF pool は Materials Project から作成しました。
 | 項目 | 件数 |
 |---|---:|
 | 有効Validation母集団 | 3,040 |
-| Strict pass | 2,599 |
-| Physical pass | 3,035 |
-| Physical fail | 5 |
+| Identical | 2,599 |
+| Equivalent | 3,035 |
+| Unproven | 5 |
 
-- **Physical pass: 3,035 / 3,040 = 99.84%**
-- **Strict pass: 2,599 / 3,040 = 85.49%**
+- **Equivalent: 3,035 / 3,040 = 99.84%**
+- **Identical: 2,599 / 3,040 = 85.49%**
 
 #### K-signature 別
 
 `F` は固定 K、`P` は parametric K を表します。
 すべての列で、上で定義したValidation母集団を使います。
 
-| K | Validation母集団 | Physical pass | Strict pass |
+| K | Validation母集団 | Equivalent | Identical |
 |---|---:|---:|---:|
 | F | 788 | 788 (100.00%) | 734 (93.15%) |
 | FF | 297 | 297 (100.00%) | 252 (84.85%) |
@@ -120,18 +120,18 @@ primary IRやBNSの欠落、Source labelの非一意性、または同一のinpu
 |---|---:|
 | 母集団 / 入力 / CIF | 927 / 927 / 927 |
 | Validation 済み・Judged | 927 |
-| Strict pass | 892 |
-| Physical pass | 927 |
-| Physical fail | 0 |
+| Identical | 892 |
+| Equivalent | 927 |
+| Unproven | 0 |
 
-- **Physical pass: 927 / 927 = 100.00%**
-- **Strict pass: 892 / 927 = 96.22%**
+- **Equivalent: 927 / 927 = 100.00%**
+- **Identical: 892 / 927 = 96.22%**
 
 
 #### K-signature 別
 
 
-| K | 母数 | Physical pass | Strict pass |
+| K | 母数 | Equivalent | Identical |
 |---|---:|---:|---:|
 | F | 798 | 798 (100.00%) | 767 (96.12%) |
 | FF | 84 | 84 (100.00%) | 81 (96.43%) |

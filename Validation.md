@@ -8,9 +8,9 @@ For each Web branch, they refer to the most recent Validation output produced by
 
 The unit of validation is a pair consisting of one input structure and one order-parameter direction (OPD).
 
-- **Strict pass**: The display setting of the OPD, the child structure, and the mode types, mode counts, atom correspondence, normalization factors, and vectors agree exactly with the Web output, including their order.
-- **Physical pass**: Even when there are differences in the displayed mode order, in signs, in the choice of basis within the same mode space, or in equivalent crystallographic settings, the child structure and the physical mode space that is spanned are equivalent, and only purely conventional differences, such as the choice of basis, remain. Every Strict pass is also included in Physical pass.
-- **Physical fail**: The OPD does not exist, the child structure is physically different, required modes are missing, or the mode vectors do not span the same physical space — that is, the result is physically different from the reference implementation. Potential candidate Physical passes, in which neither the reference implementation nor the local implementation violates mathematics but a non-trivial physical equivalence could not be decided, are also treated conservatively as fail.
+- **Identical**: The display setting of the OPD, the child structure, and the mode types, mode counts, atom correspondence, normalization factors, and vectors agree exactly with the Web output, including their order.
+- **Equivalent**: The child structure and the spanned mode space are proven equivalent to the Web output through the explicit crystallographic and mode-space equivalences of the comparator (mode order, signs, basis within the same mode space, equivalent settings). Every Identical branch is also Equivalent.
+- **Unproven**: The comparator could not prove equivalence. This includes outputs that are physically different, but also outputs whose equivalence the comparator cannot decide, and outputs where the Web output itself is refuted by the mathematical checks. It is not a statement that the local output is wrong.
 
 ## Definition of the Valid Population
 
@@ -61,18 +61,18 @@ The pass rates below are therefore **the achievement rates of a stratified stres
 | Item | Count |
 |---|---:|
 | Valid Validation population | 3,040 |
-| Strict pass | 2,599 |
-| Physical pass | 3,035 |
-| Physical fail | 5 |
+| Identical | 2,599 |
+| Equivalent | 3,035 |
+| Unproven | 5 |
 
-- **Physical pass: 3,035 / 3,040 = 99.84%**
-- **Strict pass: 2,599 / 3,040 = 85.49%**
+- **Equivalent: 3,035 / 3,040 = 99.84%**
+- **Identical: 2,599 / 3,040 = 85.49%**
 
 #### By K-signature
 
 `F` denotes a fixed K and `P` denotes a parametric K. Every column uses the Validation population defined above.
 
-| K | Validation population | Physical pass | Strict pass |
+| K | Validation population | Equivalent | Identical |
 |---|---:|---:|---:|
 | F | 788 | 788 (100.00%) | 734 (93.15%) |
 | FF | 297 | 297 (100.00%) | 252 (84.85%) |
@@ -119,16 +119,16 @@ It consists of 458 zero-K, 28 nonzero Type I/III, 412 nonzero Type IV, 19 two-K,
 |---|---:|
 | Population / inputs / CIFs | 927 / 927 / 927 |
 | Validated and judged | 927 |
-| Strict pass | 892 |
-| Physical pass | 927 |
-| Physical fail | 0 |
+| Identical | 892 |
+| Equivalent | 927 |
+| Unproven | 0 |
 
-- **Physical pass: 927 / 927 = 100.00%**
-- **Strict pass: 892 / 927 = 96.22%**
+- **Equivalent: 927 / 927 = 100.00%**
+- **Identical: 892 / 927 = 96.22%**
 
 #### By K-signature
 
-| K | Population | Physical pass | Strict pass |
+| K | Population | Equivalent | Identical |
 |---|---:|---:|---:|
 | F | 798 | 798 (100.00%) | 767 (96.12%) |
 | FF | 84 | 84 (100.00%) | 81 (96.43%) |
