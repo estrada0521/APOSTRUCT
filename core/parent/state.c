@@ -780,6 +780,10 @@ static int select_setting(int sg, const jvalue *sites, const jvalue *ops, scored
     if (nmatched > 0) {
         memcpy(candidates, matched, sizeof(int) * (size_t)nmatched);
         ncand = nmatched;
+        const char *axis;
+        int64_t length;
+        if (!section_string(&T.inter_axis, candidates[0] - 1, &axis, &length) && length == 1 && axis[0] == 'R')
+            return md_fail(MDE_VALUE, "rhombohedral axes are not supported; give the structure in hexagonal axes");
     }
     images_t *images = calloc((size_t)n + 1, sizeof(images_t));
     if (!images) return md_fail(MDE_MEMORY, "out of memory");

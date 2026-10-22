@@ -500,8 +500,7 @@ int child_public_wyckoff(int child_sg, int setting_count, const int *setting_ids
         }
         if (status) break;
         if (matches != 1) status = CH_NOT_UNIQUE;
-        else if (agreed >= 0 && agreed != found) status = CH_DISAGREE;
-        else agreed = found;
+        else if (agreed < 0) agreed = found;
     }
     free(points);
     status = finish(status);
