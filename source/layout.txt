@@ -13,7 +13,6 @@ group.point_groups.label                     group/point_groups.txt             
 group.point_groups.generator_count           group/point_groups.txt               generator_count each byu=space.ipoint_group_gen_count
 group.point_groups.generators                group/point_groups.txt               generators flat byu=space.ipoint_group_gen
 group.lattices.label                         group/lattices.txt                   label text byu=space.lattice_label
-group.lattices.k_points                      group/lattices.txt                   k_points flat byu=space.k_points
 group.lattices.ml                            group/lattices.txt                   ml flat byu=space.lattice_ml
 group.lattices.ml_denom                      group/lattices.txt                   ml_denom flat byu=space.lattice_ml_denom
 group.space_groups.label_bc                  group/space_groups.txt               label_bc text byu=space.space_label_bc
@@ -68,7 +67,6 @@ isotropy.ordinary.direction_codes            isotropy/ordinary.txt              
 isotropy.ordinary.image_direction            isotropy/ordinary.txt                image_direction each byu=isotropy.isotropy_direction
 isotropy.ordinary.basis                      isotropy/ordinary.txt                basis flat byu=isotropy.isotropy_basis
 isotropy.ordinary.origin                     isotropy/ordinary.txt                origin flat byu=isotropy.isotropy_origin
-group.magnetic_groups.count                  group/magnetic_groups.txt            group records byu=magnetic.mag_count
 group.magnetic_groups.og                     group/magnetic_groups.txt            og text byu=magnetic.mag_nlabel
 group.magnetic_groups.bns                    group/magnetic_groups.txt            bns text byu=magnetic.mag_bns_label
 group.magnetic_groups.by_sg_start            group/magnetic_groups.txt            sg group_start keys=230 sentinel byu=magnetic.mag_space_group_pointer
@@ -88,13 +86,8 @@ isotropy.magnetic.origin                     isotropy/magnetic.txt              
 isotropy.magnetic.direction_codes_start      isotropy/magnetic.txt                direction_codes start byu=magnetic.mag_iso_orderparam_pointer
 isotropy.magnetic.direction_codes            isotropy/magnetic.txt                direction_codes flat total=163000 byu=magnetic.mag_iso_orderparam
 images.images.label                          images/images.txt                    label text byu=images.image_label
-images.images.label2                         images/images.txt                    label2 text first=132 byu=images.image_label2
 images.images.dimension                      images/images.txt                    dimension each byu=images.image_dimension
-images.images.order                          images/images.txt                    order each byu=images.image_order
 images.images.type                           images/images.txt                    type each first=132 byu=images.image_type
-images.images.landau                         images/images.txt                    landau each byu=images.image_landau
-images.images.generator_count                images/images.txt                    generator_count each first=132 byu=images.image_generator_count
-images.images.diagonalize                    images/images.txt                    diagonalize each first=132 byu=images.image_diagonalize_pointer
 images.images.subgroup_count                 images/images.txt                    subgroup_count each byu=images.image_subgroup_count
 images.images.subgroup_start                 images/images.txt                    subgroup_start each byu=images.image_subgroup_pointer
 images.images.add_r                          images/images.txt                    add_r each byu=magnetic.mag_image_add_r

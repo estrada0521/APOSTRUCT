@@ -456,21 +456,6 @@ class SourceTables:
             full_dim=int(self.little["little_irr_full_dim"][gid - 1]),
         )
 
-    def image_record(self, old_id: int) -> dict[str, Any]:
-        image_id = int(self.irreps["irrep_image"][int(old_id) - 1])
-        return {
-            "id": image_id,
-            "label": str(self.images["image_label"][image_id - 1]).strip(),
-            "dimension": int(self.images["image_dimension"][image_id - 1]),
-            "order": int(self.images["image_order"][image_id - 1]),
-            "type": int(self.images["image_type"][image_id - 1])
-            if image_id - 1 < len(self.images.get("image_type", []))
-            else None,
-            "landau": int(self.images["image_landau"][image_id - 1]),
-            "direction_count": int(self.images["image_subgroup_count"][image_id - 1]),
-            "subgroup_pointer": int(self.images["image_subgroup_pointer"][image_id - 1]),
-        }
-
     def canonical_isotropy_row_id(self, rows: list[dict[str, Any]]) -> int | None:
         best_id: int | None = None
         best_key: tuple[int, int, int, int, int] | None = None

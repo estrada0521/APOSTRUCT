@@ -19,7 +19,7 @@ number field is a space-separated list, a text field is the text.
 | --- | --- | --- |
 | `group/point_ops.txt` | 72 | point operations: matrix |
 | `group/point_groups.txt` | 32 | point groups: symbol, generators |
-| `group/lattices.txt` | 14 | Bravais lattices: symbol, the conventional-to-primitive matrices, special k points |
+| `group/lattices.txt` | 14 | Bravais lattices: symbol, the conventional-to-primitive matrices, number of k families common to the lattice |
 | `group/space_groups.txt` | 230 | space groups: lattice, point group, BC symbol, default setting, generators, setting matrices |
 | `group/magnetic_ops.txt` | 144 | magnetic point operations: ordinary part, time reversal |
 | `group/magnetic_point_groups.txt` | 122 | magnetic point groups: class code |

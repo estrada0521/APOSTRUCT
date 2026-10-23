@@ -9,21 +9,6 @@ LittleIrrepRecord = LittleIrrep
 
 
 @dataclass(frozen=True)
-class ImageRecord:
-    image_id: int
-    label: str
-    dimension: int
-    order: int
-    landau: int
-    subgroup_count: int
-    subgroup_pointer: int
-    label2: str | None
-    image_type: int | None
-    generator_count: int | None
-    diagonalize_pointer: int | None
-
-
-@dataclass(frozen=True)
 class LittleKVectorRecord:
     gid: int
     sg: int

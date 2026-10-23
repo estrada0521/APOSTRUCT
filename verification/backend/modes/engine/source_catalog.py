@@ -3,7 +3,6 @@ from __future__ import annotations
 from pathlib import Path
 
 from verification.backend.modes.engine.records import (
-    ImageRecord,
     LittleIrrepRecord,
     WyckoffRow,
 )
@@ -49,38 +48,6 @@ class ModeSourceCatalogMixin:
     space_group_has_inversion = SourceTables.space_group_has_inversion
     point_group_order = SourceTables.point_group_order
     space_group_point_group_order = SourceTables.space_group_point_group_order
-
-    def image_record(self, old_id: int) -> ImageRecord:
-        cache = self.__dict__.setdefault("_image_record_cache", {})
-        record = cache.get(int(old_id))
-        if record is None:
-            record = cache[int(old_id)] = self._image_record(int(old_id))
-        return record
-
-    def _image_record(self, old_id: int) -> ImageRecord:
-        image_id = int(self.iso.irreps["irrep_image"][old_id - 1])
-
-        def optional(name: str):
-            values = self.images[name]
-            return values[image_id - 1] if image_id - 1 < len(values) else None
-
-        return ImageRecord(
-            image_id=image_id,
-            label=self.images["image_label"][image_id - 1].strip(),
-            dimension=int(self.images["image_dimension"][image_id - 1]),
-            order=int(self.images["image_order"][image_id - 1]),
-            landau=int(self.images["image_landau"][image_id - 1]),
-            subgroup_count=int(self.images["image_subgroup_count"][image_id - 1]),
-            subgroup_pointer=int(self.images["image_subgroup_pointer"][image_id - 1]),
-            label2=(optional("image_label2") or "").strip() or None,
-            image_type=None if optional("image_type") is None else int(optional("image_type")),
-            generator_count=None
-            if optional("image_generator_count") is None
-            else int(optional("image_generator_count")),
-            diagonalize_pointer=None
-            if optional("image_diagonalize_pointer") is None
-            else int(optional("image_diagonalize_pointer")),
-        )
 
     def wyckoff_rows(self, sg: int) -> list[WyckoffRow]:
         return self.tables.wyckoff_rows(sg)
