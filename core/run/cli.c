@@ -421,12 +421,13 @@ static int pipeline_options(const jvalue *request, const jvalue *cif_info, int r
     text *selectors = calloc((size_t)(2 * natoms) + 1, sizeof(text)), *unknown = calloc((size_t)nsites + 1, sizeof(text));
     char (*scratch)[2][16] = calloc((size_t)natoms + 1, sizeof *scratch);
     int *displacive = calloc((size_t)natoms + 1, sizeof(int)), *magnetic = calloc((size_t)natoms + 1, sizeof(int));
+    int *occupancy = calloc((size_t)natoms + 1, sizeof(int));
     int status = 0;
-    if (!types || !labels || !selectors || !unknown || !scratch || !displacive || !magnetic) {
+    if (!types || !labels || !selectors || !unknown || !scratch || !displacive || !magnetic || !occupancy) {
         status = md_fail(MDE_MEMORY, "out of memory");
         goto done;
     }
-    int nselectors = 0, ndisp = 0, nmag = 0, nunknown = 0;
+    int nselectors = 0, ndisp = 0, nmag = 0, nocc = 0, nunknown = 0;
     for (int i = 0; i < natoms; i++) {
         types[i] = site_name(jat(atoms, i), "type", "label", i + 1, scratch[i][0]);
         labels[i] = site_name(jat(atoms, i), "label", "type", i + 1, scratch[i][1]);
@@ -438,7 +439,7 @@ static int pipeline_options(const jvalue *request, const jvalue *cif_info, int r
     for (int s = 0; s < nsites; s++) {
         const jvalue *site = jat(sites, s);
         text name = text_of(jat(site, 0));
-        if (!jtruthy(jat(site, 1)) && !jtruthy(jat(site, 2))) continue;
+        if (!jtruthy(jat(site, 1)) && !jtruthy(jat(site, 2)) && !jtruthy(jat(site, 3))) continue;
         if (!text_in(selectors, nselectors, name) && !text_in(unknown, nunknown, name)) unknown[nunknown++] = name;
     }
     if (nunknown) {
@@ -453,31 +454,33 @@ static int pipeline_options(const jvalue *request, const jvalue *cif_info, int r
         goto done;
     }
     for (int i = 0; i < natoms; i++) {
-        int d = 0, m = 0;
+        int d = 0, m = 0, o = 0;
         for (int s = 0; s < nsites; s++) {
             const jvalue *site = jat(sites, s);
             text name = text_of(jat(site, 0));
-            if (!jtruthy(jat(site, 1)) && !jtruthy(jat(site, 2))) continue;
+            if (!jtruthy(jat(site, 1)) && !jtruthy(jat(site, 2)) && !jtruthy(jat(site, 3))) continue;
             if (!text_cmp(&name, types + i) || !text_cmp(&name, labels + i)) {
                 int last = 1;
                 for (int t = s + 1; t < nsites && last; t++) {
                     const jvalue *other = jat(sites, t);
                     text again = text_of(jat(other, 0));
-                    if ((jtruthy(jat(other, 1)) || jtruthy(jat(other, 2))) && !text_cmp(&again, &name)) last = 0;
+                    if ((jtruthy(jat(other, 1)) || jtruthy(jat(other, 2)) || jtruthy(jat(other, 3))) && !text_cmp(&again, &name)) last = 0;
                 }
                 if (!last) continue;
                 d |= jtruthy(jat(site, 1));
                 m |= jtruthy(jat(site, 2));
+                o |= jtruthy(jat(site, 3));
             }
         }
         if (d) displacive[ndisp++] = i + 1;
         if (m) magnetic[nmag++] = i + 1;
+        if (o) occupancy[nocc++] = i + 1;
     }
-    if (!allow_empty && !strain && !ndisp && !nmag) {
-        status = md_fail(MDE_VALUE, "case must include strain, displacive, or magnetic distortion");
+    if (!allow_empty && !strain && !ndisp && !nmag && !nocc) {
+        status = md_fail(MDE_VALUE, "case must include strain, displacive, magnetic, or occupancy distortion");
         goto done;
     }
-    int pure_strain_irreps = !require_irreps && !allow_empty && strain && !ndisp && !nmag;
+    int pure_strain_irreps = !require_irreps && !allow_empty && strain && !ndisp && !nmag && !nocc;
     if (pure_strain_irreps)
         for (int k = 0; k < nslots; k++) {
             const jvalue *label = member(jat(slots, k), "label");
@@ -546,6 +549,10 @@ static int pipeline_options(const jvalue *request, const jvalue *cif_info, int r
         put_index_list(b, displacive, ndisp);
         jb_lit(b, ", \"magnetic_sites\": ");
         put_index_list(b, magnetic, nmag);
+        if (nocc) {
+            jb_lit(b, ", \"occupancy_sites\": ");
+            put_index_list(b, occupancy, nocc);
+        }
         jb_lit(b, "}, \"k_label\": ");
         if (f) jb_value(b, jget(f, "k_label"));
         else jb_lit(b, "\"GM\"");
@@ -577,6 +584,7 @@ done:
     free(scratch);
     free(displacive);
     free(magnetic);
+    free(occupancy);
     return status;
 }
 

@@ -419,6 +419,8 @@ int sel_irreps(const jvalue *state, jbuf *out)
     int *displacive, *magnetic_rows, nd, nm;
     MD_TRY(site_rows(state, internal, "displacive_site_indexes", "displacive_row_ids", &displacive, &nd));
     MD_TRY(site_rows(state, internal, "magnetic_site_indexes", "magnetic_row_ids", &magnetic_rows, &nm));
+    int *occupancy_rows, no;
+    MD_TRY(site_rows(state, internal, "occupancy_site_indexes", "occupancy_row_ids", &occupancy_rows, &no));
     const jvalue *kpoints = member(catalog, "kpoints");
     int64_t nk = jis(kpoints, J_ARRAY) ? kpoints->count : 0;
     jbuf *irreps = calloc((size_t)nk + 1, sizeof(jbuf)), *kp_json = calloc((size_t)nk + 1, sizeof(jbuf));
@@ -433,16 +435,19 @@ int sel_irreps(const jvalue *state, jbuf *out)
         int64_t count = 0;
         for (int64_t c = 0; c < nc && !status; c++) {
             const jvalue *candidate = jat(candidates, c);
-            int64_t total = 0;
+            int64_t total = 0, occupancy_total = 0;
             status = mode_total(sg, candidate, displacive, nd, 0, &total);
+            if (!status && no) status = mode_total(sg, candidate, occupancy_rows, no, 2, &occupancy_total);
             if (status) break;
             int strain = include_strain && strain_visible(sg, kpoint, candidate);
-            if (total <= 0 && !strain) continue;
-            char number[32];
+            if (total <= 0 && occupancy_total <= 0 && !strain) continue;
+            char number[32], occupancy_number[32];
             snprintf(number, sizeof number, "%lld", (long long)total);
-            kv add[2];
+            snprintf(occupancy_number, sizeof occupancy_number, "%lld", (long long)occupancy_total);
+            kv add[3];
             int n = 0;
             if (total > 0) add[n++] = (kv){"displacive_mode_total", number, strlen(number)};
+            if (occupancy_total > 0) add[n++] = (kv){"occupancy_mode_total", occupancy_number, strlen(occupancy_number)};
             if (strain) add[n++] = (kv){"strain_visible", "true", 4};
             if (count++) jb_lit(&irreps[k], ", ");
             sel_merge(&irreps[k], candidate, add, n);
@@ -605,6 +610,7 @@ int sel_irreps(const jvalue *state, jbuf *out)
     free(counts);
     free(displacive);
     free(magnetic_rows);
+    free(occupancy_rows);
     jb_free(&mode_set);
     return status;
 }

@@ -145,17 +145,19 @@ int par_distortion(const jvalue *state, const jvalue *mode_set, const jvalue *re
     int include_strain;
     if (jis(requested, J_OBJECT) && jget(requested, "strain")) include_strain = jtruthy(jget(requested, "strain"));
     else include_strain = mode_set_is(mode_set, "strain_displacive", "all");
-    ints_t displacive = {0}, magnetic = {0};
+    ints_t displacive = {0}, magnetic = {0}, occupancy = {0};
     const jvalue *dsites = member(requested, "displacive_sites"), *msites = member(requested, "magnetic_sites");
+    const jvalue *osites = member(requested, "occupancy_sites");
     int status = site_selection(dsites, n, 1, &displacive);
     if (!status) {
         if (jstr_is(msites, "all")) status = site_selection(msites, n, 0, &magnetic);
         else if ((!msites || jis(msites, J_NULL)) && mode_set_is(mode_set, "magnetic", "all")) status = site_selection(0, n, 1, &magnetic);
         else status = site_selection(msites, n, 0, &magnetic);
     }
-    for (int pass = 0; pass < 2 && !status; pass++) {
-        const ints_t *selected = pass ? &magnetic : &displacive;
-        const char *name = pass ? "magnetic" : "displacive";
+    if (!status) status = site_selection(osites, n, 0, &occupancy);
+    for (int pass = 0; pass < 3 && !status; pass++) {
+        const ints_t *selected = pass == 2 ? &occupancy : pass ? &magnetic : &displacive;
+        const char *name = pass == 2 ? "occupancy" : pass ? "magnetic" : "displacive";
         for (int i = 0; i < selected->n; i++) {
             const jvalue *site = jat(atoms, selected->items[i] - 1);
             if (member_int(site, "wyckoff_row_id")) continue;
@@ -188,17 +190,19 @@ int par_distortion(const jvalue *state, const jvalue *mode_set, const jvalue *re
             break;
         }
     }
-    if (!status && !allow_empty && !include_strain && !displacive.n && !magnetic.n) status = md_fail(MDE_VALUE, "You must include some kind of distortion");
+    if (!status && !allow_empty && !include_strain && !displacive.n && !magnetic.n && !occupancy.n) status = md_fail(MDE_VALUE, "You must include some kind of distortion");
     if (!status) {
         ints_t selectable = {0};
         site_selection(0, n, 1, &selectable);
-        jbuf selection = {0}, internal = {0}, a = {0}, b = {0}, c = {0}, d = {0}, mode = {0};
+        jbuf selection = {0}, internal = {0}, a = {0}, b = {0}, c = {0}, d = {0}, e = {0}, f = {0}, mode = {0};
         jb_reset(&selection);
         jb_reset(&internal);
         jb_reset(&a);
         jb_reset(&b);
         jb_reset(&c);
         jb_reset(&d);
+        jb_reset(&e);
+        jb_reset(&f);
         jb_reset(&mode);
         if (mode_set) jb_value(&mode, mode_set);
         else jb_lit(&mode, "null");
@@ -206,6 +210,10 @@ int par_distortion(const jvalue *state, const jvalue *mode_set, const jvalue *re
         put_ints(&selection, &displacive);
         jb_lit(&selection, ", \"magnetic_sites\": ");
         put_ints(&selection, &magnetic);
+        if (occupancy.n) {
+            jb_lit(&selection, ", \"occupancy_sites\": ");
+            put_ints(&selection, &occupancy);
+        }
         jb_lit(&selection, ", \"selectable_sites\": ");
         put_ints(&selection, &selectable);
         jb_lit(&selection, ", \"site_types\": ");
@@ -217,13 +225,17 @@ int par_distortion(const jvalue *state, const jvalue *mode_set, const jvalue *re
         put_row_ids(&b, atoms, &magnetic);
         put_ints(&c, &displacive);
         put_ints(&d, &magnetic);
-        kv internal_items[6] = {{"mode_set", mode.data, mode.used},
+        put_row_ids(&e, atoms, &occupancy);
+        put_ints(&f, &occupancy);
+        kv internal_items[8] = {{"mode_set", mode.data, mode.used},
                                 {"distortion_selection", selection.data, selection.used},
                                 {"displacive_row_ids", a.data, a.used},
                                 {"magnetic_row_ids", b.data, b.used},
                                 {"displacive_site_indexes", c.data, c.used},
-                                {"magnetic_site_indexes", d.data, d.used}};
-        sel_merge(&internal, member(state, "_internal"), internal_items, 6);
+                                {"magnetic_site_indexes", d.data, d.used},
+                                {"occupancy_row_ids", e.data, e.used},
+                                {"occupancy_site_indexes", f.data, f.used}};
+        sel_merge(&internal, member(state, "_internal"), internal_items, occupancy.n ? 8 : 6);
         kv items[3] = {{"mode_set", mode.data, mode.used},
                        {"distortion_selection", selection.data, selection.used},
                        {"_internal", internal.data, internal.used}};
@@ -235,10 +247,13 @@ int par_distortion(const jvalue *state, const jvalue *mode_set, const jvalue *re
         jb_free(&b);
         jb_free(&c);
         jb_free(&d);
+        jb_free(&e);
+        jb_free(&f);
         jb_free(&mode);
     }
     free(displacive.items);
     free(magnetic.items);
+    free(occupancy.items);
     jb_free(&types);
     jb_free(&labels);
     return status;

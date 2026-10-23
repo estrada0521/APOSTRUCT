@@ -518,9 +518,13 @@ int vector_mode_total(int sg, int gid, int row_count, const int *row_ids, int ax
         if (!whole) continue;
         rat sum = rat_int(0);
         rat_overflow = 0;
-        for (int i = 0; i < 3; i++) {
-            int pg = (int)at(&T.vector_reps, (int64_t)(site_pg - 1) * 6 + (axial ? 3 : 0) + i);
-            if (pg >= 1 && pg <= 12 && present[pg] && dims[pg]) sum = rat_add(sum, rat_make(counts[pg], dims[pg]));
+        if (axial == 2) {
+            if (present[1] && dims[1]) sum = rat_make(counts[1], dims[1]);
+        } else {
+            for (int i = 0; i < 3; i++) {
+                int pg = (int)at(&T.vector_reps, (int64_t)(site_pg - 1) * 6 + (axial ? 3 : 0) + i);
+                if (pg >= 1 && pg <= 12 && present[pg] && dims[pg]) sum = rat_add(sum, rat_make(counts[pg], dims[pg]));
+            }
         }
         sum = rat_mul(sum, rat_int(dim));
         if (rat_overflow) return PE_VALUE;

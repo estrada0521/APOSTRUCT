@@ -365,15 +365,16 @@ static void case_from_json(const jvalue *payload, const char *base, apo_case *c)
         text element = text_field(name, "sites element");
         jbuf message = {0};
         jb_reset(&message);
-        int exact = jis(flags, J_OBJECT) && flags->count == 2 && jget(flags, "displacive") && jget(flags, "magnetic");
+        const jvalue *o = jis(flags, J_OBJECT) ? jget(flags, "occupancy") : 0;
+        int exact = jis(flags, J_OBJECT) && flags->count == 2 + (o != 0) && jget(flags, "displacive") && jget(flags, "magnetic");
         if (!exact) {
             jb_lit(&message, "sites[");
             put_repr(&message, element.s, element.n);
-            jb_lit(&message, "] must contain exactly displacive and magnetic");
+            jb_lit(&message, "] must contain displacive and magnetic, and optionally occupancy");
             fail_buf(&message);
         }
         const jvalue *d = jget(flags, "displacive"), *m = jget(flags, "magnetic");
-        int bools = (jis(d, J_TRUE) || jis(d, J_FALSE)) && (jis(m, J_TRUE) || jis(m, J_FALSE));
+        int bools = (jis(d, J_TRUE) || jis(d, J_FALSE)) && (jis(m, J_TRUE) || jis(m, J_FALSE)) && (!o || jis(o, J_TRUE) || jis(o, J_FALSE));
         if (!bools) {
             jb_lit(&message, "sites[");
             put_repr(&message, element.s, element.n);
@@ -381,12 +382,13 @@ static void case_from_json(const jvalue *payload, const char *base, apo_case *c)
             fail_buf(&message);
         }
         jb_free(&message);
-        if (jis(d, J_TRUE) || jis(m, J_TRUE)) {
+        if (jis(d, J_TRUE) || jis(m, J_TRUE) || jis(o, J_TRUE)) {
             if (c->nsites++) jb_lit(&c->sites, ", ");
             jb_lit(&c->sites, "[");
             put_text_json(&c->sites, element);
             jb_lit(&c->sites, jis(d, J_TRUE) ? ", true" : ", false");
-            jb_lit(&c->sites, jis(m, J_TRUE) ? ", true]" : ", false]");
+            jb_lit(&c->sites, jis(m, J_TRUE) ? ", true" : ", false");
+            jb_lit(&c->sites, jis(o, J_TRUE) ? ", true]" : ", false]");
             c->any_site_mode = 1;
         }
     }
@@ -473,8 +475,8 @@ typedef struct {
     int nk;
     char ***k;
     int *k_counts;
-    char **irreps, **displacive, **magnetic;
-    int nirreps, ndisplacive, nmagnetic;
+    char **irreps, **displacive, **magnetic, **occupancy;
+    int nirreps, ndisplacive, nmagnetic, noccupancy;
     int has_k_option, has_irrep_option, has_case_option, has_opd_option, has_format, has_full_state, has_distortion;
     const char *sg;
 } args_t;
@@ -591,6 +593,8 @@ static void parse_args(int argc, char **argv, int start, args_t *a)
             TAKE_MANY(&a->displacive, &a->ndisplacive);
         } else if (!strcmp(arg, "--magnetic") && accepts_selection) {
             TAKE_MANY(&a->magnetic, &a->nmagnetic);
+        } else if (!strcmp(arg, "--occupancy") && accepts_selection) {
+            TAKE_MANY(&a->occupancy, &a->noccupancy);
         } else if (!strcmp(arg, "--strain") && accepts_selection) {
             a->strain = 1;
         } else if (!strcmp(arg, "--opd") && !strcmp(command, "modes")) {
@@ -663,7 +667,7 @@ static void write_sg_cif(args_t *a)
     atexit(remove_sg_cif);
     a->structure = sg_cif_path;
     static char *site = "A";
-    if (!a->ndisplacive && !a->nmagnetic && !a->strain) push(&a->displacive, &a->ndisplacive, site);
+    if (!a->ndisplacive && !a->nmagnetic && !a->noccupancy && !a->strain) push(&a->displacive, &a->ndisplacive, site);
 }
 
 /* case_input.case_from_cli */
@@ -752,9 +756,9 @@ static void case_from_cli(const args_t *a, apo_case *c)
     jb_lit(&c->sites, "[");
     char **seen = 0;
     int nseen = 0;
-    for (int pass = 0; pass < 2; pass++) {
-        char **list = pass ? a->magnetic : a->displacive;
-        int n = pass ? a->nmagnetic : a->ndisplacive;
+    for (int pass = 0; pass < 3; pass++) {
+        char **list = pass == 2 ? a->occupancy : pass ? a->magnetic : a->displacive;
+        int n = pass == 2 ? a->noccupancy : pass ? a->nmagnetic : a->ndisplacive;
         for (int i = 0; i < n; i++) {
             if (in_list(seen, nseen, list[i])) continue;
             push(&seen, &nseen, list[i]);
@@ -762,7 +766,8 @@ static void case_from_cli(const args_t *a, apo_case *c)
             jb_lit(&c->sites, "[");
             jb_cstring(&c->sites, list[i]);
             jb_lit(&c->sites, in_list(a->displacive, a->ndisplacive, list[i]) ? ", true" : ", false");
-            jb_lit(&c->sites, in_list(a->magnetic, a->nmagnetic, list[i]) ? ", true]" : ", false]");
+            jb_lit(&c->sites, in_list(a->magnetic, a->nmagnetic, list[i]) ? ", true" : ", false");
+            jb_lit(&c->sites, in_list(a->occupancy, a->noccupancy, list[i]) ? ", true]" : ", false]");
             c->any_site_mode = 1;
         }
     }
@@ -779,7 +784,7 @@ static void case_from_cli(const args_t *a, apo_case *c)
 static void cli_case(const args_t *a, const char *stage, apo_case *c)
 {
     if ((!strcmp(command, "modes") || !strcmp(command, "run")) && a->case_path) {
-        if (a->structure || a->nk || a->nirreps || a->ndisplacive || a->nmagnetic || a->strain || a->opd)
+        if (a->structure || a->nk || a->nirreps || a->ndisplacive || a->nmagnetic || a->noccupancy || a->strain || a->opd)
             usage_error("--case cannot be combined with direct mode-selection arguments");
         load_case(a->case_path, c);
         int pure_strain_irreps = !strcmp(stage, "irreps") && c->strain && !c->any_site_mode;
@@ -795,13 +800,13 @@ static void cli_case(const args_t *a, const char *stage, apo_case *c)
         usage_errorf("%s requires structure", command, 0);
     }
     if (!strcmp(command, "modes") && (!a->nk || !a->nirreps || !a->opd || !*a->opd)) usage_error("direct modes requires --k, --irrep, and --opd");
-    int pure_strain = a->strain && !a->ndisplacive && !a->nmagnetic;
+    int pure_strain = a->strain && !a->ndisplacive && !a->nmagnetic && !a->noccupancy;
     if (!strcmp(command, "irreps") && !a->nk && !pure_strain) usage_error("irreps requires --k unless --strain is the only distortion");
     if (!strcmp(command, "irreps") && pure_strain && a->nk)
         for (int s = 0; s < a->nk; s++)
             if (a->k_counts[s] && !slot_is_gamma(a->k[s][0])) usage_error("strain-only irreps require --k GM or no --k");
-    if ((!strcmp(command, "irreps") || !strcmp(command, "opds") || !strcmp(command, "modes")) && !a->ndisplacive && !a->nmagnetic && !a->strain)
-        usage_error("select at least one distortion with --displacive SITE, --magnetic SITE, or --strain; SITE is an info.sites[].label or type "
+    if ((!strcmp(command, "irreps") || !strcmp(command, "opds") || !strcmp(command, "modes")) && !a->ndisplacive && !a->nmagnetic && !a->noccupancy && !a->strain)
+        usage_error("select at least one distortion with --displacive SITE, --magnetic SITE, --occupancy SITE, or --strain; SITE is an info.sites[].label or type "
                     "value");
     case_from_cli(a, c);
 }
