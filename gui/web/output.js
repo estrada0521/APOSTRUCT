@@ -1,4 +1,4 @@
-import { ModeStructureViewer } from "./mode3d.js?v=51";
+import { ModeStructureViewer } from "./mode3d.js?v=52";
 
 const $ = id => document.getElementById(id);
 const state = { modeDetailText: null, modeDetailTextRendered: false };
@@ -151,6 +151,7 @@ function outputError(error) {
   $("output-error").textContent = error?.message || String(error || "");
 }
 function resultStatus(stale = false) {
+  $("output-status").hidden = !stale;
   $("output-status").textContent = stale
     ? "Input changed — showing the previous calculated result."
     : "Showing the last calculated result.";
@@ -204,11 +205,13 @@ $("mode-viewer-controls").addEventListener("click", event => {
 window.addEventListener("pagehide", captureControls);
 $("mode-details-view-select").addEventListener("change", event => send("view", { view: event.target.value }));
 function disconnected() {
+  $("output-status").hidden = false;
   $("output-status").textContent = hasResult
     ? "Input window disconnected — this result remains available. Reopen output from the input window to reconnect."
     : "Input window disconnected. Open output from the input window.";
 }
 if (!source || !channel) {
+  $("output-status").hidden = false;
   $("output-status").textContent = "Open this page using “Open output” in the input window.";
 } else {
   send("ready");

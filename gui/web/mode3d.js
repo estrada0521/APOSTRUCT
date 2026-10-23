@@ -1854,37 +1854,33 @@ export class ModeStructureViewer {
       </div>
     </section>`;
     const childSites = this.undistortedChildSites();
-    const parentSitesByElement = new Map();
+    const sitesByElement = new Map();
     for (const site of childSites) {
-      if (!parentSitesByElement.has(site.element)) parentSitesByElement.set(site.element, new Map());
-      const parentSites = parentSitesByElement.get(site.element);
-      if (!parentSites.has(site.parentOrder)) parentSites.set(site.parentOrder, {
-        id: site.parentId,
-        wyckoff: site.parentWyckoff,
-        sites: [],
-      });
-      parentSites.get(site.parentOrder).sites.push(site);
+      if (!sitesByElement.has(site.element)) sitesByElement.set(site.element, []);
+      sitesByElement.get(site.element).push(site);
     }
-    const atomVisibility = childSites.length ? `<fieldset class="mode-atom-visibility">
-      <legend>Undistorted structure</legend>
-      <div class="mode-atom-tree">${[...parentSitesByElement.entries()].map(([element, parentSites]) => `<details class="mode-atom-branch mode-element-branch">
-        <summary><label class="mode-atom-toggle mode-element-toggle">
-          <input type="checkbox" data-mode-element="${this.escape(element)}" checked>
-          <span>${this.escape(element)}</span>
-          <span class="mode-element-swatch" data-mode-element-swatch="${this.escape(element)}" style="background-color:${this.elementColorCss(element)}" aria-hidden="true"></span>
-        </label></summary>
-        <div class="mode-parent-list">${[...parentSites.entries()].map(([parentOrder, parent]) => `<details class="mode-atom-branch mode-parent-branch">
-          <summary><label class="mode-atom-toggle mode-parent-toggle">
-            <input type="checkbox" data-mode-parent-site="${parentOrder}" data-mode-parent-element="${this.escape(element)}" checked>
-            <span>${this.escape(`${parent.id} (${parent.wyckoff})`)}</span>
-          </label></summary>
-          <div class="mode-child-list">${parent.sites.map(site => `<label class="mode-atom-toggle mode-child-toggle">
-            <input type="checkbox" data-mode-child-site="${this.escape(site.id)}" data-mode-site-parent="${site.parentOrder}" data-mode-site-element="${this.escape(site.element)}"${this.hiddenChildSites.has(site.id) ? "" : " checked"}>
-            <span>${this.escape(`${site.id} (${site.wyckoff})`)}</span>
-          </label>`).join("")}</div>
-        </details>`).join("")}</div>
-      </details>`).join("")}</div>
-    </fieldset>` : "";
+    const atomVisibility = childSites.length
+      ? '<fieldset class="mode-atom-visibility"><legend>Undistorted structure</legend>'
+        + '<div class="mode-atom-list">'
+        + [...sitesByElement].map(([element, sites]) => (
+          '<section class="mode-element-group">'
+          + '<label class="mode-atom-toggle mode-element-toggle">'
+          + '<input type="checkbox" data-mode-element="' + this.escape(element) + '" checked>'
+          + '<span>' + this.escape(element) + '</span>'
+          + '<span class="mode-element-swatch" data-mode-element-swatch="' + this.escape(element)
+          + '" style="background-color:' + this.elementColorCss(element) + '" aria-hidden="true"></span>'
+          + '</label><div class="mode-site-list">'
+          + sites.map(site => (
+            '<label class="mode-atom-toggle mode-child-toggle">'
+            + '<input type="checkbox" data-mode-child-site="' + this.escape(site.id)
+            + '" data-mode-site-element="' + this.escape(element) + '"'
+            + (this.hiddenChildSites.has(site.id) ? '' : ' checked') + '>'
+            + '<span>' + this.escape(site.id + ' (' + site.wyckoff + ')') + '</span></label>'
+          )).join('')
+          + '</div></section>'
+        )).join('')
+        + '</div></fieldset>'
+      : "";
     const hiddenModeCount = Math.max(0, this.modes.length - visibleModes.length);
     const modeProgress = hiddenModeCount ? `<p class="mode-viewer-note mode-viewer-progress">
       Showing ${visibleModes.length} of ${this.modes.length} modes.
@@ -1925,17 +1921,12 @@ export class ModeStructureViewer {
       this.renderModeControls();
     });
     const siteVisibilityInputs = [...this.controlsNode.querySelectorAll("input[data-mode-child-site]")];
-    const parentVisibilityInputs = [...this.controlsNode.querySelectorAll("input[data-mode-parent-site]")];
     const elementVisibilityInputs = [...this.controlsNode.querySelectorAll("input[data-mode-element]")];
     const syncVisibility = (input, descendants) => {
       if (!input || !descendants.length) return;
       const checkedCount = descendants.filter(descendant => descendant.checked).length;
       input.checked = checkedCount === descendants.length;
       input.indeterminate = checkedCount > 0 && checkedCount < descendants.length;
-    };
-    const syncParentVisibility = parentOrder => {
-      const parentInput = parentVisibilityInputs.find(input => input.dataset.modeParentSite === parentOrder);
-      syncVisibility(parentInput, siteVisibilityInputs.filter(input => input.dataset.modeSiteParent === parentOrder));
     };
     const syncElementVisibility = element => {
       const elementInput = elementVisibilityInputs.find(input => input.dataset.modeElement === element);
@@ -1947,25 +1938,13 @@ export class ModeStructureViewer {
       if (checked) this.hiddenChildSites.delete(childSite);
       else this.hiddenChildSites.add(childSite);
     };
-    [...siteVisibilityInputs, ...parentVisibilityInputs, ...elementVisibilityInputs].forEach(input => {
+    [...siteVisibilityInputs, ...elementVisibilityInputs].forEach(input => {
       input.addEventListener("click", event => event.stopPropagation());
     });
     siteVisibilityInputs.forEach(input => {
       input.addEventListener("change", () => {
         setChildVisibility(input, input.checked);
-        syncParentVisibility(input.dataset.modeSiteParent);
         syncElementVisibility(input.dataset.modeSiteElement);
-        this.updateScene();
-      });
-    });
-    parentVisibilityInputs.forEach(input => {
-      input.addEventListener("change", () => {
-        const parentOrder = input.dataset.modeParentSite;
-        const element = input.dataset.modeParentElement;
-        input.indeterminate = false;
-        siteVisibilityInputs.filter(siteInput => siteInput.dataset.modeSiteParent === parentOrder)
-          .forEach(siteInput => setChildVisibility(siteInput, input.checked));
-        syncElementVisibility(element);
         this.updateScene();
       });
     });
@@ -1977,12 +1956,9 @@ export class ModeStructureViewer {
         siteVisibilityInputs.filter(siteInput => siteInput.dataset.modeSiteElement === element).forEach(siteInput => {
           setChildVisibility(siteInput, input.checked);
         });
-        parentVisibilityInputs.filter(parentInput => parentInput.dataset.modeParentElement === element)
-          .forEach(parentInput => syncParentVisibility(parentInput.dataset.modeParentSite));
         this.updateScene();
       });
     });
-    parentVisibilityInputs.forEach(input => syncParentVisibility(input.dataset.modeParentSite));
     elementVisibilityInputs.forEach(input => syncElementVisibility(input.dataset.modeElement));
     this.controlsNode.querySelectorAll("input[data-mode-id]").forEach(input => {
       input.addEventListener("input", () => {

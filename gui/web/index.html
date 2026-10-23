@@ -664,7 +664,7 @@
       }
       const iso = backendState.selected?.orderparam?.isotropy || {};
       const title = [
-        $("cif-name").textContent,
+        String(backendState.input?.formula || backendState.input?.block || "").trim() || "Structure",
         backendState.space_group?.symbol || backendState.input?.parent?.symbol,
         iso.opd_label || ("OPD " + state.orderparamIndex),
       ].filter(Boolean).join(" · ");

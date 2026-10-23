@@ -23,7 +23,7 @@ html, body.output-window { height: 100%; overflow: hidden; }
   border-radius: 4px;
 }
 .output-heading { display: grid; gap: 6px; min-width: 0; }
-#result-title { overflow-wrap: anywhere; }
+#result-title { margin: 0; font-size: var(--font-size-base); font-weight: 400; overflow-wrap: anywhere; }
 #output-status { color: #555; font-size: 13px; }
 .output-block .mode-details-view-switch {
   display: grid;
@@ -58,3 +58,8 @@ html, body.output-window { height: 100%; overflow: hidden; }
   .output-block .mode-viewer-workspace { --mode-sidebar-width: 180px; }
   .output-block .mode-viewer-display-options { flex-wrap: wrap; }
 }
+
+/* All subgroup sites are visible; the main mode list owns scrolling. */
+.output-block .mode-atom-list { display: grid; gap: 10px; }
+.output-block .mode-element-group { gap: 4px; }
+.output-block .mode-site-list { display: grid; gap: 3px; padding-left: 18px; }
