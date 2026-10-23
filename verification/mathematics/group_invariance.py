@@ -982,11 +982,24 @@ def assess_group_invariance(
     subgroup_label: str,
     structure: Sequence[QuantizedStructureOrbit],
 ) -> dict[str, Any]:
-    """Assess the display-rounding necessary condition for one saved output."""
+    """Assess the display-rounding necessary condition for one saved output: over the declared presentations, and
+    when none satisfies it, over the declared and derived ones."""
 
+    result = _assess_over(definitions, subgroup_label, structure, _DECLARED_CLAIM)
+    if result["status"] in {"satisfied", "not_applicable"}:
+        return result
+    return _assess_over(definitions, subgroup_label, structure, _DERIVED_CLAIM)
+
+
+def _assess_over(
+    definitions: Sequence[QuantizedModeDefinition | QuantizedStrainDefinition],
+    subgroup_label: str,
+    structure: Sequence[QuantizedStructureOrbit],
+    claim: str,
+) -> dict[str, Any]:
     if not isinstance(definitions, Sequence):
         raise ValueError("mode definitions must be an ordered sequence")
-    authority = group_authority(subgroup_label)
+    authority = presentation_authority(subgroup_label, claim)
     if not isinstance(structure, Sequence) or not structure:
         raise ValueError("undistorted structure must be a nonempty ordered sequence")
     for orbit in structure:
@@ -1122,7 +1135,7 @@ def assess_group_invariance(
     return {
         "theorem": GROUP_INVARIANCE_THEOREM,
         "status": status,
-        "claim": "atomic_mode_field_group_invariance_over_declared_presentations",
+        "claim": claim,
         "subgroup_display_label": authority.requested_label,
         "subgroup_bns_label": authority.bns_label,
         "subgroup_uni_number": authority.uni_number,
@@ -1389,6 +1402,100 @@ def _validate_setting_refutation(
     return definition_index
 
 
+_DECLARED_CLAIM = "atomic_mode_field_group_invariance_over_declared_presentations"
+_DERIVED_CLAIM = "atomic_mode_field_group_invariance_over_derived_presentations"
+_SIGNED_PERMUTATIONS = tuple(
+    tuple(tuple(sign[row] if column == order[row] else 0 for column in range(3)) for row in range(3))
+    for order in ((0, 1, 2), (0, 2, 1), (1, 0, 2), (1, 2, 0), (2, 0, 1), (2, 1, 0))
+    for sign in ((1, 1, 1), (1, 1, -1), (1, -1, 1), (1, -1, -1), (-1, 1, 1), (-1, 1, -1), (-1, -1, 1), (-1, -1, -1))
+)
+_QUARTER_SHIFTS = tuple(
+    (Fraction(x, 4), Fraction(y, 4), Fraction(z, 4)) for x in range(4) for y in range(4) for z in range(4)
+)
+
+
+def _inverse_signed_permutation(matrix: Matrix) -> Matrix:
+    return tuple(tuple(matrix[column][row] for column in range(3)) for row in range(3))  # type: ignore[return-value]
+
+
+def _conjugates(operations: Sequence[GroupOperation], matrix: Matrix):
+    """(W, w) g (W, w)^-1 for every g and every quarter-cell shift w: the same group in moved coordinates. Translations
+    are kept in 1/24 units, which hold every Source and Hall translation."""
+
+    inverse = _inverse_signed_permutation(matrix)
+    moved = []
+    for operation in operations:
+        rotation = _matrix_multiply(_matrix_multiply(matrix, operation.rotation), inverse)
+        if any((component * 24).denominator != 1 for component in operation.translation):
+            raise ValueError("presentation translation is not a multiple of 1/24")
+        twenty_fourths = [int(component * 24) for component in operation.translation]
+        translation = [sum(matrix[row][axis] * twenty_fourths[axis] for axis in range(3)) for row in range(3)]
+        moved.append((rotation, translation, operation.time_reversal))
+    for shift in _QUARTER_SHIFTS:
+        w = [int(component * 24) for component in shift]
+        out = set()
+        for rotation, translation, time_reversal in moved:
+            components = tuple(
+                Fraction((translation[row] + w[row] - sum(rotation[row][axis] * w[axis] for axis in range(3))) % 24, 24)
+                for row in range(3)
+            )
+            out.add(GroupOperation(rotation, components, time_reversal))  # type: ignore[arg-type]
+        yield frozenset(out)
+
+
+@lru_cache(maxsize=None)
+def _derived_settings(bns_label: str) -> tuple[_GroupSettingAuthority, ...]:
+    """Every declared presentation moved by a signed axis permutation and a quarter-cell origin shift, new operation
+    sets only, in a fixed order. These are conjugates of the reported group, so its type is unchanged."""
+
+    declared = group_authority(bns_label).settings
+    seen = {setting.operation_sha256 for setting in declared}
+    derived = []
+    for setting in declared:
+        operations = (_IDENTITY, *setting.nonidentity_operations)
+        for matrix in _SIGNED_PERMUTATIONS:
+            for group in _conjugates(operations, matrix):
+                digest = _operation_digest(group)
+                if digest in seen:
+                    continue
+                seen.add(digest)
+                ordered = sorted(group, key=_operation_key)
+                derived.append(
+                    _GroupSettingAuthority(
+                        setting_key=f"derived:{len(derived) + 1}",
+                        authority="derived",
+                        hall_number=setting.hall_number,
+                        source_setting_ids=setting.source_setting_ids,
+                        choice=setting.choice,
+                        operation_count=len(group),
+                        operation_sha256=digest,
+                        generators=tuple(ordered),
+                        nonidentity_operations=tuple(operation for operation in ordered if operation != _IDENTITY),
+                    )
+                )
+    return tuple(derived)
+
+
+def presentation_authority(label: str, claim: str = _DECLARED_CLAIM) -> _GroupAuthority:
+    """The declared presentations, or for the derived claim the declared ones followed by their derived ones."""
+
+    authority = group_authority(label)
+    if claim != _DERIVED_CLAIM:
+        return authority
+    return _GroupAuthority(
+        requested_label=authority.requested_label,
+        bns_label=authority.bns_label,
+        uni_number=authority.uni_number,
+        hall_symbol=authority.hall_symbol,
+        operation_count=authority.operation_count,
+        operation_sha256=authority.operation_sha256,
+        generators=authority.generators,
+        nonidentity_operations=authority.nonidentity_operations,
+        setting_coverage_complete=authority.setting_coverage_complete,
+        settings=authority.settings + _derived_settings(authority.bns_label),
+    )
+
+
 def _validate_presentation_group_invariance_certificate(
     row: Mapping[str, Any]
 ) -> None:
@@ -1396,7 +1503,7 @@ def _validate_presentation_group_invariance_certificate(
     display_label = row.get("subgroup_display_label")
     if not isinstance(display_label, str):
         raise ValueError("invalid subgroup display label")
-    authority = group_authority(display_label)
+    authority = presentation_authority(display_label, str(row.get("claim")))
     if status == "not_applicable":
         definition_rows = row.get("definition_row_count")
         if (
@@ -1592,7 +1699,8 @@ def validate_group_invariance_certificate(row: Mapping[str, Any]) -> None:
         return
     if row.get("claim") in {
         "atomic_mode_field_group_invariance",
-        "atomic_mode_field_group_invariance_over_declared_presentations",
+        _DECLARED_CLAIM,
+        _DERIVED_CLAIM,
     }:
         _validate_presentation_group_invariance_certificate(row)
         return
