@@ -769,6 +769,24 @@ static long long option(const char *options, const char *key, long long fallback
 
 enum { MAX_TOKENS = 1 << 16 };
 
+/* the magnetic point operations: each family of point_ops.txt (a block starting at an identity matrix), then the same
+ * family with time reversal */
+static long long magnetic_number(const char *dir, long long k, int primed)
+{
+    entity_table *ops = table_of(dir, "group/point_ops.txt");
+    int c = column_of(ops, "matrix");
+    long long start = 0, offset = 0;
+    for (int r = 0; r <= ops->rows; r++) {
+        if (r == ops->rows || (r > 0 && !strcmp(ops->fields[r][c], "1 0 0 0 1 0 0 0 1"))) {
+            long long size = r - start;
+            if (k > start && k <= r) return offset + (primed ? size : 0) + (k - start);
+            offset += 2 * size, start = r;
+        }
+    }
+    die("no such point operation", 0);
+    return 0;
+}
+
 /* one blob section from its layout line: SECTION FILE COLUMN MODE [OPTIONS] */
 static char byu_names[1 << 16];
 static size_t byu_used;
@@ -796,6 +814,7 @@ static void render_section(const char *dir, char *line)
     int c = column_of(t, column);
     long long first = option(options, "first", t->rows), unit = option(options, "div", 1), lead = option(options, "lead", 0);
     long long pad = option(options, "pad", 0), total = option(options, "total", 0), keys = option(options, "keys", 0);
+    long long op_every = option(options, "ops", 0);
     int zero_empty = option(options, "zero_empty", 0) > 0, sentinel = option(options, "sentinel", 0) > 0;
     int rows = (int)(first < t->rows ? first : t->rows);
     static const char *starts[MAX_TOKENS];
@@ -819,7 +838,17 @@ static void render_section(const char *dir, char *line)
         for (long long i = 0; i < lead; i++, written++) put_int(&b, 0);
         for (int r = 0; r < rows; r++) {
             int n = field_tokens(t->fields[r][c], starts, lengths, MAX_TOKENS);
-            for (int i = 0; i < n; i++, written++) put_token(&b, starts[i], lengths[i]);
+            for (int i = 0; i < n; i++, written++) {
+                if (op_every && i % op_every == op_every - 1) {
+                    char *after;
+                    long long k = strtoll(starts[i], &after, 10);
+                    int primed = after < starts[i] + lengths[i] && *after == '\'';
+                    if (after + primed != starts[i] + lengths[i]) die("bad operation", t->fields[r][c]);
+                    put_int(&b, magnetic_number(dir, k, primed));
+                } else {
+                    put_token(&b, starts[i], lengths[i]);
+                }
+            }
             for (long long i = n; i < pad; i++, written++) put_int(&b, 0);
         }
         for (; written < total; written++) put_int(&b, 0);
@@ -846,6 +875,20 @@ static void render_section(const char *dir, char *line)
             put_int(&b, mode[6] == 'c' ? count : start);
         }
         if (sentinel) put_int(&b, rows + 1);
+    } else if (!strncmp(mode, "magnetic_", 9)) {
+        for (int primed = 0; primed < 2 && mode[9] == 'f'; primed++)
+            for (int r = 1; r <= t->rows; r++) put_int(&b, magnetic_number(dir, r, primed));
+        for (long long m = 1; mode[9] != 'f'; m++) {
+            int found = 0;
+            for (int r = 1; r <= t->rows && !found; r++)
+                for (int primed = 0; primed < 2 && !found; primed++)
+                    if (magnetic_number(dir, r, primed) == m) {
+                        found = 1;
+                        if (mode[9] == 'o') put_int(&b, r);
+                        else put_token(&b, primed ? "T" : "F", 1);
+                    }
+            if (!found) break;
+        }
     } else if (!strcmp(mode, "records")) {
         put_int(&b, rows);
     } else {

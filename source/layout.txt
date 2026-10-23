@@ -3,15 +3,18 @@
 # Modes: each (one number per record), text (one string per record), flat (the records' lists in order), start (the 1-based start of each record's
 # list in flat), count (each record's list length), group_start / group_count (per key 1..K of COLUMN: the 1-based
 # first record and the number of records), records (the number of records), derived (a section apo builds at startup
-# from the others: only its BYU name is recorded here).
+# from the others: only its BYU name is recorded here), magnetic_ordinary / magnetic_reversed / magnetic_from_ordinary (the
+# magnetic point operations: each family of point_ops.txt, a block starting at the identity, then that family with time
+# reversal; per operation its point operation and time reversal, and per point operation and time reversal its number).
 # Options: pad=W (each list padded with 0 to W), total=N (the whole section padded with 0 to N), div=W (counts and
 # starts in units of W items), zero_empty (start 0 for an empty list), sentinel (one more start after the last),
-# keys=K, first=N (only the first N records), lead=N (N zeros before the first list, counted by start), byu=NAME
-# (the section's name in the BYU tables).
+# ops=W (every W-th item is a point operation, with ' for time reversal, written as its magnetic number), keys=K,
+# first=N (only the first N records), lead=N (N zeros before the first list, counted by start), byu=NAME (the section's
+# name in the BYU tables).
 group.point_ops.matrix                       group/point_ops.txt                  matrix flat byu=space.ipoint_op
 group.point_groups.label                     group/point_groups.txt               label text byu=space.point_group_label_inter
-group.point_groups.generator_count           group/point_groups.txt               generator_count each byu=space.ipoint_group_gen_count
-group.point_groups.generators                group/point_groups.txt               generators flat byu=space.ipoint_group_gen
+group.point_groups.generator_count           group/point_groups.txt               generators count byu=space.ipoint_group_gen_count
+group.point_groups.generators                group/point_groups.txt               generators flat pad=5 byu=space.ipoint_group_gen
 group.lattices.label                         group/lattices.txt                   label text byu=space.lattice_label
 group.lattices.ml                            group/lattices.txt                   ml flat byu=space.lattice_ml
 group.lattices.ml_denom                      group/lattices.txt                   ml_denom flat byu=space.lattice_ml_denom
@@ -63,7 +66,7 @@ irreps.old.by_sg_start                       irreps/old.txt                     
 irreps.old.image                             irreps/old.txt                       image each byu=irreps.irrep_image
 isotropy.ordinary.by_old_start               isotropy/ordinary.txt                old group_start keys=4777 sentinel byu=isotropy.isotropy_irrep_pointer
 isotropy.ordinary.direction_codes_start      isotropy/ordinary.txt                direction_codes start byu=isotropy.isotropy_orderparam_pointer
-isotropy.ordinary.direction_codes            isotropy/ordinary.txt                direction_codes flat total=144000 byu=isotropy.isotropy_orderparam
+isotropy.ordinary.direction_codes            isotropy/ordinary.txt                direction_codes flat byu=isotropy.isotropy_orderparam
 isotropy.ordinary.image_direction            isotropy/ordinary.txt                image_direction each byu=isotropy.isotropy_direction
 isotropy.ordinary.basis                      isotropy/ordinary.txt                basis flat byu=isotropy.isotropy_basis
 isotropy.ordinary.origin                     isotropy/ordinary.txt                origin flat byu=isotropy.isotropy_origin
@@ -71,10 +74,10 @@ group.magnetic_groups.og                     group/magnetic_groups.txt          
 group.magnetic_groups.bns                    group/magnetic_groups.txt            bns text byu=magnetic.mag_bns_label
 group.magnetic_groups.by_sg_start            group/magnetic_groups.txt            sg group_start keys=230 sentinel byu=magnetic.mag_space_group_pointer
 group.magnetic_groups.generator_count        group/magnetic_groups.txt            generators count div=5 byu=magnetic.mag_gen_count
-group.magnetic_groups.generators             group/magnetic_groups.txt            generators flat pad=20 byu=magnetic.mag_gen
-group.magnetic_ops.reversed                  group/magnetic_ops.txt               reversed each byu=magnetic.mag_point_op_r
-group.magnetic_ops.ordinary                  group/magnetic_ops.txt               ordinary each byu=magnetic.mag_point_op_mag2nonmag
-group.magnetic_ops.from_ordinary             group/magnetic_ops.txt               from_ordinary each byu=magnetic.mag_point_op_nonmag2mag
+group.magnetic_groups.generators             group/magnetic_groups.txt            generators flat pad=20 ops=5 byu=magnetic.mag_gen
+group.magnetic_ops.reversed                  group/point_ops.txt                  matrix magnetic_reversed byu=magnetic.mag_point_op_r
+group.magnetic_ops.ordinary                  group/point_ops.txt                  matrix magnetic_ordinary byu=magnetic.mag_point_op_mag2nonmag
+group.magnetic_ops.from_ordinary             group/point_ops.txt                  matrix magnetic_from_ordinary byu=magnetic.mag_point_op_nonmag2mag
 group.magnetic_point_groups.code             group/magnetic_point_groups.txt      code each byu=magnetic.mag_point_group_code
 group.magnetic_groups.type4                  group/magnetic_groups.txt            type4 each byu=magnetic.mag_type4_pointer
 group.type4_supergroups.supergroup           group/type4_supergroups.txt          supergroup each byu=magnetic.mag_type4_supergroup
@@ -84,7 +87,7 @@ isotropy.magnetic.by_old_start               isotropy/magnetic.txt              
 isotropy.magnetic.basis                      isotropy/magnetic.txt                basis flat byu=magnetic.mag_iso_basis
 isotropy.magnetic.origin                     isotropy/magnetic.txt                origin flat byu=magnetic.mag_iso_origin
 isotropy.magnetic.direction_codes_start      isotropy/magnetic.txt                direction_codes start byu=magnetic.mag_iso_orderparam_pointer
-isotropy.magnetic.direction_codes            isotropy/magnetic.txt                direction_codes flat total=163000 byu=magnetic.mag_iso_orderparam
+isotropy.magnetic.direction_codes            isotropy/magnetic.txt                direction_codes flat byu=magnetic.mag_iso_orderparam
 images.images.label                          images/images.txt                    label text byu=images.image_label
 images.images.dimension                      images/images.txt                    dimension each byu=images.image_dimension
 images.images.type                           images/images.txt                    type each first=132 byu=images.image_type
