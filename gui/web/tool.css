@@ -750,6 +750,13 @@ td {
   flex-direction: column;
 }
 
+.opd-option input[type="radio"] {
+  flex: none;
+  font: inherit;
+  line-height: inherit;
+  margin-top: calc((1lh - 13px) / 2);
+}
+
 .opd-lines .choice {
   font-size: 0.9em;
 }
