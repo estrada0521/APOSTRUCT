@@ -64,7 +64,7 @@ html, body.output-window { height: 100%; overflow: hidden; }
 .output-block .mode-element-group { gap: 4px; }
 .output-block .mode-site-list { display: grid; gap: 3px; padding-left: 18px; }
 
-.output-block .mode-element-modes { display: grid; gap: 0; margin: 0; background: var(--site-color); color: var(--site-ink, var(--color-control)); --check-ink: var(--site-check, var(--color-control)); --check-paper: var(--site-color, #fff); }
+.output-block .mode-element-modes { display: grid; gap: 0; margin: 0; background: var(--site-color); color: var(--site-ink, var(--color-control)); --check-ink: var(--site-check, var(--color-control)); --check-paper: var(--site-color, #fff); --check-box: var(--site-check-box, #fff); --check-border: var(--site-check-border, #767676); }
 .output-block .mode-element-modes > .mode-element-toggle { padding: 8px 18px; }
 .output-block .mode-site-card {
   min-width: 0;
@@ -73,7 +73,7 @@ html, body.output-window { height: 100%; overflow: hidden; }
   border-radius: 0;
   background: var(--site-color);
   color: var(--site-ink, var(--color-control));
-  --check-ink: var(--site-check, var(--color-control)); --check-paper: var(--site-color, #fff);
+  --check-ink: var(--site-check, var(--color-control)); --check-paper: var(--site-color, #fff); --check-box: var(--site-check-box, #fff); --check-border: var(--site-check-border, #767676);
 }
 .output-block .mode-site-heading { font-weight: 500; overflow-wrap: anywhere; }
 .output-block .mode-site-card .mode-site-list { padding-left: 0; margin-bottom: 8px; }
@@ -107,7 +107,7 @@ html, body.output-window { height: 100%; overflow: hidden; }
 }
 
 .output-block .mode-viewer-sidebar { gap: 0; padding: 0; background: rgb(32, 32, 32); }
-.output-block .output-heading { margin: 0; padding: 18px 18px 12px; color: #fff; --check-ink: #fff; --check-paper: rgb(32, 32, 32); }
+.output-block .output-heading { margin: 0; padding: 18px 18px 12px; color: #fff; --check-ink: #fff; --check-paper: rgb(32, 32, 32); --check-box: rgb(64, 64, 64); --check-border: rgb(120, 120, 120); }
 .output-block .mode-master-group { color: #fff; background: rgb(32, 32, 32); padding-bottom: 14px; }
 .output-block .mode-controls-scroll { background: rgb(245, 245, 243); }
 .output-block .mode-viewer-display-options { min-height: 0; padding: 0; color: #fff; }

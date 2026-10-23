@@ -784,9 +784,9 @@ input[type="checkbox"] {
   width: 13px;
   height: 13px;
   margin: 0 3px;
-  border: 1px solid #767676;
+  border: 1px solid var(--check-border, #767676);
   border-radius: 3px;
-  background: #fff;
+  background: var(--check-box, #fff);
   vertical-align: -2px;
   cursor: pointer;
 }
