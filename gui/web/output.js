@@ -1,4 +1,4 @@
-import { ModeStructureViewer } from "./mode3d.js?v=59";
+import { ModeStructureViewer } from "./mode3d.js?v=60";
 
 const $ = id => document.getElementById(id);
 const state = { modeDetailText: null, modeDetailTextRendered: false };
@@ -36,11 +36,8 @@ const modeViewer = new ModeStructureViewer({
   empty: $("mode-viewer-empty"),
   controls: $("mode-viewer-controls"),
   homeButton: $("mode-viewer-home"),
-  arrowOnlyInput: $("mode-viewer-arrow-only"),
   bondsInput: $("mode-viewer-bonds"),
   polyhedraInput: $("mode-viewer-polyhedra"),
-  polyhedronOpacityInput: $("mode-viewer-poly-opacity"),
-  polyhedronOpacityOutput: $("mode-viewer-poly-opacity-value"),
 });
 
 const modeWorkspace = document.querySelector(".mode-viewer-workspace");

@@ -105,3 +105,9 @@ html, body.output-window { height: 100%; overflow: hidden; }
   border: 2px solid #ffffff;
   box-shadow: 0 0 0 1px rgb(0 0 0 / 40%);
 }
+
+.output-block .mode-viewer-sidebar { gap: 0; padding: 0; background: rgb(32, 32, 32); }
+.output-block .output-heading { margin: 0; padding: 18px 18px 12px; color: #fff; --check-ink: #fff; --check-paper: rgb(32, 32, 32); }
+.output-block .mode-master-group { color: #fff; background: rgb(32, 32, 32); padding-bottom: 14px; }
+.output-block .mode-controls-scroll { background: rgb(245, 245, 243); }
+.output-block .mode-viewer-display-options { min-height: 0; padding: 0; color: #fff; }

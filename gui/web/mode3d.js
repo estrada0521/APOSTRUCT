@@ -1551,11 +1551,8 @@ export class ModeStructureViewer {
     scaleOutput,
     arrowsInput,
     momentsInput,
-    arrowOnlyInput,
     bondsInput,
     polyhedraInput,
-    polyhedronOpacityInput,
-    polyhedronOpacityOutput,
   }) {
     this.canvas = canvas;
     this.empty = empty;
@@ -1568,11 +1565,8 @@ export class ModeStructureViewer {
     this.scaleOutput = scaleOutput;
     this.arrowsInput = arrowsInput;
     this.momentsInput = momentsInput;
-    this.arrowOnlyInput = arrowOnlyInput;
     this.bondsInput = bondsInput;
     this.polyhedraInput = polyhedraInput;
-    this.polyhedronOpacityInput = polyhedronOpacityInput;
-    this.polyhedronOpacityOutput = polyhedronOpacityOutput;
     this.payload = null;
     this.modes = [];
     this.amplitudes = new Map();
@@ -1659,17 +1653,12 @@ export class ModeStructureViewer {
       this.scaleInput,
       this.arrowsInput,
       this.momentsInput,
-      this.arrowOnlyInput,
       this.bondsInput,
       this.polyhedraInput,
-      this.polyhedronOpacityInput,
     ].forEach(input => {
       input?.addEventListener("input", () => {
         if (input === this.scaleInput && this.scaleOutput) {
           this.scaleOutput.textContent = number(this.scaleInput.value, 1).toFixed(2);
-        }
-        if (input === this.polyhedronOpacityInput && this.polyhedronOpacityOutput) {
-          this.polyhedronOpacityOutput.textContent = `${Math.round(number(input.value, 70))}%`;
         }
         this.syncDisplayControls();
         this.updateScene();
@@ -1683,13 +1672,8 @@ export class ModeStructureViewer {
   }
 
   syncDisplayControls() {
-    const arrowsOnly = Boolean(this.arrowOnlyInput?.checked);
-    const disableTopology = arrowsOnly || this.bondOptionsSuppressed;
-    if (this.bondsInput) this.bondsInput.disabled = disableTopology;
-    if (this.polyhedraInput) this.polyhedraInput.disabled = disableTopology;
-    if (this.polyhedronOpacityInput) {
-      this.polyhedronOpacityInput.disabled = disableTopology || !this.polyhedraInput?.checked;
-    }
+    if (this.bondsInput) this.bondsInput.disabled = this.bondOptionsSuppressed;
+    if (this.polyhedraInput) this.polyhedraInput.disabled = this.bondOptionsSuppressed;
   }
 
   resetModeAmplitudes() {
@@ -2475,13 +2459,9 @@ export class ModeStructureViewer {
       atom => !this.hiddenChildSites.has(atom.childSite),
     );
     const { displacements, moments } = this.modeVectors(atoms, scale);
-    const arrowsOnly = Boolean(this.arrowOnlyInput?.checked);
     const showBonds = !this.bondOptionsSuppressed && Boolean(this.bondsInput?.checked);
     const showPolyhedra = !this.bondOptionsSuppressed && Boolean(this.polyhedraInput?.checked);
-    const polyhedronOpacity = Math.min(
-      1,
-      Math.max(0, number(this.polyhedronOpacityInput?.value, 70) / 100),
-    );
+    const polyhedronOpacity = 0.7;
     // Viewer primitives are sized from the parent cell, not the child
     // supercell. Otherwise bond/arrow thickness grows with supercell index.
     const visualScale = Math.max(...parentVectors.map(vector => vector.length()), 1);
@@ -2498,7 +2478,7 @@ export class ModeStructureViewer {
       group.add(makeCellEdges(distortedParentVectors, PARENT_CELL_COLOR, parentOffset, 1, false, 2));
     }
     group.add(makeCellEdges(vectors, CHILD_CELL_COLOR, new THREE.Vector3(), 0.62));
-    if (!arrowsOnly && (showBonds || showPolyhedra)) {
+    if (showBonds || showPolyhedra) {
       const sourceAtoms = new Map();
       for (const atom of atoms) {
         if (sourceAtoms.has(atom.sourceKey)) continue;
@@ -2540,13 +2520,11 @@ export class ModeStructureViewer {
       const displacement = combine(vectors, displacements.get(atom.sourceKey) || [0, 0, 0]);
       const position = basePosition.clone().add(displacement);
       const fallbackRadius = visualScale * 0.045;
-      if (!arrowsOnly) {
-        const mesh = makeModeAtomMesh(atom, fallbackRadius);
-        mesh.position.copy(position);
-        mesh.userData = { label: atom.label, fractional: atom.frac };
-        group.add(mesh);
-      }
-      if (arrowsOnly || this.arrowsInput?.checked) {
+      const mesh = makeModeAtomMesh(atom, fallbackRadius);
+      mesh.position.copy(position);
+      mesh.userData = { label: atom.label, fractional: atom.frac };
+      group.add(mesh);
+      if (this.arrowsInput?.checked) {
         const displacementArrow = arrow(basePosition, displacement, 0x1677b8, visualScale);
         if (displacementArrow) group.add(displacementArrow);
       }

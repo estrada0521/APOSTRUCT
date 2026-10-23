@@ -293,7 +293,7 @@ table {
 
 .mode-viewer-stage {
   display: grid;
-  grid-template-rows: max-content minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   min-width: 0;
   height: 100%;
   min-height: 0;
