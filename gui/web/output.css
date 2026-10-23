@@ -119,4 +119,4 @@ html, body.output-window { height: 100%; overflow: hidden; }
 .output-block .mode-element-modes > .mode-element-toggle { padding: 16px 18px 8px; }
 .output-block .mode-site-list,
 .output-block .mode-site-card .mode-site-list { display: flex; flex-wrap: wrap; gap: 4px 12px; }
-.output-block .output-heading select { color-scheme: dark; background: rgb(64, 64, 64); border-color: rgb(64, 64, 64); color: #fff; }
+.output-block .output-heading select { color-scheme: dark; background: rgb(64, 64, 64); border-color: rgb(120, 120, 120); color: #fff; }
