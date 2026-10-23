@@ -3,6 +3,7 @@
 
 #include <errno.h>
 #include <limits.h>
+#include <setjmp.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,8 +31,15 @@ static const char *command = "";
 
 /* ------------------------------------------------------------ errors */
 
+static jmp_buf *error_trap;
+static char trap_message[8192];
+
 static void usage_error(const char *message)
 {
+    if (error_trap) {
+        snprintf(trap_message, sizeof trap_message, "%s", message);
+        longjmp(*error_trap, 1);
+    }
     fprintf(stderr, "apo %s: error: %s\n", command, message);
     exit(2);
 }
@@ -45,6 +53,10 @@ static void usage_errorf(const char *format, const char *a, const char *b)
 
 static void fail_buf(jbuf *message)
 {
+    if (error_trap) {
+        snprintf(trap_message, sizeof trap_message, "%.*s", (int)message->used, message->data ? message->data : "");
+        longjmp(*error_trap, 1);
+    }
     fprintf(stderr, "apo %s: error: %.*s\n", command, (int)message->used, message->data ? message->data : "");
     exit(2);
 }
@@ -943,66 +955,107 @@ static void put_amplitudes(const args_t *a, jbuf *b)
 static void put_case(jbuf *b, const apo_case *c);
 
 /* gui_launch.gui_launch_from_case and send_gui_launch */
-static int show_command(const args_t *a)
+/* The GUI launch of a case (what apo show publishes); 0, or -1 with the run's error JSON in *failure. */
+static int case_launch(const apo_case *c, const args_t *a, jbuf *launch, const char **failure)
 {
-    apo_case c;
-    load_case(a->case_path, &c);
-    jdoc *kdoc = jdoc_parse(c.k.data, c.k.used);
+    jdoc *kdoc = jdoc_parse(c->k.data, c->k.used);
     const jvalue *slots = jdoc_root(kdoc);
     int nslots = jis(slots, J_ARRAY) ? (int)slots->count : 0, all_irreps = nslots > 0;
     for (int i = 0; i < nslots; i++) all_irreps = all_irreps && jtruthy(jget(jat(slots, i), "ir"));
     jdoc_free(kdoc);
-    const char *stage = strcmp(c.opd.data, "null") ? "modes" : all_irreps ? "opds" : nslots ? "irreps" : "kpoints";
+    const char *stage = strcmp(c->opd.data, "null") ? "modes" : all_irreps ? "opds" : nslots ? "irreps" : "kpoints";
     int deep = !strcmp(stage, "opds") || !strcmp(stage, "modes");
     jbuf request = {0};
     jb_reset(&request);
     jb_lit(&request, "{\"call\": \"request\", ");
-    put_case(&request, &c);
+    put_case(&request, c);
     jb_lit(&request, deep ? ", \"require_irreps\": true" : ", \"require_irreps\": false");
     jb_lit(&request, !strcmp(stage, "kpoints") ? ", \"allow_empty_distortion\": true}" : ", \"allow_empty_distortion\": false}");
     const char *result = cli_run_json(request.data, (int64_t)request.used);
     jb_free(&request);
-    if (!result) {
-        fprintf(stderr, "MemoryError: CLI run ran out of memory\n");
-        return 1;
+    if (!result) usage_error("CLI run ran out of memory");
+    if (cli_run_status() < 0) {
+        *failure = result;
+        return -1;
     }
-    if (cli_run_status() < 0) return report_error(result);
     jdoc *rdoc = jdoc_parse(result, (size_t)cli_run_length());
     const jvalue *options = jdoc_root(rdoc);
-    jbuf launch = {0};
-    jb_reset(&launch);
-    jb_lit(&launch, "{\"schema\": \"APOSTRUCT.gui.launch.v1\", \"stage\": ");
-    jb_cstring(&launch, stage);
-    const char *name = strrchr(c.structure, '/');
-    jb_lit(&launch, ", \"source_name\": ");
-    jb_cstring(&launch, name ? name + 1 : c.structure);
-    jb_lit(&launch, ", \"state_request\": {");
+    jb_reset(launch);
+    jb_lit(launch, "{\"schema\": \"APOSTRUCT.gui.launch.v1\", \"stage\": ");
+    jb_cstring(launch, stage);
+    const char *name = strrchr(c->structure, '/');
+    jb_lit(launch, ", \"source_name\": ");
+    jb_cstring(launch, name ? name + 1 : c->structure);
+    jb_lit(launch, ", \"state_request\": {");
     static const char *const fields[] = {"mode_set", "distortion_selection", "k_label", "k_index", "k_params",
                                          "irrep", "irrep_index", "orderparam", "orderparam_index", "selections"};
     for (int i = 0; i < 10; i++) {
         const jvalue *v = jget(options, fields[i]);
         if (!v || jis(v, J_NULL)) continue;
-        jb_lit(&launch, "\"");
-        jb_lit(&launch, fields[i]);
-        jb_lit(&launch, "\": ");
-        jb_value(&launch, v);
-        jb_lit(&launch, ", ");
+        jb_lit(launch, "\"");
+        jb_lit(launch, fields[i]);
+        jb_lit(launch, "\": ");
+        jb_value(launch, v);
+        jb_lit(launch, ", ");
     }
     jdoc_free(rdoc);
-    FILE *f = fopen(c.structure, "rb");
-    if (!f) usage_errorf("could not read structure CIF: %s", c.structure, 0);
+    FILE *f = fopen(c->structure, "rb");
+    if (!f) usage_errorf("could not read structure CIF: %s", c->structure, 0);
     size_t size;
     char *cif = read_all(f, &size);
     fclose(f);
-    jb_lit(&launch, "\"cif\": ");
-    jb_string(&launch, cif, size);
+    jb_lit(launch, "\"cif\": ");
+    jb_string(launch, cif, size);
     free(cif);
-    jb_lit(&launch, deep ? ", \"include_opd\": true" : ", \"include_opd\": false");
-    jb_lit(&launch, !strcmp(stage, "modes") ? ", \"include_mode_details\": true}" : ", \"include_mode_details\": false}");
-    if (a->namplitudes && strcmp(stage, "modes")) usage_error("--amplitude requires a case with opd");
-    jb_lit(&launch, ", \"amplitudes\": ");
-    put_amplitudes(a, &launch);
-    jb_lit(&launch, "}");
+    jb_lit(launch, deep ? ", \"include_opd\": true" : ", \"include_opd\": false");
+    jb_lit(launch, !strcmp(stage, "modes") ? ", \"include_mode_details\": true}" : ", \"include_mode_details\": false}");
+    if (a && a->namplitudes && strcmp(stage, "modes")) usage_error("--amplitude requires a case with opd");
+    jb_lit(launch, ", \"amplitudes\": ");
+    if (a) put_amplitudes(a, launch);
+    else jb_lit(launch, "[]");
+    jb_lit(launch, "}");
+    return 0;
+}
+
+/* apo serve: the launch of an Examples case (a case JSON with "cif"), or 1 with a message. */
+int apo_case_launch(const char *case_json, size_t n, jbuf *launch, char *error, size_t error_size)
+{
+    jmp_buf trap;
+    jdoc *doc = jdoc_parse(case_json, n);
+    if (!doc) {
+        snprintf(error, error_size, "invalid case JSON");
+        return 1;
+    }
+    apo_case c;
+    if (setjmp(trap)) {
+        error_trap = 0;
+        jdoc_free(doc);
+        snprintf(error, error_size, "%s", trap_message);
+        return 1;
+    }
+    error_trap = &trap;
+    case_from_json(jdoc_root(doc), exe_dir, &c);
+    const char *failure = 0;
+    int status = case_launch(&c, 0, launch, &failure);
+    error_trap = 0;
+    jdoc_free(doc);
+    if (status) {
+        jdoc *fdoc = jdoc_parse(failure, (size_t)cli_run_length());
+        const jvalue *message = jget(jget(jdoc_root(fdoc), "error"), "message");
+        snprintf(error, error_size, "%.*s", message ? (int)message->count : 0, message ? message->u.s : "case failed");
+        jdoc_free(fdoc);
+        return 1;
+    }
+    return 0;
+}
+
+static int show_command(const args_t *a)
+{
+    apo_case c;
+    load_case(a->case_path, &c);
+    jbuf launch = {0};
+    const char *failure = 0;
+    if (case_launch(&c, a, &launch, &failure)) return report_error(failure);
     jbuf reply = {0};
     jb_reset(&reply);
     char base[1024], error[32768];

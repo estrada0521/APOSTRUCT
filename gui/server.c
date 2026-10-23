@@ -767,6 +767,42 @@ static int serve_asset(net_socket fd, const char *path)
     return 1;
 }
 
+int apo_case_launch(const char *case_json, size_t n, jbuf *launch, char *error, size_t error_size);
+
+/* An Examples case: the launch apo show would publish for it, published here. */
+static int example(const char *body, size_t n, jbuf *out, api_error *e)
+{
+    jbuf launch = {0};
+    jb_reset(&launch);
+    char error[4096];
+    if (apo_case_launch(body, n, &launch, error, sizeof error)) {
+        jb_free(&launch);
+        return api_fail(e, "%s", error);
+    }
+    jdoc *doc = jdoc_parse(launch.data, launch.used);
+    int failed = doc ? publish(jdoc_root(doc), out, e) : api_fail(e, "example launch is not JSON");
+    jdoc_free(doc);
+    jb_free(&launch);
+    return failed;
+}
+
+/* GET /examples.json.gz: the branch bundle's example index next to the frontend. */
+static int serve_examples(net_socket fd)
+{
+    char path[PATH_MAX * 2];
+    snprintf(path, sizeof path, "%s/../../branches/examples.json.gz", frontend);
+    struct stat st;
+    if (stat(path, &st) || !S_ISREG(st.st_mode)) return 0;
+    FILE *f = fopen(path, "rb");
+    if (!f) return 0;
+    char *data = malloc((size_t)st.st_size + 1);
+    size_t n = fread(data, 1, (size_t)st.st_size, f);
+    fclose(f);
+    respond(fd, 200, "application/gzip", data, n);
+    free(data);
+    return 1;
+}
+
 static int query_after(const char *query, int64_t *after, api_error *e)
 {
     *after = 0;
@@ -843,6 +879,8 @@ static void handle(net_socket fd)
                 failed = api_fail(&e, "request body must be a JSON object");
             } else if (!strcmp(endpoint, "state")) {
                 failed = gui_state(jdoc_root(doc), 0, &out, &e);
+            } else if (!strcmp(endpoint, "example")) {
+                failed = example(content_length ? body : "{}", content_length ? content_length : 2, &out, &e);
             } else if (!strcmp(endpoint, "gui_launch")) {
                 failed = query && *query ? api_fail(&e, "gui_launch does not accept query parameters") : publish(jdoc_root(doc), &out, &e);
             } else {
@@ -863,6 +901,7 @@ static void handle(net_socket fd)
         net_close(fd);
         jb_free(&in);
         _exit(0);
+    } else if (!strcmp(method, "GET") && !strcmp(target, "/examples.json.gz") && serve_examples(fd)) {
     } else if (!strcmp(method, "GET") && serve_asset(fd, target)) {
     } else {
         respond(fd, 404, "text/plain; charset=utf-8", "Not Found", 9);

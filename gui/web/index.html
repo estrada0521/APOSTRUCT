@@ -5,10 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>APOSTRUCT</title>
   <link rel="stylesheet" href="theme.css?v=4">
-  <link rel="stylesheet" href="tool.css?v=100">
+  <link rel="stylesheet" href="tool.css?v=101">
 </head>
 <body>
   <main class="page">
+    <section class="examples-panel" id="examples-panel" hidden>
+      <label class="examples-toggle"><input id="examples-mode" type="checkbox"> Examples</label>
+      <div id="examples-controls" class="examples-controls" hidden>
+        <div class="examples-grid">
+          <span>MP pool</span><span class="examples-row"><button class="primary-action" id="examples-open-mp" type="button">Random example</button><span class="examples-note" id="examples-note-mp"></span></span>
+          <span>MAGNDATA</span><span class="examples-row"><button class="primary-action" id="examples-open-magndata" type="button">Open example</button><span class="examples-note" id="examples-note-magndata"></span></span>
+          <span></span><select id="examples-category"></select>
+          <span></span><select id="examples-case"></select>
+        </div>
+        <div class="examples-row examples-result">
+          <span id="examples-input" class="examples-input"></span>
+          <button class="primary-action" id="examples-download" type="button" disabled>Download CIF</button>
+          <button class="primary-action" id="examples-copy" type="button" disabled>Copy input JSON</button>
+          <span class="examples-note" id="examples-note"></span>
+        </div>
+      </div>
+    </section>
+
     <section class="block">
       <div class="parent-source-heading">
         <span class="block-title">1. Parent structure:</span>
@@ -82,6 +100,8 @@
       distortionSelection: null,
       guiLaunchRevision: 0,
       running: false,
+      sourceName: "",
+      exampleFormula: "",
     };
 
     const $ = id => document.getElementById(id);
@@ -187,7 +207,8 @@
         throw new Error("GUI launch has no structure source");
       }
       state.cif = request.cif;
-      $("cif-name").textContent = String(launch.source_name || "");
+      state.sourceName = String(launch.source_name || "");
+      $("cif-name").textContent = state.sourceName;
 
       const selections = Array.isArray(request.selections) ? request.selections : [];
       state.backendState = backendState;
@@ -449,7 +470,7 @@
       const sg = backendState.space_group || input.parent || {};
       const lat = input.lattice || {};
       const symbol = sg.symbol || input.parent?.symbol || "";
-      const materialName = String(input.formula || input.block || "").trim();
+      const materialName = String(input.formula || state.exampleFormula || input.block || "").trim();
       const hasLattice = [lat.a, lat.b, lat.c, lat.alpha, lat.beta, lat.gamma]
         .every(value => value !== null && value !== undefined && value !== "");
       const lines = [
@@ -657,6 +678,7 @@
     }
 
     function renderModeDetails(backendState, initialView) {
+      syncExampleActions();
       const modeDetails = backendState.selected?.mode_details;
       if (!modeDetails) {
         outputWindow.markStale();
@@ -743,7 +765,9 @@
       const file = $("cif-file").files && $("cif-file").files[0];
       const bytes = file ? await file.arrayBuffer() : null;
       state.cif = bytes ? new TextDecoder().decode(bytes) : "";
-      $("cif-name").textContent = file ? file.name : "";
+      state.sourceName = file ? file.name : "";
+      state.exampleFormula = "";
+      $("cif-name").textContent = state.sourceName;
       resetAnalysisWorkflow();
       await analyze({ includeOPD: false });
       if (state.backendState) {
@@ -796,6 +820,137 @@
       $("mode-details-section").hidden = true;
     });
     pollGuiLaunch();
+
+    const examples = { index: null, busy: false };
+
+    async function loadExamples() {
+      if (examples.index) return examples.index;
+      const response = await fetch("/examples.json.gz");
+      if (!response.ok) throw new Error("The example index is not available");
+      const text = await new Response(response.body.pipeThrough(new DecompressionStream("gzip"))).text();
+      examples.index = JSON.parse(text);
+      $("examples-category").replaceChildren(...examples.index.magndata.map(category => {
+        const option = document.createElement("option");
+        option.value = category.id;
+        option.textContent = `${category.label} (${category.cases.length})`;
+        return option;
+      }));
+      fillExampleCases();
+      return examples.index;
+    }
+
+    function fillExampleCases() {
+      const category = examples.index?.magndata.find(item => item.id === $("examples-category").value);
+      $("examples-case").replaceChildren(...(category?.cases || []).map((item, index) => {
+        const option = document.createElement("option");
+        option.value = String(index);
+        option.textContent = `${item.id}${item.formula ? ` · ${item.formula}` : ""}`;
+        return option;
+      }));
+    }
+
+    async function openExample(choose, noteId) {
+      if (examples.busy) return;
+      const note = $(noteId);
+      $("examples-note-mp").textContent = "";
+      $("examples-note-magndata").textContent = "";
+      $("examples-note").textContent = "";
+      examples.busy = true;
+      $("examples-open-mp").disabled = $("examples-open-magndata").disabled = true;
+      try {
+        const index = await loadExamples();
+        const { input, opd, formula } = choose(index);
+        $("examples-input").textContent = input;
+        note.textContent = "Computing...";
+        const start = performance.now();
+        state.exampleFormula = formula || "";
+        await postJSON("/api/APOSTRUCT/example", { ...index.inputs[input], opd });
+        note.textContent = `${((performance.now() - start) / 1000).toFixed(2)} s`;
+      } catch (error) {
+        $("examples-input").textContent = "";
+        note.textContent = error.message || String(error);
+      } finally {
+        examples.busy = false;
+        $("examples-open-mp").disabled = $("examples-open-magndata").disabled = false;
+      }
+    }
+
+    function exampleSites(selection) {
+      const types = Array.isArray(selection?.site_types) ? selection.site_types : [];
+      const has = value => new Set(Array.isArray(value) ? value.map(Number) : []);
+      const displacive = has(selection?.displacive_sites), magnetic = has(selection?.magnetic_sites);
+      const sites = {};
+      types.forEach((type, offset) => {
+        const element = String(type).match(/[A-Z][a-z]?/)?.[0];
+        if (!element) throw new Error(`Site type ${type} has no element`);
+        const flags = { displacive: displacive.has(offset + 1), magnetic: magnetic.has(offset + 1) };
+        const prior = sites[element];
+        if (prior && (prior.displacive !== flags.displacive || prior.magnetic !== flags.magnetic)) {
+          throw new Error(`The sites of ${element} are selected differently`);
+        }
+        sites[element] = flags;
+      });
+      return Object.fromEntries(Object.entries(sites).sort(([left], [right]) => left.localeCompare(right)));
+    }
+
+    async function currentCase() {
+      const backend = state.backendState;
+      const selected = backend?.selected || {};
+      const orderparam = selected.orderparam || {};
+      const opd = String(orderparam.isotropy?.opd_label || orderparam.direction?.label || "");
+      const kpoints = Array.isArray(selected.kpoints) ? selected.kpoints : [];
+      const irreps = Array.isArray(selected.irreps_selected) ? selected.irreps_selected : selected.irrep ? [selected.irrep] : [];
+      if (!state.cif || !opd || !kpoints.length || kpoints.length !== irreps.length) throw new Error("The selection is incomplete");
+      const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(state.cif));
+      const cif = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, "0")).join("").slice(0, 12);
+      const k = kpoints.map((kpoint, index) => {
+        const params = Object.fromEntries(Object.entries(kpoint.display_parameters || kpoint.parameters || {})
+          .filter(([, value]) => value !== null && value !== undefined && String(value) !== "")
+          .sort(([left], [right]) => left.localeCompare(right))
+          .map(([name, value]) => [name, String(value)]));
+        const slot = { label: String(kpoint.label || ""), ir: String(irreps[index]?.symbol || irreps[index]?.label || "") };
+        return Object.keys(params).length ? { ...slot, params } : slot;
+      });
+      const selection = backend.distortion_selection || {};
+      return { cif, strain: Boolean(selection.strain), sites: exampleSites(selection), k, opd };
+    }
+
+    function syncExampleActions() {
+      $("examples-download").disabled = !state.cif;
+      $("examples-copy").disabled = !state.backendState?.selected?.mode_details;
+    }
+
+    loadExamples().then(() => { $("examples-panel").hidden = false; }).catch(() => {});
+    $("examples-mode").addEventListener("change", () => {
+      $("examples-controls").hidden = !$("examples-mode").checked;
+    });
+    $("examples-category").addEventListener("change", fillExampleCases);
+    $("examples-open-mp").addEventListener("click", () => openExample(index => {
+      const [input, opd] = index.mp[Math.floor(Math.random() * index.mp.length)];
+      return { input, opd, formula: "" };
+    }, "examples-note-mp"));
+    $("examples-open-magndata").addEventListener("click", () => openExample(index => {
+      const category = index.magndata.find(item => item.id === $("examples-category").value);
+      const item = category?.cases[Number($("examples-case").value)];
+      if (!item) throw new Error("Select a MAGNDATA example");
+      return { input: item.input, opd: item.opd, formula: item.formula };
+    }, "examples-note-magndata"));
+    $("examples-download").addEventListener("click", () => {
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(new Blob([state.cif], { type: "chemical/x-cif" }));
+      link.download = state.sourceName || "structure.cif";
+      link.click();
+      URL.revokeObjectURL(link.href);
+    });
+    $("examples-copy").addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(`${JSON.stringify(await currentCase(), null, 2)}\n`);
+        $("examples-note").textContent = "Copied";
+      } catch (error) {
+        $("examples-note").textContent = error.message || String(error);
+      }
+    });
+
   </script>
 </body>
 </html>

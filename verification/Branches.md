@@ -8,6 +8,7 @@ It contains no saved Web output, Local output, sweep definition, worker plan, da
 - `manifest.json`: bundle schema, counts, comparator versions, and SHA-256 digests of the two compressed JSONL files.
 - `inputs.jsonl.gz`: one canonical input payload per content-addressed `input_id`.
 - `results.jsonl.gz`: one landed result per `(input_id, opd)` branch.
+- `examples.json.gz`: the GUI Examples index, derived from the two files above: the MP branches, the MAGNDATA branches by category with their case ID and formula, and each input as an `apo` case.
 
 An input row has this shape:
 

@@ -817,3 +817,56 @@ input[type="checkbox"]:indeterminate::after {
 }
 input[type="checkbox"]:disabled { opacity: 0.4; cursor: default; }
 input[type="checkbox"]:focus-visible { outline: 2px solid var(--check-ink, var(--color-control)); outline-offset: 1px; }
+
+.examples-panel {
+  padding: 18px;
+  border: 1px dashed var(--color-border);
+  border-radius: 4px;
+}
+
+.examples-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.examples-controls {
+  margin-top: 1em;
+}
+
+.examples-controls[hidden] {
+  display: none;
+}
+
+.examples-grid {
+  display: grid;
+  grid-template-columns: max-content max-content;
+  align-items: center;
+  gap: 8px 10px;
+}
+
+.examples-grid select {
+  min-width: 180px;
+  max-width: min(360px, 70vw);
+}
+
+.examples-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+
+.examples-result {
+  margin-top: 1em;
+}
+
+.examples-input {
+  width: 8.5em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.examples-note {
+  color: var(--color-muted);
+}

@@ -128,3 +128,4 @@ apo show --case case.json --server http://127.0.0.1:8300
 `show` はcaseの最も深い段まで開く。kだけならirrep選択、irrepまでならOPD選択、`opd` まであればmode詳細と構造表示。
 `--amplitude DEFINITION_ID=VALUE` でmode sliderの初期値を指定する（`--amplitude magnetic-1=1`）。
 CIFの本文は `show` 側で読んでserverに送る。caseと計算結果はserverのmemoryにだけ残る。
+1. の上のExamplesは公開済みのbranch（MPからはランダム、MAGNDATAは分類から選択）を `branches/examples.json.gz` から開き、input IDと計算時間を表示する。今の選択は `--case` 用のcaseとしてcopyできる。
