@@ -1900,7 +1900,10 @@ export class ModeStructureViewer {
           + renderSiteModes(card.modes)
           + '</section>';
       }).join('');
-      return '<section class="mode-element-modes">' + heading + contents + '</section>';
+      const groupColor = element ? this.elementColorCss(element) : 'rgb(180,180,180)';
+      const groupInk = element ? this.elementTextColorCss(element) : '#202020';
+      return '<section class="mode-element-modes" data-mode-card-element="' + this.escape(element)
+        + '" style="--site-color:' + groupColor + ';--site-ink:' + groupInk + '">' + heading + contents + '</section>';
     }).join('');
     const hiddenModeCount = Math.max(0, this.modes.length - visibleModes.length);
     const modeProgress = hiddenModeCount ? `<p class="mode-viewer-note mode-viewer-progress">
