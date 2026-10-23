@@ -64,7 +64,7 @@ html, body.output-window { height: 100%; overflow: hidden; }
 .output-block .mode-element-group { gap: 4px; }
 .output-block .mode-site-list { display: grid; gap: 3px; padding-left: 18px; }
 
-.output-block .mode-element-modes { display: grid; gap: 0; margin: 0; background: var(--site-color); color: var(--site-ink, #202020); --check-ink: var(--site-ink, #000); --check-paper: var(--site-color, #fff); }
+.output-block .mode-element-modes { display: grid; gap: 0; margin: 0; background: var(--site-color); color: var(--site-ink, var(--color-control)); --check-ink: var(--site-ink, var(--color-control)); --check-paper: var(--site-color, #fff); }
 .output-block .mode-element-modes > .mode-element-toggle { padding: 8px 18px; }
 .output-block .mode-site-card {
   min-width: 0;
@@ -72,8 +72,8 @@ html, body.output-window { height: 100%; overflow: hidden; }
   border: 0;
   border-radius: 0;
   background: var(--site-color);
-  color: var(--site-ink, #202020);
-  --check-ink: var(--site-ink, #000); --check-paper: var(--site-color, #fff);
+  color: var(--site-ink, var(--color-control));
+  --check-ink: var(--site-ink, var(--color-control)); --check-paper: var(--site-color, #fff);
 }
 .output-block .mode-site-heading { font-weight: 500; overflow-wrap: anywhere; }
 .output-block .mode-site-card .mode-site-list { padding-left: 0; margin-bottom: 8px; }
@@ -93,7 +93,7 @@ html, body.output-window { height: 100%; overflow: hidden; }
   width: 12px;
   height: 12px;
   margin-top: -4px;
-  background: #202020;
+  background: var(--color-control);
   border: 2px solid #ffffff;
   box-shadow: 0 0 0 1px rgb(0 0 0 / 40%);
 }
@@ -101,7 +101,7 @@ html, body.output-window { height: 100%; overflow: hidden; }
   box-sizing: border-box;
   width: 12px;
   height: 12px;
-  background: #202020;
+  background: var(--color-control);
   border: 2px solid #ffffff;
   box-shadow: 0 0 0 1px rgb(0 0 0 / 40%);
 }

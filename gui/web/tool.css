@@ -116,17 +116,16 @@ button {
 
 .primary-action {
   min-height: 22px;
-  border: 1px solid #404040;
+  border: 1px solid var(--color-control);
   border-radius: 3px;
-  background: #404040;
+  background: var(--color-control);
   color: #ffffff;
   padding: 1px 8px;
   text-decoration: none;
 }
 
 .primary-action:hover {
-  background: rgb(31, 30, 30);
-  border-color: rgb(31, 30, 30);
+  opacity: 0.85;
 }
 
 #cif-name {
@@ -494,9 +493,9 @@ table {
   width: 10px;
   height: 10px;
   margin-top: -3.5px;
-  border: 1px solid #202020;
+  border: 1px solid var(--color-control);
   border-radius: 50%;
-  background: #202020;
+  background: var(--color-control);
   appearance: none;
 }
 
@@ -512,9 +511,9 @@ table {
 .mode-master input[type="range"]::-moz-range-thumb {
   width: 10px;
   height: 10px;
-  border: 1px solid #202020;
+  border: 1px solid var(--color-control);
   border-radius: 50%;
-  background: #202020;
+  background: var(--color-control);
 }
 
 .mode-master output {
@@ -687,9 +686,9 @@ table {
   width: 10px;
   height: 10px;
   margin-top: -3.5px;
-  border: 1px solid #202020;
+  border: 1px solid var(--color-control);
   border-radius: 50%;
-  background: #202020;
+  background: var(--color-control);
   appearance: none;
 }
 
@@ -703,9 +702,9 @@ table {
 .mode-slider input[type="range"]::-moz-range-thumb {
   width: 10px;
   height: 10px;
-  border: 1px solid #202020;
+  border: 1px solid var(--color-control);
   border-radius: 50%;
-  background: #202020;
+  background: var(--color-control);
 }
 
 .mode-slider output {
@@ -755,6 +754,29 @@ td {
   font-size: 0.9em;
 }
 
+input[type="radio"] {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  box-sizing: border-box;
+  width: 13px;
+  height: 13px;
+  margin: 0 3px;
+  border: 1px solid #767676;
+  border-radius: 50%;
+  background: #fff;
+  vertical-align: -2px;
+  cursor: pointer;
+}
+input[type="radio"]:checked { border-color: var(--color-control); background: var(--color-control); }
+input[type="radio"]:checked::after {
+  content: "";
+  position: absolute;
+  inset: 3.5px;
+  border-radius: 50%;
+  background: #fff;
+}
+input[type="radio"]:focus-visible { outline: 2px solid var(--color-control); outline-offset: 1px; }
 input[type="checkbox"] {
   appearance: none;
   -webkit-appearance: none;
@@ -771,8 +793,8 @@ input[type="checkbox"] {
 }
 input[type="checkbox"]:checked,
 input[type="checkbox"]:indeterminate {
-  border-color: var(--check-ink, #000);
-  background: var(--check-ink, #000);
+  border-color: var(--check-ink, var(--color-control));
+  background: var(--check-ink, var(--color-control));
 }
 input[type="checkbox"]:checked::after {
   content: "";
@@ -795,4 +817,4 @@ input[type="checkbox"]:indeterminate::after {
   background: var(--check-paper, #fff);
 }
 input[type="checkbox"]:disabled { opacity: 0.4; cursor: default; }
-input[type="checkbox"]:focus-visible { outline: 2px solid var(--check-ink, #000); outline-offset: 1px; }
+input[type="checkbox"]:focus-visible { outline: 2px solid var(--check-ink, var(--color-control)); outline-offset: 1px; }
