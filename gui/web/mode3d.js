@@ -1893,7 +1893,7 @@ export class ModeStructureViewer {
     const topologyNote = this.bondOptionsSuppressed
       ? `<p class="mode-viewer-note">Bonds and polyhedra are disabled for structures above ${MAX_AUTOMATIC_BOND_ATOMS} atoms.</p>`
       : "";
-    this.controlsNode.innerHTML = `${master}${atomVisibility}${topologyNote}${groups || '<p class="mode-viewer-note">No visualizable mode definitions.</p>'}${modeProgress}`;
+    this.controlsNode.innerHTML = `${master}<div class="mode-controls-scroll">${atomVisibility}${topologyNote}${groups || '<p class="mode-viewer-note">No visualizable mode definitions.</p>'}${modeProgress}</div>`;
     const masterInput = this.controlsNode.querySelector("input[data-master-amplitude]");
     masterInput?.addEventListener("input", () => {
       this.playing = false;

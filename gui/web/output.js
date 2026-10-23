@@ -1,4 +1,4 @@
-import { ModeStructureViewer } from "./mode3d.js?v=50";
+import { ModeStructureViewer } from "./mode3d.js?v=51";
 
 const $ = id => document.getElementById(id);
 const state = { modeDetailText: null, modeDetailTextRendered: false };
@@ -106,6 +106,7 @@ function setModeDetailsView(view) {
   if (!showViewer) ensureModeDetailText();
   $("mode-details-text-panel").hidden = showViewer;
   $("mode-details-viewer-panel").hidden = !showViewer;
+  $("mode-viewer-controls").hidden = !showViewer;
   $("mode-details-view-select").value = showViewer ? "viewer" : "text";
   if (showViewer) requestAnimationFrame(() => modeViewer.refreshLayout());
 }
