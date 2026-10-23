@@ -815,8 +815,30 @@ static void render_section(const char *dir, char *line)
     long long first = option(options, "first", t->rows), unit = option(options, "div", 1), lead = option(options, "lead", 0);
     long long pad = option(options, "pad", 0), total = option(options, "total", 0), keys = option(options, "keys", 0);
     long long op_every = option(options, "ops", 0);
+    const char *per_name = strstr(options, "per=");
+    int per = -1;
+    if (per_name) {
+        char name[128];
+        sscanf(per_name + 4, "%127s", name);
+        per = column_of(t, name);
+    }
     int zero_empty = option(options, "zero_empty", 0) > 0, sentinel = option(options, "sentinel", 0) > 0;
     int rows = (int)(first < t->rows ? first : t->rows);
+    long long grid = option(options, "grid", 0);
+    int *place = 0;
+    if (grid) {
+        int slot = column_of(t, "slot");
+        place = xmalloc(sizeof *place * (size_t)(keys * grid));
+        for (long long i = 0; i < keys * grid; i++) place[i] = -1;
+        for (int r = 0; r < rows; r++) {
+            long long key = atoll(t->fields[r][0]), at = atoll(t->fields[r][slot]);
+            if (key < 1 || key > keys || at < 1 || at > grid || place[(key - 1) * grid + at - 1] >= 0)
+                die("bad grid position", t->fields[r][0]);
+            place[(key - 1) * grid + at - 1] = r;
+        }
+        rows = (int)(keys * grid);
+    }
+#define FIELD(r) (place ? (place[r] < 0 ? "" : t->fields[place[r]][c]) : t->fields[r][c])
     static const char *starts[MAX_TOKENS];
     static size_t lengths[MAX_TOKENS];
     text_buf b = {0};
@@ -824,12 +846,12 @@ static void render_section(const char *dir, char *line)
     if (!strcmp(mode, "text")) {
         for (int r = 0; r < rows; r++) {
             put(&b, "\"", 1);
-            put(&b, t->fields[r][c], strlen(t->fields[r][c]));
+            put(&b, FIELD(r), strlen(FIELD(r)));
             put_token(&b, "\"", 1);
         }
     } else if (!strcmp(mode, "each")) {
         for (int r = 0; r < rows; r++) {
-            int n = field_tokens(t->fields[r][c], starts, lengths, MAX_TOKENS);
+            int n = field_tokens(FIELD(r), starts, lengths, MAX_TOKENS);
             if (n) put_token(&b, starts[0], lengths[0]);
             else put_int(&b, 0);
         }
@@ -837,13 +859,13 @@ static void render_section(const char *dir, char *line)
         long long written = 0;
         for (long long i = 0; i < lead; i++, written++) put_int(&b, 0);
         for (int r = 0; r < rows; r++) {
-            int n = field_tokens(t->fields[r][c], starts, lengths, MAX_TOKENS);
+            int n = field_tokens(FIELD(r), starts, lengths, MAX_TOKENS);
             for (int i = 0; i < n; i++, written++) {
                 if (op_every && i % op_every == op_every - 1) {
                     char *after;
                     long long k = strtoll(starts[i], &after, 10);
                     int primed = after < starts[i] + lengths[i] && *after == '\'';
-                    if (after + primed != starts[i] + lengths[i]) die("bad operation", t->fields[r][c]);
+                    if (after + primed != starts[i] + lengths[i]) die("bad operation", FIELD(r));
                     put_int(&b, magnetic_number(dir, k, primed));
                 } else {
                     put_token(&b, starts[i], lengths[i]);
@@ -855,8 +877,11 @@ static void render_section(const char *dir, char *line)
     } else if (!strcmp(mode, "start") || !strcmp(mode, "count")) {
         long long at = 1 + lead;
         for (int r = 0; r < rows; r++) {
-            int n = field_tokens(t->fields[r][c], starts, lengths, MAX_TOKENS);
-            if (mode[0] == 'c') put_int(&b, n / unit);
+            int n = field_tokens(FIELD(r), starts, lengths, MAX_TOKENS);
+            if (mode[0] == 'c' && per >= 0) {
+                long long by = place && place[r] < 0 ? 0 : atoll(place ? t->fields[place[r]][per] : t->fields[r][per]);
+                put_int(&b, by ? n / by : 0);
+            } else if (mode[0] == 'c') put_int(&b, n / unit);
             else put_int(&b, n == 0 && zero_empty ? 0 : (at - 1) / unit + 1);
             at += n;
         }
@@ -875,6 +900,15 @@ static void render_section(const char *dir, char *line)
             put_int(&b, mode[6] == 'c' ? count : start);
         }
         if (sentinel) put_int(&b, rows + 1);
+    } else if (!strcmp(mode, "directions")) {
+        for (int r = 0; r < rows; r++) {
+            int n = field_tokens(FIELD(r), starts, lengths, MAX_TOKENS), d = 0;
+            for (int v = 4; v + 3 <= n; v += 4)
+                if (strncmp(starts[v], "0", lengths[v]) || strncmp(starts[v + 1], "0", lengths[v + 1]) ||
+                    strncmp(starts[v + 2], "0", lengths[v + 2]))
+                    d++;
+            put_int(&b, d);
+        }
     } else if (!strncmp(mode, "magnetic_", 9)) {
         for (int primed = 0; primed < 2 && mode[9] == 'f'; primed++)
             for (int r = 1; r <= t->rows; r++) put_int(&b, magnetic_number(dir, r, primed));
@@ -894,8 +928,10 @@ static void render_section(const char *dir, char *line)
     } else {
         die("unknown layout mode", mode);
     }
+#undef FIELD
     parse_block(section, dot + 1, b.data, b.used);
     free(b.data);
+    free(place);
 }
 
 /* every section of layout.txt; returns the table files it reads */

@@ -29,8 +29,8 @@ number field is a space-separated list, a text field is the text.
 | `settings/wyckoff.txt` | 1731 | Wyckoff positions: space group, letter, site point group, formula |
 | `settings/site_point_groups.txt` | 32 | site point groups: irreps and vector representations |
 | `settings/site_settings.txt` | 152 | orientations of the site point groups: operations, vector basis |
-| `k/slots.txt` | 378 | k families per lattice: name, number of parameters, vector |
-| `k/space_group_slots.txt` | 6210 | k families per space group: Kovalev number, conventional-to-ML matrix row |
+| `k/slots.txt` | 212 | k families per lattice: name, base point and parameter directions (the number of parameters is the number of nonzero directions) |
+| `k/space_group_slots.txt` | 4141 | k families per space group: Kovalev number, conventional-to-ML matrix row |
 | `k/star_flips.txt`, `k/star_orders.txt`, `k/conv2ml.txt` | | the choices among equivalent star arms |
 | `irreps/little.txt` | 10300 | little irreps: space group, k, partner, Kovalev label, real form, matrices at the seed positions (the irrep basis) |
 | `irreps/old.txt` | 4777 | irreps at k points without parameters: space group, Mulliken label, image |
