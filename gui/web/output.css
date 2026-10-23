@@ -114,7 +114,8 @@ html, body.output-window { height: 100%; overflow: hidden; }
 .output-block .output-heading { gap: 12px; padding-bottom: 16px; }
 .output-block .mode-master-group { padding-bottom: 18px; }
 .output-block .mode-master-group > h4 { margin-bottom: 14px; }
-.output-block .mode-master-group button { background: #fff; border-color: #fff; color: rgb(32, 32, 32); }
+.output-block .mode-master-group button { background: rgb(222, 222, 220); border-color: rgb(222, 222, 220); color: rgb(32, 32, 32); }
+.output-block .mode-master-group button:hover { background: #fff; border-color: #fff; }
 .output-block .mode-element-modes > .mode-element-toggle { padding: 16px 18px 8px; }
 .output-block .mode-site-list,
 .output-block .mode-site-card .mode-site-list { display: flex; flex-wrap: wrap; gap: 4px 12px; }

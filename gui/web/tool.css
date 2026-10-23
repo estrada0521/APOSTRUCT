@@ -125,7 +125,8 @@ button {
 }
 
 .primary-action:hover {
-  opacity: 0.85;
+  background: rgb(32, 32, 32);
+  border-color: rgb(32, 32, 32);
 }
 
 #cif-name {
