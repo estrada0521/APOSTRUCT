@@ -544,7 +544,7 @@ def _mode_physical_block_identity(
 
     match = re.fullmatch(
         r"(?P<formal>.+)(?P<direction>\([^()]*\))"
-        r"(?P<site>\[[^\[\]]+:(?P<kind>dsp|mag)\])(?P<tail>.+)",
+        r"(?P<site>\[[^\[\]]+:(?P<kind>dsp|mag|occ)\])(?P<tail>.+)",
         str(label),
     )
     if match is None:
@@ -777,7 +777,7 @@ def _family_span_proof(
     """Prove equal visible mode spans inside each selected physical block."""
 
     if (
-        vector_kind not in {"dsp", "mag"}
+        vector_kind not in {"dsp", "mag", "occ"}
         or len(web_modes) != len(local_modes)
         or not web_modes
         or not math.isfinite(tol)

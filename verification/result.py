@@ -13,7 +13,7 @@ from typing import Any, Iterable, Mapping
 
 COMPARATOR_VERSION = "validation.v9"
 DEFAULT_TOLERANCE = 5e-5
-KINDS = ("dsp", "mag", "strain")
+KINDS = ("dsp", "mag", "occ", "strain")
 
 
 @lru_cache(maxsize=4096)
@@ -128,7 +128,7 @@ def parse_mode_identity(label: object, *, expected_kind: str) -> ModeIdentity:
     if len(site_parts) != 3:
         raise ValueError(f"invalid mode site identity in {label!r}")
     atom, wyckoff, kind = site_parts
-    if kind != expected_kind or kind not in {"dsp", "mag"}:
+    if kind != expected_kind or kind not in {"dsp", "mag", "occ"}:
         raise ValueError(
             f"mode label kind {kind!r} does not match section {expected_kind!r}"
         )
@@ -160,6 +160,7 @@ def _payloads(comparison: Mapping[str, Any]) -> dict[str, Mapping[str, Any]]:
     return {
         "dsp": comparison.get("definitions") or {},
         "mag": comparison.get("magnetic_definitions") or {},
+        "occ": comparison.get("occupancy_definitions") or {},
         "strain": comparison.get("strain_definitions") or {},
     }
 
@@ -353,7 +354,7 @@ def _row_atom_layer(payloads: Mapping[str, Mapping[str, Any]]) -> dict[str, Any]
     real_mismatches = 0
     positions = 0
     presentation_assignments = 0
-    for kind in ("dsp", "mag"):
+    for kind in ("dsp", "mag", "occ"):
         payload = payloads[kind]
         has_presentation_proof = _complete_mode_presentation_proof(payload)
         for mode in payload.get("modes") or []:

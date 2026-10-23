@@ -50,6 +50,8 @@ def load_definitions_and_structure(mode_details: dict) -> tuple[list, list]:
         definitions.append(_local_definition(raw, ordinal=len(definitions), kind="dsp"))
     for raw in mode_details.get("magnetic_definitions", []):
         definitions.append(_local_definition(raw, ordinal=len(definitions), kind="mag"))
+    for raw in mode_details.get("occupancy_definitions", []):
+        definitions.append(_local_definition(raw, ordinal=len(definitions), kind="occ"))
     structure = [_local_structure_orbit(raw) for raw in mode_details.get("undistorted_atoms", [])]
     return definitions, structure
 

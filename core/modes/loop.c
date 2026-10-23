@@ -911,16 +911,18 @@ static int md_present(md_request *r, md_state *st, int first, int count, const i
 
 static int site_loop(md_request *r, md_state *st, md_aliases *al)
 {
-    const jvalue *allowed_sites[2] = {jget(r->request, "displacive_site_indexes"), jget(r->request, "magnetic_site_indexes")};
-    const jvalue *allowed_rows[2] = {jget(r->request, "displacive_row_ids"), jget(r->request, "magnetic_row_ids")};
+    const jvalue *allowed_sites[3] = {jget(r->request, "displacive_site_indexes"), jget(r->request, "magnetic_site_indexes"),
+                                      jget(r->request, "occupancy_site_indexes")};
+    const jvalue *allowed_rows[3] = {jget(r->request, "displacive_row_ids"), jget(r->request, "magnetic_row_ids"),
+                                     jget(r->request, "occupancy_row_ids")};
     int raw_override_proof = r->has_source_basis_override && occurrence_sublattice(r->source_basis_override, r->presentation_pml);
     for (int site_index = 0; site_index < r->nsites; site_index++) {
         md_site *site = r->sites + site_index;
         int site_definitions = 0, site_atoms = 0;
         for (int spec_index = 0; spec_index < r->nspecs; spec_index++) {
             md_spec *spec = r->specs + spec_index;
-            int mag = spec->magnetic_kind;
-            const jvalue *allowed = allowed_sites[mag];
+            int kind = spec->magnetic_kind, mag = kind == 1, scalar = kind == MD_KIND_OCCUPANCY;
+            const jvalue *allowed = allowed_sites[kind];
             if (allowed && !jis(allowed, J_NULL)) {
                 int found = 0;
                 for (int64_t i = 0; i < allowed->count; i++) {
@@ -932,7 +934,7 @@ static int site_loop(md_request *r, md_state *st, md_aliases *al)
             int64_t site_row_id = 0;
             const jvalue *row_value = jget(site->site, "wyckoff_row_id");
             if (jtruthy(row_value) && py_int_of(row_value, &site_row_id)) return md_fail(MDE_VALUE, "invalid literal for int()");
-            allowed = allowed_rows[mag];
+            allowed = allowed_rows[kind];
             if (allowed && !jis(allowed, J_NULL)) {
                 int found = 0;
                 for (int64_t i = 0; i < allowed->count; i++) {
@@ -1013,7 +1015,7 @@ static int site_loop(md_request *r, md_state *st, md_aliases *al)
                 return md_fail(MDE_MEMORY, "out of memory");
             }
             for (int i = 0; i < f.source_count; i++) row_lengths[i] = f.source_lengths[i];
-            int64_t block_values[6] = {mag ? 2 : 1, dynamic, phase, spec->stokes, spec_index, site_index};
+            int64_t block_values[6] = {kind + 1, dynamic, phase, spec->stokes, spec_index, site_index};
             int64_t zero = 0;
             int code = block_layout(f.site_pg, f.empty ? 0 : (int)little_type_of(f.gid), f.empty ? 0 : f.nsummaries,
                                     f.empty ? &zero : f.summary_words, f.empty ? 0 : f.adopted,
@@ -1090,9 +1092,11 @@ static int site_loop(md_request *r, md_state *st, md_aliases *al)
                 double *scratch = malloc(sizeof(double) * (size_t)(3 * (f.lanes > 0 ? f.lanes : 1)));
                 if (!block_vectors || !scratch) return md_fail(MDE_MEMORY, "out of memory");
                 double pre[9];
-                int has_pre = !presented && r->has_presentation_inverse;
+                int has_pre = !presented && r->has_presentation_inverse && !scalar;
                 for (int i = 0; i < 9; i++) pre[i] = r->presentation_inverse[i / 3][i % 3];
-                int rows_status = mode_rows_from_plan(mode_count, f.lanes, f.modes, has_pre, pre, p->has_inverse, p->inverse, natoms,
+                static const double identity[9] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
+                int rows_status = mode_rows_from_plan(mode_count, f.lanes, f.modes, has_pre, pre, p->has_inverse,
+                                                      scalar ? identity : p->inverse, natoms,
                                                       p->raw_indices, p->offsets, p->equivalents, p->has_negated ? p->negated : 0,
                                                       scratch, block_vectors);
                 free(scratch);
@@ -1105,14 +1109,14 @@ static int site_loop(md_request *r, md_state *st, md_aliases *al)
                 memset(b, 0, sizeof *b);
                 b->spec_order = spec_index;
                 b->site_order = site_index;
-                b->magnetic = mag;
+                b->magnetic = kind;
                 b->site = site;
                 const jvalue *label = jget(site->site, "label"), *type = jget(site->site, "type"), *wyck = jget(site->site, "wyckoff");
                 char *atom_label = jtruthy(label) ? md_py_str(label) : jtruthy(type) ? md_py_str(type) : (char *)md_strdup("Atom", 4);
                 char *wyckoff = jtruthy(wyck) ? md_py_str(wyck) : (char *)md_strdup("?", 1);
                 b->kvector = md_format("(%s)", st->text_kvector[spec_index]);
                 b->label_prefix = md_format("%s[%s]%s%s[%s:%s:%s]", r->parent_symbol, st->text_kvector[spec_index], spec->irrep_name,
-                                            st->text_direction[spec_index], atom_label, wyckoff, mag ? "mag" : "dsp");
+                                            st->text_direction[spec_index], atom_label, wyckoff, scalar ? "occ" : mag ? "mag" : "dsp");
                 free(atom_label);
                 free(wyckoff);
                 b->direction = st->text_direction[spec_index];
@@ -1142,11 +1146,11 @@ static int site_loop(md_request *r, md_state *st, md_aliases *al)
                     m->block = block_index;
                     char *component = component_text(row[2]);
                     const char *base = bases[row[0]];
-                    m->site_irrep = row[1] ? md_format("%s_%lld(%s)", base, (long long)row[1], component) : md_format("%s(%s)", base, component);
+                    m->site_irrep = row[1] && !(scalar && row[1] == 1) ? md_format("%s_%lld(%s)", base, (long long)row[1], component) : md_format("%s(%s)", base, component);
                     free(component);
                     if (display_wanted) {
                         char *display_component = component_text(row[4]);
-                        m->display = row[3] ? md_format("%s_%lld(%s)", base, (long long)row[3], display_component)
+                        m->display = row[3] && !(scalar && row[3] == 1) ? md_format("%s_%lld(%s)", base, (long long)row[3], display_component)
                                             : md_format("%s(%s)", base, display_component);
                         free(display_component);
                     }
@@ -1211,9 +1215,11 @@ static int md_present(md_request *r, md_state *st, int first, int count, const i
         memcpy(vectors + (size_t)i * natoms * 3, st->modes[first + i].vectors, sizeof(double) * (size_t)(natoms * 3));
         identities[i] = st->modes[first + i].identity;
     }
+    int scalar = st->blocks[st->modes[first].block].magnetic == MD_KIND_OCCUPANCY;
     double basis[9];
-    for (int i = 0; i < 9; i++) basis[i] = r->presentation_basis[i / 3][i % 3];
-    int status = present_block(count, natoms, vectors, keys, family_rows, basis, r->has_centering, r->centering_factor, normfactor, has, perm);
+    for (int i = 0; i < 9; i++) basis[i] = scalar ? i % 4 == 0 : r->presentation_basis[i / 3][i % 3];
+    int status = present_block(count, natoms, vectors, keys, family_rows, basis, r->has_centering, r->centering_factor,
+                               normfactor, has, perm);
     if (status) {
         free(vectors);
         free(normfactor);
@@ -1588,7 +1594,7 @@ static int public_definitions(md_request *r, md_state *st, const int *list, int 
         jb_cstring(b, label);
         free(label);
         jb_lit(b, ", \"mode\": {\"kind\": ");
-        jb_cstring(b, blk->magnetic ? "magnetic" : "displacive");
+        jb_cstring(b, blk->magnetic == MD_KIND_OCCUPANCY ? "occupancy" : blk->magnetic ? "magnetic" : "displacive");
         jb_lit(b, ", \"k\": ");
         jb_cstring(b, blk->k);
         jb_lit(b, ", \"kvector\": ");
@@ -1628,8 +1634,13 @@ static int public_definitions(md_request *r, md_state *st, const int *list, int 
         jb_int(b, (int64_t)md_vectors.used);
         jb_lit(b, ", ");
         jb_int(b, plan->natoms);
-        jb_lit(b, "]}");
-        MD_TRY(md_put_doubles(m->vectors, 3 * plan->natoms));
+        if (blk->magnetic == MD_KIND_OCCUPANCY) {
+            jb_lit(b, ", 1]}");
+            for (int a = 0; a < plan->natoms; a++) MD_TRY(md_put_doubles(m->vectors + 3 * a, 1));
+        } else {
+            jb_lit(b, "]}");
+            MD_TRY(md_put_doubles(m->vectors, 3 * plan->natoms));
+        }
         MD_TRY(md_factor_metadata(r, blk->spec_order, b));
         jb_lit(b, "}");
     }
@@ -1901,7 +1912,7 @@ typedef struct {
     md_spec *strain_specs;
     const md_spec **strain_list;
     int *strain_orders, nstrain;
-    int *admitted, *lists[2], *emitted, *site_offset, *atom_named, *block_site;
+    int *admitted, *lists[3], *emitted, *site_offset, *atom_named, *block_site;
     jbuf factors, strain;
 } md_owned;
 
@@ -1968,6 +1979,7 @@ static void owned_free(md_owned *o)
     free(o->admitted);
     free(o->lists[0]);
     free(o->lists[1]);
+    free(o->lists[2]);
     free(o->emitted);
     free(o->site_offset);
     free(o->atom_named);
@@ -2016,10 +2028,11 @@ static int build(md_request *r, jbuf *b, md_owned *o)
         }
         free(sites);
     }
-    int counts[2] = {0, 0};
-    o->lists[0] = malloc(sizeof(int) * (size_t)(o->st.nmodes + 1));
-    o->lists[1] = malloc(sizeof(int) * (size_t)(o->st.nmodes + 1));
-    if (!o->lists[0] || !o->lists[1]) return md_fail(MDE_MEMORY, "out of memory");
+    int counts[3] = {0, 0, 0};
+    for (int kind = 0; kind < 3; kind++) {
+        o->lists[kind] = malloc(sizeof(int) * (size_t)(o->st.nmodes + 1));
+        if (!o->lists[kind]) return md_fail(MDE_MEMORY, "out of memory");
+    }
     for (int i = 0; i < o->st.nmodes; i++) {
         const md_block *blk = o->st.blocks + o->st.modes[i].block;
         int pending = 0, admitted_spec = o->admitted[blk->spec_order];
@@ -2029,7 +2042,7 @@ static int build(md_request *r, jbuf *b, md_owned *o)
         o->lists[blk->magnetic][counts[blk->magnetic]++] = i;
     }
     /* Python appends o->admitted pending blocks after the loop, then sorts stably. */
-    for (int kind = 0; kind < 2; kind++) {
+    for (int kind = 0; kind < 3; kind++) {
         int *ordered = malloc(sizeof(int) * (size_t)(counts[kind] + 1));
         if (!ordered) return md_fail(MDE_MEMORY, "out of memory");
         int k = 0;
@@ -2051,13 +2064,14 @@ static int build(md_request *r, jbuf *b, md_owned *o)
     }
     o->emitted = calloc((size_t)n + 1, sizeof(int));
     if (!o->emitted) return md_fail(MDE_MEMORY, "out of memory");
-    for (int kind = 0; kind < 2; kind++)
+    for (int kind = 0; kind < 3; kind++)
         for (int i = 0; i < counts[kind]; i++) o->emitted[o->st.blocks[o->st.modes[o->lists[kind][i]].block].spec_order] = 1;
     jb_reset(&o->factors);
     MD_TRY(secondary_factors(r, &o->st, o->emitted, &o->factors));
     if (r->coupled) {
         MD_TRY(independent_union(r, &o->st, o->lists[0], &counts[0]));
         MD_TRY(independent_union(r, &o->st, o->lists[1], &counts[1]));
+        MD_TRY(independent_union(r, &o->st, o->lists[2], &counts[2]));
     }
     jb_reset(&o->strain);
     if (jtruthy(jget(r->request, "include_strain"))) MD_TRY(md_strain_definitions(r, o->strain_list, o->strain_orders, o->nstrain, &o->strain));
@@ -2074,7 +2088,7 @@ static int build(md_request *r, jbuf *b, md_owned *o)
     int nblocks = 0;
     o->block_site = malloc(sizeof(int) * (size_t)(o->st.nplans + 1));
     if (!o->atom_named || !o->block_site) return md_fail(MDE_MEMORY, "out of memory");
-    for (int kind = 0; kind < 2; kind++)
+    for (int kind = 0; kind < 3; kind++)
         for (int i = 0; i < counts[kind]; i++) {
             md_plan *plan = o->st.plans + o->st.modes[o->lists[kind][i]].plan;
             if (plan->atom_block >= 0) continue;
@@ -2089,7 +2103,7 @@ static int build(md_request *r, jbuf *b, md_owned *o)
             plan->atom_block = found;
         }
     int strain_empty = o->strain.used <= 2;
-    if (!counts[0] && !counts[1] && strain_empty) {
+    if (!counts[0] && !counts[1] && !counts[2] && strain_empty) {
         jb_reset(b);
         jb_lit(b, "{\"status\": \"missing\", \"reason\": ");
         const jvalue *symbol = jget(r->irrep, "symbol");
@@ -2177,6 +2191,8 @@ static int build(md_request *r, jbuf *b, md_owned *o)
     jb_raw(b, o->strain.data, o->strain.used);
     jb_lit(b, ", \"magnetic_definitions\": ");
     MD_TRY(public_definitions(r, &o->st, o->lists[1], counts[1], b));
+    jb_lit(b, ", \"occupancy_definitions\": ");
+    MD_TRY(public_definitions(r, &o->st, o->lists[2], counts[2], b));
     jb_lit(b, ", \"secondary_opd_factors\": ");
     jb_raw(b, o->factors.data, o->factors.used);
     jb_lit(b, ", \"displacive_amplitudes\": []}");

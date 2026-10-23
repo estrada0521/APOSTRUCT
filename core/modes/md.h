@@ -140,10 +140,12 @@ typedef struct {
     int64_t heading_gid, heading_kp[4];
     char *heading_label;
     /* render tuple */
-    int magnetic_kind; /* mode_kind == "mag" */
+    int magnetic_kind; /* 0 displacive, 1 magnetic, MD_KIND_OCCUPANCY */
     int vector_setting;
     char *irrep_name;
 } md_spec;
+
+enum { MD_KIND_OCCUPANCY = 2 };
 
 typedef struct {
     const jvalue *request, *cif, *selected_k, *irrep, *opd, *iso;

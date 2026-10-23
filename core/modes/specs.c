@@ -1101,6 +1101,21 @@ static int subduced_mode_specs(md_request *r)
     return status;
 }
 
+static int occupancy_specs(md_request *r)
+{
+    if (!jtruthy(jget(r->request, "include_occupancy"))) return 0;
+    int n = r->nspecs;
+    for (int i = 0; i < n; i++) {
+        if (r->specs[i].magnetic_kind) continue;
+        md_spec *s = push_spec(r);
+        if (!s) return md_err.kind;
+        MD_TRY(copy_spec(s, r->specs + i));
+        s->magnetic_kind = MD_KIND_OCCUPANCY;
+        s->vector_setting = 3;
+    }
+    return 0;
+}
+
 int md_render_specs(md_request *r)
 {
     const jvalue *coupled = r->iso ? jget(r->iso, "coupled") : 0;
@@ -1108,9 +1123,11 @@ int md_render_specs(md_request *r)
     const jvalue *include_magnetic = jget(r->request, "include_magnetic");
     if (r->coupled) {
         const jvalue *displacive_rows = jget(r->request, "displacive_row_ids"), *magnetic_rows = jget(r->request, "magnetic_row_ids");
-        int include_displacive = !displacive_rows || jis(displacive_rows, J_NULL) || jtruthy(displacive_rows);
+        int include_displacive = !displacive_rows || jis(displacive_rows, J_NULL) || jtruthy(displacive_rows) ||
+                                 jtruthy(jget(r->request, "include_occupancy"));
         int include_mag = jtruthy(include_magnetic) && (!magnetic_rows || jis(magnetic_rows, J_NULL) || jtruthy(magnetic_rows));
-        return md_coupled_specs(r, include_displacive, include_mag);
+        MD_TRY(md_coupled_specs(r, include_displacive, include_mag));
+        return occupancy_specs(r);
     }
     int first = r->nspecs;
     MD_TRY(subduced_mode_specs(r));
@@ -1121,5 +1138,5 @@ int md_render_specs(md_request *r)
         for (int i = first; i < r->nspecs; i++)
             MD_TRY(set_render(r->specs + i, 1, r->specs[i].display_label ? r->specs[i].display_label : r->specs[i].label));
     }
-    return 0;
+    return occupancy_specs(r);
 }

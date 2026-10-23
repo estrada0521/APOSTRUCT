@@ -37,7 +37,7 @@ apo opds --sg 62 --k GM --irrep mGM1+ --magnetic A
 
 ## Sites
 
-`--displacive` と `--magnetic` は `info.sites` の `label` か `type` を取る。`label` は1つのsite、`type` はその種類の全siteを選ぶ。
+`--displacive`・`--magnetic`・`--occupancy` は `info.sites` の `label` か `type` を取る。`label` は1つのsite、`type` はその種類の全siteを選ぶ。
 `--strain` はhomogeneous strainを加える。strainだけの `irreps` では `--k` を省略でき、`GM` とみなす。
 
 ```sh
@@ -75,7 +75,7 @@ OPD の各行は、取り方に依らないものと依るものを分けて持�
 
 ## Modes
 
-各 mode は `definition_id`（その payload 内での ID）、`role`（primary か、誘起された secondary か）、k 点の `slot` を持つ。`invariants` は取り方に依らずに mode を特定する：kind、k 点、irrep、site、Wyckoff 位置、site irrep。`setting` はその一つの見せ方：ラベル、BYU の既約表現の基底での方向、成分のある腕 `kvector`、パラメータの名前、`normfactor`、変位や磁気モーメントの `vectors`。`vectors` の符号と、複数の mode が張る空間の中での基底は、基底とドメインの取り方に従う。`subgroup_details` は子の胞の `subgroup` と `setting`（basis、origin、親の設定）を分ける。
+各 mode は `definition_id`（その payload 内での ID）、`role`（primary か、誘起された secondary か）、k 点の `slot` を持つ。`invariants` は取り方に依らずに mode を特定する：kind、k 点、irrep、site、Wyckoff 位置、site irrep。`setting` はその一つの見せ方：ラベル、BYU の既約表現の基底での方向、成分のある腕 `kvector`、パラメータの名前、`normfactor`、`vectors`（原子ごとの変位か磁気モーメント、占有 mode では原子ごとの占有の値1つ）。`vectors` の符号と、複数の mode が張る空間の中での基底は、基底とドメインの取り方に従う。`subgroup_details` は子の胞の `subgroup` と `setting`（basis、origin、親の設定）を分ける。
 `--format text` はmode表を出す（`modes` と `run --upto modes` のみ）。
 
 ## Case
@@ -93,6 +93,7 @@ OPD の各行は、取り方に依らないものと依るものを分けて持�
 ```
 
 - fieldは `structure`・`cif`・`sites`・`strain`・`k`・`opd` のみ。`structure` と `cif` はどちらか一方。
+- 各siteには `"occupancy": true` も指定できる。
 - `structure` の相対pathは、case fileのdirectoryから解決する。
 - `cif` は12文字のcontent IDで、このcheckoutの `assets/cif/` か `assets/magndata/cif/` から探す。
 - `k` の各要素は `label`、`params`（名前と値のobject）、`ir` を持つ。`ir` はOPD段から必要。

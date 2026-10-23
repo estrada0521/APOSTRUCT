@@ -54,6 +54,15 @@ static int projection_tables(int site_pg, int vector_basis_id, int vector_settin
             return RW_TABLES;
         ready = 1;
     }
+    if (vector_setting == 3) {
+        reps[0] = 1;
+        reps[1] = reps[2] = 0;
+        memset(constants, 0, sizeof(double) * 3 * (size_t)vector_dim * 3);
+        constants[0] = 1.0;
+        for (int lane = 0; lane < lanes; lane++)
+            for (int i = 0; i < 9; i++) points[9 * lane + i] = i % 4 == 0;
+        return target == 1 ? 0 : RW_INDEX;
+    }
     const double *constant = (const double *)values.data;
     int64_t constant_count = section_count(&values);
     int step = vector_dim > 1 ? vector_dim : 1;
@@ -353,7 +362,7 @@ int display_families(int gid, int full_dim, int site_pg, int pg_irrep, int vecto
                      const double *direction, int lanes, const int *records, double *modes_out)
 {
     if (gid <= 0 || full_dim <= 0 || full_dim > 48 || site_pg <= 0 || pg_irrep <= 0 || vector_basis_id <= 0 ||
-        vector_dim < 1 || vector_dim > 3 || vector_setting < 1 || vector_setting > 2 || project_count <= 0 || lanes <= 0)
+        vector_dim < 1 || vector_dim > 3 || vector_setting < 1 || vector_setting > 3 || project_count <= 0 || lanes <= 0)
         return 0;
     if (direction_rows <= 0 || direction_rows > 48) return 0;
     for (int i = 0; i < direction_rows * full_dim; i++)

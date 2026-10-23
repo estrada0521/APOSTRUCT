@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from typing import Any, Mapping
 
-VECTOR_DEFINITION_FIELDS = ("displacive_definitions", "magnetic_definitions")
+VECTOR_DEFINITION_FIELDS = ("displacive_definitions", "magnetic_definitions", "occupancy_definitions")
 
 
 def definition_rows(mode_details: Mapping[str, Any], definition: Mapping[str, Any]) -> list[dict[str, Any]]:
@@ -22,7 +22,7 @@ def definition_rows(mode_details: Mapping[str, Any], definition: Mapping[str, An
             "child_site": atoms[index]["child_site"],
             "wyckoff_site": atoms[index]["wyckoff_site"],
             "xyz": list(atoms[index]["xyz"]),
-            "dxyz": list(vector),
+            "dxyz": [vector, 0.0, 0.0] if isinstance(vector, (int, float)) else list(vector),
         }
         for index, vector in zip(block, definition["vectors"], strict=True)
     ]

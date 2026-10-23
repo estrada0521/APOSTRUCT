@@ -351,6 +351,14 @@ static void put_vectors(jbuf *b, const jvalue *placeholder, const double *vector
     const jvalue *pair = jget(placeholder, "$f64");
     int64_t offset = jat(pair, 0)->u.i, atoms = jat(pair, 1)->u.i;
     jb_lit(b, "[");
+    if (pair->count == 3) {
+        for (int64_t a = 0; a < atoms; a++) {
+            if (a) jb_lit(b, ", ");
+            jb_float(b, offset + a < nvectors ? vectors[offset + a] : 0.0);
+        }
+        jb_lit(b, "]");
+        return;
+    }
     for (int64_t a = 0; a < atoms; a++) {
         if (a) jb_lit(b, ", ");
         jb_lit(b, "[");

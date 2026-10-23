@@ -579,7 +579,7 @@ int mode_frame(int sg, const char *wyckoff, int64_t wyckoff_length, const char *
                  k_label);
         return fail(PY_VALUE, message), fail_kind;
     }
-    if (vector_setting != 1 && vector_setting != 2) {
+    if (vector_setting < 1 || vector_setting > 3) {
         snprintf(message, sizeof message, "unsupported vector setting: %d", vector_setting);
         return fail(PY_VALUE, message), fail_kind;
     }
@@ -589,7 +589,9 @@ int mode_frame(int sg, const char *wyckoff, int64_t wyckoff_length, const char *
         old_id = (int)section_int(&T.irr_old, gid - 1);
     /* project entries: the selected little's site-pg irreps in the vector slots */
     int vector_slots[3];
-    for (int i = 0; i < 3; i++) vector_slots[i] = (int)section_int(&T.vector_reps, (int64_t)(site_pg - 1) * 6 + (vector_setting - 1) * 3 + i);
+    for (int i = 0; i < 3; i++)
+        vector_slots[i] = vector_setting == 3 ? (i == 0)
+                                              : (int)section_int(&T.vector_reps, (int64_t)(site_pg - 1) * 6 + (vector_setting - 1) * 3 + i);
     int *entries = malloc(sizeof(int) * 64);
     int nentries = 0, target_direction = 0, has_target = 0;
     if (!entries) {
@@ -813,6 +815,7 @@ int mode_frame(int sg, const char *wyckoff, int64_t wyckoff_length, const char *
         transform_count = 2;
         negate = vector_setting == 2 && det.n < 0;
     }
+    if (vector_setting == 3) transform_count = 0;
     int64_t setting_key[24] = {0};
     if (has_setting) {
         memcpy(setting_key, setting_words, sizeof(int64_t) * 18);
@@ -827,7 +830,7 @@ int mode_frame(int sg, const char *wyckoff, int64_t wyckoff_length, const char *
         free(entries);
         return 0;
     }
-    int eligible = irrep_type == 1 && nparams && vector_setting == 1 && has_override && override_count > 0;
+    int eligible = irrep_type == 1 && nparams && vector_setting != 2 && has_override && override_count > 0;
     layout candidate = {0}, baseline = {0};
     int have_candidate = 0, have_baseline = 0, baseline_failed = 0, baseline_kind = 0;
     char baseline_message[200] = "";

@@ -41,22 +41,24 @@ _MODULAR_PRIMES = (
     1_000_121,
 )
 _NUMBER = re.compile(r"[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?")
-_MODE_SITE = re.compile(r"\[([^:\]]+):([^:\]]+):(dsp|mag)]")
+_MODE_SITE = re.compile(r"\[([^:\]]+):([^:\]]+):(dsp|mag|occ)]")
 _DEFINITION_HEADER = re.compile(
     rf"(?P<label>.+?)\s+normfactor\s*=\s*(?P<norm>\?|{_NUMBER.pattern})\s*"
 )
 _VECTOR_HEADER = re.compile(
-    r"atom\s+x\s+y\s+z\s+(?:dx\s+dy\s+dz|dmx\s+dmy\s+dmz)"
+    r"atom\s+x\s+y\s+z\s+(?:dx\s+dy\s+dz|dmx\s+dmy\s+dmz|occ)"
 )
 _STRAIN_HEADER = re.compile(r"e1\s+e2\s+e3\s+e4\s+e5\s+e6")
 _SITE_MULTIPLICITY = re.compile(r"([1-9]\d*)")
 _DEFINITION_HEADINGS = {
     "Displacive mode definitions": "dsp",
     "Magnetic mode definitions": "mag",
+    "Occupancy mode definitions": "occ",
 }
 _SECTION_STOPS = {
     "Displacive mode amplitudes",
     "Magnetic mode amplitudes",
+    "Occupancy mode amplitudes",
     "Parent-cell strain mode definitions",
     "Parent-cell strain mode amplitudes",
 }
@@ -251,6 +253,8 @@ def definitions_from_web_text(
         if current_label is None:
             raise ValueError(f"mode row precedes its definition on line {line_number}")
         parts = line.split()
+        if current_kind == "occ" and len(parts) in (4, 5) and _NUMBER.fullmatch(parts[-1]):
+            parts = [*parts, "0", "0"]
         numeric: list[str]
         atom_marker: str | None
         if len(parts) == 6 and all(_NUMBER.fullmatch(part) for part in parts):
@@ -517,7 +521,10 @@ def definitions_from_local_payload(
     for kind, key in (
         ("dsp", "displacive_definitions"),
         ("mag", "magnetic_definitions"),
+        ("occ", "occupancy_definitions"),
     ):
+        if kind == "occ" and key not in details:
+            continue
         rows = _required_list(details.get(key), field=f"Local {key}")
         for raw in rows:
             definitions.append(

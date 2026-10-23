@@ -64,8 +64,9 @@ static int attach(const jvalue *state, const jvalue *k_params, jbuf *b)
     put_or_null(&request, k_params);
     jb_lit(&request, jtruthy(member(distortion, "strain")) ? ", \"include_strain\": true" : ", \"include_strain\": false");
     jb_lit(&request, jtruthy(member(distortion, "magnetic_sites")) ? ", \"include_magnetic\": true" : ", \"include_magnetic\": false");
+    if (jtruthy(member(distortion, "occupancy_sites"))) jb_lit(&request, ", \"include_occupancy\": true");
     static const char *internal_keys[] = {"displacive_row_ids", "magnetic_row_ids", "displacive_site_indexes", "magnetic_site_indexes",
-                                          "parent_inter_setting_id"};
+                                          "occupancy_row_ids", "occupancy_site_indexes", "parent_inter_setting_id"};
     for (size_t i = 0; i < sizeof internal_keys / sizeof internal_keys[0]; i++) {
         jb_lit(&request, ", \"");
         jb_lit(&request, internal_keys[i]);

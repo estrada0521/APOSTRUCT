@@ -637,6 +637,8 @@ def _vector_action(operation: GroupOperation, kind: str) -> Matrix:
         factor = 1
     elif kind == "mag":
         factor = operation.time_reversal * _determinant(operation.rotation)
+    elif kind == "occ":
+        return ((1, 0, 0), (0, 1, 0), (0, 0, 1))
     else:
         raise ValueError(f"unsupported mode kind {kind!r}")
     return tuple(tuple(factor * value for value in row) for row in operation.rotation)  # type: ignore[return-value]
@@ -1007,7 +1009,7 @@ def assess_group_invariance(
             raise ValueError("mode definitions use an unsupported definition type")
         if definition.ordinal != expected_ordinal:
             raise ValueError("mode definition ordinals must be contiguous and ordered")
-        if definition.kind not in {"dsp", "mag"}:
+        if definition.kind not in {"dsp", "mag", "occ"}:
             raise ValueError(f"unsupported mode kind {definition.kind!r}")
         kind_counts[definition.kind] += 1
         row_count += len(definition.rows)

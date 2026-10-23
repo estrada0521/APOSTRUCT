@@ -48,7 +48,7 @@ typedef struct {
 static int is_f64(const jvalue *v)
 {
     return jis(v, J_OBJECT) && v->count == 1 && jstr_is(v->u.members, "$f64") && jis(v->u.members + 1, J_ARRAY) &&
-           v->u.members[1].count == 2;
+           (v->u.members[1].count == 2 || v->u.members[1].count == 3);
 }
 
 /* A compact copy of v; private keys dropped when public. */
@@ -145,6 +145,19 @@ static int put_pretty(jbuf *b, const jvalue *v, int indent, int depth, const exp
         const jvalue *pair = v->u.members + 1;
         int64_t offset = jat(pair, 0)->u.i, atoms = jat(pair, 1)->u.i;
         jb_lit(b, "[");
+        if (pair->count == 3) {
+            for (int64_t a = 0; a < atoms; a++) {
+                if (a) jb_lit(b, ",");
+                newline(b, indent, depth + 1);
+                double value = offset + a < x->nvectors ? x->vectors[offset + a] : 0.0;
+                if (value != value || value - value != 0.0)
+                    return md_fail(MDE_VALUE, "Out of range float values are not JSON compliant");
+                jb_float(b, value);
+            }
+            if (atoms) newline(b, indent, depth);
+            jb_lit(b, "]");
+            return 0;
+        }
         for (int64_t a = 0; a < atoms; a++) {
             if (a) jb_lit(b, ",");
             newline(b, indent, depth + 1);
@@ -818,9 +831,12 @@ static void mode_details_result(jbuf *b, const jvalue *details, const jvalue *or
         first = 0;
         jb_value(b, key);
         jb_lit(b, ": ");
-        int definitions = jstr_is(key, "displacive_definitions") || jstr_is(key, "magnetic_definitions");
+        int definitions = jstr_is(key, "displacive_definitions") || jstr_is(key, "magnetic_definitions") ||
+                          jstr_is(key, "occupancy_definitions");
         if (definitions && jis(value, J_ARRAY)) {
-            const char *kind = jstr_is(key, "displacive_definitions") ? "displacive" : "magnetic";
+            const char *kind = jstr_is(key, "displacive_definitions") ? "displacive"
+                               : jstr_is(key, "magnetic_definitions") ? "magnetic"
+                                                                      : "occupancy";
             jb_lit(b, "[");
             for (int64_t d = 0; d < value->count; d++) {
                 const jvalue *definition = jat(value, d);

@@ -37,7 +37,7 @@ apo opds --sg 62 --k GM --irrep mGM1+ --magnetic A
 
 ## Sites
 
-`--displacive` and `--magnetic` take a `label` or `type` from `info.sites`. A `label` selects one site, a `type` all sites of that type.
+`--displacive`, `--magnetic` and `--occupancy` take a `label` or `type` from `info.sites`. A `label` selects one site, a `type` all sites of that type.
 `--strain` adds homogeneous strain. For strain-only `irreps`, `--k` may be omitted and is taken as `GM`.
 
 ```sh
@@ -75,7 +75,7 @@ Each OPD row separates what does not depend on choices from what does. `invarian
 
 ## Modes
 
-Each mode has a `definition_id` (an ID within that payload), a `role` (primary or induced secondary) and the `slot` of its k point. `invariants` identifies it apart from any choice: kind, k point, irrep, site, Wyckoff position and site irrep. `setting` holds one presentation: the label, the direction in the BYU irrep basis, the active arm `kvector`, the parameter names, `normfactor` and the displacement or moment `vectors`, whose signs and, in a space with several modes, whose basis follow the choices of basis and domain. `subgroup_details` separates the `subgroup` from the `setting` (basis, origin, parent setting) of the child cell.
+Each mode has a `definition_id` (an ID within that payload), a `role` (primary or induced secondary) and the `slot` of its k point. `invariants` identifies it apart from any choice: kind, k point, irrep, site, Wyckoff position and site irrep. `setting` holds one presentation: the label, the direction in the BYU irrep basis, the active arm `kvector`, the parameter names, `normfactor` and the `vectors`: a displacement or moment per atom, or for an occupancy mode one occupancy value per atom, whose signs and, in a space with several modes, whose basis follow the choices of basis and domain. `subgroup_details` separates the `subgroup` from the `setting` (basis, origin, parent setting) of the child cell.
 `--format text` prints the mode table (`modes` and `run --upto modes` only).
 
 ## Case
@@ -93,6 +93,7 @@ A selection collected in JSON.
 ```
 
 - Fields are limited to `structure`, `cif`, `sites`, `strain`, `k` and `opd`. Exactly one of `structure` and `cif`.
+- Each site may also set `"occupancy": true`.
 - A relative `structure` path is resolved from the case file's directory.
 - `cif` is a 12-character content ID looked up in `assets/cif/` or `assets/magndata/cif/` of this checkout.
 - Each `k` item has `label`, `params` (an object of names and values) and `ir`. `ir` is required from the OPD stage on.

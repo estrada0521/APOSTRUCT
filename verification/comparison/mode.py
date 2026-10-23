@@ -60,6 +60,7 @@ def _has_complete_mode_payload(web: CompleteModeDetails) -> bool:
             bool(web.undistorted_atoms),
             bool(web.displacive_definitions),
             bool(web.magnetic_definitions),
+            bool(web.occupancy_definitions),
             bool(web.strain_definitions),
         )
     )
@@ -269,6 +270,15 @@ def compare_mode_details(
                 tol,
                 vector_kind="mag",
             )
+    occupancy_modes = None if structure_only else _vector_modes_payload(
+        web.occupancy_definitions,
+        _local_modes_in_exact_web_order(
+            web.occupancy_definitions,
+            list(local.get("occupancy_definitions") or []),
+        ),
+        tol,
+        vector_kind="occ",
+    )
     strain_modes = None if structure_only else _strain_modes_payload(
         web.strain_definitions,
         list(local.get("strain_definitions") or []),
@@ -297,10 +307,11 @@ def compare_mode_details(
     elif structure_only:
         status = "ok"
     else:
-        assert modes is not None and magnetic_modes is not None and strain_modes is not None
+        assert modes is not None and magnetic_modes is not None and occupancy_modes is not None and strain_modes is not None
         kind_statuses = (
             ("displacive", modes),
             ("magnetic", magnetic_modes),
+            ("occupancy", occupancy_modes),
             ("strain", strain_modes),
         )
         failed_kind = next((kind for kind, payload in kind_statuses if payload["strict_status"] != "ok"), None)
@@ -321,6 +332,7 @@ def compare_mode_details(
     if modes is not None:
         result["definitions"] = modes
         result["magnetic_definitions"] = magnetic_modes
+        result["occupancy_definitions"] = occupancy_modes
         result["strain_definitions"] = strain_modes
     return result
 

@@ -526,14 +526,19 @@ static int vector_of(const jvalue *vectors, int64_t index, const vectors_t *x, d
 {
     if (jis(vectors, J_OBJECT)) {
         const jvalue *pair = jget(vectors, "$f64");
-        int64_t at = jat(pair, 0)->u.i + 3 * index;
-        for (int k = 0; k < 3; k++) out[k] = at + k < x->nvectors ? x->vectors[at + k] : 0.0;
-        return 0;
+        int width = pair->count == 3 ? 1 : 3;
+        int64_t at = jat(pair, 0)->u.i + width * index;
+        for (int k = 0; k < 3; k++) out[k] = k < width && at + k < x->nvectors ? x->vectors[at + k] : 0.0;
+        return width;
+    }
+    if (jis(jat(vectors, index), J_FLOAT) || jis(jat(vectors, index), J_INT)) {
+        if (py_float_of(jat(vectors, index), out)) out[0] = 0.0;
+        return 1;
     }
     const jvalue *row = jat(vectors, index);
     for (int k = 0; k < 3; k++)
         if (py_float_of(jat(row, k), out + k)) out[k] = 0.0;
-    return 0;
+    return 3;
 }
 
 static int64_t vector_count(const jvalue *vectors)
@@ -643,12 +648,12 @@ static int definition_block(jbuf *b, const jvalue *details, const jvalue *defini
         double p[3], v[3];
         for (int k = 0; k < 3; k++)
             if (!jtruthy(xyz) || py_float_of(jat(xyz, k), p + k)) p[k] = 0.0;
-        vector_of(vectors, r, x, v);
+        int width = vector_of(vectors, r, x, v);
         for (int k = 0; k < 3; k++) {
             jb_lit(b, " ");
             put_fixed(b, p[k], precision + 3, precision);
         }
-        for (int k = 0; k < 3; k++) {
+        for (int k = 0; k < width; k++) {
             jb_lit(b, " ");
             put_fixed(b, v[k], vector_precision + 3, vector_precision);
         }
@@ -793,6 +798,10 @@ int md_render_text(const jvalue *state, const double *vectors, int64_t nvectors,
     if (!code && jtruthy(magnetic))
         code = definitions(b, details, magnetic, "Magnetic mode definitions", "atom    x        y        z        dmx     dmy     dmz", &l, &x,
                            precision, vector_precision, &touched, &count);
+    const jvalue *occupancy = member(details, "occupancy_definitions");
+    if (!code && jtruthy(occupancy))
+        code = definitions(b, details, occupancy, "Occupancy mode definitions", "atom    x        y        z        occ", &l, &x, precision,
+                           vector_precision, &touched, &count);
     free(touched);
     free(count);
     layout_free(&l);

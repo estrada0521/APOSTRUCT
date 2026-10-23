@@ -119,6 +119,7 @@ class CompleteModeDetails:
     magnetic_definitions: tuple[DisplaciveModeDefinition, ...] = ()
     strain_definitions: tuple[StrainModeDefinition, ...] = ()
     magnetic_amplitudes: tuple[DisplaciveAmplitudeRow, ...] = ()
+    occupancy_definitions: tuple[DisplaciveModeDefinition, ...] = ()
 
 
 def _plain_text(html: str) -> str:
@@ -201,6 +202,7 @@ def parse_structure_atoms(text: str, start: str, end: str) -> tuple[StructureAto
         _section(text, start, end),
         "Displacive mode definitions",
         "Magnetic mode definitions",
+        "Occupancy mode definitions",
         "Parent-cell strain mode definitions",
     )
     rows: list[StructureAtom] = []
@@ -261,6 +263,7 @@ def _cut_at_headings(body: str, *stops: str) -> str:
 _DEFINITION_HEADINGS = (
     "Displacive mode definitions",
     "Magnetic mode definitions",
+    "Occupancy mode definitions",
     "Parent-cell strain mode definitions",
 )
 
@@ -303,6 +306,8 @@ def parse_displacive_definitions(text: str) -> tuple[DisplaciveModeDefinition, .
         "Displacive mode amplitudes",
         "Magnetic mode definitions",
         "Magnetic mode amplitudes",
+        "Occupancy mode definitions",
+        "Occupancy mode amplitudes",
         "Parent-cell strain mode definitions",
         "Parent-cell strain mode amplitudes",
     )
@@ -367,6 +372,8 @@ def parse_magnetic_definitions(text: str) -> tuple[DisplaciveModeDefinition, ...
     body = _cut_at_headings(
         _section(text, "Magnetic mode definitions"),
         "Magnetic mode amplitudes",
+        "Occupancy mode definitions",
+        "Occupancy mode amplitudes",
         "Parent-cell strain mode definitions",
         "Parent-cell strain mode amplitudes",
     )
@@ -374,6 +381,26 @@ def parse_magnetic_definitions(text: str) -> tuple[DisplaciveModeDefinition, ...
     # only the vector headings and label kind differ.
     return parse_displacive_definitions(
         "Displacive mode definitions\n" + body + "\nDisplacive mode amplitudes"
+    )
+
+
+def parse_occupancy_definitions(text: str) -> tuple[DisplaciveModeDefinition, ...]:
+    """Occupancy rows carry one value per atom; it is read as the vector (occ, 0, 0)."""
+
+    body = _cut_at_headings(
+        _section(text, "Occupancy mode definitions"),
+        "Occupancy mode amplitudes",
+        "Parent-cell strain mode definitions",
+        "Parent-cell strain mode amplitudes",
+    )
+    padded = []
+    for raw in body.splitlines():
+        if "normfactor" in raw or len(_numbers(raw)) < 4:
+            padded.append(raw)
+        else:
+            padded.append(f"{raw} 0 0")
+    return parse_displacive_definitions(
+        "Displacive mode definitions\n" + "\n".join(padded) + "\nDisplacive mode amplitudes"
     )
 
 
@@ -458,6 +485,7 @@ def parse_complete_mode_details_from_text(text: str) -> CompleteModeDetails:
         magnetic_definitions=parse_magnetic_definitions(text),
         strain_definitions=parse_strain_definitions(text),
         magnetic_amplitudes=parse_magnetic_amplitudes(text),
+        occupancy_definitions=parse_occupancy_definitions(text),
     )
 
 
