@@ -119,3 +119,9 @@ html, body.output-window { height: 100%; overflow: hidden; }
 .output-block .mode-site-list,
 .output-block .mode-site-card .mode-site-list { display: flex; flex-wrap: wrap; gap: 4px 12px; }
 .output-block .output-heading select { color-scheme: dark; background: rgb(64, 64, 64); border-color: rgb(120, 120, 120); color: #fff; }
+.output-block .mode-site-card { padding: 16px 18px; }
+.output-block .mode-site-heading { margin-bottom: 8px; }
+.output-block .mode-site-card .mode-site-list { margin-bottom: 16px; }
+.output-block .mode-irrep-heading { margin-bottom: 8px; }
+.output-block .mode-slider { min-height: 22px; margin-bottom: 4px; }
+.output-block .mode-irrep-group + .mode-irrep-group { margin-top: 16px; }
