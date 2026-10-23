@@ -63,3 +63,14 @@ html, body.output-window { height: 100%; overflow: hidden; }
 .output-block .mode-atom-list { display: grid; gap: 10px; }
 .output-block .mode-element-group { gap: 4px; }
 .output-block .mode-site-list { display: grid; gap: 3px; padding-left: 18px; }
+
+.output-block .mode-element-modes { display: grid; gap: 8px; margin-bottom: 12px; }
+.output-block .mode-site-card {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--site-color) 35%, #deded9);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--site-color) 18%, rgb(245, 245, 243));
+}
+.output-block .mode-site-heading { font-weight: 500; overflow-wrap: anywhere; }
+.output-block .mode-site-card .mode-site-list { padding-left: 0; margin-bottom: 8px; }

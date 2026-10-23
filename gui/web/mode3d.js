@@ -1817,14 +1817,8 @@ export class ModeStructureViewer {
       </label>`;
     }).join("");
     const visibleModes = this.modes.slice(0, this.modeControlLimit);
-    const siteGroups = new Map();
-    for (const mode of visibleModes) {
-      const siteLabel = mode.kind === "strain" ? "Strain" : this.modeSiteLabel(mode);
-      if (!siteGroups.has(siteLabel)) siteGroups.set(siteLabel, []);
-      siteGroups.get(siteLabel).push(mode);
-    }
-    const groups = [...siteGroups.entries()].map(([siteLabel, modes]) => {
-      const irrepGroups = new Map();
+    const renderSiteModes = modes => {
+    const irrepGroups = new Map();
       for (const mode of modes) {
         const groupLabel = this.modeControlGroupLabel(mode);
         if (!irrepGroups.has(groupLabel)) irrepGroups.set(groupLabel, []);
@@ -1842,8 +1836,8 @@ export class ModeStructureViewer {
           ${renderModes(groupModes)}
         </div>`;
       }).join("");
-      return `<details class="mode-group" open><summary>${this.escape(siteLabel)} Modes</summary>${contents}</details>`;
-    }).join("");
+      return contents;
+    };
     const master = `<section class="mode-group mode-master-group">
       <h4><span class="mode-master-actions"><button class="primary-action" type="button" data-mode-animate aria-pressed="false">Animate</button><button class="primary-action" type="button" data-mode-reset>Reset</button></span></h4>
       <div class="mode-master">
@@ -1854,33 +1848,60 @@ export class ModeStructureViewer {
       </div>
     </section>`;
     const childSites = this.undistortedChildSites();
-    const sitesByElement = new Map();
+    const parentSites = Array.isArray(this.payload?.viewer_parent?.sites) ? this.payload.viewer_parent.sites : [];
+    const cards = new Map();
     for (const site of childSites) {
-      if (!sitesByElement.has(site.element)) sitesByElement.set(site.element, []);
-      sitesByElement.get(site.element).push(site);
+      if (!cards.has(site.parentId)) cards.set(site.parentId, {
+        label: site.parentId,
+        wyckoff: site.parentWyckoff,
+        element: site.element,
+        children: [],
+        modes: [],
+      });
+      cards.get(site.parentId).children.push(site);
     }
-    const atomVisibility = childSites.length
-      ? '<fieldset class="mode-atom-visibility"><legend>Undistorted structure</legend>'
-        + '<div class="mode-atom-list">'
-        + [...sitesByElement].map(([element, sites]) => (
-          '<section class="mode-element-group">'
-          + '<label class="mode-atom-toggle mode-element-toggle">'
-          + '<input type="checkbox" data-mode-element="' + this.escape(element) + '" checked>'
-          + '<span>' + this.escape(element) + '</span>'
-          + '<span class="mode-element-swatch" data-mode-element-swatch="' + this.escape(element)
-          + '" style="background-color:' + this.elementColorCss(element) + '" aria-hidden="true"></span>'
-          + '</label><div class="mode-site-list">'
-          + sites.map(site => (
-            '<label class="mode-atom-toggle mode-child-toggle">'
-            + '<input type="checkbox" data-mode-child-site="' + this.escape(site.id)
-            + '" data-mode-site-element="' + this.escape(element) + '"'
-            + (this.hiddenChildSites.has(site.id) ? '' : ' checked') + '>'
-            + '<span>' + this.escape(site.id + ' (' + site.wyckoff + ')') + '</span></label>'
-          )).join('')
-          + '</div></section>'
-        )).join('')
-        + '</div></fieldset>'
-      : "";
+    for (const mode of visibleModes) {
+      const label = mode.kind === "strain" ? "Strain" : this.modeSiteLabel(mode);
+      if (!cards.has(label)) {
+        const parent = mode.kind === "strain" ? null : parentSites.find(site => site.label === label);
+        cards.set(label, {
+          label,
+          wyckoff: parent ? String(parent.multiplicity || "") + String(parent.wyckoff || "") : "",
+          element: parent ? elementFromLabel(parent.type || parent.label) : "",
+          children: [],
+          modes: [],
+        });
+      }
+      cards.get(label).modes.push(mode);
+    }
+    const elements = new Map();
+    for (const card of cards.values()) {
+      if (!elements.has(card.element)) elements.set(card.element, []);
+      elements.get(card.element).push(card);
+    }
+    const renderChildSite = site => (
+      '<label class="mode-atom-toggle mode-child-toggle">'
+      + '<input type="checkbox" data-mode-child-site="' + this.escape(site.id)
+      + '" data-mode-site-element="' + this.escape(site.element) + '"'
+      + (this.hiddenChildSites.has(site.id) ? '' : ' checked') + '>'
+      + '<span>' + this.escape(site.id + ' (' + site.wyckoff + ')') + '</span></label>'
+    );
+    const groups = [...elements].map(([element, siteCards]) => {
+      const heading = element
+        ? '<label class="mode-atom-toggle mode-element-toggle"><input type="checkbox" data-mode-element="'
+          + this.escape(element) + '" checked><span>' + this.escape(element) + '</span></label>'
+        : '';
+      const contents = siteCards.map(card => {
+        const color = card.element ? this.elementColorCss(card.element) : 'rgb(180,180,180)';
+        return '<section class="mode-site-card" data-mode-card-element="' + this.escape(card.element)
+          + '" style="--site-color:' + color + '">'
+          + '<div class="mode-site-heading">' + this.escape(card.label + (card.wyckoff ? ' (' + card.wyckoff + ')' : '')) + '</div>'
+          + (card.children.length ? '<div class="mode-site-list">' + card.children.map(renderChildSite).join('') + '</div>' : '')
+          + renderSiteModes(card.modes)
+          + '</section>';
+      }).join('');
+      return '<section class="mode-element-modes">' + heading + contents + '</section>';
+    }).join('');
     const hiddenModeCount = Math.max(0, this.modes.length - visibleModes.length);
     const modeProgress = hiddenModeCount ? `<p class="mode-viewer-note mode-viewer-progress">
       Showing ${visibleModes.length} of ${this.modes.length} modes.
@@ -1889,7 +1910,7 @@ export class ModeStructureViewer {
     const topologyNote = this.bondOptionsSuppressed
       ? `<p class="mode-viewer-note">Bonds and polyhedra are disabled for structures above ${MAX_AUTOMATIC_BOND_ATOMS} atoms.</p>`
       : "";
-    this.controlsNode.innerHTML = `${master}<div class="mode-controls-scroll">${atomVisibility}${topologyNote}${groups || '<p class="mode-viewer-note">No visualizable mode definitions.</p>'}${modeProgress}</div>`;
+    this.controlsNode.innerHTML = `${master}<div class="mode-controls-scroll">${topologyNote}${groups || '<p class="mode-viewer-note">No visualizable mode definitions.</p>'}${modeProgress}</div>`;
     const masterInput = this.controlsNode.querySelector("input[data-master-amplitude]");
     masterInput?.addEventListener("input", () => {
       this.playing = false;
@@ -2063,6 +2084,9 @@ export class ModeStructureViewer {
   updateElementSwatches() {
     this.controlsNode?.querySelectorAll("[data-mode-element-swatch]").forEach(swatch => {
       swatch.style.backgroundColor = this.elementColorCss(swatch.dataset.modeElementSwatch);
+    });
+    this.controlsNode?.querySelectorAll("[data-mode-card-element]").forEach(card => {
+      if (card.dataset.modeCardElement) card.style.setProperty("--site-color", this.elementColorCss(card.dataset.modeCardElement));
     });
   }
 
