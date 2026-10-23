@@ -131,3 +131,4 @@ html, body.output-window { height: 100%; overflow: hidden; }
 .output-block .mode-irrep-heading { overflow-wrap: anywhere; }
 .output-block .mode-element-modes > .mode-element-toggle { padding-bottom: 0; }
 .output-block .mode-element-toggle + .mode-site-card { padding-top: 12px; }
+.output-block .mode-site-card .mode-site-list:last-child { margin-bottom: 0; }
