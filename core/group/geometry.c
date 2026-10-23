@@ -43,7 +43,7 @@ int geo_load(void)
         {"group.point_groups.code", &G.point_group_code, 0},
         {"settings.inter_settings.wyckoff_start", &G.inter_wyckoff_pointer, 0},
         {"settings.inter_settings.wyckoff", &G.inter_wyckoff_fract, 0},
-        {"group.space_groups.settings", &G.settings, 0},
+        {"group.space_groups.cinter", &G.settings, 0},
         {"settings.inter_settings.number", &G.inter_number, 0},
         {"group.point_groups.generator_count", &G.group_gen_count, 0},
         {"group.point_groups.generators", &G.group_gen, 0},
@@ -154,7 +154,7 @@ int geo_inter_setting_ids(int sg, int capacity, int *out)
  * (half 0 or 1) and of one inter setting. */
 void geo_cinter_base(int sg, int half, int64_t *out)
 {
-    for (int i = 0; i < 16; i++) out[i] = at(&G.settings, 29408 + (int64_t)sg * 32 + half * 16 + i);
+    for (int i = 0; i < 16; i++) out[i] = at(&G.settings, (int64_t)(sg - 1) * 32 + half * 16 + i);
 }
 
 void geo_inter_block(int setting_id, int half, int64_t *out)
@@ -280,7 +280,7 @@ int geo_pml_generators(int sg, int64_t (*out)[5])
     }
     int identity = 1;
     for (int i = 0; i < 32; i++)
-        if (at(&G.settings, 29408 + (int64_t)sg * 32 + i) != ((i % 16) % 5 == 0)) identity = 0;
+        if (at(&G.settings, (int64_t)(sg - 1) * 32 + i) != ((i % 16) % 5 == 0)) identity = 0;
     if (identity) {
         for (int index = 0; index < count; index++) {
             for (int part = 0; part < 5; part++) out[index][part] = at(&G.generators, (G.gen_start[sg] + index) * 5 + part);

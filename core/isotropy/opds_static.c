@@ -24,8 +24,8 @@ const char *k_display_star_json(int sg, int kslot, int dim);
 int k_coordinate_map_words(int sg, int kslot, int64_t *out);
 
 static struct {
-    section_view image_label, image_dimension, image_subgroup, image_subgroup_count, image_subgroup_pointer, image_subgroup_maximal,
-        image_subgroup_min, image_subgroup_rg, dir_label, dir_dimension, dir_subduction, dir_pointer, dir, irrep_image,
+    section_view image_label, image_dimension, image_subgroup, image_subgroup_count, image_subgroup_pointer,
+        dir_label, dir_dimension, dir_subduction, dir_pointer, dir, irrep_image,
         iso_pointer, iso_basis, iso_origin, iso_direction, iso_label, iso_op_pointer, iso_op, const_values, point_group, group_order, gen_count, gen,
         irr_old, irr_sg, irr_k, k_dim;
     int ready;
@@ -42,9 +42,6 @@ int sel_tables(void)
                 {"images.image_subgroups.subgroup", &T.image_subgroup},
                 {"images.images.subgroup_count", &T.image_subgroup_count},
                 {"images.images.subgroup_start", &T.image_subgroup_pointer},
-                {"images.image_subgroups.maximal", &T.image_subgroup_maximal},
-                {"images.image_subgroups.minimal", &T.image_subgroup_min},
-                {"images.image_subgroups.rg", &T.image_subgroup_rg},
                 {"images.image_directions.label", &T.dir_label},
                 {"images.image_directions.dimension", &T.dir_dimension},
                 {"images.image_directions.subduction", &T.dir_subduction},

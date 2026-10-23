@@ -30,7 +30,6 @@ DEFAULT_SPACE_GROUP_PREFERENCES = (
     "orthorhombic axes abc, origin choice 2, hexagonal axes, "
     "SSG standard setting"
 )
-SPACE_SETTINGS_CINTER_BASE = 29408
 
 
 def _fmt_frac(value: Fraction) -> str:
@@ -99,7 +98,6 @@ class SourceTables:
             "cell": int(self.space["ispace_inter_cell"][index]),
             "axis": str(self.space["space_inter_axis"][index]).strip(),
             "abc": str(self.space["space_inter_abc"][index]).strip(),
-            "label_full": str(self.space["space_inter_label_full"][index]).strip(),
             "label_short": str(self.space["space_inter_label_short"][index]).strip(),
         }
 
@@ -258,15 +256,10 @@ class SourceTables:
         return (num[0] // gcd, num[1] // gcd, num[2] // gcd, den // gcd)
 
     def _space_cinter_base_matrix(self, sg: int, half: int) -> list[list[int]]:
-        """Return the SG-indexed conventional/cinter base matrix used by iso.
+        """The space group's BC-to-ITA block (half 0) or its inverse (half 1), group.space_groups.cinter."""
 
-        The two SG-indexed halves occupy 32 integers per space group in
-        ``data_space:ispace_settings`` starting at offset 29408. SG numbers
-        index the table directly, so index 0 is a dummy identity block.
-        """
-
-        start = SPACE_SETTINGS_CINTER_BASE + int(sg) * 32 + int(half) * 16
-        return self._matrix4(list(map(int, self.space["ispace_settings"][start:start + 16])))
+        start = (int(sg) - 1) * 32 + int(half) * 16
+        return self._matrix4(list(map(int, self.space["ispace_cinter"][start:start + 16])))
 
     def _default_inter_matrix(self, sg: int, half: int) -> list[list[int]]:
         choice = int(self.space["ispace_inter_choice"][int(sg) - 1])

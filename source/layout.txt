@@ -2,7 +2,8 @@
 #   SECTION  FILE  COLUMN  MODE  [OPTIONS]
 # Modes: each (one number per record), text (one string per record), flat (the records' lists in order), start (the 1-based start of each record's
 # list in flat), count (each record's list length), group_start / group_count (per key 1..K of COLUMN: the 1-based
-# first record and the number of records), records (the number of records), directions (the number of nonzero
+# first record and the number of records), group_flag (per key 1..K of COLUMN: the 1-based first record whose
+# flag=COLUMN is T), records (the number of records), directions (the number of nonzero
 # direction records after the first in a list of (x y z d) records), derived (a section apo builds at startup
 # from the others: only its BYU name is recorded here), magnetic_ordinary / magnetic_reversed / magnetic_from_ordinary (the
 # magnetic point operations: each family of point_ops.txt, a block starting at the identity, then that family with time
@@ -11,7 +12,8 @@
 # starts in units of W items), zero_empty (start 0 for an empty list), sentinel (one more start after the last),
 # grid=G with keys=K (record (key, slot) at (key - 1) G + slot, by the first column and the slot column; empty
 # places 0 or ""), per=COLUMN (count divided by that column), ops=W (every W-th item is a point operation, with '
-# for time reversal, written as its magnetic number), keys=K, first=N (only the first N records), lead=N (N zeros before the first list, counted by start), byu=NAME (the section's
+# for time reversal, written as its magnetic number), inverse (after each 4x4 block, its inverse with the smallest
+# common denominator), keys=K, first=N (only the first N records), lead=N (N zeros before the first list, counted by start), byu=NAME (the section's
 # name in the BYU tables).
 group.point_ops.matrix                       group/point_ops.txt                  matrix flat byu=space.ipoint_op
 group.point_groups.label                     group/point_groups.txt               label text byu=space.point_group_label_inter
@@ -27,14 +29,13 @@ group.space_groups.generators                group/space_groups.txt             
 settings.inter_settings.number               settings/inter_settings.txt          number each byu=space.ispace_inter_number
 settings.inter_settings.version              settings/inter_settings.txt          version each byu=space.ispace_inter_version
 settings.inter_settings.short                settings/inter_settings.txt          short text byu=space.space_inter_label_short
-settings.inter_settings.full                 settings/inter_settings.txt          full text byu=space.space_inter_label_full
 settings.inter_settings.origin               settings/inter_settings.txt          origin each byu=space.ispace_inter_origin
 settings.inter_settings.axis                 settings/inter_settings.txt          axis text byu=space.space_inter_axis
 settings.inter_settings.abc                  settings/inter_settings.txt          abc text byu=space.space_inter_abc
 settings.inter_settings.cell                 settings/inter_settings.txt          cell each byu=space.ispace_inter_cell
-group.space_groups.inter_choice              group/space_groups.txt               inter_choice each byu=space.ispace_inter_choice
-group.space_groups.settings                  group/space_groups.txt               settings flat byu=space.ispace_settings
-settings.inter_settings.inter                settings/inter_settings.txt          inter flat byu=space.ispace_settings_inter
+group.space_groups.inter_choice              settings/inter_settings.txt          number group_flag keys=230 flag=default byu=space.ispace_inter_choice
+group.space_groups.cinter                    group/space_groups.txt               cinter flat inverse byu=space.ispace_cinter
+settings.inter_settings.inter                settings/inter_settings.txt          inter flat inverse byu=space.ispace_settings_inter
 settings.wyckoff_exceptions.formula          settings/wyckoff_exceptions.txt      formula flat
 settings.wyckoff.by_sg_count                 settings/wyckoff.txt                 sg group_count keys=230 byu=wyckoff.iwyckoff_count
 settings.wyckoff.by_sg_start                 settings/wyckoff.txt                 sg group_start keys=230 byu=wyckoff.iwyckoff_pointer
@@ -43,7 +44,7 @@ settings.wyckoff.fract                       settings/wyckoff.txt               
 settings.wyckoff.site_pg                     settings/wyckoff.txt                 site_pg each byu=wyckoff.iwyckoff_pg
 settings.site_settings.by_pg_count           settings/site_settings.txt           pg group_count keys=32 byu=wyckoff.iwyckoff_pg_settings_count
 settings.site_settings.by_pg_start           settings/site_settings.txt           pg group_start keys=32 byu=wyckoff.iwyckoff_pg_elements_pointer
-settings.site_settings.elements              settings/site_settings.txt           elements flat byu=wyckoff.iwyckoff_pg_elements
+settings.site_settings.elements              settings/site_settings.txt           elements flat pad=48 byu=wyckoff.iwyckoff_pg_elements
 settings.site_point_groups.irrep             settings/site_point_groups.txt       irrep flat byu=wyckoff.iwyckoff_pg_irrep
 settings.site_point_groups.vector_reps       settings/site_point_groups.txt       vector_reps flat byu=wyckoff.iwyckoff_pg_vector_reps
 settings.site_settings.vector_basis          settings/site_settings.txt           vector_basis flat byu=wyckoff.iwyckoff_pg_vector_basis
@@ -93,13 +94,10 @@ isotropy.magnetic.direction_codes            isotropy/magnetic.txt              
 images.images.label                          images/images.txt                    label text byu=images.image_label
 images.images.dimension                      images/images.txt                    dimension each byu=images.image_dimension
 images.images.type                           images/images.txt                    type each first=132 byu=images.image_type
-images.images.subgroup_count                 images/images.txt                    subgroup_count each byu=images.image_subgroup_count
-images.images.subgroup_start                 images/images.txt                    subgroup_start each byu=images.image_subgroup_pointer
+images.images.subgroup_count                 images/images.txt                    directions count byu=images.image_subgroup_count
+images.images.subgroup_start                 images/images.txt                    directions start byu=images.image_subgroup_pointer
 images.images.add_r                          images/images.txt                    add_r each byu=magnetic.mag_image_add_r
-images.image_subgroups.maximal               images/image_subgroups.txt           maximal each byu=images.image_subgroup_maximal
-images.image_subgroups.minimal               images/image_subgroups.txt           minimal each byu=images.image_subgroup_min
-images.image_subgroups.rg                    images/image_subgroups.txt           rg each byu=images.image_subgroup_rg
-images.image_subgroups.subgroup              images/image_subgroups.txt           subgroup each byu=images.image_subgroup
+images.image_subgroups.subgroup              images/images.txt                    directions flat byu=images.image_subgroup
 images.image_directions.label                images/image_directions.txt          label text byu=images.image_dir_label
 images.image_directions.dimension            images/image_directions.txt          dimension each byu=images.image_dir_dimension
 images.image_directions.subduction           images/image_directions.txt          vector count per=dimension byu=images.image_dir_subduction

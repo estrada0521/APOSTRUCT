@@ -787,6 +787,57 @@ static long long magnetic_number(const char *dir, long long k, int primed)
     return 0;
 }
 
+static long long gcd_ll(long long a, long long b)
+{
+    if (a < 0) a = -a;
+    if (b < 0) b = -b;
+    while (b) {
+        long long t = a % b;
+        a = b, b = t;
+    }
+    return a;
+}
+
+/* the inverse of a 4x4 affine block (rows 1-3 the linear part, row 4 the translation and the denominator), written
+ * with the smallest common denominator */
+static void put_inverse(text_buf *b, const char *const *starts)
+{
+    long long a[16];
+    for (int i = 0; i < 16; i++) a[i] = atoll(starts[i]);
+    long long d = a[15];
+    if (!d) die("zero denominator in a 4x4 block", 0);
+    long long det = a[0] * (a[5] * a[10] - a[6] * a[9]) - a[1] * (a[4] * a[10] - a[6] * a[8]) +
+                    a[2] * (a[4] * a[9] - a[5] * a[8]);
+    if (!det) die("singular 4x4 block", 0);
+    long long n[12], den[12];
+    for (int i = 0; i < 3; i++)
+        for (int j = 0; j < 3; j++) {
+            int r1 = (j + 1) % 3, r2 = (j + 2) % 3, c1 = (i + 1) % 3, c2 = (i + 2) % 3;
+            n[3 * i + j] = (a[4 * r1 + c1] * a[4 * r2 + c2] - a[4 * r1 + c2] * a[4 * r2 + c1]) * d;
+            den[3 * i + j] = det;
+        }
+    for (int j = 0; j < 3; j++) {
+        long long num = 0;
+        for (int k = 0; k < 3; k++) num -= a[12 + k] * (a[4 * ((j + 1) % 3) + (k + 1) % 3] * a[4 * ((j + 2) % 3) + (k + 2) % 3] -
+                                                        a[4 * ((j + 1) % 3) + (k + 2) % 3] * a[4 * ((j + 2) % 3) + (k + 1) % 3]);
+        n[9 + j] = num, den[9 + j] = det;
+    }
+    long long common = 1;
+    for (int i = 0; i < 12; i++) {
+        if (den[i] < 0) n[i] = -n[i], den[i] = -den[i];
+        long long g = gcd_ll(n[i], den[i]);
+        if (g) n[i] /= g, den[i] /= g;
+        if (!n[i]) den[i] = 1;
+        common = common / gcd_ll(common, den[i]) * den[i];
+    }
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) put_int(b, n[3 * i + j] * (common / den[3 * i + j]));
+        put_int(b, 0);
+    }
+    for (int j = 0; j < 3; j++) put_int(b, n[9 + j] * (common / den[9 + j]));
+    put_int(b, common);
+}
+
 /* one blob section from its layout line: SECTION FILE COLUMN MODE [OPTIONS] */
 static char byu_names[1 << 16];
 static size_t byu_used;
@@ -815,6 +866,7 @@ static void render_section(const char *dir, char *line)
     long long first = option(options, "first", t->rows), unit = option(options, "div", 1), lead = option(options, "lead", 0);
     long long pad = option(options, "pad", 0), total = option(options, "total", 0), keys = option(options, "keys", 0);
     long long op_every = option(options, "ops", 0);
+    int inverse = option(options, "inverse", 0) > 0;
     const char *per_name = strstr(options, "per=");
     int per = -1;
     if (per_name) {
@@ -872,6 +924,11 @@ static void render_section(const char *dir, char *line)
                 }
             }
             for (long long i = n; i < pad; i++, written++) put_int(&b, 0);
+            if (inverse) {
+                if (n != 16) die("inverse needs 4x4 blocks", FIELD(r));
+                put_inverse(&b, starts);
+                written += 16;
+            }
         }
         for (; written < total; written++) put_int(&b, 0);
     } else if (!strcmp(mode, "start") || !strcmp(mode, "count")) {
@@ -922,6 +979,18 @@ static void render_section(const char *dir, char *line)
                         else put_token(&b, primed ? "T" : "F", 1);
                     }
             if (!found) break;
+        }
+    } else if (!strcmp(mode, "group_flag")) {
+        const char *flag_name = strstr(options, "flag=");
+        char name[128] = "";
+        if (flag_name) sscanf(flag_name + 5, "%127s", name);
+        int flag = column_of(t, name);
+        for (long long k = 1; k <= keys; k++) {
+            int found = 0;
+            for (int r = 0; r < rows && !found; r++)
+                if (atoll(t->fields[r][c]) == k && !strcmp(t->fields[r][flag], "T")) found = r + 1;
+            if (!found) die("no flagged record for a key", name);
+            put_int(&b, found);
         }
     } else if (!strcmp(mode, "records")) {
         put_int(&b, rows);

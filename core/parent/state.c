@@ -16,7 +16,7 @@ int solve_wyckoff_formula(const double *base, const double *cols, const double *
 
 static struct {
     section_view label_bc, wyckoff_label, pg_label, inter_number, inter_version, inter_origin, inter_cell, inter_axis, inter_abc,
-        inter_label_full, inter_label_short, lattice_label, point_group, group_order;
+        inter_label_short, lattice_label, point_group, group_order;
     int ready;
 } T;
 
@@ -35,7 +35,6 @@ int par_tables(void)
                 {"settings.inter_settings.cell", &T.inter_cell},
                 {"settings.inter_settings.axis", &T.inter_axis},
                 {"settings.inter_settings.abc", &T.inter_abc},
-                {"settings.inter_settings.full", &T.inter_label_full},
                 {"settings.inter_settings.short", &T.inter_label_short},
                 {"group.lattices.label", &T.lattice_label},
                 {"group.space_groups.point_group", &T.point_group},

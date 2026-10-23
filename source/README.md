@@ -10,7 +10,7 @@ the pointers between tables, ...) is left out. `build.sh` compiles the tables in
 
 A blob section is named `directory.table.column` (with `_start` and `_count` for the pointers the build renders, and
 `by_COLUMN_start` / `by_COLUMN_count` for the records grouped by a key); `layout.txt` also records each section's name in
-the BYU tables (`byu=`), which the verifier uses.
+the BYU tables (`byu=`), which the verifier uses. A 4x4 setting matrix is stored once; the build adds its inverse.
 
 Each table file starts with a tab-separated header; every later line is one entity, with tab-separated fields. A
 number field is a space-separated list, a text field is the text.
@@ -20,11 +20,11 @@ number field is a space-separated list, a text field is the text.
 | `group/point_ops.txt` | 72 | point operations: matrix |
 | `group/point_groups.txt` | 32 | point groups: symbol, generators |
 | `group/lattices.txt` | 14 | Bravais lattices: symbol, the conventional-to-primitive matrices, number of k families common to the lattice |
-| `group/space_groups.txt` | 230 | space groups: lattice, point group, BC symbol, default setting, generators, setting matrices |
+| `group/space_groups.txt` | 230 | space groups: lattice, point group, BC symbol, generators, the BC-to-ITA setting matrix |
 | `group/magnetic_point_groups.txt` | 122 | magnetic point groups: class code |
 | `group/magnetic_groups.txt` | 1651 | magnetic space groups: space group, OG and BNS symbols, generators (translation and point operation, `'` for time reversal), type-4 supergroup row |
 | `group/type4_supergroups.txt` | 520 | type-4 reference supergroups: group, basis, origin |
-| `settings/inter_settings.txt` | 800 | International Tables settings: number, symbols, origin and cell choices, matrices |
+| `settings/inter_settings.txt` | 777 | International Tables settings: space group, whether it is the default, symbol, origin and cell choices, matrix |
 | `settings/wyckoff_exceptions.txt` | 107 | Wyckoff formulas in other settings that differ from the ones apo derives from the default setting |
 | `settings/wyckoff.txt` | 1731 | Wyckoff positions: space group, letter, site point group, formula |
 | `settings/site_point_groups.txt` | 32 | site point groups: irreps and vector representations |
@@ -35,7 +35,7 @@ number field is a space-separated list, a text field is the text.
 | `irreps/little.txt` | 10300 | little irreps: space group, k, partner, Kovalev label, real form, matrices at the seed positions (the irrep basis) |
 | `irreps/old.txt` | 4777 | irreps at k points without parameters: space group, Mulliken label, image |
 | `isotropy/ordinary.txt`, `isotropy/magnetic.txt` | 15239, 16721 | the presentation of each isotropy subgroup: subgroup basis and origin, representative direction (the OPD labels are those of image directions) |
-| `images/*.txt` | | the image catalog: images, their subgroups and directions, and each image with time reversal added |
+| `images/images.txt`, `images/image_directions.txt` | 141, 689 | the image catalog: images with their directions, and each image with time reversal added |
 
 `constants.txt` holds the constants that matrix and direction entries refer to: entry `k` means constant `k`, `-k` its
 negative, and `0` no constant. Each has a decimal value and, when it lies in Q(√2, √3), an exact form; the ones without
