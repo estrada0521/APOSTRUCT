@@ -476,6 +476,7 @@ typedef struct {
     char **irreps, **displacive, **magnetic;
     int nirreps, ndisplacive, nmagnetic;
     int has_k_option, has_irrep_option, has_case_option, has_opd_option, has_format, has_full_state, has_distortion;
+    const char *sg;
 } args_t;
 
 static int option_like(const char *s) { return s[0] == '-' && s[1] && !(s[1] >= '0' && s[1] <= '9') && s[1] != '.'; }
@@ -579,6 +580,9 @@ static void parse_args(int argc, char **argv, int start, args_t *a)
             TAKE_MANY(&a->k[a->nk], &a->k_counts[a->nk]);
             a->nk++;
             a->has_k_option = 1;
+        } else if (!strcmp(arg, "--sg") && (!strcmp(command, "kpoints") || !strcmp(command, "irreps") || !strcmp(command, "opds"))) {
+            TAKE();
+            a->sg = value;
         } else if (!strcmp(arg, "--irrep") && (!strcmp(command, "opds") || !strcmp(command, "modes"))) {
             TAKE();
             push(&a->irreps, &a->nirreps, value);
@@ -619,6 +623,47 @@ static int in_list(char **list, int n, const char *s)
     for (int i = 0; i < n; i++)
         if (!strcmp(list[i], s)) return 1;
     return 0;
+}
+
+static char sg_cif_path[PATH_MAX];
+
+static void remove_sg_cif(void)
+{
+    if (sg_cif_path[0]) remove(sg_cif_path);
+}
+
+/* --sg N: the parent is space group N in its default setting, given to the pipeline as a CIF with one atom (label A) at
+ * a general position, whose displacements and moments carry every irrep; k points, irreps and OPDs do not depend on it. */
+static void write_sg_cif(args_t *a)
+{
+    char *end;
+    long sg = strtol(a->sg, &end, 10);
+    if (*end || !*a->sg || sg < 1 || sg > 230) usage_errorf("argument --sg: invalid space group number: '%s'", a->sg, 0);
+    if (a->structure) usage_error("give either a structure or --sg, not both");
+    const char *cell = sg <= 2     ? "5.1 5.7 6.3 81 86 79"
+                       : sg <= 15  ? "5.1 5.7 6.3 90 97 90"
+                       : sg <= 74  ? "5.1 5.7 6.3 90 90 90"
+                       : sg <= 142 ? "5.1 5.1 6.3 90 90 90"
+                       : sg <= 194 ? "5.1 5.1 6.3 90 90 120"
+                                   : "5.1 5.1 5.1 90 90 90";
+    double v[6];
+    sscanf(cell, "%lf %lf %lf %lf %lf %lf", &v[0], &v[1], &v[2], &v[3], &v[4], &v[5]);
+    const char *dir = getenv("TMPDIR");
+    if (!dir || !*dir) dir = getenv("TEMP");
+    if (!dir || !*dir) dir = "/tmp";
+    snprintf(sg_cif_path, sizeof sg_cif_path, "%s/apo-sg%ld-%ld.cif", dir, sg, (long)getpid());
+    FILE *f = fopen(sg_cif_path, "w");
+    if (!f) usage_errorf("cannot write a temporary CIF in %s", dir, 0);
+    fprintf(f,
+            "data_sg%ld\n_symmetry_Int_Tables_number %ld\n_cell_length_a %g\n_cell_length_b %g\n_cell_length_c %g\n"
+            "_cell_angle_alpha %g\n_cell_angle_beta %g\n_cell_angle_gamma %g\nloop_\n_atom_site_label\n_atom_site_type_symbol\n"
+            "_atom_site_fract_x\n_atom_site_fract_y\n_atom_site_fract_z\nA C 0.1234 0.2345 0.3456\n",
+            sg, sg, v[0], v[1], v[2], v[3], v[4], v[5]);
+    fclose(f);
+    atexit(remove_sg_cif);
+    a->structure = sg_cif_path;
+    static char *site = "A";
+    if (!a->ndisplacive && !a->nmagnetic && !a->strain) push(&a->displacive, &a->ndisplacive, site);
 }
 
 /* case_input.case_from_cli */
@@ -1067,6 +1112,7 @@ int main(int argc, char **argv)
     }
     args_t a;
     parse_args(argc, argv, 2, &a);
+    if (a.sg) write_sg_cif(&a);
     if (!strcmp(command, "serve")) return serve_command(&a);
     if (!strcmp(command, "show")) return show_command(&a);
     const char *stage = !strcmp(command, "run") ? a.upto : command;

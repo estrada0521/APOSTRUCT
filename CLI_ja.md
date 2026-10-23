@@ -27,6 +27,14 @@ CIFのpathを位置引数で渡す。setting、site、占有率、座標はCIF�
 座標は小数、誤差付き表記（`0.1234(5)`）、`1/2` のような有理数で書ける。
 Wyckoff位置を決められないsiteは `info.sites[].wyckoff_mapping_error` に理由が入り、そのsiteを選ぶと停止する。
 
+構造なしで、`kpoints`、`irreps`、`opds` はCIFの代わりに `--sg N`（1〜230）を取る。親は空間群Nの既定のsettingで、k点、既約表現、OPDは群だけで決まる。
+このとき親は一般位置のsite `A` を1つ持ち、`--displacive A` や `--magnetic A` を指定しなければ変位として選ばれる。出力のmodeの本数はこのsiteについてのもの。
+
+```sh
+apo opds --sg 221 --k R --irrep R5-
+apo opds --sg 62 --k GM --irrep mGM1+ --magnetic A
+```
+
 ## Sites
 
 `--displacive` と `--magnetic` は `info.sites` の `label` か `type` を取る。`label` は1つのsite、`type` はその種類の全siteを選ぶ。

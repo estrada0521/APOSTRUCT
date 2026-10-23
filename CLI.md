@@ -27,6 +27,14 @@ Pass the CIF path as the positional argument. Setting, sites, occupancies and co
 Coordinates may be decimals, values with uncertainties (`0.1234(5)`) or rationals such as `1/2`.
 A site whose Wyckoff position cannot be determined carries the reason in `info.sites[].wyckoff_mapping_error`; selecting it stops the calculation.
 
+Without a structure, `kpoints`, `irreps` and `opds` take `--sg N` (1 to 230) instead of the CIF: the parent is space group N in its default setting, and k points, irreps and OPDs depend only on the group.
+The parent then has one site `A` at a general position, selected as displacive unless `--displacive A` or `--magnetic A` is given; its mode totals in the output refer to that site.
+
+```sh
+apo opds --sg 221 --k R --irrep R5-
+apo opds --sg 62 --k GM --irrep mGM1+ --magnetic A
+```
+
 ## Sites
 
 `--displacive` and `--magnetic` take a `label` or `type` from `info.sites`. A `label` selects one site, a `type` all sites of that type.
