@@ -93,7 +93,7 @@ static int compute(const family *f, int64_t row_id)
     int64_t p = section_int(&f->op_pointer, row_id - 1) - 1;
     for (int i = 0; i < 48 * 48; i++) v[i] = 0;
     for (int r = 0; r < nf; r++)
-        for (int c = 0; c < dim; c++) v[r * 48 + c] = constants[section_int(&f->op, p + r * dim + c)];
+        for (int c = 0; c < dim; c++) v[r * 48 + c] = const_ref_value(section_int(&f->op, p + r * dim + c));
     int64_t none = 0, basis[9] = {0};
     if (orderparam_to_subgroup_rows(gid, 0, &none, v, (int64_t)nf * 48, nf, nc, candidates[0], ops, signs, 256, basis, kept[0], &nk))
         return -1;

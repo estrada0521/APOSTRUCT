@@ -147,4 +147,4 @@ int irrep_transform_inverse(int gid, double complex *inverse)
     return 0;
 }
 
-static double const_value(int64_t code) { return ((const double *)T.const_values.data)[code]; }
+static double const_value(int64_t code) { return const_ref_value(code); }

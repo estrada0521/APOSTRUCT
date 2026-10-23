@@ -10,7 +10,7 @@ the pointers between tables, ...) is left out. `build.sh` compiles the tables in
 
 A blob section is named `directory.table.column` (with `_start` and `_count` for the pointers the build renders, and
 `by_COLUMN_start` / `by_COLUMN_count` for the records grouped by a key); `layout.txt` also records each section's name in
-the BYU tables (`byu=`), which `byu_export` and the verifier use.
+the BYU tables (`byu=`), which the verifier uses.
 
 Each table file starts with a tab-separated header; every later line is one entity, with tab-separated fields. A
 number field is a space-separated list, a text field is the text.
@@ -38,8 +38,10 @@ number field is a space-separated list, a text field is the text.
 | `isotropy/ordinary.txt`, `isotropy/magnetic.txt` | 15239, 16721 | the presentation of each isotropy subgroup: subgroup basis and origin, representative direction (the OPD labels are those of image directions) |
 | `images/*.txt` | | the image catalog: images, their subgroups and directions, and each image with time reversal added |
 
-`const.dat` names the constants that matrix and direction entries refer to by number.
+`constants.txt` holds the constants that matrix and direction entries refer to: entry `k` means constant `k`, `-k` its
+negative, and `0` no constant. Each has a decimal value and, when it lies in Q(√2, √3), an exact form; the ones without
+a form are the coefficients of representative directions.
 
-`bin/byu_export bin/source.blob DIR [--full-matrices]` writes the tables back in the BYU format (`data_*.txt`): every
-section apo reads, including those it builds at startup, and with `--full-matrices` the little irrep matrices at every
-position. They equal the corresponding BYU tables.
+`bin/source_dump bin/source.blob FILE` writes what apo reads from the Source, independent of how the tables encode it:
+every section, including those apo builds at startup, with constants written as their values, and the little irrep
+matrices at every position.

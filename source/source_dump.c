@@ -37,32 +37,28 @@ static const struct {
     {"settings.site_settings.vector_basis", 1, 1},
 };
 
-static section_view exact, values, present;
-
-/* a constant reference as its value: exact as [r, s2, s3, s6] (r + s2 sqrt2 + s3 sqrt3 + s6 sqrt6), else ~decimal */
+/* a constant reference as its value: exact as [r, s2, s3, s6] (r + s2 sqrt2 + s3 sqrt3 + s6 sqrt6), 0 for zero, else
+ * ~decimal; - for no reference */
 static void put_constant(FILE *out, int64_t code)
 {
     if (code == 0) {
         fputs("-", out);
         return;
     }
-    if (code == 1) {
-        fputs("0", out);
+    int64_t w[8];
+    if (const_ref_exact(code, w)) {
+        double v = const_ref_value(code);
+        if (v != v) fprintf(out, "?%lld", (long long)code);
+        else fprintf(out, "~%.15g", v);
         return;
     }
-    if (code < 0 || code >= section_count(&present) || !section_int(&present, code)) {
-        fprintf(out, "?%lld", (long long)code);
-        return;
-    }
-    int has_exact = 0;
-    for (int j = 0; j < 4; j++) has_exact |= section_int(&exact, 8 * code + 2 * j + 1) != 0;
-    if (!has_exact) {
-        fprintf(out, "~%.15g", ((const double *)values.data)[code]);
+    if (!w[0] && !w[2] && !w[4] && !w[6]) {
+        fputc('0', out);
         return;
     }
     fputc('[', out);
     for (int j = 0; j < 4; j++) {
-        int64_t n = section_int(&exact, 8 * code + 2 * j), d = section_int(&exact, 8 * code + 2 * j + 1);
+        int64_t n = w[2 * j], d = w[2 * j + 1];
         if (j) fputc(',', out);
         if (!n || !d) fputc('0', out);
         else if (d == 1) fprintf(out, "%lld", (long long)n);
@@ -140,8 +136,6 @@ int main(int argc, char **argv)
         fprintf(stderr, "usage: source_dump <source.blob> <output file>\n");
         return 2;
     }
-    if (section_find("const.exact", &exact) || section_find("const.values", &values) || section_find("const.present", &present))
-        return 1;
     FILE *out = fopen(argv[2], "w");
     if (!out) return 1;
     const char *names[4096];

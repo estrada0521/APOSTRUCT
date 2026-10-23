@@ -70,7 +70,6 @@ class SourceTables:
         self.isotropy = self.iso.isotropy
         self.wyckoff = self.iso.wyckoff
         self.images = self.iso.images
-        self.const = self.iso.const
 
     def space_symbol(self, sg: int) -> str:
         return str(self.space["space_label_bc"][int(sg) - 1]).strip()

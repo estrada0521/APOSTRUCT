@@ -76,12 +76,7 @@ int sel_tables(void)
 
 void exact_register_codes(int rows, int cols, const double *doubles, const int64_t *codes);
 
-static double constant(int64_t code)
-{
-    const double *values = (const double *)T.const_values.data;
-    if (code < 0 || code >= (int64_t)T.const_values.entry->count) return NAN;
-    return values[code];
-}
+static double constant(int64_t code) { return const_ref_value(code); }
 
 static void strip_view(const section_view *view, int64_t index, const char **s, int64_t *n)
 {

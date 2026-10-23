@@ -80,8 +80,9 @@ static int projection_tables(int site_pg, int vector_basis_id, int vector_settin
                 int64_t index = (int64_t)(vector_basis_id - 1) * 18 + (vector_setting - 1) * 9 + start * 3 + column * 3 + axis;
                 if (index < 0 || index >= section_count(&basis_codes)) return RW_INDEX;
                 int64_t code = section_int(&basis_codes, index);
-                if (code < 0 || code >= constant_count) return RW_INDEX;
-                constants[(start * vector_dim + column) * 3 + axis] = constant[code];
+                double value = const_ref_value(code);
+                if (value != value) return RW_INDEX;
+                constants[(start * vector_dim + column) * 3 + axis] = value;
             }
     }
     for (int lane = 0; lane < lanes; lane++) {

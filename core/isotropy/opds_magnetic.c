@@ -293,7 +293,7 @@ static int magnetic_row(jbuf *b, int64_t old_id, int64_t row_id, int canonical, 
         matrix[p] = calloc((size_t)w + 1, sizeof(char *));
         widths[p] = w;
         for (int c = 0; c < w; c++) {
-            numeric[p][c] = constants[section_int(&T.iso_op, a + c)];
+            numeric[p][c] = const_ref_value(section_int(&T.iso_op, a + c));
             jbuf t = {0};
             jb_reset(&t);
             sel_fmt_display_value(&t, numeric[p][c]);

@@ -1934,7 +1934,7 @@ static int mag_table_labels(const sp_induced *c, int gid, const pset *seen, cons
         if (fn <= 0 || dim <= 0 || dim > 48) continue;
         double *values = calloc((size_t)fn * 48 + 1, sizeof(double));
         for (int64_t p = 0; p < fn; p++)
-            for (int64_t q = 0; q < dim; q++) values[p * 48 + q] = constants[section_int(&ops, ptr + p * dim + q)];
+            for (int64_t q = 0; q < dim; q++) values[p * 48 + q] = const_ref_value(section_int(&ops, ptr + p * dim + q));
         int64_t sub_basis[9], kept[192][5], none = 0;
         int kept_count = 0;
         int code = orderparam_to_subgroup_rows(gid, 0, &none, values, fn * 48, (int)fn, ncand, &cand[0][0], cops, csigns, 256, sub_basis,

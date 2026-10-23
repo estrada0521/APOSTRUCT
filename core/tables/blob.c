@@ -1,6 +1,7 @@
 /* The baked Source blob (source_blob.h), mmapped once per process and read
  * by the kernels through typed section views. */
 
+#include <math.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -105,30 +106,48 @@ int section_string(const section_view *view, int64_t index, const char **text, i
 
 /* One Source little-irrep sparse matrix (data_little little_irr_full_*)
  * into out (dim x dim).  Returns nonzero when the tables do not hold it. */
+static section_view const_values, const_present, const_exact;
+
+static int const_ready(void)
+{
+    static int ready;
+    if (!ready && blob && !section_find("const.values", &const_values) && !section_find("const.present", &const_present) &&
+        !section_find("const.exact", &const_exact) && const_values.entry->kind == BLOB_F64)
+        ready = 1;
+    return ready;
+}
+
+double const_ref_value(int64_t ref)
+{
+    int64_t k = ref < 0 ? -ref : ref;
+    if (!const_ready() || k <= 0 || k >= (int64_t)const_values.entry->count || !const_present.data[k]) return NAN;
+    double v = ((const double *)const_values.data)[k];
+    return ref < 0 ? -v : v;
+}
+
+int const_ref_exact(int64_t ref, int64_t words[8])
+{
+    int64_t k = ref < 0 ? -ref : ref;
+    if (!const_ready() || k <= 0 || k >= (int64_t)const_values.entry->count || !const_present.data[k]) return 1;
+    int has = 0;
+    for (int j = 0; j < 8; j++) words[j] = section_int(&const_exact, 8 * k + j);
+    for (int j = 0; j < 4; j++) {
+        has |= words[2 * j + 1] != 0;
+        if (ref < 0) words[2 * j] = -words[2 * j];
+    }
+    return !has;
+}
+
 int little_codes(int gid, int dim, int position, int *codes);
 
 int little_sparse_matrix(int gid, int dim, int position, double *out)
 {
-    static section_view values, present;
-    static int ready;
-    if (!ready) {
-        if (!blob || section_find("const.values", &values) || section_find("const.present", &present) || values.entry->kind != BLOB_F64)
-            return 1;
-        ready = 1;
-    }
     if (dim <= 0 || dim > 48) return 1;
     int codes[48 * 48];
     if (little_codes(gid, dim, position, codes)) return 1;
-    int64_t constant_count = (int64_t)values.entry->count;
-    const double *constants = (const double *)values.data;
     for (int i = 0; i < dim * dim; i++) {
-        int code = codes[i];
-        if (code == 1) {
-            out[i] = 0.0;
-            continue;
-        }
-        if (code < 0 || code >= constant_count || !present.data[code]) return 1;
-        out[i] = constants[code];
+        out[i] = const_ref_value(codes[i]);
+        if (out[i] != out[i]) return 1;
     }
     return 0;
 }

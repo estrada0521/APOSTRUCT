@@ -14,7 +14,7 @@ import numpy as np
 
 TABLE_NAMES = ("space", "irreps", "little", "isotropy", "wyckoff", "images", "magnetic")
 # the files the blob records hashes of always include these; the entity tables are the ones layout.txt names
-AUTHORITY_FILES = ("layout.txt", "const.dat")
+AUTHORITY_FILES = ("layout.txt", "constants.txt")
 _KINDS = {1: "<i1", 2: "<i2", 3: "<i4", 4: "<i8", 5: "<f8", 6: "|b1"}
 
 

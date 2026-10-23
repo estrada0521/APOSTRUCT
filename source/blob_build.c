@@ -321,7 +321,7 @@ static void parse_block(const char *table, const char *name, const char *block, 
 }
 
 /* Exact constants: a + b sqrt2 + c sqrt3 + d sqrt6 with rational parts, parsed
- * from the symbolic column of const.dat. Forms outside that field (nested
+ * from the form column of constants.txt. Forms outside that field (nested
  * radicals, 22.5 degrees) parse as absent. */
 typedef struct {
     int64_t n, d;
@@ -580,34 +580,35 @@ static double q23_value(q23 v)
     return sum;
 }
 
+/* constants.txt: a header line, then one constant per line: number (1, 2, ... in order), decimal value, exact form
+ * (empty when there is none).  A reference k in the tables is constant k, -k its negative, 0 no reference. */
 static void load_constants(const char *dir)
 {
     char path[4096];
-    snprintf(path, sizeof path, "%s/const.dat", dir);
+    snprintf(path, sizeof path, "%s/constants.txt", dir);
     size_t size;
     char *text = read_file(path, &size);
-    int64_t max_code = -1;
+    int64_t max_code = 0;
     int64_t codes[4096];
     double values[4096];
     static q23 exact[4096];
     int count = 0;
-    char *line = text;
+    char *line = strchr(text, '\n');
+    line = line ? line + 1 : text + size;
     while (*line) {
         char *end = strchr(line, '\n');
         if (end) *end = 0;
-        char *p = line;
-        while (isspace((unsigned char)*p)) p++;
-        if (*p) {
+        if (*line) {
             if (count >= 4096) die("too many constants", 0);
-            char *after;
-            codes[count] = strtoll(p, &after, 10);
-            char *symbol;
-            values[count] = strtod(after, &symbol);
-            while (isspace((unsigned char)*symbol)) symbol++;
-            exact[count] = q23_parse(symbol);
+            char *after, *tab;
+            codes[count] = strtoll(line, &after, 10);
+            if (codes[count] != count + 1 || *after != '\t') die("constants must be numbered 1, 2, ... in order", line);
+            values[count] = strtod(after + 1, &tab);
+            if (*tab != '\t') die("constant needs a value and a form column", line);
+            exact[count] = q23_parse(tab + 1);
             if (exact[count].ok && fabs(q23_value(exact[count]) - values[count]) > 1e-13 * (1.0 + fabs(values[count])))
-                die("constant symbol does not match its value", symbol);
-            if (codes[count] + 1 > max_code) max_code = codes[count] + 1;
+                die("constant form does not match its value", tab + 1);
+            if (codes[count] > max_code) max_code = codes[count];
             count++;
         }
         if (!end) break;
@@ -620,23 +621,17 @@ static void load_constants(const char *dir)
     memset(dense, 0, sizeof(double) * (size_t)n);
     memset(present, 0, (size_t)n);
     for (int i = 0; i < count; i++) {
-        if (codes[i] < 0) die("negative constant code", 0);
         dense[codes[i]] = values[i];
         present[codes[i]] = 1;
-        if (codes[i] >= 2 && codes[i] % 2 == 0) {
-            dense[codes[i] + 1] = -values[i];
-            present[codes[i] + 1] = 1;
-        }
     }
     int64_t *exact_words = xmalloc(sizeof(int64_t) * 8 * (size_t)n);
     memset(exact_words, 0, sizeof(int64_t) * 8 * (size_t)n);
     for (int i = 0; i < count; i++) {
         if (!exact[i].ok) continue;
-        for (int sign = 0; sign < (codes[i] >= 2 && codes[i] % 2 == 0 ? 2 : 1); sign++)
-            for (int j = 0; j < 4; j++) {
-                exact_words[8 * (codes[i] + sign) + 2 * j] = sign ? -exact[i].x[j].n : exact[i].x[j].n;
-                exact_words[8 * (codes[i] + sign) + 2 * j + 1] = exact[i].x[j].d;
-            }
+        for (int j = 0; j < 4; j++) {
+            exact_words[8 * codes[i] + 2 * j] = exact[i].x[j].n;
+            exact_words[8 * codes[i] + 2 * j + 1] = exact[i].x[j].d;
+        }
     }
     section *s = add_section("const.exact");
     s->kind = BLOB_I64;
@@ -932,7 +927,7 @@ int main(int argc, char **argv)
     const char *files[64];
     int file_count = 0;
     files[file_count++] = "layout.txt";
-    files[file_count++] = "const.dat";
+    files[file_count++] = "constants.txt";
     for (int i = 0; i < tables && file_count < 64; i++) files[file_count++] = etables[i].path;
     add_hashes(argv[1], files, file_count);
 

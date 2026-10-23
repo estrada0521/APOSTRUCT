@@ -746,7 +746,7 @@ int mode_frame(int sg, const char *wyckoff, int64_t wyckoff_length, const char *
         for (int r = 0; r < count; r++) {
             R.row_lengths[r] = full_dim;
             for (int c = 0; c < full_dim; c++)
-                R.rows[r * R.row_stride + c] = constants[section_int(&T.iso_op, pointer + (int64_t)r * full_dim + c)];
+                R.rows[r * R.row_stride + c] = const_ref_value(section_int(&T.iso_op, pointer + (int64_t)r * full_dim + c));
         }
     } else if (nparams) {
         free(rows);

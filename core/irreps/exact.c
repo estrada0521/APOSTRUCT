@@ -68,30 +68,17 @@ int little_codes(int gid, int dim, int position, int *codes);
 /* The Source matrix of a little irrep at a generated position as const.exact words (8 per entry), from its codes. */
 static int little_exact_words(int gid, int dim, int position, int64_t *words)
 {
-    static section_view exact;
-    static int ready_exact;
-    if (!ready_exact) {
-        if (section_find("const.exact", &exact) || !section_is_int(&exact)) return 1;
-        ready_exact = 1;
-    }
     int *codes = malloc(sizeof(int) * (size_t)dim * dim + 1);
     if (!codes || little_codes(gid, dim, position, codes)) {
         free(codes);
         return 1;
     }
-    int64_t ncodes = (int64_t)exact.entry->count / 8;
     for (int i = 0; i < dim * dim; i++) {
         int64_t *w = words + 8 * i, code = codes[i];
-        if (code < 0 || code >= ncodes) {
+        if (const_ref_exact(code, w)) {
             free(codes);
-            return 1;
+            return const_ref_value(code) != const_ref_value(code) ? 1 : 2;
         }
-        for (int j = 0; j < 8; j++) w[j] = code == 1 ? (j % 2) : section_int(&exact, 8 * code + j);
-        if (!w[1] && code > 1) {
-            free(codes);
-            return 2;
-        }
-        if (!w[1]) w[1] = w[3] = w[5] = w[7] = 1;
     }
     free(codes);
     return 0;
@@ -100,13 +87,12 @@ static int little_exact_words(int gid, int dim, int position, int64_t *words)
 /* the table's words, for the generators of the derivation */
 static int little_table_words(int gid, int dim, int position, int64_t *words)
 {
-    static section_view irr_pointer, pointer, matrices, exact;
+    static section_view irr_pointer, pointer, matrices;
     static int ready;
     if (!ready) {
         if (section_find("irreps.little.position_start", &irr_pointer)
             || section_find("irreps.little.matrix_start", &pointer)
-            || section_find("irreps.little.matrices", &matrices) || section_find("const.exact", &exact)
-            || !section_is_int(&exact))
+            || section_find("irreps.little.matrices", &matrices))
             return 1;
         ready = 1;
     }
@@ -116,15 +102,12 @@ static int little_table_words(int gid, int dim, int position, int64_t *words)
     memset(words, 0, sizeof(int64_t) * 8 * (size_t)dim * dim);
     for (int i = 0; i < dim * dim; i++)
         for (int j = 0; j < 4; j++) words[8 * i + 2 * j + 1] = 1;
-    int64_t codes = (int64_t)exact.entry->count / 8;
     for (int64_t offset = (start - 1) * 3; offset < (end - 1) * 3; offset += 3) {
         int64_t row = section_int(&matrices, offset), col = section_int(&matrices, offset + 1);
         int64_t code = section_int(&matrices, offset + 2);
-        if (row < 1 || row > dim || col < 1 || col > dim || code < 0 || code >= codes) return 1;
-        int64_t *w = words + 8 * ((row - 1) * dim + col - 1);
-        for (int j = 0; j < 8; j++) w[j] = section_int(&exact, 8 * code + j);
-        if (!w[1] && code > 1) return 2;
-        if (!w[1]) w[1] = w[3] = w[5] = w[7] = 1;
+        if (row < 1 || row > dim || col < 1 || col > dim) return 1;
+        if (const_ref_exact(code, words + 8 * ((row - 1) * dim + col - 1)))
+            return const_ref_value(code) != const_ref_value(code) ? 1 : 2;
     }
     return 0;
 }
@@ -423,22 +406,7 @@ out:
 }
 
 /* const.exact words (8) of a Source constant code; nonzero without an exact form */
-int exact_const_words(int64_t code, int64_t *words)
-{
-    static section_view exact;
-    static int ready;
-    if (!ready) {
-        if (section_find("const.exact", &exact) || !section_is_int(&exact)) return 1;
-        ready = 1;
-    }
-    if (code < 0 || code >= (int64_t)exact.entry->count / 8) return 1;
-    for (int j = 0; j < 8; j++) words[j] = section_int(&exact, 8 * code + j);
-    if (!words[1]) {
-        if (code > 1) return 1;
-        for (int j = 0; j < 8; j++) words[j] = j % 2;
-    }
-    return 0;
-}
+int exact_const_words(int64_t code, int64_t *words) { return const_ref_exact(code, words); }
 
 /* ---- the little irrep matrices from those at a generating set ---- */
 
@@ -827,28 +795,26 @@ static int derive_codes(int gid, const int64_t *kparam, int **codes_out, unsigne
     for (int q = 0; q < n && !status; q++)
         if (!have[q]) status = 8;
     /* codes by residue */
-    static section_view exact;
-    static int ready;
-    if (!status && !ready && (section_find("const.exact", &exact) || !section_is_int(&exact))) status = 9;
-    if (!status) ready = 1;
     int *codes = 0;
     if (!status) {
-        int64_t ncodes = (int64_t)exact.entry->count / 8;
-        uint64_t *value = malloc(sizeof(uint64_t) * (size_t)ncodes);
-        unsigned char *usable = calloc((size_t)ncodes, 1);
-        for (int64_t q = 2; q < ncodes; q++) {
-            int64_t wv[8];
-            for (int j = 0; j < 8; j++) wv[j] = section_int(&exact, 8 * q + j);
-            if (!wv[1]) continue;
-            cy_from_sqrt23(f, wv, &x);
-            value[q] = cy_residue(f, &x, w, p);
-            usable[q] = 1;
-        }
+        int64_t ncodes = 1;
+        int64_t wv[8];
+        while (const_ref_value(ncodes) == const_ref_value(ncodes)) ncodes++;
+        uint64_t *value = malloc(sizeof(uint64_t) * 2 * (size_t)ncodes);
+        unsigned char *usable = calloc(2 * (size_t)ncodes, 1);
+        for (int64_t q = 2; q < ncodes; q++)
+            for (int sign = 0; sign < 2; sign++) {
+                if (const_ref_exact(sign ? -q : q, wv)) continue;
+                cy_from_sqrt23(f, wv, &x);
+                value[2 * q + sign] = cy_residue(f, &x, w, p);
+                usable[2 * q + sign] = 1;
+            }
         codes = malloc(sizeof(int) * sq * n);
         for (size_t i = 0; i < sq * n && !status; i++) {
             int code = S[i] ? 0 : 1;
             for (int64_t q = 2; q < ncodes && !code; q++)
-                if (usable[q] && value[q] == S[i]) code = (int)q;
+                for (int sign = 0; sign < 2 && !code; sign++)
+                    if (usable[2 * q + sign] && value[2 * q + sign] == S[i]) code = sign ? (int)-q : (int)q;
             if (!code) status = 10;
             codes[i] = code;
         }
@@ -918,17 +884,9 @@ int little_seed_positions(int gid, int *positions, int *count)
 int little_code_value_equal(int a, int b)
 {
     if (a == b) return 1;
-    static section_view exact;
-    static int ready;
-    if (!ready && (section_find("const.exact", &exact) || !section_is_int(&exact))) return 0;
-    ready = 1;
-    int64_t n = (int64_t)exact.entry->count / 8;
-    if (a < 1 || b < 1 || a >= n || b >= n) return 0;
-    for (int j = 0; j < 8; j += 2) {
-        int64_t an = a == 1 ? 0 : section_int(&exact, 8 * a + j), ad = a == 1 ? 1 : section_int(&exact, 8 * a + j + 1);
-        int64_t bn = b == 1 ? 0 : section_int(&exact, 8 * b + j), bd = b == 1 ? 1 : section_int(&exact, 8 * b + j + 1);
-        if (!ad || !bd) return 0;
-        if ((__int128)an * bd != (__int128)bn * ad) return 0;
-    }
+    int64_t x[8], y[8];
+    if (const_ref_exact(a, x) || const_ref_exact(b, y)) return 0;
+    for (int j = 0; j < 8; j += 2)
+        if ((__int128)x[j] * y[j + 1] != (__int128)y[j] * x[j + 1]) return 0;
     return 1;
 }

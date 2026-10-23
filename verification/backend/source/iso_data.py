@@ -143,23 +143,8 @@ def _load_table(path: Path) -> Dict[str, list]:
     return {name: _parse_block(data) for name, data in _split_sections(path)}
 
 
-def _load_constants(path: Path) -> Dict[int, float]:
-    const: Dict[int, float] = {}
-    for line in path.read_text().splitlines():
-        line = line.strip()
-        if not line:
-            continue
-        parts = line.split()
-        code = int(parts[0])
-        value = float(parts[1])
-        const[code] = value
-        if code >= 2 and code % 2 == 0:
-            const[code + 1] = -value
-    return const
-
-
 class ISOData:
-    TABLES = ("space", "irreps", "little", "isotropy", "wyckoff", "images", "const")
+    TABLES = ("space", "irreps", "little", "isotropy", "wyckoff", "images")
 
     def __init__(self, data_dir: str | Path):
         self.data_dir = Path(data_dir)
@@ -179,7 +164,6 @@ class ISOData:
             self.magnetic = self._compiled_source.table("magnetic")
         else:
             raise ValueError(f"only the distributed Source is supported: {self.data_dir}")
-        self.const = _load_constants(self._find("const.dat", "const(1).dat"))
 
 
     def _find(self, *names: str) -> Path:
