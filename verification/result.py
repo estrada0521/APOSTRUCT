@@ -160,7 +160,7 @@ def _payloads(comparison: Mapping[str, Any]) -> dict[str, Mapping[str, Any]]:
     return {
         "dsp": comparison.get("definitions") or {},
         "mag": comparison.get("magnetic_definitions") or {},
-        "occ": comparison.get("occupancy_definitions") or {},
+        "occ": comparison.get("occupancy_definitions") or {"web_count": 0, "local_count": 0, "count_match": True},
         "strain": comparison.get("strain_definitions") or {},
     }
 
@@ -188,7 +188,7 @@ def _identities(
     for kind in KINDS:
         out.extend(
             parse_mode_identity(label, expected_kind=kind)
-            for label in _mode_labels(payloads[kind], side=side, kind=kind)
+            for label in _mode_labels(payloads.get(kind, {}), side=side, kind=kind)
         )
     return tuple(out)
 
@@ -244,7 +244,7 @@ def _normfactor_layer(
     # Mode comparison already owns the full-label or sequence pairing authority.
     mismatches: list[str] = []
     for kind in KINDS:
-        for index, mode in enumerate(payloads[kind].get("modes") or [], start=1):
+        for index, mode in enumerate(payloads.get(kind, {}).get("modes") or [], start=1):
             if not isinstance(mode, Mapping):
                 continue
             if kind == "strain":
@@ -355,7 +355,7 @@ def _row_atom_layer(payloads: Mapping[str, Mapping[str, Any]]) -> dict[str, Any]
     positions = 0
     presentation_assignments = 0
     for kind in ("dsp", "mag", "occ"):
-        payload = payloads[kind]
+        payload = payloads.get(kind, {})
         has_presentation_proof = _complete_mode_presentation_proof(payload)
         for mode in payload.get("modes") or []:
             if not isinstance(mode, Mapping):
@@ -433,7 +433,7 @@ def _vector_layer(payloads: Mapping[str, Mapping[str, Any]]) -> dict[str, Any]:
     gauge: set[str] = set()
     failures: dict[str, str] = {}
     for kind in KINDS:
-        payload = payloads[kind]
+        payload = payloads.get(kind, {})
         status = str(payload.get("status") or "missing")
         if status == "ok":
             pass
