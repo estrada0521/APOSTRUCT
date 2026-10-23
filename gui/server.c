@@ -180,8 +180,8 @@ static int distortion_selection(const jvalue *v, jbuf *b, api_error *e)
         return 0;
     }
     if (!jis(v, J_OBJECT)) return api_fail(e, "distortion_selection must be an object");
-    static const char *const allowed[] = {"strain", "displacive_sites", "magnetic_sites"};
-    if (reject_unknown(v, allowed, 3, "distortion_selection", e)) return 1;
+    static const char *const allowed[] = {"strain", "displacive_sites", "magnetic_sites", "occupancy_sites"};
+    if (reject_unknown(v, allowed, 4, "distortion_selection", e)) return 1;
     jb_lit(b, "{");
     int first = 1;
     const jvalue *strain = jget(v, "strain");
@@ -191,8 +191,8 @@ static int distortion_selection(const jvalue *v, jbuf *b, api_error *e)
         jb_value(b, strain);
         first = 0;
     }
-    static const char *const names[] = {"displacive_sites", "magnetic_sites"};
-    for (int i = 0; i < 2; i++) {
+    static const char *const names[] = {"displacive_sites", "magnetic_sites", "occupancy_sites"};
+    for (int i = 0; i < 3; i++) {
         const jvalue *sites = jget(v, names[i]);
         if (!sites) continue;
         char field[64];
@@ -588,15 +588,16 @@ static int publish(const jvalue *launch, jbuf *out, api_error *e)
             jb_free(&state);
             return api_fail(e, "GUI launch returned no mode definitions for amplitudes");
         }
-        static const char *const kinds[3][2] = {{"displacive", "displacive_definitions"}, {"magnetic", "magnetic_definitions"}, {"strain", "strain_definitions"}};
+        static const char *const kinds[4][2] = {{"displacive", "displacive_definitions"}, {"magnetic", "magnetic_definitions"},
+                                                {"occupancy", "occupancy_definitions"}, {"strain", "strain_definitions"}};
         int navailable = 0;
-        for (int k = 0; k < 3; k++) {
+        for (int k = 0; k < 4; k++) {
             const jvalue *list = member(details, kinds[k][1]);
             navailable += jis(list, J_ARRAY) ? (int)list->count : 0;
         }
         char **available = calloc((size_t)navailable + 1, sizeof *available);
         int filled = 0;
-        for (int k = 0; k < 3; k++) {
+        for (int k = 0; k < 4; k++) {
             const jvalue *list = member(details, kinds[k][1]);
             for (int64_t i = 0; jis(list, J_ARRAY) && i < list->count; i++) {
                 available[filled] = malloc(48);

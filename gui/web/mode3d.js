@@ -982,6 +982,7 @@ magneticArrowMaterial.userData[SHARED_RESOURCE] = true;
 const MODE_KINDS = [
   ["displacive", "Atomic displacement", "displacive_definitions"],
   ["magnetic", "Magnetic moment", "magnetic_definitions"],
+  ["occupancy", "Occupancy", "occupancy_definitions"],
   ["strain", "Strain", "strain_definitions"],
 ];
 
@@ -2038,6 +2039,10 @@ export class ModeStructureViewer {
       ?? this.payload?.subgroup_details?.display_basis
       ?? this.payload?.subgroup_details?.basis;
     const vectors = vectorsFromBasis(parentVectors, basis) || cellVectors(this.payload?.lattice);
+    if (mode.kind === "occupancy") {
+      const largest = Math.max(0, ...rows.map(row => Math.abs(number(row?.dxyz)) * norm));
+      return largest > EPS ? 1 / largest : 1;
+    }
     let largest = 0;
     for (const row of rows) {
       const vector = mode.kind === "magnetic" ? rowMoment(row) : vector3(row?.dxyz);
@@ -2305,6 +2310,7 @@ export class ModeStructureViewer {
     const sourceKeys = [...new Set(atoms.map(atom => atom.sourceKey))];
     const displacements = new Map(sourceKeys.map(key => [key, [0, 0, 0]]));
     const moments = new Map(sourceKeys.map(key => [key, [0, 0, 0]]));
+    const occupancies = new Map(sourceKeys.map(key => [key, 0]));
     for (const mode of this.modes) {
       const normfactor = Math.abs(number(mode.definition?.normfactor, 1));
       const normalization = normfactor > EPS ? normfactor : 1;
@@ -2318,10 +2324,12 @@ export class ModeStructureViewer {
           addVector(displacements.get(key), vector3(row.dxyz ?? row.displacement ?? row.vector), amplitude);
         } else if (mode.kind === "magnetic") {
           addVector(moments.get(key), rowMoment(row), amplitude);
+        } else if (mode.kind === "occupancy") {
+          occupancies.set(key, occupancies.get(key) + number(row.dxyz) * amplitude);
         }
       });
     }
-    return { displacements, moments };
+    return { displacements, moments, occupancies };
   }
 
   buildViewCube(vectors) {
@@ -2489,7 +2497,7 @@ export class ModeStructureViewer {
     const atoms = this.buildAtoms().filter(
       atom => !this.hiddenChildSites.has(atom.childSite),
     );
-    const { displacements, moments } = this.modeVectors(atoms, scale);
+    const { displacements, moments, occupancies } = this.modeVectors(atoms, scale);
     const showBonds = !this.bondOptionsSuppressed && Boolean(this.bondsInput?.checked);
     const showPolyhedra = !this.bondOptionsSuppressed && Boolean(this.polyhedraInput?.checked);
     const polyhedronOpacity = 0.7;
@@ -2551,10 +2559,14 @@ export class ModeStructureViewer {
       const displacement = combine(vectors, displacements.get(atom.sourceKey) || [0, 0, 0]);
       const position = basePosition.clone().add(displacement);
       const fallbackRadius = visualScale * 0.045;
-      const mesh = makeModeAtomMesh(atom, fallbackRadius);
-      mesh.position.copy(position);
-      mesh.userData = { label: atom.label, fractional: atom.frac };
-      group.add(mesh);
+      const occupancy = Math.max(0, 1 + (occupancies.get(atom.sourceKey) || 0));
+      if (occupancy > EPS) {
+        const mesh = makeModeAtomMesh(atom, fallbackRadius);
+        mesh.position.copy(position);
+        mesh.scale.multiplyScalar(Math.cbrt(occupancy));
+        mesh.userData = { label: atom.label, fractional: atom.frac };
+        group.add(mesh);
+      }
       if (this.arrowsInput?.checked) {
         const displacementArrow = arrow(basePosition, displacement, 0x1677b8, visualScale);
         if (displacementArrow) group.add(displacementArrow);

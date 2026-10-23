@@ -343,6 +343,7 @@
     function selectedDistortionSelection() {
       const renderedSiteInputs = document.querySelectorAll(
         "[id^='includedisplacive']:not(#includedisplaciveall):not(#includedisplacivenone), "
+        + "[id^='includescalar']:not(#includescalarall):not(#includescalarnone), "
         + "[id^='includemagnetic']:not(#includemagneticall):not(#includemagneticnone)",
       );
       if (!renderedSiteInputs.length) {
@@ -356,6 +357,7 @@
         strain: Boolean($("includestrain")?.checked),
         displacive_sites: selectedSiteIndexes("includedisplacive"),
         magnetic_sites: selectedSiteIndexes("includemagnetic"),
+        occupancy_sites: selectedSiteIndexes("includescalar"),
       };
     }
 
@@ -508,22 +510,23 @@
       const siteTypes = selection.site_types || atoms.map(site => site.type || site.label);
       const siteLabels = selection.site_labels || atoms.map(site => site.label || site.type);
       const selectedFor = kind => new Set(selection[`${kind}_sites`] || []);
-      const siteBoxes = kind => siteTypes.map((siteType, i) => {
+      const siteBoxes = (kind, key = kind) => siteTypes.map((siteType, i) => {
         if (!selectableSites.has(i + 1)) return "";
         const prefix = `include${kind}`;
         const id = `${prefix}${String(i + 1).padStart(3, "0")}`;
-        const checked = selectedFor(kind).has(i + 1) ? "checked" : "";
+        const checked = selectedFor(key).has(i + 1) ? "checked" : "";
         const label = siteLabels[i] || siteType || ("site" + (i + 1));
         return `${esc(label)}<input type="checkbox" id="${id}" ${checked}>`;
       }).filter(Boolean).join(" ");
       $("distortion-table").querySelector("tbody").innerHTML = `
         <tr><td>Strain: <input type="checkbox" id="includestrain" ${selection.strain ? "checked" : ""}></td></tr>
         <tr><td valign="TOP">Displacive: </td><td>all<input type="checkbox" id="includedisplaciveall"> none<input type="checkbox" id="includedisplacivenone"> ${siteBoxes("displacive")}</td></tr>
+        <tr><td valign="TOP">Occupational: </td><td>all<input type="checkbox" id="includescalarall"> none<input type="checkbox" id="includescalarnone"> ${siteBoxes("scalar", "occupancy")}</td></tr>
         <tr><td valign="TOP">Magnetic: </td><td>all<input type="checkbox" id="includemagneticall"> none<input type="checkbox" id="includemagneticnone"> ${siteBoxes("magnetic")}</td></tr>
       `;
       $("distortion-table").querySelectorAll("input").forEach(input => {
         input.addEventListener("change", () => {
-          for (const prefix of ["includedisplacive", "includemagnetic"]) {
+          for (const prefix of ["includedisplacive", "includescalar", "includemagnetic"]) {
             if (input.id === `${prefix}all` && input.checked) {
               document.querySelectorAll(`[id^='${prefix}']`).forEach(node => {
                 if (node.id !== `${prefix}none`) node.checked = true;
@@ -879,13 +882,15 @@
       const types = Array.isArray(selection?.site_types) ? selection.site_types : [];
       const has = value => new Set(Array.isArray(value) ? value.map(Number) : []);
       const displacive = has(selection?.displacive_sites), magnetic = has(selection?.magnetic_sites);
+      const occupancy = has(selection?.occupancy_sites);
       const sites = {};
       types.forEach((type, offset) => {
         const element = String(type).match(/[A-Z][a-z]?/)?.[0];
         if (!element) throw new Error(`Site type ${type} has no element`);
         const flags = { displacive: displacive.has(offset + 1), magnetic: magnetic.has(offset + 1) };
+        if (occupancy.size) flags.occupancy = occupancy.has(offset + 1);
         const prior = sites[element];
-        if (prior && (prior.displacive !== flags.displacive || prior.magnetic !== flags.magnetic)) {
+        if (prior && Object.keys(flags).some(key => prior[key] !== flags[key])) {
           throw new Error(`The sites of ${element} are selected differently`);
         }
         sites[element] = flags;
