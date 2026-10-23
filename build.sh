@@ -1,5 +1,6 @@
 #!/bin/sh
-# Build apo, the Source blob, the verification library and byu_export (the BYU-format tables) into bin/.
+# Build apo, the Source blob, the verification library, byu_export (the BYU-format tables) and source_dump (what apo
+# reads from the Source) into bin/.
 # CC picks the compiler (a mingw-w64 one builds Windows executables, natively under MSYS2 or as a cross build);
 # HOSTCC builds the blob compiler, which runs on this machine.
 set -e
@@ -18,6 +19,7 @@ esac
 $HOSTCC -O2 $INC -o bin/source_blob_build source/blob_build.c -lm
 ./bin/source_blob_build source bin/source.blob
 $CC $FLAGS -o bin/byu_export$EXE source/byu_export.c $SRC $LIBS
+$CC $FLAGS -o bin/source_dump$EXE source/source_dump.c $SRC $LIBS
 [ -z "$EXE" ] && $CC $FLAGS -fPIC -shared -o bin/_apostruct.so $SRC -lm
 $CC $FLAGS -o bin/apo$EXE $SRC cli/apo_main.c gui/server.c $LIBS
 cat $( (find core -name '*.[ch]'; echo source/blob_build.c) | LC_ALL=C sort) | { command -v shasum >/dev/null && shasum -a 256 || sha256sum; } | cut -d' ' -f1 > bin/_apostruct.source
