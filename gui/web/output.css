@@ -132,3 +132,5 @@ html, body.output-window { height: 100%; overflow: hidden; }
 .output-block .mode-element-modes > .mode-element-toggle { padding-bottom: 0; }
 .output-block .mode-element-toggle + .mode-site-card { padding-top: 12px; }
 .output-block .mode-site-card .mode-site-list:last-child { margin-bottom: 0; }
+.output-block .mode-irrep-heading { display: flex; flex-wrap: wrap; column-gap: 6px; row-gap: 4px; }
+.output-block .mode-group-properties { margin-left: 0; white-space: normal; }
