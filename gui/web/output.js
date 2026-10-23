@@ -54,6 +54,7 @@ function sliderLabelWidth() {
 }
 
 function setModeSidebarWidth(width) {
+  if (window.matchMedia && window.matchMedia("(max-width: 600px)").matches) return;
   if (!modeWorkspace || !modeSidebar || !modeResizer) return;
   const bounds = modeWorkspace.getBoundingClientRect();
   const handleWidth = modeResizer.getBoundingClientRect().width;

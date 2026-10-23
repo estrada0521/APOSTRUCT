@@ -54,8 +54,27 @@ html, body.output-window { height: 100%; overflow: hidden; }
 .output-block .mode-group summary { top: 0; }
 .output-block .mode-details-output { box-sizing: border-box; height: 100%; }
 @media (max-width: 600px) {
-  .output-page { padding: 6px; }
-  .output-block .mode-viewer-workspace { --mode-sidebar-width: 180px; }
+  html.output-document, body.output-window {
+    height: auto;
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+  .output-page {
+    height: auto;
+    min-height: 100vh;
+    min-height: 100svh;
+    padding: 6px;
+  }
+  .output-block { height: auto; }
+  .output-block .mode-viewer-workspace {
+    height: auto;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 66vh max(320px, 66vh);
+    grid-template-rows: 66svh max(320px, 66svh);
+    gap: 12px;
+  }
+  .output-block .mode-viewer-resizer { display: none; }
   .output-block .mode-viewer-display-options { flex-wrap: wrap; }
 }
 
