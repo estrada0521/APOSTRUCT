@@ -1,4 +1,4 @@
-import { ModeStructureViewer } from "./mode3d.js?v=58";
+import { ModeStructureViewer } from "./mode3d.js?v=59";
 
 const $ = id => document.getElementById(id);
 const state = { modeDetailText: null, modeDetailTextRendered: false };

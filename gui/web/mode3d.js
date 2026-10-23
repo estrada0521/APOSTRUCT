@@ -1894,7 +1894,8 @@ export class ModeStructureViewer {
       const contents = siteCards.map(card => {
         const color = card.element ? this.elementColorCss(card.element) : 'rgb(180,180,180)';
         return '<section class="mode-site-card" data-mode-card-element="' + this.escape(card.element)
-          + '" style="--site-color:' + color + ';--site-ink:' + (card.element ? this.elementTextColorCss(card.element) : 'rgb(64, 64, 64)') + '">'
+          + '" style="--site-color:' + color + ';--site-ink:' + (card.element ? this.elementTextColorCss(card.element) : 'rgb(64, 64, 64)')
+          + ';--site-check:' + (card.element ? this.elementCheckColorCss(card.element) : 'rgb(32, 32, 32)') + '">'
           + '<div class="mode-site-heading">' + this.escape(card.label + (card.wyckoff ? ' (' + card.wyckoff + ')' : '')) + '</div>'
           + (card.children.length ? '<div class="mode-site-list">' + card.children.map(renderChildSite).join('') + '</div>' : '')
           + renderSiteModes(card.modes)
@@ -1902,8 +1903,9 @@ export class ModeStructureViewer {
       }).join('');
       const groupColor = element ? this.elementColorCss(element) : 'rgb(180,180,180)';
       const groupInk = element ? this.elementTextColorCss(element) : 'rgb(64, 64, 64)';
+      const groupCheck = element ? this.elementCheckColorCss(element) : 'rgb(32, 32, 32)';
       return '<section class="mode-element-modes" data-mode-card-element="' + this.escape(element)
-        + '" style="--site-color:' + groupColor + ';--site-ink:' + groupInk + '">' + heading + contents + '</section>';
+        + '" style="--site-color:' + groupColor + ';--site-ink:' + groupInk + ';--site-check:' + groupCheck + '">' + heading + contents + '</section>';
     }).join('');
     const hiddenModeCount = Math.max(0, this.modes.length - visibleModes.length);
     const modeProgress = hiddenModeCount ? `<p class="mode-viewer-note mode-viewer-progress">
@@ -2092,6 +2094,10 @@ export class ModeStructureViewer {
     return luminance > 0.179 ? "rgb(64, 64, 64)" : "#ffffff";
   }
 
+  elementCheckColorCss(element) {
+    return this.elementTextColorCss(element) === "#ffffff" ? "#ffffff" : "rgb(32, 32, 32)";
+  }
+
   updateElementSwatches() {
     this.controlsNode?.querySelectorAll("[data-mode-element-swatch]").forEach(swatch => {
       swatch.style.backgroundColor = this.elementColorCss(swatch.dataset.modeElementSwatch);
@@ -2100,6 +2106,7 @@ export class ModeStructureViewer {
       if (card.dataset.modeCardElement) {
         card.style.setProperty("--site-color", this.elementColorCss(card.dataset.modeCardElement));
         card.style.setProperty("--site-ink", this.elementTextColorCss(card.dataset.modeCardElement));
+        card.style.setProperty("--site-check", this.elementCheckColorCss(card.dataset.modeCardElement));
       }
     });
   }
