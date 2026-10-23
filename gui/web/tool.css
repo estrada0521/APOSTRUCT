@@ -754,3 +754,45 @@ td {
 .opd-lines .choice {
   font-size: 0.9em;
 }
+
+input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  box-sizing: border-box;
+  width: 13px;
+  height: 13px;
+  margin: 0 3px;
+  border: 1px solid #767676;
+  border-radius: 3px;
+  background: #fff;
+  vertical-align: -2px;
+  cursor: pointer;
+}
+input[type="checkbox"]:checked,
+input[type="checkbox"]:indeterminate {
+  border-color: var(--check-ink, #000);
+  background: var(--check-ink, #000);
+}
+input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  left: 3.5px;
+  top: 0.5px;
+  width: 3px;
+  height: 7px;
+  border: solid var(--check-paper, #fff);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+input[type="checkbox"]:indeterminate::after {
+  content: "";
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  top: 5px;
+  height: 2px;
+  background: var(--check-paper, #fff);
+}
+input[type="checkbox"]:disabled { opacity: 0.4; cursor: default; }
+input[type="checkbox"]:focus-visible { outline: 2px solid var(--check-ink, #000); outline-offset: 1px; }
