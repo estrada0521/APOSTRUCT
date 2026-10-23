@@ -1845,7 +1845,7 @@ export class ModeStructureViewer {
       return `<details class="mode-group" open><summary>${this.escape(siteLabel)} Modes</summary>${contents}</details>`;
     }).join("");
     const master = `<section class="mode-group mode-master-group">
-      <h4><span>Master Amp</span><span class="mode-master-actions"><button class="primary-action" type="button" data-mode-animate aria-pressed="false">Animate</button><button class="primary-action" type="button" data-mode-reset>Reset</button></span></h4>
+      <h4><span class="mode-master-actions"><button class="primary-action" type="button" data-mode-animate aria-pressed="false">Animate</button><button class="primary-action" type="button" data-mode-reset>Reset</button></span></h4>
       <div class="mode-master">
         <span>Parent</span>
         <input type="range" min="0" max="1" step="0.01" value="1" data-master-amplitude>
