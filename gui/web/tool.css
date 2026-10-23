@@ -437,11 +437,6 @@ table {
   padding: 0;
 }
 
-.material-name {
-  margin-left: 8px;
-  color: var(--color-muted);
-}
-
 .mode-master {
   display: grid;
   grid-template-columns: max-content 120px max-content 44px;

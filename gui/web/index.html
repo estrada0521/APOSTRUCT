@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>APOSTRUCT</title>
   <link rel="stylesheet" href="theme.css?v=3">
-  <link rel="stylesheet" href="tool.css?v=94">
+  <link rel="stylesheet" href="tool.css?v=96">
 </head>
 <body>
   <main class="page">
@@ -454,8 +454,8 @@
         .every(value => value !== null && value !== undefined && value !== "");
       const lines = [
         [
-          `${esc(sg.number ?? input.parent?.number ?? "")} ${esc(symbol)}`.trim(),
           materialName ? `<span class="material-name">${esc(materialName)}</span>` : "",
+          `${esc(sg.number ?? input.parent?.number ?? "")} ${esc(symbol)}`.trim(),
         ].filter(Boolean).join(" "),
         ...(hasLattice ? [
           `a=${esc(fmtNumber(lat.a))}, b=${esc(fmtNumber(lat.b))}, c=${esc(fmtNumber(lat.c))}`,
