@@ -1894,7 +1894,7 @@ export class ModeStructureViewer {
       const contents = siteCards.map(card => {
         const color = card.element ? this.elementColorCss(card.element) : 'rgb(180,180,180)';
         return '<section class="mode-site-card" data-mode-card-element="' + this.escape(card.element)
-          + '" style="--site-color:' + color + '">'
+          + '" style="--site-color:' + color + ';--site-ink:' + (card.element ? this.elementTextColorCss(card.element) : '#202020') + '">'
           + '<div class="mode-site-heading">' + this.escape(card.label + (card.wyckoff ? ' (' + card.wyckoff + ')' : '')) + '</div>'
           + (card.children.length ? '<div class="mode-site-list">' + card.children.map(renderChildSite).join('') + '</div>' : '')
           + renderSiteModes(card.modes)
@@ -2081,12 +2081,23 @@ export class ModeStructureViewer {
     return colorCss(softenedMaterialColor(atomColor({ element })));
   }
 
+  elementTextColorCss(element) {
+    const hex = this.elementColorCss(element).slice(1);
+    const rgb = [0, 2, 4].map(offset => parseInt(hex.slice(offset, offset + 2), 16) / 255);
+    const linear = rgb.map(value => value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4);
+    const luminance = 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
+    return luminance > 0.179 ? "#000000" : "#ffffff";
+  }
+
   updateElementSwatches() {
     this.controlsNode?.querySelectorAll("[data-mode-element-swatch]").forEach(swatch => {
       swatch.style.backgroundColor = this.elementColorCss(swatch.dataset.modeElementSwatch);
     });
     this.controlsNode?.querySelectorAll("[data-mode-card-element]").forEach(card => {
-      if (card.dataset.modeCardElement) card.style.setProperty("--site-color", this.elementColorCss(card.dataset.modeCardElement));
+      if (card.dataset.modeCardElement) {
+        card.style.setProperty("--site-color", this.elementColorCss(card.dataset.modeCardElement));
+        card.style.setProperty("--site-ink", this.elementTextColorCss(card.dataset.modeCardElement));
+      }
     });
   }
 

@@ -17,12 +17,12 @@ html, body.output-window { height: 100%; overflow: hidden; }
   gap: 12px;
   min-height: 0;
   overflow: hidden;
-  padding: 18px;
+  padding: 18px 0 0;
   background: rgb(245, 245, 243);
-  border: 1px solid #e3e3e3;
-  border-radius: 4px;
+  border: 0;
+  border-radius: 0;
 }
-.output-heading { display: grid; gap: 6px; min-width: 0; }
+.output-heading { display: grid; gap: 6px; min-width: 0; margin-inline: 18px; }
 #result-title { margin: 0; font-size: var(--font-size-base); font-weight: 400; overflow-wrap: anywhere; }
 #output-status { color: #555; font-size: 13px; }
 .output-block .mode-details-view-switch {
@@ -40,7 +40,7 @@ html, body.output-window { height: 100%; overflow: hidden; }
 .output-block .mode-master-group {
   position: static;
   margin: 0;
-  padding-bottom: 10px;
+  padding: 0 18px 10px;
 }
 .output-block .mode-master-group > h4 { width: auto; flex-wrap: wrap; margin-top: 0; }
 .output-block .mode-master { grid-template-columns: max-content minmax(30px, 1fr) max-content max-content; }
@@ -64,13 +64,43 @@ html, body.output-window { height: 100%; overflow: hidden; }
 .output-block .mode-element-group { gap: 4px; }
 .output-block .mode-site-list { display: grid; gap: 3px; padding-left: 18px; }
 
-.output-block .mode-element-modes { display: grid; gap: 8px; margin-bottom: 12px; }
+.output-block .mode-element-modes { display: grid; gap: 0; margin: 0; }
+.output-block .mode-element-modes > .mode-element-toggle { padding: 8px 18px; }
 .output-block .mode-site-card {
   min-width: 0;
-  padding: 10px;
-  border: 1px solid color-mix(in srgb, var(--site-color) 35%, #deded9);
-  border-radius: 4px;
-  background: color-mix(in srgb, var(--site-color) 18%, rgb(245, 245, 243));
+  padding: 12px 18px;
+  border: 0;
+  border-radius: 0;
+  background: var(--site-color);
+  color: var(--site-ink, #202020);
 }
 .output-block .mode-site-heading { font-weight: 500; overflow-wrap: anywhere; }
 .output-block .mode-site-card .mode-site-list { padding-left: 0; margin-bottom: 8px; }
+
+.output-block .mode-viewer-sidebar input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  background: #ffffff;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 25%);
+}
+.output-block .mode-viewer-sidebar input[type="range"]::-moz-range-track {
+  height: 4px;
+  background: #ffffff;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 25%);
+}
+.output-block .mode-viewer-sidebar input[type="range"]::-webkit-slider-thumb {
+  box-sizing: border-box;
+  width: 12px;
+  height: 12px;
+  margin-top: -4px;
+  background: #202020;
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 40%);
+}
+.output-block .mode-viewer-sidebar input[type="range"]::-moz-range-thumb {
+  box-sizing: border-box;
+  width: 12px;
+  height: 12px;
+  background: #202020;
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 40%);
+}
