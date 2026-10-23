@@ -6,14 +6,6 @@
   <title>APOSTRUCT</title>
   <link rel="stylesheet" href="theme.css?v=1">
   <link rel="stylesheet" href="tool.css?v=88">
-  <script type="importmap">
-    {
-      "imports": {
-        "three": "./vendor/three.module.js",
-        "three/addons/": "./vendor/addons/"
-      }
-    }
-  </script>
 </head>
 <body>
   <main class="page">
@@ -67,54 +59,15 @@
     </section>
 
     <section class="block" id="mode-details-section" hidden>
-      <div class="mode-details-heading">
-        <label class="block-title mode-details-view-switch">6. Select:
-          <select id="mode-details-view-select">
-            <option value="text">Complete mode details</option>
-            <option value="viewer">Interactive viewer</option>
-          </select>
-        </label>
-        <div class="mode-details-height-control">
-          <label>Height × <input id="mode-details-height-scale" class="tiny-input" type="number" min="0.5" max="4" step="0.1" value="1" inputmode="decimal" required></label>
-          <button class="primary-action" id="mode-details-height-change" type="button">Change</button>
-        </div>
-      </div>
-      <div class="mode-details-layout">
-        <div id="mode-details-text-panel" role="tabpanel">
-          <pre id="mode-details-output" class="mode-details-output"></pre>
-        </div>
-        <section id="mode-details-viewer-panel" class="mode-viewer-shell" role="tabpanel" aria-label="Interactive mode viewer" hidden>
-          <div class="mode-viewer-workspace">
-            <aside class="mode-viewer-sidebar" aria-label="Mode amplitudes">
-              <div id="mode-viewer-controls" class="mode-viewer-controls"></div>
-            </aside>
-            <div class="mode-viewer-resizer" role="separator" aria-label="Resize mode controls" aria-orientation="vertical" tabindex="0"></div>
-            <div class="mode-viewer-stage">
-              <div class="mode-viewer-display-options">
-                <label><input id="mode-viewer-arrow-only" type="checkbox"> Arrows only</label>
-                <label><input id="mode-viewer-bonds" type="checkbox" checked> Bonds</label>
-                <label><input id="mode-viewer-polyhedra" type="checkbox" checked> Polyhedra</label>
-                <label class="mode-viewer-opacity">Opacity
-                  <input id="mode-viewer-poly-opacity" type="range" min="0" max="100" step="5" value="70">
-                  <output id="mode-viewer-poly-opacity-value">70%</output>
-                </label>
-              </div>
-              <div class="mode-viewer-canvas-wrap">
-                <canvas id="mode-viewer-canvas"></canvas>
-                <button class="mode-viewer-home" id="mode-viewer-home" type="button" aria-label="Restore default view" title="Restore default view">
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.2 12 3l9 8.2v9.3h-6.1v-6.2H9.1v6.2H3z"/></svg>
-                </button>
-                <div id="mode-viewer-empty" class="mode-viewer-empty">Calculate mode details to open the viewer</div>
-              </div>
-            </div>
-          </div>
-        </section>
-      </div>
+      <p class="block-title">6. Output:
+        <button class="primary-action" id="open-output" type="button">Open output ↗</button>
+      </p>
+      <p id="output-window-status" role="status">The viewer and complete mode details open in a separate window.</p>
     </section>
   </main>
 
   <script type="module">
-    import { ModeStructureViewer } from "./mode3d.js?v=50";
+    import { OutputWindowHost } from "./output-window.js?v=1";
 
     const state = {
       cif: "",
@@ -127,142 +80,14 @@
       orderparamIndex: 1,
       modeSet: "strain_displacive",
       distortionSelection: null,
-      modeDetailText: null,
-      modeDetailTextLoading: false,
-      modeDetailTextRendered: false,
       guiLaunchRevision: 0,
       running: false,
     };
 
     const $ = id => document.getElementById(id);
 
-    function renderModeDetailText(output, text) {
-      const fragment = document.createDocumentFragment();
-      const source = String(text || "");
-      const headingPattern = /^(Parent structure|Subgroup details|Undistorted superstructure|Displacive mode definitions|Magnetic mode definitions|Parent-cell strain mode definitions)$/gm;
-      let cursor = 0;
-      for (const match of source.matchAll(headingPattern)) {
-        appendModeText(fragment, source.slice(cursor, match.index));
-        const heading = document.createElement("span");
-        heading.className = "mode-details-section-heading";
-        heading.textContent = match[0];
-        fragment.append(heading);
-        cursor = match.index + match[0].length;
-      }
-      appendModeText(fragment, source.slice(cursor));
-      output.replaceChildren(fragment);
-    }
-
-    function ensureModeDetailText() {
-      if (state.modeDetailTextRendered || state.modeDetailTextLoading) return;
-      const output = $("mode-details-output");
-      if (state.modeDetailText !== null) {
-        renderModeDetailText(output, state.modeDetailText);
-        state.modeDetailTextRendered = true;
-        return;
-      }
-      renderModeDetailText(output, "");
-      state.modeDetailTextRendered = true;
-    }
-
-    const modeViewer = new ModeStructureViewer({
-      canvas: $("mode-viewer-canvas"),
-      empty: $("mode-viewer-empty"),
-      controls: $("mode-viewer-controls"),
-      homeButton: $("mode-viewer-home"),
-      arrowOnlyInput: $("mode-viewer-arrow-only"),
-      bondsInput: $("mode-viewer-bonds"),
-      polyhedraInput: $("mode-viewer-polyhedra"),
-      polyhedronOpacityInput: $("mode-viewer-poly-opacity"),
-      polyhedronOpacityOutput: $("mode-viewer-poly-opacity-value"),
-    });
-
-    const modeWorkspace = document.querySelector(".mode-viewer-workspace");
-    const modeSidebar = document.querySelector(".mode-viewer-sidebar");
-    const modeResizer = document.querySelector(".mode-viewer-resizer");
-    const MODE_DETAILS_BASE_HEIGHT = 1000;
-
-    function changeModeDetailsHeight() {
-      const input = $("mode-details-height-scale");
-      if (!input.reportValidity()) return;
-      const multiplier = Number(input.value);
-      if (!Number.isFinite(multiplier)) return;
-      document.querySelector(".mode-details-layout").style.setProperty(
-        "--mode-details-height",
-        `${MODE_DETAILS_BASE_HEIGHT * multiplier}px`,
-      );
-      if ($("mode-details-view-select").value === "viewer") {
-        requestAnimationFrame(() => modeViewer.refreshLayout(true));
-      }
-    }
-
-    $("mode-details-height-change").addEventListener("click", changeModeDetailsHeight);
-
-    function setModeSidebarWidth(width) {
-      if (!modeWorkspace || !modeSidebar || !modeResizer) return;
-      const bounds = modeWorkspace.getBoundingClientRect();
-      const handleWidth = modeResizer.getBoundingClientRect().width;
-      const availableWidth = bounds.width - handleWidth;
-      if (availableWidth <= 0) return;
-      const minimumSidebar = Math.min(220, Math.max(100, availableWidth * 0.3));
-      const minimumViewer = Math.min(260, Math.max(120, availableWidth * 0.3));
-      const maximumSidebar = Math.max(minimumSidebar, availableWidth - minimumViewer);
-      const nextWidth = Math.min(maximumSidebar, Math.max(minimumSidebar, width));
-      modeWorkspace.style.setProperty("--mode-sidebar-width", `${nextWidth}px`);
-      modeResizer.setAttribute("aria-valuemin", String(Math.round(minimumSidebar)));
-      modeResizer.setAttribute("aria-valuemax", String(Math.round(maximumSidebar)));
-      modeResizer.setAttribute("aria-valuenow", String(Math.round(nextWidth)));
-    }
-
-    modeResizer?.addEventListener("pointerdown", event => {
-      event.preventDefault();
-      modeResizer.focus();
-      modeViewer.setLiveLayoutResize(true);
-      modeResizer.setPointerCapture(event.pointerId);
-      modeResizer.classList.add("is-dragging");
-    });
-    modeResizer?.addEventListener("pointermove", event => {
-      if (!modeResizer.hasPointerCapture(event.pointerId) || !modeWorkspace) return;
-      setModeSidebarWidth(event.clientX - modeWorkspace.getBoundingClientRect().left);
-    });
-    const stopModeResize = event => {
-      if (modeResizer?.hasPointerCapture(event.pointerId)) {
-        modeResizer.releasePointerCapture(event.pointerId);
-      }
-      modeResizer?.classList.remove("is-dragging");
-      modeViewer.setLiveLayoutResize(false);
-    };
-    modeResizer?.addEventListener("pointerup", stopModeResize);
-    modeResizer?.addEventListener("pointercancel", stopModeResize);
-    modeResizer?.addEventListener("lostpointercapture", () => {
-      modeResizer.classList.remove("is-dragging");
-      modeViewer.setLiveLayoutResize(false);
-    });
-    modeResizer?.addEventListener("keydown", event => {
-      if (!modeSidebar || !["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
-      event.preventDefault();
-      const current = modeSidebar.getBoundingClientRect().width;
-      const target = event.key === "Home"
-        ? 0
-        : event.key === "End"
-          ? Number.POSITIVE_INFINITY
-          : current + (event.key === "ArrowLeft" ? -20 : 20);
-      setModeSidebarWidth(target);
-    });
-    window.addEventListener("resize", () => {
-      if (modeSidebar) setModeSidebarWidth(modeSidebar.getBoundingClientRect().width);
-    });
-
-    function setModeDetailsView(view) {
-      const showViewer = view === "viewer";
-      if (!showViewer) ensureModeDetailText();
-      $("mode-details-text-panel").hidden = showViewer;
-      $("mode-details-viewer-panel").hidden = !showViewer;
-      $("mode-details-view-select").value = showViewer ? "viewer" : "text";
-      if (showViewer) requestAnimationFrame(() => modeViewer.refreshLayout());
-    }
-
-    $("mode-details-view-select").addEventListener("change", event => setModeDetailsView(event.target.value));
+    const outputWindow = new OutputWindowHost($("output-window-status"));
+    $("open-output").addEventListener("click", () => outputWindow.open());
 
     function esc(value) {
       return String(value ?? "").replace(/[&<>"']/g, ch => ({
@@ -409,7 +234,7 @@
       }
       if (stage === "modes") {
         renderModeDetails(backendState, "viewer");
-        modeViewer.setAmplitudes(launch.amplitudes || []);
+        outputWindow.setAmplitudes(launch.amplitudes || []);
         $("mode-details-section").hidden = false;
       }
     }
@@ -604,7 +429,10 @@
       if (step < 3) $("k-section").hidden = true;
       if (step < 4) $("irrep-section").hidden = true;
       if (step < 5) $("opd-section").hidden = true;
-      if (step < 6) $("mode-details-section").hidden = true;
+      if (step < 6) {
+        outputWindow.markStale();
+        $("mode-details-section").hidden = true;
+      }
     }
 
     function renderData(backendState) {
@@ -696,6 +524,7 @@
           state.orderparamIndex = 1;
           $("irrep-section").hidden = true;
           $("opd-section").hidden = true;
+          outputWindow.markStale();
           $("mode-details-section").hidden = true;
         });
       });
@@ -724,6 +553,7 @@
         state.irrepSelections = state.kSelections.map(() => 1);
         $("irrep-section").hidden = true;
         $("opd-section").hidden = true;
+        outputWindow.markStale();
         $("mode-details-section").hidden = true;
       };
       document.querySelectorAll(".k-select").forEach(node => {
@@ -756,6 +586,7 @@
           if (index === 0) state.irrepIndex = selectedIrrepIndex();
           state.orderparamIndex = 1;
           $("opd-section").hidden = true;
+          outputWindow.markStale();
           $("mode-details-section").hidden = true;
         });
       });
@@ -783,6 +614,7 @@
       document.querySelectorAll("input[name='orderparam']").forEach(radio => {
         radio.addEventListener("change", () => {
           state.orderparamIndex = Number(radio.value || 1);
+          outputWindow.markStale();
           $("mode-details-section").hidden = true;
         });
       });
@@ -813,29 +645,6 @@
       return `<span class="choice" title="${esc(CHOICE_TITLE)}">${esc(text)}</span>`;
     }
 
-    function choiceNode(text) {
-      const span = document.createElement("span");
-      span.className = "choice";
-      span.title = CHOICE_TITLE;
-      span.textContent = text;
-      return span;
-    }
-
-    // the subgroup line of the mode details text, with its basis, origin and k-active parts marked as choices
-    function appendModeText(fragment, text) {
-      const line = /^(.*?)(, basis=\{[^}\n]*\})(, origin=\([^)\n]*\))(, s=\d+, i=\d+, )(k-active= [^\n]*)$/m;
-      const match = text.match(line);
-      if (!match) {
-        fragment.append(document.createTextNode(text));
-        return;
-      }
-      fragment.append(document.createTextNode(text.slice(0, match.index) + match[1]));
-      fragment.append(document.createTextNode(", "), choiceNode(match[2].slice(2)));
-      fragment.append(document.createTextNode(", "), choiceNode(match[3].slice(2)));
-      fragment.append(document.createTextNode(match[4]), choiceNode(match[5]));
-      fragment.append(document.createTextNode(text.slice(match.index + match[0].length)));
-    }
-
     function fmtBasis(value) {
       if (!Array.isArray(value)) return value ? String(value) : "";
       const rows = value.filter(Array.isArray).map(row => `(${row.join(",")})`);
@@ -847,25 +656,30 @@
       return `(${value.join(",")})`;
     }
 
-    function renderModeDetails(backendState, initialView = "text") {
-      const output = $("mode-details-output");
-      output.replaceChildren();
-      const embeddedText = backendState.selected?.mode_detail_text;
-      if (typeof embeddedText === "string") state.modeDetailText = embeddedText;
-      else state.modeDetailText = "";
-      state.modeDetailTextLoading = false;
-      state.modeDetailTextRendered = false;
-      if (initialView === "text") ensureModeDetailText();
+    function renderModeDetails(backendState, initialView) {
       const modeDetails = backendState.selected?.mode_details;
-      modeViewer.setData(modeDetails ? {
-        ...modeDetails,
-        viewer_parent: {
-          lattice: backendState.input?.lattice || null,
-          sites: backendState.input?.atom_sites || [],
+      if (!modeDetails) {
+        outputWindow.markStale();
+        return;
+      }
+      const iso = backendState.selected?.orderparam?.isotropy || {};
+      const title = [
+        $("cif-name").textContent,
+        backendState.space_group?.symbol || backendState.input?.parent?.symbol,
+        iso.opd_label || ("OPD " + state.orderparamIndex),
+      ].filter(Boolean).join(" · ");
+      outputWindow.setData({
+        title,
+        text: backendState.selected?.mode_detail_text || "",
+        viewer: {
+          ...modeDetails,
+          viewer_parent: {
+            lattice: backendState.input?.lattice || null,
+            sites: backendState.input?.atom_sites || [],
+          },
+          viewer_irrep_properties: selectedIrrepProperties(backendState),
         },
-        viewer_irrep_properties: selectedIrrepProperties(backendState),
-      } : null);
-      setModeDetailsView(initialView);
+      }, initialView);
     }
 
     function selectedIrrepProperties(backendState) {
@@ -903,8 +717,6 @@
 
     function resetAnalysisWorkflow() {
       state.backendState = null;
-      state.modeDetailText = null;
-      state.modeDetailTextLoading = false;
       state.kLabel = "GM";
       state.kSelections = [{ label: "GM", params: { a: "", b: "", g: "" } }];
       state.irrepIndex = 1;
@@ -918,9 +730,8 @@
       $("k-selectors").replaceChildren();
       $("irrep-selectors").replaceChildren();
       $("opd-options").replaceChildren();
-      $("mode-details-output").textContent = "";
       $("parent-summary").textContent = "";
-      modeViewer.setData(null);
+      outputWindow.markStale();
       hideAfter(1);
     }
 
@@ -962,6 +773,7 @@
         await analyze({ includeOPD: true });
         if (!state.backendState) return;
         $("opd-section").hidden = false;
+        outputWindow.markStale();
         $("mode-details-section").hidden = true;
       });
     });
@@ -980,6 +792,7 @@
       if (state.backendState) renderK(state.backendState);
       $("irrep-section").hidden = true;
       $("opd-section").hidden = true;
+      outputWindow.markStale();
       $("mode-details-section").hidden = true;
     });
     pollGuiLaunch();

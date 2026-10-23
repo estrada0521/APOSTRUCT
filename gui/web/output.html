@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>APOSTRUCT — Output</title>
+  <link rel="stylesheet" href="theme.css?v=1">
+  <link rel="stylesheet" href="tool.css?v=88">
+  <link rel="stylesheet" href="output.css?v=1">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "./vendor/three.module.js",
+        "three/addons/": "./vendor/addons/"
+      }
+    }
+  </script>
+</head>
+<body class="output-window">
+  <main class="page output-page">
+    <header class="output-heading">
+      <strong id="result-title">APOSTRUCT — Output</strong>
+      <span id="output-status" role="status">Waiting for a calculated result from the input window…</span>
+      <p id="output-error" class="error" role="alert" hidden></p>
+    </header>
+    <section class="output-block" id="mode-details-section">
+      <div class="mode-details-heading">
+        <label class="block-title mode-details-view-switch">View:
+          <select id="mode-details-view-select">
+            <option value="text">Complete mode details</option>
+            <option value="viewer">Interactive viewer</option>
+          </select>
+        </label>
+      </div>
+      <div class="mode-details-layout">
+        <div id="mode-details-text-panel" role="tabpanel">
+          <pre id="mode-details-output" class="mode-details-output"></pre>
+        </div>
+        <section id="mode-details-viewer-panel" class="mode-viewer-shell" role="tabpanel" aria-label="Interactive mode viewer" hidden>
+          <div class="mode-viewer-workspace">
+            <aside class="mode-viewer-sidebar" aria-label="Mode amplitudes">
+              <div id="mode-viewer-controls" class="mode-viewer-controls"></div>
+            </aside>
+            <div class="mode-viewer-resizer" role="separator" aria-label="Resize mode controls" aria-orientation="vertical" tabindex="0"></div>
+            <div class="mode-viewer-stage">
+              <div class="mode-viewer-display-options">
+                <label><input id="mode-viewer-arrow-only" type="checkbox"> Arrows only</label>
+                <label><input id="mode-viewer-bonds" type="checkbox" checked> Bonds</label>
+                <label><input id="mode-viewer-polyhedra" type="checkbox" checked> Polyhedra</label>
+                <label class="mode-viewer-opacity">Opacity
+                  <input id="mode-viewer-poly-opacity" type="range" min="0" max="100" step="5" value="70">
+                  <output id="mode-viewer-poly-opacity-value">70%</output>
+                </label>
+              </div>
+              <div class="mode-viewer-canvas-wrap">
+                <canvas id="mode-viewer-canvas"></canvas>
+                <button class="mode-viewer-home" id="mode-viewer-home" type="button" aria-label="Restore default view" title="Restore default view">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.2 12 3l9 8.2v9.3h-6.1v-6.2H9.1v6.2H3z"/></svg>
+                </button>
+                <div id="mode-viewer-empty" class="mode-viewer-empty">Calculate mode details to open the viewer</div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+  <script type="module" src="output.js?v=1"></script>
+</body>
+</html>

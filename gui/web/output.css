@@ -1,0 +1,27 @@
+html, body.output-window { height: 100%; overflow: hidden; }
+.output-page {
+  height: 100vh;
+  height: 100dvh;
+  padding: 12px;
+  gap: 10px;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+.output-heading { display: grid; gap: 4px; min-width: 0; }
+#result-title { overflow-wrap: anywhere; }
+#output-status { color: #555; font-size: 13px; }
+.output-block {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 8px;
+  min-width: 0;
+  min-height: 0;
+}
+.output-block .mode-details-layout { height: 100%; margin-top: 0; }
+.output-block .mode-viewer-workspace { --mode-sidebar-width: 300px; }
+.output-block .mode-details-view-switch { width: auto; display: flex; flex-wrap: wrap; }
+.output-block .mode-details-output { box-sizing: border-box; height: 100%; }
+@media (max-width: 600px) {
+  .output-page { padding: 6px; }
+  .output-block .mode-viewer-workspace { --mode-sidebar-width: 180px; }
+  .output-block .mode-viewer-display-options { flex-wrap: wrap; }
+}
