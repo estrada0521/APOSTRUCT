@@ -126,6 +126,8 @@ html, body.output-window { height: 100%; overflow: hidden; }
 .output-block .mode-slider { min-height: 22px; margin-bottom: 4px; }
 .output-block .mode-irrep-group + .mode-irrep-group { margin-top: 16px; }
 .output-block .mode-atom-toggle { white-space: normal; align-items: flex-start; }
-.output-block .mode-atom-toggle input { flex: none; margin-top: calc((1lh - 13px) / 2); }
+.output-block .mode-atom-toggle input { flex: none; font: inherit; line-height: inherit; margin-top: calc((1lh - 13px) / 2); }
 .output-block .mode-atom-toggle span { overflow: visible; overflow-wrap: anywhere; }
 .output-block .mode-irrep-heading { overflow-wrap: anywhere; }
+.output-block .mode-element-modes > .mode-element-toggle { padding-bottom: 0; }
+.output-block .mode-element-toggle + .mode-site-card { padding-top: 12px; }
