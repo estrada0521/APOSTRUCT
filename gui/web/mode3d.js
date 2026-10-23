@@ -1866,7 +1866,7 @@ export class ModeStructureViewer {
     const renderChildSite = site => (
       '<label class="mode-atom-toggle mode-child-toggle">'
       + '<input type="checkbox" data-mode-child-site="' + this.escape(site.id)
-      + '" data-mode-site-element="' + this.escape(site.element) + '"'
+      + '" data-mode-site-element="' + this.escape(site.element) + '" data-mode-site-parent="' + this.escape(site.parentId) + '"'
       + (this.hiddenChildSites.has(site.id) ? '' : ' checked') + '>'
       + '<span>' + this.escape(site.id + ' (' + site.wyckoff + ')') + '</span></label>'
     );
@@ -1881,7 +1881,10 @@ export class ModeStructureViewer {
           + '" style="--site-color:' + color + ';--site-ink:' + (card.element ? this.elementTextColorCss(card.element) : 'rgb(64, 64, 64)')
           + ';--site-check:' + (card.element ? this.elementCheckColorCss(card.element) : 'rgb(32, 32, 32)')
           + (card.element ? this.elementCheckBoxCss(card.element) : '') + '">'
-          + '<div class="mode-site-heading">' + this.escape(card.label + (card.wyckoff ? ' (' + card.wyckoff + ')' : '')) + '</div>'
+          + (card.children.length
+            ? '<label class="mode-atom-toggle mode-site-heading"><input type="checkbox" data-mode-parent-site="' + this.escape(card.label)
+              + '" checked><span>' + this.escape(card.label + (card.wyckoff ? ' (' + card.wyckoff + ')' : '')) + '</span></label>'
+            : '<div class="mode-site-heading">' + this.escape(card.label + (card.wyckoff ? ' (' + card.wyckoff + ')' : '')) + '</div>')
           + (card.children.length ? '<div class="mode-site-list">' + card.children.map(renderChildSite).join('') + '</div>' : '')
           + renderSiteModes(card.modes)
           + '</section>';
@@ -1933,6 +1936,7 @@ export class ModeStructureViewer {
     });
     const siteVisibilityInputs = [...this.controlsNode.querySelectorAll("input[data-mode-child-site]")];
     const elementVisibilityInputs = [...this.controlsNode.querySelectorAll("input[data-mode-element]")];
+    const parentVisibilityInputs = [...this.controlsNode.querySelectorAll("input[data-mode-parent-site]")];
     const syncVisibility = (input, descendants) => {
       if (!input || !descendants.length) return;
       const checkedCount = descendants.filter(descendant => descendant.checked).length;
@@ -1943,19 +1947,34 @@ export class ModeStructureViewer {
       const elementInput = elementVisibilityInputs.find(input => input.dataset.modeElement === element);
       syncVisibility(elementInput, siteVisibilityInputs.filter(input => input.dataset.modeSiteElement === element));
     };
+    const syncParentVisibility = parent => {
+      const parentInput = parentVisibilityInputs.find(input => input.dataset.modeParentSite === parent);
+      syncVisibility(parentInput, siteVisibilityInputs.filter(input => input.dataset.modeSiteParent === parent));
+    };
     const setChildVisibility = (input, checked) => {
       input.checked = checked;
       const childSite = input.dataset.modeChildSite;
       if (checked) this.hiddenChildSites.delete(childSite);
       else this.hiddenChildSites.add(childSite);
     };
-    [...siteVisibilityInputs, ...elementVisibilityInputs].forEach(input => {
+    [...siteVisibilityInputs, ...parentVisibilityInputs, ...elementVisibilityInputs].forEach(input => {
       input.addEventListener("click", event => event.stopPropagation());
     });
     siteVisibilityInputs.forEach(input => {
       input.addEventListener("change", () => {
         setChildVisibility(input, input.checked);
+        syncParentVisibility(input.dataset.modeSiteParent);
         syncElementVisibility(input.dataset.modeSiteElement);
+        this.updateScene();
+      });
+    });
+    parentVisibilityInputs.forEach(input => {
+      input.addEventListener("change", () => {
+        const parent = input.dataset.modeParentSite;
+        input.indeterminate = false;
+        const children = siteVisibilityInputs.filter(siteInput => siteInput.dataset.modeSiteParent === parent);
+        children.forEach(siteInput => setChildVisibility(siteInput, input.checked));
+        if (children.length) syncElementVisibility(children[0].dataset.modeSiteElement);
         this.updateScene();
       });
     });
@@ -1967,9 +1986,11 @@ export class ModeStructureViewer {
         siteVisibilityInputs.filter(siteInput => siteInput.dataset.modeSiteElement === element).forEach(siteInput => {
           setChildVisibility(siteInput, input.checked);
         });
+        parentVisibilityInputs.forEach(parentInput => syncParentVisibility(parentInput.dataset.modeParentSite));
         this.updateScene();
       });
     });
+    parentVisibilityInputs.forEach(input => syncParentVisibility(input.dataset.modeParentSite));
     elementVisibilityInputs.forEach(input => syncElementVisibility(input.dataset.modeElement));
     this.controlsNode.querySelectorAll("input[data-mode-id]").forEach(input => {
       input.addEventListener("input", () => {
@@ -2099,7 +2120,7 @@ export class ModeStructureViewer {
         card.style.setProperty("--site-ink", this.elementTextColorCss(card.dataset.modeCardElement));
         card.style.setProperty("--site-check", this.elementCheckColorCss(card.dataset.modeCardElement));
         const dark = this.elementTextColorCss(card.dataset.modeCardElement) === "#ffffff";
-        card.style.setProperty("--site-check-box", dark ? "rgb(64, 64, 64)" : "#fff");
+        card.style.setProperty("--site-check-box", dark ? "rgb(64, 64, 64)" : "var(--color-check-box)");
         card.style.setProperty("--site-check-border", dark ? "rgb(120, 120, 120)" : "#767676");
       }
     });

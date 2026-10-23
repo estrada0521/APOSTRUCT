@@ -1,4 +1,4 @@
-import { ModeStructureViewer } from "./mode3d.js?v=61";
+import { ModeStructureViewer } from "./mode3d.js?v=62";
 
 const $ = id => document.getElementById(id);
 const state = { modeDetailText: null, modeDetailTextRendered: false };
@@ -43,13 +43,23 @@ const modeViewer = new ModeStructureViewer({
 const modeWorkspace = document.querySelector(".mode-viewer-workspace");
 const modeSidebar = document.querySelector(".mode-viewer-sidebar");
 const modeResizer = document.querySelector(".mode-viewer-resizer");
+function sliderLabelWidth() {
+  const rows = [...document.querySelectorAll("#mode-viewer-controls .mode-slider")];
+  if (!rows.length) return 0;
+  const row = getComputedStyle(rows[0]);
+  const card = rows[0].closest(".mode-site-card");
+  const padding = card ? parseFloat(getComputedStyle(card).paddingLeft) + parseFloat(getComputedStyle(card).paddingRight) : 36;
+  const label = Math.max(...rows.map(item => item.querySelector(".mode-slider-label")?.scrollWidth || 0));
+  return padding + 80 + 44 + 2 * parseFloat(row.columnGap || "6") + label + 24;
+}
+
 function setModeSidebarWidth(width) {
   if (!modeWorkspace || !modeSidebar || !modeResizer) return;
   const bounds = modeWorkspace.getBoundingClientRect();
   const handleWidth = modeResizer.getBoundingClientRect().width;
   const availableWidth = bounds.width - handleWidth;
   if (availableWidth <= 0) return;
-  const minimumSidebar = Math.min(220, Math.max(100, availableWidth * 0.3));
+  const minimumSidebar = Math.max(Math.min(220, Math.max(100, availableWidth * 0.3)), sliderLabelWidth());
   const minimumViewer = Math.min(260, Math.max(120, availableWidth * 0.3));
   const maximumSidebar = Math.max(minimumSidebar, availableWidth - minimumViewer);
   const nextWidth = Math.min(maximumSidebar, Math.max(minimumSidebar, width));
@@ -97,6 +107,9 @@ modeResizer?.addEventListener("keydown", event => {
 window.addEventListener("resize", () => {
   if (modeSidebar) setModeSidebarWidth(modeSidebar.getBoundingClientRect().width);
 });
+new MutationObserver(() => {
+  if (modeSidebar && !modeSidebar.closest("[hidden]")) setModeSidebarWidth(modeSidebar.getBoundingClientRect().width);
+}).observe($("mode-viewer-controls"), { childList: true });
 
 function setModeDetailsView(view) {
   const showViewer = view === "viewer";

@@ -786,7 +786,7 @@ input[type="checkbox"] {
   margin: 0 3px;
   border: 1px solid var(--check-border, #767676);
   border-radius: 3px;
-  background: var(--check-box, #fff);
+  background: var(--check-box, var(--color-check-box));
   vertical-align: -2px;
   cursor: pointer;
 }

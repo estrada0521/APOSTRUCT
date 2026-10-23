@@ -64,7 +64,7 @@ html, body.output-window { height: 100%; overflow: hidden; }
 .output-block .mode-element-group { gap: 4px; }
 .output-block .mode-site-list { display: grid; gap: 3px; padding-left: 18px; }
 
-.output-block .mode-element-modes { display: grid; gap: 0; margin: 0; background: var(--site-color); color: var(--site-ink, var(--color-control)); --check-ink: var(--site-check, var(--color-control)); --check-paper: var(--site-color, #fff); --check-box: var(--site-check-box, #fff); --check-border: var(--site-check-border, #767676); }
+.output-block .mode-element-modes { display: grid; gap: 0; margin: 0; background: var(--site-color); color: var(--site-ink, var(--color-control)); --check-ink: var(--site-check, var(--color-control)); --check-paper: var(--site-color, #fff); --check-box: var(--site-check-box, var(--color-check-box)); --check-border: var(--site-check-border, #767676); }
 .output-block .mode-element-modes > .mode-element-toggle { padding: 8px 18px; }
 .output-block .mode-site-card {
   min-width: 0;
@@ -73,7 +73,7 @@ html, body.output-window { height: 100%; overflow: hidden; }
   border-radius: 0;
   background: var(--site-color);
   color: var(--site-ink, var(--color-control));
-  --check-ink: var(--site-check, var(--color-control)); --check-paper: var(--site-color, #fff); --check-box: var(--site-check-box, #fff); --check-border: var(--site-check-border, #767676);
+  --check-ink: var(--site-check, var(--color-control)); --check-paper: var(--site-color, #fff); --check-box: var(--site-check-box, var(--color-check-box)); --check-border: var(--site-check-border, #767676);
 }
 .output-block .mode-site-heading { font-weight: 500; overflow-wrap: anywhere; }
 .output-block .mode-site-card .mode-site-list { padding-left: 0; margin-bottom: 8px; }
@@ -125,3 +125,7 @@ html, body.output-window { height: 100%; overflow: hidden; }
 .output-block .mode-irrep-heading { margin-bottom: 8px; }
 .output-block .mode-slider { min-height: 22px; margin-bottom: 4px; }
 .output-block .mode-irrep-group + .mode-irrep-group { margin-top: 16px; }
+.output-block .mode-atom-toggle { white-space: normal; align-items: flex-start; }
+.output-block .mode-atom-toggle input { flex: none; margin-top: calc((1lh - 13px) / 2); }
+.output-block .mode-atom-toggle span { overflow: visible; overflow-wrap: anywhere; }
+.output-block .mode-irrep-heading { overflow-wrap: anywhere; }
