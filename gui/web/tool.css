@@ -124,10 +124,6 @@ button {
   text-decoration: none;
 }
 
-.primary-action:hover {
-  background: rgb(32, 32, 32);
-  border-color: rgb(32, 32, 32);
-}
 
 #cif-name {
   color: var(--color-muted);
