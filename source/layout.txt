@@ -1,15 +1,17 @@
 # How the Source tables become the blob sections apo reads.  One section per line:
-#   SECTION  FILE  COLUMN  MODE  [OPTIONS]
+#   SECTION  FILE  COLUMN  MODE  [OPTIONS]   (flat takes COLUMN,COLUMN,... to join several columns per record)
 # Modes: each (one number per record), text (one string per record), flat (the records' lists in order), start (the 1-based start of each record's
 # list in flat), count (each record's list length), group_start / group_count (per key 1..K of COLUMN: the 1-based
-# first record and the number of records), group_flag (per key 1..K of COLUMN: the 1-based first record whose
+# first record and the number of records), keyed / keyed_list (per item of each nonempty list: first column, slot, item; or
+# per nonempty list: first column, slot, its length, its items), group_flag (per key 1..K of COLUMN: the 1-based first record whose
 # flag=COLUMN is T), records (the number of records), directions (the number of nonzero
 # direction records after the first in a list of (x y z d) records), derived (a section apo builds at startup
 # from the others: only its BYU name is recorded here), magnetic_ordinary / magnetic_reversed / magnetic_from_ordinary (the
 # magnetic point operations: each family of point_ops.txt, a block starting at the identity, then that family with time
 # reversal; per operation its point operation and time reversal, and per point operation and time reversal its number).
 # Options: pad=W (each list padded with 0 to W), total=N (the whole section padded with 0 to N), div=W (counts and
-# starts in units of W items), zero_empty (start 0 for an empty list), sentinel (one more start after the last),
+# starts in units of W items), zero_empty (start 0 for an empty list), nonempty (each: skip the
+# records whose field is empty), sentinel (one more start after the last),
 # grid=G with keys=K (record (key, slot) at (key - 1) G + slot, by the first column and the slot column; empty
 # places 0 or ""), per=COLUMN (count divided by that column), ops=W (every W-th item is a point operation, with '
 # for time reversal, written as its magnetic number), inverse (after each 4x4 block, its inverse with the smallest
@@ -36,7 +38,7 @@ settings.inter_settings.cell                 settings/inter_settings.txt        
 group.space_groups.inter_choice              settings/inter_settings.txt          number group_flag keys=230 flag=default byu=space.ispace_inter_choice
 group.space_groups.cinter                    group/space_groups.txt               cinter flat inverse byu=space.ispace_cinter
 settings.inter_settings.inter                settings/inter_settings.txt          inter flat inverse byu=space.ispace_settings_inter
-settings.wyckoff_exceptions.formula          settings/wyckoff_exceptions.txt      formula flat
+settings.wyckoff_exceptions.formula          settings/wyckoff_exceptions.txt      setting,position,fract flat
 settings.wyckoff.by_sg_count                 settings/wyckoff.txt                 sg group_count keys=230 byu=wyckoff.iwyckoff_count
 settings.wyckoff.by_sg_start                 settings/wyckoff.txt                 sg group_start keys=230 byu=wyckoff.iwyckoff_pointer
 settings.wyckoff.label                       settings/wyckoff.txt                 label text byu=wyckoff.wyckoff_label
@@ -60,8 +62,8 @@ irreps.little.kovalev                        irreps/little.txt                  
 irreps.little.matrices                       irreps/little.txt                    matrices flat byu=little.little_irr_full_matrices
 irreps.little.real_form_start                irreps/little.txt                    real_form start zero_empty lead=1 byu=little.little_irr_real2_pointer
 irreps.little.real_form                      irreps/little.txt                    real_form flat lead=1 byu=little.little_irr_real2
-k.star_flips.flip                            k/star_flips.txt                     flip flat byu=little.little_k_star_flip
-k.star_orders.order                          k/star_orders.txt                    order flat byu=little.little_k_star_order
+k.star_flips.flip                            k/space_group_slots.txt              flipped keyed byu=little.little_k_star_flip
+k.star_orders.order                          k/space_group_slots.txt              arm_order keyed_list byu=little.little_k_star_order
 k.conv2ml.matrix                             k/conv2ml.txt                        matrix flat byu=little.little_k_conv2ml
 k.space_group_slots.conv2ml                  k/space_group_slots.txt              conv2ml each grid=27 keys=230 byu=little.little_k_conv2ml_index
 irreps.old.mulliken                          irreps/old.txt                       mulliken text byu=irreps.irrep_label_pg
@@ -82,10 +84,10 @@ group.magnetic_ops.reversed                  group/point_ops.txt                
 group.magnetic_ops.ordinary                  group/point_ops.txt                  matrix magnetic_ordinary byu=magnetic.mag_point_op_mag2nonmag
 group.magnetic_ops.from_ordinary             group/point_ops.txt                  matrix magnetic_from_ordinary byu=magnetic.mag_point_op_nonmag2mag
 group.magnetic_point_groups.code             group/magnetic_point_groups.txt      code each byu=magnetic.mag_point_group_code
-group.magnetic_groups.type4                  group/magnetic_groups.txt            type4 each byu=magnetic.mag_type4_pointer
-group.type4_supergroups.supergroup           group/type4_supergroups.txt          supergroup each byu=magnetic.mag_type4_supergroup
-group.type4_supergroups.basis                group/type4_supergroups.txt          basis flat byu=magnetic.mag_type4_supergroup_basis
-group.type4_supergroups.origin               group/type4_supergroups.txt          origin flat byu=magnetic.mag_type4_supergroup_origin
+group.magnetic_groups.type4                  group/magnetic_groups.txt            type4_basis start div=9 zero_empty byu=magnetic.mag_type4_pointer
+group.type4_supergroups.supergroup           group/magnetic_groups.txt            type4_sg each nonempty byu=magnetic.mag_type4_supergroup
+group.type4_supergroups.basis                group/magnetic_groups.txt            type4_basis flat byu=magnetic.mag_type4_supergroup_basis
+group.type4_supergroups.origin               group/magnetic_groups.txt            type4_origin flat byu=magnetic.mag_type4_supergroup_origin
 isotropy.magnetic.by_old_start               isotropy/magnetic.txt                old group_start keys=4777 sentinel byu=magnetic.mag_iso_irrep_pointer
 isotropy.magnetic.basis                      isotropy/magnetic.txt                basis flat byu=magnetic.mag_iso_basis
 isotropy.magnetic.origin                     isotropy/magnetic.txt                origin flat byu=magnetic.mag_iso_origin

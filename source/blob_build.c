@@ -862,11 +862,13 @@ static void render_section(const char *dir, char *line)
     if (!dot) die("section without table", section);
     *dot = 0;
     entity_table *t = table_of(dir, file);
-    int c = column_of(t, column);
+    int columns[8], column_count = 0;
+    for (char *name = strtok(column, ","); name && column_count < 8; name = strtok(0, ",")) columns[column_count++] = column_of(t, name);
+    int c = columns[0];
     long long first = option(options, "first", t->rows), unit = option(options, "div", 1), lead = option(options, "lead", 0);
     long long pad = option(options, "pad", 0), total = option(options, "total", 0), keys = option(options, "keys", 0);
     long long op_every = option(options, "ops", 0);
-    int inverse = option(options, "inverse", 0) > 0;
+    int inverse = option(options, "inverse", 0) > 0, nonempty = option(options, "nonempty", 0) > 0;
     const char *per_name = strstr(options, "per=");
     int per = -1;
     if (per_name) {
@@ -905,31 +907,33 @@ static void render_section(const char *dir, char *line)
         for (int r = 0; r < rows; r++) {
             int n = field_tokens(FIELD(r), starts, lengths, MAX_TOKENS);
             if (n) put_token(&b, starts[0], lengths[0]);
-            else put_int(&b, 0);
+            else if (!nonempty) put_int(&b, 0);
         }
     } else if (!strcmp(mode, "flat")) {
         long long written = 0;
         for (long long i = 0; i < lead; i++, written++) put_int(&b, 0);
-        for (int r = 0; r < rows; r++) {
-            int n = field_tokens(FIELD(r), starts, lengths, MAX_TOKENS);
-            for (int i = 0; i < n; i++, written++) {
-                if (op_every && i % op_every == op_every - 1) {
-                    char *after;
-                    long long k = strtoll(starts[i], &after, 10);
-                    int primed = after < starts[i] + lengths[i] && *after == '\'';
-                    if (after + primed != starts[i] + lengths[i]) die("bad operation", FIELD(r));
-                    put_int(&b, magnetic_number(dir, k, primed));
-                } else {
-                    put_token(&b, starts[i], lengths[i]);
+        for (int r = 0; r < rows; r++)
+            for (int part = 0; part < column_count; part++) {
+                c = columns[part];
+                int n = field_tokens(FIELD(r), starts, lengths, MAX_TOKENS);
+                for (int i = 0; i < n; i++, written++) {
+                    if (op_every && i % op_every == op_every - 1) {
+                        char *after;
+                        long long op = strtoll(starts[i], &after, 10);
+                        int primed = after < starts[i] + lengths[i] && *after == '\'';
+                        if (after + primed != starts[i] + lengths[i]) die("bad operation", FIELD(r));
+                        put_int(&b, magnetic_number(dir, op, primed));
+                    } else {
+                        put_token(&b, starts[i], lengths[i]);
+                    }
+                }
+                for (long long i = n; i < pad; i++, written++) put_int(&b, 0);
+                if (inverse) {
+                    if (n != 16) die("inverse needs 4x4 blocks", FIELD(r));
+                    put_inverse(&b, starts);
+                    written += 16;
                 }
             }
-            for (long long i = n; i < pad; i++, written++) put_int(&b, 0);
-            if (inverse) {
-                if (n != 16) die("inverse needs 4x4 blocks", FIELD(r));
-                put_inverse(&b, starts);
-                written += 16;
-            }
-        }
         for (; written < total; written++) put_int(&b, 0);
     } else if (!strcmp(mode, "start") || !strcmp(mode, "count")) {
         long long at = 1 + lead;
@@ -979,6 +983,24 @@ static void render_section(const char *dir, char *line)
                         else put_token(&b, primed ? "T" : "F", 1);
                     }
             if (!found) break;
+        }
+    } else if (!strcmp(mode, "keyed") || !strcmp(mode, "keyed_list")) {
+        int slot = column_of(t, "slot");
+        for (int r = 0; r < rows; r++) {
+            int n = field_tokens(FIELD(r), starts, lengths, MAX_TOKENS);
+            if (!n) continue;
+            if (mode[5] == '_') {
+                put_token(&b, t->fields[r][0], strlen(t->fields[r][0]));
+                put_token(&b, t->fields[r][slot], strlen(t->fields[r][slot]));
+                put_int(&b, n);
+            }
+            for (int i = 0; i < n; i++) {
+                if (mode[5] != '_') {
+                    put_token(&b, t->fields[r][0], strlen(t->fields[r][0]));
+                    put_token(&b, t->fields[r][slot], strlen(t->fields[r][slot]));
+                }
+                put_token(&b, starts[i], lengths[i]);
+            }
         }
     } else if (!strcmp(mode, "group_flag")) {
         const char *flag_name = strstr(options, "flag=");

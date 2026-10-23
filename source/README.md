@@ -22,16 +22,15 @@ number field is a space-separated list, a text field is the text.
 | `group/lattices.txt` | 14 | Bravais lattices: symbol, the conventional-to-primitive matrices, number of k families common to the lattice |
 | `group/space_groups.txt` | 230 | space groups: lattice, point group, BC symbol, generators, the BC-to-ITA setting matrix |
 | `group/magnetic_point_groups.txt` | 122 | magnetic point groups: class code |
-| `group/magnetic_groups.txt` | 1651 | magnetic space groups: space group, OG and BNS symbols, generators (translation and point operation, `'` for time reversal), type-4 supergroup row |
-| `group/type4_supergroups.txt` | 520 | type-4 reference supergroups: group, basis, origin |
+| `group/magnetic_groups.txt` | 1651 | magnetic space groups: space group, OG and BNS symbols, generators (translation and point operation, `'` for time reversal), and for type IV the reference space group with its basis and origin |
 | `settings/inter_settings.txt` | 777 | International Tables settings: space group, whether it is the default, symbol, origin and cell choices, matrix |
 | `settings/wyckoff_exceptions.txt` | 107 | Wyckoff formulas in other settings that differ from the ones apo derives from the default setting |
 | `settings/wyckoff.txt` | 1731 | Wyckoff positions: space group, letter, site point group, formula |
 | `settings/site_point_groups.txt` | 32 | site point groups: irreps and vector representations |
 | `settings/site_settings.txt` | 152 | orientations of the site point groups: operations, vector basis |
 | `k/slots.txt` | 212 | k families per lattice: name, base point and parameter directions (the number of parameters is the number of nonzero directions) |
-| `k/space_group_slots.txt` | 4141 | k families per space group: Kovalev number, conventional-to-ML matrix row |
-| `k/star_flips.txt`, `k/star_orders.txt`, `k/conv2ml.txt` | | the choices among equivalent star arms |
+| `k/space_group_slots.txt` | 4141 | k families per space group: Kovalev number, conventional-to-ML matrix row, and BYU's choices among equivalent star arms (arms stored with the opposite sign, a different arm order) |
+| `k/conv2ml.txt` | 42 | the conventional-to-ML parameter matrices |
 | `irreps/little.txt` | 10300 | little irreps: space group, k, partner, Kovalev label, real form, matrices at the seed positions (the irrep basis) |
 | `irreps/old.txt` | 4777 | irreps at k points without parameters: space group, Mulliken label, image |
 | `isotropy/ordinary.txt`, `isotropy/magnetic.txt` | 15239, 16721 | the presentation of each isotropy subgroup: subgroup basis and origin, representative direction (the OPD labels are those of image directions) |
