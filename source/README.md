@@ -31,7 +31,7 @@ number field is a space-separated list, a text field is the text.
 | `k/slots.txt` | 212 | k families per lattice: name, base point and parameter directions (the number of parameters is the number of nonzero directions) |
 | `k/space_group_slots.txt` | 4141 | k families per space group: Kovalev number, conventional-to-ML matrix row, and BYU's choices among equivalent star arms (arms stored with the opposite sign, a different arm order) |
 | `k/conv2ml.txt` | 42 | the conventional-to-ML parameter matrices |
-| `irreps/little.txt` | 10300 | little irreps: space group, k, partner, Kovalev label, real form, matrices at the seed positions (the irrep basis) |
+| `irreps/little.txt` | 10294 | little irreps: space group, k, partner, Kovalev label, real form, matrices at the seed positions (the irrep basis) |
 | `irreps/old.txt` | 4777 | irreps at k points without parameters: space group, Mulliken label, image |
 | `isotropy/ordinary.txt`, `isotropy/magnetic.txt` | 15239, 16721 | the presentation of each isotropy subgroup: subgroup basis and origin, representative direction (the OPD labels are those of image directions) |
 | `images/images.txt`, `images/image_directions.txt` | 141, 689 | the image catalog: images with their directions, and each image with time reversal added |

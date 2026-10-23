@@ -47,7 +47,7 @@ settings.wyckoff.site_pg                     settings/wyckoff.txt               
 settings.site_settings.by_pg_count           settings/site_settings.txt           pg group_count keys=32 byu=wyckoff.iwyckoff_pg_settings_count
 settings.site_settings.by_pg_start           settings/site_settings.txt           pg group_start keys=32 byu=wyckoff.iwyckoff_pg_elements_pointer
 settings.site_settings.elements              settings/site_settings.txt           elements flat pad=48 byu=wyckoff.iwyckoff_pg_elements
-settings.site_point_groups.irrep             settings/site_point_groups.txt       irrep flat byu=wyckoff.iwyckoff_pg_irrep
+settings.site_point_groups.irrep             settings/site_point_groups.txt       irrep flat pad=12 byu=wyckoff.iwyckoff_pg_irrep
 settings.site_point_groups.vector_reps       settings/site_point_groups.txt       vector_reps flat byu=wyckoff.iwyckoff_pg_vector_reps
 settings.site_settings.vector_basis          settings/site_settings.txt           vector_basis flat byu=wyckoff.iwyckoff_pg_vector_basis
 group.lattices.k_count                       group/lattices.txt                   k_count each byu=little.little_k_count
