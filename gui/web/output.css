@@ -18,6 +18,12 @@ html, body.output-window { height: 100%; overflow: hidden; }
 }
 .output-block .mode-details-layout { height: 100%; margin-top: 0; }
 .output-block .mode-viewer-workspace { --mode-sidebar-width: 300px; }
+.output-block .mode-viewer-sidebar {
+  padding: 18px;
+  background: rgb(245, 245, 243);
+  border: 1px solid #e3e3e3;
+  border-radius: 4px;
+}
 .output-block .mode-details-view-switch { width: auto; display: flex; flex-wrap: wrap; }
 .output-block .mode-details-output { box-sizing: border-box; height: 100%; }
 @media (max-width: 600px) {
