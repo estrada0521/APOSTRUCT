@@ -1894,14 +1894,14 @@ export class ModeStructureViewer {
       const contents = siteCards.map(card => {
         const color = card.element ? this.elementColorCss(card.element) : 'rgb(180,180,180)';
         return '<section class="mode-site-card" data-mode-card-element="' + this.escape(card.element)
-          + '" style="--site-color:' + color + ';--site-ink:' + (card.element ? this.elementTextColorCss(card.element) : 'rgb(32, 32, 32)') + '">'
+          + '" style="--site-color:' + color + ';--site-ink:' + (card.element ? this.elementTextColorCss(card.element) : 'rgb(64, 64, 64)') + '">'
           + '<div class="mode-site-heading">' + this.escape(card.label + (card.wyckoff ? ' (' + card.wyckoff + ')' : '')) + '</div>'
           + (card.children.length ? '<div class="mode-site-list">' + card.children.map(renderChildSite).join('') + '</div>' : '')
           + renderSiteModes(card.modes)
           + '</section>';
       }).join('');
       const groupColor = element ? this.elementColorCss(element) : 'rgb(180,180,180)';
-      const groupInk = element ? this.elementTextColorCss(element) : 'rgb(32, 32, 32)';
+      const groupInk = element ? this.elementTextColorCss(element) : 'rgb(64, 64, 64)';
       return '<section class="mode-element-modes" data-mode-card-element="' + this.escape(element)
         + '" style="--site-color:' + groupColor + ';--site-ink:' + groupInk + '">' + heading + contents + '</section>';
     }).join('');
@@ -2089,7 +2089,7 @@ export class ModeStructureViewer {
     const rgb = [0, 2, 4].map(offset => parseInt(hex.slice(offset, offset + 2), 16) / 255);
     const linear = rgb.map(value => value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4);
     const luminance = 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
-    return luminance > 0.179 ? "rgb(32, 32, 32)" : "#ffffff";
+    return luminance > 0.179 ? "rgb(64, 64, 64)" : "#ffffff";
   }
 
   updateElementSwatches() {
