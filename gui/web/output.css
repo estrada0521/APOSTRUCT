@@ -165,3 +165,6 @@ body.output-window { --mode-viewer-background: var(--color-panel); }
 .output-block .mode-viewer-canvas-wrap {
   overflow: hidden;
 }
+
+#result-title > span { display: block; }
+#result-title .result-heading-detail { margin-top: 6px; }

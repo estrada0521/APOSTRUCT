@@ -1,5 +1,5 @@
 import { OutputTabs } from "./output-tabs.js?v=1";
-import { ModeStructureViewer } from "./mode3d.js?v=66";
+import { ModeStructureViewer } from "./mode3d.js?v=67";
 
 const $ = id => document.getElementById(id);
 const modeViewer = new ModeStructureViewer({
@@ -204,7 +204,13 @@ function displayActive() {
     modeViewer.updateScene();
   }
   if (entry.ui?.sidebarWidth) modeWorkspace.style.setProperty("--mode-sidebar-width", entry.ui.sidebarWidth);
-  $("result-title").textContent = entry.snapshot.title || "APOSTRUCT — Output";
+  const heading = entry.snapshot.heading || [entry.snapshot.title || "APOSTRUCT — Output"];
+  $("result-title").replaceChildren(...heading.map((text, index) => {
+    const line = document.createElement("span");
+    line.textContent = text;
+    if (index) line.className = "result-heading-detail";
+    return line;
+  }));
   document.title = (entry.snapshot.title || "APOSTRUCT") + " — Output";
   $("mode-details-section").setAttribute("aria-labelledby", "result-tab-" + entry.revision);
   $("output-status").hidden = true;

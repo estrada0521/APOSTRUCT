@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>APOSTRUCT</title>
   <link rel="stylesheet" href="theme.css?v=6">
-  <link rel="stylesheet" href="tool.css?v=103">
+  <link rel="stylesheet" href="tool.css?v=104">
 </head>
 <body>
   <main class="page">
@@ -688,6 +688,11 @@
         return;
       }
       const iso = backendState.selected?.orderparam?.isotropy || {};
+      const material = String(backendState.input?.formula || backendState.input?.block || "").trim() || "Structure";
+      const parentGroup = backendState.space_group?.symbol || backendState.input?.parent?.symbol || "";
+      const childGroup = iso.subgroup?.symbol || modeDetails.subgroup_details?.magnetic_subgroup?.symbol || "";
+      const irrepLabel = (backendState.selected?.irreps_selected || (backendState.selected?.irrep ? [backendState.selected.irrep] : [])).map(ir => ir.symbol || ir.label).filter(Boolean).join(" + ");
+      const opdLabel = iso.opd_label || ("OPD " + state.orderparamIndex);
       const title = [
         String(backendState.input?.formula || backendState.input?.block || "").trim() || "Structure",
         backendState.space_group?.symbol || backendState.input?.parent?.symbol,
@@ -696,6 +701,7 @@
       ].filter(Boolean).join(" · ");
       outputWindow.setData({
         title,
+        heading: [material + (parentGroup ? "  " + parentGroup : "") + (childGroup ? " → " + childGroup : ""), irrepLabel + " | " + opdLabel],
         text: backendState.selected?.mode_detail_text || "",
         viewer: {
           ...modeDetails,

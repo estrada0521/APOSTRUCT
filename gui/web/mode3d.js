@@ -1646,10 +1646,21 @@ export class ModeStructureViewer {
     requestAnimationFrame(this.animate);
   }
 
+  updatePlayButton() {
+    if (!this.playButton) return;
+    const label = this.playing ? "Pause" : "Animate";
+    this.playButton.setAttribute("aria-label", label);
+    this.playButton.title = label;
+    this.playButton.setAttribute("aria-pressed", String(this.playing));
+    this.playButton.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${this.playing
+      ? '<path d="M8 5v14M16 5v14" fill="none" stroke="currentColor" stroke-width="3"/>'
+      : '<path d="M8 5l11 7-11 7z" fill="currentColor"/>'}</svg>`;
+  }
+
   bindControls() {
     this.playButton?.addEventListener("click", () => {
       this.playing = !this.playing;
-      this.playButton.textContent = this.playing ? "Pause" : "Animate";
+      this.updatePlayButton();
       this.playButton.setAttribute("aria-pressed", String(this.playing));
     });
     this.resetButton?.addEventListener("click", () => this.resetModeAmplitudes());
@@ -1685,7 +1696,7 @@ export class ModeStructureViewer {
     for (const mode of this.modes) this.amplitudes.set(mode.id, 0);
     this.masterAmplitude = 1;
     if (this.playButton) {
-      this.playButton.textContent = "Animate";
+      this.updatePlayButton();
       this.playButton.setAttribute("aria-pressed", "false");
     }
     this.updateControlValues();
@@ -1764,7 +1775,7 @@ export class ModeStructureViewer {
     if (this.scaleInput) this.scaleInput.value = "1";
     if (this.scaleOutput) this.scaleOutput.textContent = "1.00";
     if (this.playButton) {
-      this.playButton.textContent = "Animate";
+      this.updatePlayButton();
       this.playButton.setAttribute("aria-pressed", "false");
     }
     this.renderModeControls();
@@ -1825,7 +1836,7 @@ export class ModeStructureViewer {
     this.animationStart = performance.now();
     this.animationPhaseOffset = state.phase || 0;
     if (this.playButton) {
-      this.playButton.textContent = this.playing ? "Pause" : "Animate";
+      this.updatePlayButton();
       this.playButton.setAttribute("aria-pressed", String(this.playing));
     }
     this.needsRender = true;
@@ -1894,7 +1905,7 @@ export class ModeStructureViewer {
       return contents;
     };
     const master = `<section class="mode-group mode-master-group">
-      <h4><span class="mode-master-actions"><button class="primary-action" type="button" data-mode-animate aria-pressed="false">Animate</button><button class="primary-action" type="button" data-mode-reset>Reset</button></span></h4>
+      <h4><span class="mode-master-actions"><button class="primary-action" type="button" data-mode-animate aria-pressed="false" aria-label="Animate" title="Animate"></button><button class="primary-action" type="button" data-mode-reset aria-label="Reset" title="Reset"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10a8 8 0 1 1 1 7M4 4v6h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button></span></h4>
       <div class="mode-master">
         <span>Parent</span>
         <input type="range" min="0" max="1" step="0.01" value="1" data-master-amplitude>
@@ -1979,7 +1990,7 @@ export class ModeStructureViewer {
     masterInput?.addEventListener("input", () => {
       this.playing = false;
       if (this.playButton) {
-        this.playButton.textContent = "Animate";
+        this.updatePlayButton();
         this.playButton.setAttribute("aria-pressed", "false");
       }
       this.masterAmplitude = Math.min(1, Math.max(0, number(masterInput.value, 1)));
@@ -1987,6 +1998,7 @@ export class ModeStructureViewer {
       this.updateScene();
     });
     this.playButton = this.controlsNode.querySelector("button[data-mode-animate]");
+    this.updatePlayButton();
     this.resetButton = this.controlsNode.querySelector("button[data-mode-reset]");
     this.playButton?.addEventListener("click", () => {
       this.playing = !this.playing;
@@ -1994,7 +2006,7 @@ export class ModeStructureViewer {
         this.animationStart = performance.now();
         this.animationPhaseOffset = Math.asin(Math.sqrt(Math.min(1, Math.max(0, this.masterAmplitude))));
       }
-      this.playButton.textContent = this.playing ? "Pause" : "Animate";
+      this.updatePlayButton();
       this.playButton.setAttribute("aria-pressed", String(this.playing));
     });
     this.resetButton?.addEventListener("click", () => this.resetModeAmplitudes());
@@ -2075,7 +2087,7 @@ export class ModeStructureViewer {
     });
     this.updateControlValues();
     if (this.playButton) {
-      this.playButton.textContent = this.playing ? "Pause" : "Animate";
+      this.updatePlayButton();
       this.playButton.setAttribute("aria-pressed", String(this.playing));
     }
     const counts = MODE_KINDS.map(([kind, label]) => {
