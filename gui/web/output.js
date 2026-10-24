@@ -186,6 +186,9 @@ function saveActive() {
 }
 function renderTabs() {
   const bar = $("output-tabs");
+  const multiple = tabs.entries.size > 1;
+  bar.hidden = !multiple;
+  document.querySelector(".output-page").classList.toggle("single-result", !multiple);
   for (const item of [...bar.children]) {
     if (!tabs.entries.has(Number(item.dataset.revision))) item.remove();
   }

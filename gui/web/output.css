@@ -169,3 +169,5 @@ html, body.output-window { height: 100%; overflow: hidden; }
 @media (max-width: 600px) {
   .output-tabs { margin: -6px -6px 4px; padding: 4px 6px; }
 }
+
+.output-page.single-result { grid-template-rows: minmax(0, 1fr); }
