@@ -48,7 +48,7 @@ export class OutputWindowHost {
     if (!this.popup || this.popup.closed) {
       const url = new URL("./output.html", import.meta.url);
       url.hash = this.channel;
-      this.popup = window.open(url, "apostruct-output-" + this.channel, "popup,width=1200,height=850");
+      this.popup = window.open(url, "apostruct-output-" + this.channel, "popup,width=800,height=567");
       if (!this.popup) {
         this.status.textContent = "The browser blocked the output window. Allow popups for this page, then try again.";
         return;
