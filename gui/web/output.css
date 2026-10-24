@@ -154,15 +154,20 @@ html, body.output-window { height: 100%; overflow: hidden; }
 .output-block .mode-irrep-heading { display: flex; flex-wrap: wrap; column-gap: 6px; row-gap: 4px; }
 .output-block .mode-group-properties { margin-left: 0; white-space: normal; }
 
-/* One result window; tabs own independent viewer/text state. */
-.output-page { grid-template-rows: auto minmax(0, 1fr); gap: 8px; }
-.output-tabs { display: flex; gap: 4px; overflow-x: auto; min-width: 0; padding: 0 0 4px; scrollbar-width: thin; }
-.output-tab { display: flex; flex: 0 0 auto; align-items: stretch; border: 1px solid rgb(210,210,208); border-radius: 6px; background: rgb(239,239,237); overflow: hidden; }
-.output-tab:has([aria-selected="true"]) { background: #fff; border-color: rgb(105,105,103); }
-.output-tab button { border: 0; border-radius: 0; background: transparent; color: inherit; font: inherit; padding: 8px 10px; cursor: pointer; }
-.output-tab [role="tab"] { max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.output-tab [aria-selected="true"] { font-weight: 600; }
-.output-tab .output-tab-close { padding-inline: 8px; color: #666; }
-.output-tab button:hover { background: rgb(0 0 0 / 6%); }
-.output-tab button:focus-visible { outline: 2px solid currentColor; outline-offset: -3px; }
+/* Browser-style tabs: selection never changes geometry or font metrics. */
+.output-page { grid-template-rows: auto minmax(0, 1fr); gap: 0; }
+.output-tabs { display: flex; align-items: end; gap: 0; overflow-x: auto; min-width: 0; margin: -12px -12px 12px; padding: 8px 12px 0; background: rgb(228,228,226); scrollbar-width: thin; }
+.output-tab { position: relative; display: flex; flex: 0 0 clamp(150px, 20vw, 240px); height: 36px; align-items: center; min-width: 0; border: 0; border-radius: 10px 10px 0 0; background: transparent; color: var(--color-control); }
+.output-tab::after { content: ""; position: absolute; right: 0; top: 10px; height: 16px; width: 1px; background: rgb(180,180,177); pointer-events: none; }
+.output-tab.is-active { background: var(--color-page); color: var(--color-text); z-index: 1; }
+.output-tab.is-active::after, .output-tab:has(+ .is-active)::after { opacity: 0; }
+.output-tab:not(.is-active):hover { background: rgb(239,239,237); }
+.output-tab button { border: 0; border-radius: 0; background: transparent; color: inherit; font: inherit; font-weight: 400; cursor: pointer; }
+.output-tab [role="tab"] { flex: 1 1 auto; min-width: 0; height: 100%; padding: 0 10px 0 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
+.output-tab .output-tab-close { flex: 0 0 24px; width: 24px; height: 24px; margin-right: 6px; padding: 0; border-radius: 50%; line-height: 24px; font-size: 16px; }
+.output-tab .output-tab-close:hover { background: rgb(0 0 0 / 10%); }
+.output-tab button:focus-visible { outline: 2px solid var(--color-control); outline-offset: -3px; }
 .output-empty { color: #666; padding: 24px; margin: 0; }
+@media (max-width: 600px) {
+  .output-tabs { margin: -6px -6px 6px; padding-inline: 6px; }
+}

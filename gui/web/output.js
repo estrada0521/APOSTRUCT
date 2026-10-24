@@ -186,30 +186,41 @@ function saveActive() {
 }
 function renderTabs() {
   const bar = $("output-tabs");
-  bar.replaceChildren();
+  for (const item of [...bar.children]) {
+    if (!tabs.entries.has(Number(item.dataset.revision))) item.remove();
+  }
   for (const entry of tabs.entries.values()) {
-    const item = document.createElement("div");
-    item.className = "output-tab";
-    const tab = document.createElement("button");
-    tab.type = "button"; tab.id = "result-tab-" + entry.revision;
-    tab.setAttribute("role", "tab");
-    tab.setAttribute("aria-controls", "mode-details-section");
-    tab.setAttribute("aria-selected", String(entry.revision === tabs.activeRevision));
-    tab.tabIndex = entry.revision === tabs.activeRevision ? 0 : -1;
-    tab.textContent = entry.snapshot.title || "Result";
-    tab.title = tab.textContent;
-    tab.addEventListener("click", () => activate(entry.revision));
-    const close = document.createElement("button");
-    close.type = "button"; close.className = "output-tab-close"; close.textContent = "×";
-    close.setAttribute("aria-label", "Close " + tab.textContent);
-    close.addEventListener("click", () => {
-      saveActive();
-      tabs.close(entry.revision);
-      send("close", { revision: entry.revision });
-      if (displayedRevision !== tabs.activeRevision) displayActive();
-      else renderTabs();
-    });
-    item.append(tab, close); bar.append(item);
+    let item = [...bar.children].find(node => Number(node.dataset.revision) === entry.revision);
+    if (!item) {
+      item = document.createElement("div");
+      item.className = "output-tab";
+      item.dataset.revision = entry.revision;
+      const tab = document.createElement("button");
+      tab.type = "button"; tab.id = "result-tab-" + entry.revision;
+      tab.setAttribute("role", "tab");
+      tab.setAttribute("aria-controls", "mode-details-section");
+      tab.addEventListener("click", () => activate(entry.revision));
+      const close = document.createElement("button");
+      close.type = "button"; close.className = "output-tab-close"; close.textContent = "×";
+      close.addEventListener("click", () => {
+        saveActive();
+        tabs.close(entry.revision);
+        send("close", { revision: entry.revision });
+        if (displayedRevision !== tabs.activeRevision) displayActive();
+        else renderTabs();
+        $("result-tab-" + tabs.activeRevision)?.focus({ preventScroll: true });
+      });
+      item.append(tab, close); bar.append(item);
+    }
+    const [tab, close] = item.children;
+    const active = entry.revision === tabs.activeRevision;
+    item.classList.toggle("is-active", active);
+    tab.setAttribute("aria-selected", String(active));
+    tab.tabIndex = active ? 0 : -1;
+    const title = entry.snapshot.title || "Result";
+    if (tab.textContent !== title) tab.textContent = title;
+    tab.title = title;
+    close.setAttribute("aria-label", "Close " + title);
   }
 }
 function activate(revision) {
