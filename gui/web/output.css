@@ -1,9 +1,9 @@
 html, body.output-window { height: 100%; overflow: hidden; background: var(--color-bg); }
-body.output-window { --mode-viewer-background: var(--color-panel); }
+body.output-window { --mode-viewer-background: var(--color-panel); --output-gap: 6px; }
 .output-page {
   height: 100vh;
   height: 100dvh;
-  padding: 12px;
+  padding: var(--output-gap);
   grid-template-rows: minmax(0, 1fr);
 }
 .output-block, .output-results {
@@ -11,7 +11,8 @@ body.output-window { --mode-viewer-background: var(--color-panel); }
   min-height: 0;
   height: 100%;
 }
-.output-block .mode-viewer-workspace { --mode-sidebar-width: 300px; }
+.output-block .mode-viewer-workspace { --mode-sidebar-width: 300px; grid-template-columns: minmax(0, var(--mode-sidebar-width)) var(--output-gap) minmax(0, 1fr); }
+.output-block .mode-viewer-resizer { min-width: var(--output-gap); }
 .output-block .mode-viewer-sidebar {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
@@ -59,7 +60,7 @@ body.output-window { --mode-viewer-background: var(--color-panel); }
     height: auto;
     min-height: 100vh;
     min-height: 100svh;
-    padding: 6px;
+    padding: var(--output-gap);
   }
   .output-block { height: auto; }
   .output-block .mode-viewer-workspace {
@@ -67,7 +68,7 @@ body.output-window { --mode-viewer-background: var(--color-panel); }
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: 66vh max(320px, 66vh);
     grid-template-rows: 66svh max(320px, 66svh);
-    gap: 12px;
+    gap: var(--output-gap);
   }
   .output-block .mode-viewer-resizer { display: none; }
   .output-block .mode-viewer-display-options { flex-wrap: wrap; }
@@ -150,9 +151,10 @@ body.output-window { --mode-viewer-background: var(--color-panel); }
 .output-block .mode-group-properties { margin-left: 0; white-space: normal; }
 
 /* Fixed geometry: selection changes paint only, never font or dimensions. */
-.output-page { grid-template-rows: auto minmax(0, 1fr); gap: 6px; }
-.output-tabs { display: flex; align-items: center; gap: 6px; overflow-x: auto; min-width: 0; margin: -6px 0 0; padding: 0; background: var(--color-bg); scrollbar-width: thin; }
-.output-tab { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 24px; flex: 0 0 clamp(150px, 20vw, 240px); align-items: center; height: 28px; min-width: 0; padding: 0 4px 0 0; border: 1px solid var(--color-panel-border); border-radius: var(--radius-panel); background: transparent; color: var(--color-control); }
+.output-page { grid-template-rows: auto minmax(0, 1fr); gap: var(--output-gap); }
+.output-tabs { display: flex; align-items: center; gap: var(--output-gap); overflow-x: auto; min-width: 0; margin: 0; padding: 0; background: var(--color-bg); scrollbar-width: none; }
+.output-tabs::-webkit-scrollbar { display: none; }
+.output-tab { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 24px; flex: 0 0 clamp(150px, 20vw, 240px); align-items: center; height: 28px; min-width: 0; padding: 0 4px 0 0; border: 1px solid transparent; border-radius: var(--radius-panel); background: transparent; color: var(--color-control); }
 .output-tab.is-active { border-color: var(--color-panel-border); background: var(--color-panel); color: var(--color-text); }
 .output-tab:not(.is-active):hover { background: var(--color-hover); }
 .output-tab button { box-sizing: border-box; min-height: 0; min-width: 0; max-width: none; margin: 0; border: 0; background: transparent; color: inherit; font: inherit; font-weight: 400; cursor: pointer; appearance: none; }
