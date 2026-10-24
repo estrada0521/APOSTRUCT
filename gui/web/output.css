@@ -156,11 +156,9 @@ html, body.output-window { height: 100%; overflow: hidden; }
 
 /* Browser-style tabs: selection never changes geometry or font metrics. */
 .output-page { grid-template-rows: auto minmax(0, 1fr); gap: 0; }
-.output-tabs { display: flex; align-items: end; gap: 0; overflow-x: auto; min-width: 0; margin: -12px -12px 12px; padding: 8px 12px 0 0; background: rgb(228,228,226); scrollbar-width: thin; }
-.output-tab { position: relative; display: flex; flex: 0 0 clamp(150px, 20vw, 240px); height: 36px; align-items: center; min-width: 0; border: 0; border-radius: 10px 10px 0 0; background: transparent; color: var(--color-control); }
-.output-tab::after { content: ""; position: absolute; right: 0; top: 10px; height: 16px; width: 1px; background: rgb(180,180,177); pointer-events: none; }
+.output-tabs { display: flex; align-items: end; gap: 6px; overflow-x: auto; min-width: 0; margin: -12px -12px 12px; padding: 8px 12px; background: rgb(228,228,226); scrollbar-width: thin; }
+.output-tab { position: relative; display: flex; flex: 0 0 clamp(150px, 20vw, 240px); height: 36px; align-items: center; min-width: 0; border: 0; border-radius: 8px; background: transparent; color: var(--color-control); }
 .output-tab.is-active { background: var(--color-page); color: var(--color-text); z-index: 1; }
-.output-tab.is-active::after, .output-tab:has(+ .is-active)::after { opacity: 0; }
 .output-tab:not(.is-active):hover { background: rgb(239,239,237); }
 .output-tab button { border: 0; border-radius: 0; background: transparent; color: inherit; font: inherit; font-weight: 400; cursor: pointer; }
 .output-tab [role="tab"] { flex: 1 1 auto; min-width: 0; height: 100%; padding: 0 10px 0 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
@@ -169,5 +167,5 @@ html, body.output-window { height: 100%; overflow: hidden; }
 .output-tab button:focus-visible { outline: 2px solid var(--color-control); outline-offset: -3px; }
 .output-empty { color: #666; padding: 24px; margin: 0; }
 @media (max-width: 600px) {
-  .output-tabs { margin: -6px -6px 6px; padding: 8px 6px 0 0; }
+  .output-tabs { margin: -6px -6px 6px; padding: 8px 6px; }
 }
