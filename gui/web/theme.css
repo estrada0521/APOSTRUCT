@@ -4,6 +4,8 @@
   --color-page: rgb(253, 253, 252);
   --color-bg: rgb(249, 249, 247);
   --color-panel: rgb(245, 245, 243);
+  --color-panel-border: #e3e3e3;
+  --radius-panel: 4px;
   --color-hover: rgb(239, 239, 238);
   --color-result-bg: rgb(249, 249, 247);
   /* 設定の段階を示す行の網掛け（標準=地色 / Hall=灰 / ITA固有=濃い灰） */
