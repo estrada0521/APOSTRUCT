@@ -297,10 +297,14 @@ window.addEventListener("message", event => {
   try {
     if (message.type === "results" || message.type === "result") {
       const empty = !tabs.active;
+      const fresh = message.type === "result" && message.entry?.snapshot && !tabs.entries.has(message.entry.revision);
+      if (fresh) saveActive();
       for (const entry of message.entries || [message.entry]) if (entry?.snapshot) tabs.add(entry);
-      if (empty && message.activeRevision !== undefined) tabs.select(message.activeRevision);
+      if (fresh) tabs.select(message.entry.revision);
+      else if (empty && message.activeRevision !== undefined) tabs.select(message.activeRevision);
       if (displayedRevision !== tabs.activeRevision) displayActive();
       else renderTabs();
+      if (fresh) $("result-tab-" + tabs.activeRevision)?.scrollIntoView({ block: "nearest", inline: "nearest" });
     } else if (message.type === "amplitudes") {
       const entry = tabs.entries.get(message.revision);
       if (!entry) return;

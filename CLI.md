@@ -127,7 +127,7 @@ apo show --case case.json --server http://127.0.0.1:8300
 
 `show` opens the deepest stage in the case: irrep selection for k only, OPD selection up to irreps, and mode details with the structure view when `opd` is present.
 `--amplitude DEFINITION_ID=VALUE` sets an initial mode slider value (`--amplitude magnetic-1=1`).
-`show` reads the CIF itself and sends its text to the server. Each mode-details result adds an output tab without replacing existing tabs or changing the tab being viewed. Each tab retains its mode amplitudes, camera, display options and scroll positions until closed. Results live in the current GUI session, without disk persistence; the input window can restore a closed/reloaded output window while it remains open.
+`show` reads the CIF itself and sends its text to the server. Each mode-details result adds an output tab and selects it without replacing existing tabs. Each tab retains its mode amplitudes, camera, display options and scroll positions until closed. Results live in the current GUI session, without disk persistence; the input window can restore a closed/reloaded output window while it remains open.
 
 Consecutive `show` requests are delivered in order. Keep the input page open so it can receive them. If its pending queue is full (128 requests or 32 MiB), a new request reports an error instead of silently replacing an earlier result; wait for the input page to receive pending requests before retrying.
 The Examples band above step 1 opens a published branch (a random MP example, or a MAGNDATA example by category) from `branches/examples.json.gz`, shows its input ID and the computation time, and copies the current selection as a case for `--case`.

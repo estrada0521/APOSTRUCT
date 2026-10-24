@@ -42,7 +42,7 @@ test("host retains all results and routes CLI amplitudes to their own result", (
   host.open();
   host.setData({ title: "B" });
   host.setAmplitudes([{ definition_id: "displacive-1", value: "3/4" }]);
-  assert.equal(host.tabs.activeRevision, 1);
+  assert.equal(host.tabs.activeRevision, 2);
   assert.equal(host.tabs.entries.get(1).amplitudes[0].value, "1/2");
   assert.equal(host.tabs.entries.get(2).amplitudes[0].value, "3/4");
   const receive = (type, detail = {}, origin = location.origin) => listeners.get("message")({

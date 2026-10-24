@@ -1,4 +1,4 @@
-// Results live until explicitly closed. A new result never steals the current selection.
+// Results live until explicitly closed. Selection is controlled by the host/window.
 export class OutputTabs {
   constructor() { this.entries = new Map(); this.activeRevision = null; }
   get active() { return this.entries.get(this.activeRevision) || null; }
