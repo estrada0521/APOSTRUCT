@@ -32,7 +32,7 @@ body.output-window { --mode-viewer-background: var(--color-panel); }
   margin: 0;
   padding: 0 var(--space-panel) 10px;
 }
-.output-block .mode-master-group > h4 { width: auto; flex-wrap: wrap; margin-top: 0; }
+.output-block .mode-master-group > h4 { width: auto; justify-content: center; flex-wrap: wrap; margin-top: 0; }
 .output-block .mode-master { grid-template-columns: max-content minmax(30px, 1fr) max-content max-content; }
 .output-block .mode-master input[type="range"] { width: 100%; min-width: 0; }
 .output-block .mode-controls-scroll {
@@ -167,4 +167,4 @@ body.output-window { --mode-viewer-background: var(--color-panel); }
 }
 
 #result-title > span { display: block; }
-#result-title .result-heading-detail { margin-top: 6px; }
+#result-title .result-heading-detail { margin-top: 6px; opacity: 0.65; }

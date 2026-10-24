@@ -1652,9 +1652,7 @@ export class ModeStructureViewer {
     this.playButton.setAttribute("aria-label", label);
     this.playButton.title = label;
     this.playButton.setAttribute("aria-pressed", String(this.playing));
-    this.playButton.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${this.playing
-      ? '<path d="M8 5v14M16 5v14" fill="none" stroke="currentColor" stroke-width="3"/>'
-      : '<path d="M8 5l11 7-11 7z" fill="currentColor"/>'}</svg>`;
+    this.playButton.textContent = label;
   }
 
   bindControls() {
@@ -1905,7 +1903,7 @@ export class ModeStructureViewer {
       return contents;
     };
     const master = `<section class="mode-group mode-master-group">
-      <h4><span class="mode-master-actions"><button class="primary-action" type="button" data-mode-animate aria-pressed="false" aria-label="Animate" title="Animate"></button><button class="primary-action" type="button" data-mode-reset aria-label="Reset" title="Reset"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10a8 8 0 1 1 1 7M4 4v6h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button></span></h4>
+      <h4><span class="mode-master-actions"><button class="primary-action" type="button" data-mode-animate aria-pressed="false" aria-label="Animate" title="Animate">Animate</button><button class="primary-action" type="button" data-mode-reset aria-label="Reset" title="Reset">Reset</button></span></h4>
       <div class="mode-master">
         <span>Parent</span>
         <input type="range" min="0" max="1" step="0.01" value="1" data-master-amplitude>

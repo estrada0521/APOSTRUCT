@@ -515,10 +515,10 @@ table {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
+  width: 76px;
   height: 26px;
   min-height: 26px;
-  padding: 3px;
+  padding: 1px 7px;
   white-space: nowrap;
 }
 
@@ -880,5 +880,3 @@ input[type="checkbox"]:focus-visible { outline: 2px solid var(--check-ink, var(-
   border: 1px solid var(--color-panel-border);
   border-radius: var(--radius-panel);
 }
-
-.mode-master-actions svg { display: block; width: 18px; height: 18px; }
