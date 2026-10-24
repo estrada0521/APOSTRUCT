@@ -701,6 +701,8 @@
       ].filter(Boolean).join(" · ");
       outputWindow.setData({
         title,
+        material,
+        groupTransition: [parentGroup, childGroup].filter(Boolean).join(" → "),
         heading: [material + (parentGroup ? "  " + parentGroup : "") + (childGroup ? " → " + childGroup : ""), irrepLabel + " | " + opdLabel],
         text: backendState.selected?.mode_detail_text || "",
         viewer: {

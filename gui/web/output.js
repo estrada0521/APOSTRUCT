@@ -207,7 +207,13 @@ function displayActive() {
   const heading = entry.snapshot.heading || [entry.snapshot.title || "APOSTRUCT — Output"];
   $("result-title").replaceChildren(...heading.map((text, index) => {
     const line = document.createElement("span");
-    line.textContent = text;
+    if (index === 0 && entry.snapshot.material) {
+      line.append(document.createTextNode(entry.snapshot.material + " "));
+      const groups = document.createElement("span");
+      groups.className = "result-heading-groups";
+      groups.textContent = entry.snapshot.groupTransition || "";
+      line.append(groups);
+    } else line.textContent = text;
     if (index) line.className = "result-heading-detail";
     return line;
   }));
