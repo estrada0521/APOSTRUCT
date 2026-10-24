@@ -153,3 +153,16 @@ html, body.output-window { height: 100%; overflow: hidden; }
 .output-block .mode-site-card .mode-site-list:last-child { margin-bottom: 0; }
 .output-block .mode-irrep-heading { display: flex; flex-wrap: wrap; column-gap: 6px; row-gap: 4px; }
 .output-block .mode-group-properties { margin-left: 0; white-space: normal; }
+
+/* One result window; tabs own independent viewer/text state. */
+.output-page { grid-template-rows: auto minmax(0, 1fr); gap: 8px; }
+.output-tabs { display: flex; gap: 4px; overflow-x: auto; min-width: 0; padding: 0 0 4px; scrollbar-width: thin; }
+.output-tab { display: flex; flex: 0 0 auto; align-items: stretch; border: 1px solid rgb(210,210,208); border-radius: 6px; background: rgb(239,239,237); overflow: hidden; }
+.output-tab:has([aria-selected="true"]) { background: #fff; border-color: rgb(105,105,103); }
+.output-tab button { border: 0; border-radius: 0; background: transparent; color: inherit; font: inherit; padding: 8px 10px; cursor: pointer; }
+.output-tab [role="tab"] { max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.output-tab [aria-selected="true"] { font-weight: 600; }
+.output-tab .output-tab-close { padding-inline: 8px; color: #666; }
+.output-tab button:hover { background: rgb(0 0 0 / 6%); }
+.output-tab button:focus-visible { outline: 2px solid currentColor; outline-offset: -3px; }
+.output-empty { color: #666; padding: 24px; margin: 0; }

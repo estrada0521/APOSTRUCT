@@ -85,7 +85,7 @@
   </main>
 
   <script type="module">
-    import { OutputWindowHost } from "./output-window.js?v=1";
+    import { OutputWindowHost } from "./output-window.js?v=2";
 
     const state = {
       cif: "",
@@ -264,7 +264,7 @@
       try {
         if (!state.running) {
           const result = await getJSON(
-            `/api/APOSTRUCT/gui_launch?after=${encodeURIComponent(state.guiLaunchRevision)}`,
+            `/api/APOSTRUCT/gui_launch?after=${encodeURIComponent(state.guiLaunchRevision)}&next=1`,
           );
           state.guiLaunchRevision = Number(result.revision || 0);
           if (result.launch) {
@@ -691,6 +691,7 @@
       const title = [
         String(backendState.input?.formula || backendState.input?.block || "").trim() || "Structure",
         backendState.space_group?.symbol || backendState.input?.parent?.symbol,
+        (backendState.selected?.irreps_selected || (backendState.selected?.irrep ? [backendState.selected.irrep] : [])).map(ir => ir.symbol || ir.label).filter(Boolean).join(" + "),
         iso.opd_label || ("OPD " + state.orderparamIndex),
       ].filter(Boolean).join(" · ");
       outputWindow.setData({

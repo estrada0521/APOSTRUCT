@@ -1,24 +1,23 @@
-// One output window per input page. Only serializable result data crosses the boundary.
+import { OutputTabs } from "./output-tabs.js?v=1";
+
+// One output window, many independent results. The input page keeps them across popup reloads.
 export class OutputWindowHost {
   constructor(status) {
     this.status = status;
     this.channel = crypto.randomUUID();
     this.popup = null;
-    this.snapshot = null;
+    this.tabs = new OutputTabs();
     this.revision = 0;
-    this.amplitudes = [];
-    this.masterAmplitude = 1;
-    this.view = "viewer";
-    this.stale = false;
     window.addEventListener("message", event => {
       if (event.origin !== location.origin || event.source !== this.popup) return;
       const message = event.data;
       if (!message || message.app !== "apostruct-output" || message.channel !== this.channel) return;
       if (message.type === "ready") this.publish();
-      else if (message.type === "controls" && message.revision === this.revision) {
-        this.amplitudes = message.amplitudes;
-        this.masterAmplitude = message.masterAmplitude;
-      } else if (message.type === "view") this.view = message.view;
+      else if (message.type === "result-state") {
+        const entry = this.tabs.entries.get(message.revision);
+        if (entry) Object.assign(entry, message.state);
+      } else if (message.type === "select") this.tabs.select(message.revision);
+      else if (message.type === "close") this.tabs.close(message.revision);
     });
     window.addEventListener("pagehide", () => this.send("input-unavailable"));
     window.addEventListener("pageshow", () => this.publish());
@@ -29,30 +28,22 @@ export class OutputWindowHost {
     }
   }
   publish() {
-    if (this.snapshot) this.send("snapshot", {
-      snapshot: this.snapshot, revision: this.revision, amplitudes: this.amplitudes,
-      masterAmplitude: this.masterAmplitude, view: this.view, stale: this.stale,
-    });
+    this.send("results", { entries: [...this.tabs.entries.values()], activeRevision: this.tabs.activeRevision });
   }
-  setData(snapshot, view = this.view) {
-    this.snapshot = snapshot;
-    this.view = view;
-    this.revision++;
-    this.amplitudes = [];
-    this.masterAmplitude = 1;
-    this.stale = false;
-    this.publish();
+  setData(snapshot, view = "viewer") {
+    const entry = this.tabs.add({ revision: ++this.revision, snapshot, view: view || "viewer" });
+    this.send("result", { entry });
   }
   setAmplitudes(amplitudes) {
-    this.amplitudes = amplitudes;
-    this.send("amplitudes", { amplitudes, revision: this.revision });
+    const entry = this.tabs.entries.get(this.revision);
+    if (!entry) return;
+    entry.amplitudes = amplitudes;
+    this.send("amplitudes", { amplitudes, revision: entry.revision });
   }
-  markStale() {
-    this.stale = true;
-    this.send("stale");
-  }
+  // Editing input does not invalidate an independently retained result.
+  markStale() {}
   open() {
-    if (!this.snapshot) return;
+    if (!this.tabs.entries.size && (!this.popup || this.popup.closed)) return;
     if (!this.popup || this.popup.closed) {
       const url = new URL("./output.html", import.meta.url);
       url.hash = this.channel;
@@ -64,6 +55,6 @@ export class OutputWindowHost {
     }
     this.popup.focus();
     this.publish();
-    this.status.textContent = "Output opens in a separate window or tab.";
+    this.status.textContent = "Results remain in output tabs until closed.";
   }
 }

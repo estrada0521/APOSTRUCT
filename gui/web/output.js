@@ -1,4 +1,5 @@
-import { ModeStructureViewer } from "./mode3d.js?v=63";
+import { OutputTabs } from "./output-tabs.js?v=1";
+import { ModeStructureViewer } from "./mode3d.js?v=64";
 
 const $ = id => document.getElementById(id);
 const state = { modeDetailText: null, modeDetailTextRendered: false };
@@ -119,7 +120,11 @@ function setModeDetailsView(view) {
   $("mode-details-viewer-panel").hidden = !showViewer;
   $("mode-viewer-controls").hidden = !showViewer;
   $("mode-details-view-select").value = showViewer ? "viewer" : "text";
-  if (showViewer) requestAnimationFrame(() => modeViewer.refreshLayout());
+  modeViewer.setVisible(showViewer && !document.hidden);
+  if (showViewer) requestAnimationFrame(() => {
+    modeViewer.resize();
+    if (!modeViewer.fitted) { modeViewer.fitView(); modeViewer.fitted = true; }
+  });
 }
 
 $("mode-details-view-select").addEventListener("change", event => setModeDetailsView(event.target.value));
@@ -151,9 +156,9 @@ function appendModeText(fragment, text) {
 
 const channel = location.hash.slice(1);
 const source = window.opener;
-let revision = -1;
+const tabs = new OutputTabs();
+let displayedRevision = null;
 
-let hasResult = false;
 function send(type, detail = {}) {
   if (source && !source.closed) source.postMessage({ app: "apostruct-output", channel, type, ...detail }, location.origin);
 }
@@ -161,70 +166,169 @@ function outputError(error) {
   $("output-error").hidden = !error;
   $("output-error").textContent = error?.message || String(error || "");
 }
-function resultStatus(stale = false) {
-  $("output-status").hidden = !stale;
-  $("output-status").textContent = stale
-    ? "Input changed — showing the previous calculated result."
-    : "Showing the last calculated result.";
+function saveActive() {
+  const entry = tabs.entries.get(displayedRevision);
+  if (!entry) return;
+  const scroll = $("mode-viewer-controls").querySelector(".mode-controls-scroll");
+  entry.ui = {
+    viewer: modeViewer.captureState(),
+    controlsScroll: scroll?.scrollTop || 0,
+    textScroll: [$("mode-details-output").scrollLeft, $("mode-details-output").scrollTop],
+    pageScroll: [window.scrollX, window.scrollY],
+    sidebarWidth: modeWorkspace.style.getPropertyValue("--mode-sidebar-width"),
+  };
+  entry.amplitudes = entry.ui.viewer.amplitudes;
+  entry.masterAmplitude = entry.ui.viewer.masterAmplitude;
+  entry.view = $("mode-details-view-select").value;
+  send("result-state", { revision: entry.revision, state: {
+    ui: entry.ui, amplitudes: entry.amplitudes, masterAmplitude: entry.masterAmplitude, view: entry.view,
+  } });
 }
+function renderTabs() {
+  const bar = $("output-tabs");
+  bar.replaceChildren();
+  for (const entry of tabs.entries.values()) {
+    const item = document.createElement("div");
+    item.className = "output-tab";
+    const tab = document.createElement("button");
+    tab.type = "button"; tab.id = "result-tab-" + entry.revision;
+    tab.setAttribute("role", "tab");
+    tab.setAttribute("aria-controls", "mode-details-section");
+    tab.setAttribute("aria-selected", String(entry.revision === tabs.activeRevision));
+    tab.tabIndex = entry.revision === tabs.activeRevision ? 0 : -1;
+    tab.textContent = entry.snapshot.title || "Result";
+    tab.title = tab.textContent;
+    tab.addEventListener("click", () => activate(entry.revision));
+    const close = document.createElement("button");
+    close.type = "button"; close.className = "output-tab-close"; close.textContent = "×";
+    close.setAttribute("aria-label", "Close " + tab.textContent);
+    close.addEventListener("click", () => {
+      saveActive();
+      tabs.close(entry.revision);
+      send("close", { revision: entry.revision });
+      if (displayedRevision !== tabs.activeRevision) displayActive();
+      else renderTabs();
+    });
+    item.append(tab, close); bar.append(item);
+  }
+}
+function activate(revision) {
+  if (revision === tabs.activeRevision) return;
+  saveActive();
+  if (tabs.select(revision)) displayActive();
+}
+function displayActive() {
+  renderTabs();
+  const entry = tabs.active;
+  $("mode-details-section").hidden = !entry;
+  $("output-empty").hidden = Boolean(entry);
+  displayedRevision = entry?.revision ?? null;
+  send("select", { revision: displayedRevision });
+  if (!entry) {
+    state.modeDetailText = null; state.modeDetailTextRendered = false;
+    $("mode-details-output").replaceChildren();
+    modeViewer.setVisible(false);
+    modeViewer.setData(null);
+    document.title = "APOSTRUCT — Output";
+    return;
+  }
+  outputError(null);
+  state.modeDetailText = entry.snapshot.text || "";
+  state.modeDetailTextRendered = false;
+  $("mode-details-output").replaceChildren();
+  modeWorkspace.style.removeProperty("--mode-sidebar-width");
+  modeViewer.setVisible(false);
+  modeViewer.setData(entry.snapshot.viewer);
+  if (!modeViewer.bondOptionsSuppressed) {
+    $("mode-viewer-bonds").checked = true;
+    $("mode-viewer-polyhedra").checked = true;
+  }
+  if (entry.ui) modeViewer.restoreState(entry.ui.viewer);
+  else {
+    if (entry.amplitudes?.length) modeViewer.setAmplitudes(entry.amplitudes);
+    modeViewer.masterAmplitude = entry.masterAmplitude ?? 1;
+    modeViewer.updateControlValues();
+    modeViewer.updateScene();
+  }
+  if (entry.ui?.sidebarWidth) modeWorkspace.style.setProperty("--mode-sidebar-width", entry.ui.sidebarWidth);
+  $("result-title").textContent = entry.snapshot.title || "APOSTRUCT — Output";
+  document.title = (entry.snapshot.title || "APOSTRUCT") + " — Output";
+  $("mode-details-section").setAttribute("aria-labelledby", "result-tab-" + entry.revision);
+  $("output-status").hidden = true;
+  setModeDetailsView(entry.view || "viewer");
+  requestAnimationFrame(() => {
+    if (displayedRevision !== entry.revision) return;
+    if (entry.ui) {
+      // Layout may have changed while the tab was hidden; preserve its camera and scale.
+      modeViewer.restoreState(entry.ui.viewer);
+      const scroll = $("mode-viewer-controls").querySelector(".mode-controls-scroll");
+      if (scroll) scroll.scrollTop = entry.ui.controlsScroll;
+      [$("mode-details-output").scrollLeft, $("mode-details-output").scrollTop] = entry.ui.textScroll;
+      window.scrollTo(...entry.ui.pageScroll);
+    }
+    saveActive();
+  });
+}
+$("output-tabs").addEventListener("keydown", event => {
+  if (!event.target.matches('[role="tab"]')) return;
+  const keys = [...tabs.entries.keys()], i = keys.indexOf(tabs.activeRevision);
+  const index = event.key === "ArrowRight" ? (i + 1) % keys.length
+    : event.key === "ArrowLeft" ? (i + keys.length - 1) % keys.length
+    : event.key === "Home" ? 0 : event.key === "End" ? keys.length - 1 : -1;
+  if (index < 0) return;
+  event.preventDefault(); activate(keys[index]);
+  $("result-tab-" + keys[index])?.focus();
+});
 window.addEventListener("message", event => {
   if (event.origin !== location.origin || event.source !== source) return;
   const message = event.data;
   if (!message || message.app !== "apostruct-output" || message.channel !== channel) return;
-  if (message.type === "snapshot") {
-    if (!message.snapshot || message.revision < revision) return;
-    try {
-      const isNew = message.revision !== revision;
-      const snapshot = message.snapshot;
-      if (isNew) {
-        outputError(null);
-        state.modeDetailText = snapshot.text || "";
-        state.modeDetailTextRendered = false;
-        $("mode-details-output").replaceChildren();
-        modeViewer.setData(snapshot.viewer);
-        if (message.amplitudes?.length) modeViewer.setAmplitudes(message.amplitudes);
-        if (Number.isFinite(message.masterAmplitude)) modeViewer.masterAmplitude = message.masterAmplitude;
-        modeViewer.updateControlValues();
-        modeViewer.updateScene();
-        $("result-title").textContent = snapshot.title || "APOSTRUCT — Output";
-        document.title = (snapshot.title || "APOSTRUCT") + " — Output";
-        setModeDetailsView(message.view || "viewer");
-        revision = message.revision;
-        hasResult = true;
+  try {
+    if (message.type === "results" || message.type === "result") {
+      const empty = !tabs.active;
+      for (const entry of message.entries || [message.entry]) if (entry?.snapshot) tabs.add(entry);
+      if (empty && message.activeRevision !== undefined) tabs.select(message.activeRevision);
+      if (displayedRevision !== tabs.activeRevision) displayActive();
+      else renderTabs();
+    } else if (message.type === "amplitudes") {
+      const entry = tabs.entries.get(message.revision);
+      if (!entry) return;
+      entry.amplitudes = message.amplitudes;
+      if (entry.ui) {
+        const values = new Map(entry.ui.viewer.amplitudes.map(row => [row.definition_id, row.value]));
+        for (const row of message.amplitudes) values.set(row.definition_id, row.value);
+        entry.ui.viewer.amplitudes = [...values].map(([definition_id, value]) => ({ definition_id, value }));
       }
-      resultStatus(message.stale);
-    } catch (error) { outputError(error); }
-  } else if (message.type === "amplitudes" && message.revision === revision) {
-    try { modeViewer.setAmplitudes(message.amplitudes); } catch (error) { outputError(error); }
-  } else if (message.type === "stale") {
-    if (hasResult) resultStatus(true);
-  } else if (message.type === "input-unavailable") {
-    disconnected();
-  }
+      if (displayedRevision === message.revision) {
+        modeViewer.setAmplitudes(message.amplitudes);
+        saveActive();
+      }
+    } else if (message.type === "input-unavailable") disconnected();
+  } catch (error) { outputError(error); }
 });
-function captureControls() {
-  queueMicrotask(() => send("controls", {
-    revision,
-    amplitudes: [...modeViewer.amplitudes].map(([definition_id, value]) => ({ definition_id, value })),
-    masterAmplitude: modeViewer.masterAmplitude,
-  }));
+$("mode-viewer-controls").addEventListener("input", saveActive);
+$("mode-viewer-controls").addEventListener("click", () => queueMicrotask(saveActive));
+$("mode-viewer-canvas").addEventListener("pointerup", () => requestAnimationFrame(saveActive));
+let wheelSave;
+$("mode-viewer-canvas").addEventListener("wheel", () => {
+  clearTimeout(wheelSave); wheelSave = setTimeout(saveActive, 150);
+}, { passive: true });
+for (const id of ["mode-viewer-bonds", "mode-viewer-polyhedra", "mode-details-view-select"]) {
+  $(id).addEventListener("change", saveActive);
 }
-$("mode-viewer-controls").addEventListener("input", captureControls);
-$("mode-viewer-controls").addEventListener("click", event => {
-  if (event.target.closest("button[data-mode-reset]")) captureControls();
+window.addEventListener("pagehide", saveActive);
+document.addEventListener("visibilitychange", () => {
+  modeViewer.setVisible(!document.hidden && Boolean(tabs.active) && $("mode-details-view-select").value === "viewer");
 });
-window.addEventListener("pagehide", captureControls);
-$("mode-details-view-select").addEventListener("change", event => send("view", { view: event.target.value }));
 function disconnected() {
   $("output-status").hidden = false;
-  $("output-status").textContent = hasResult
-    ? "Input window disconnected — this result remains available. Reopen output from the input window to reconnect."
+  $("output-status").textContent = tabs.entries.size
+    ? "Input window disconnected — saved results remain available."
     : "Input window disconnected. Open output from the input window.";
 }
-if (!source || !channel) {
-  $("output-status").hidden = false;
-  $("output-status").textContent = "Open this page using “Open output” in the input window.";
-} else {
+if (!source || !channel) $("output-empty").textContent = "Open this page using “Open output” in the input window.";
+else {
   send("ready");
   setInterval(() => { if (source.closed) disconnected(); }, 2000);
 }
+modeViewer.setVisible(false);

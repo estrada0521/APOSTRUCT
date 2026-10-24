@@ -508,6 +508,14 @@ static int gui_state(const jvalue *payload, int allow_empty, jbuf *out, api_erro
 static pthread_mutex_t compute_lock = PTHREAD_MUTEX_INITIALIZER, mailbox_lock = PTHREAD_MUTEX_INITIALIZER;
 static int64_t revision;
 static char *launch_json;
+typedef struct launch_entry {
+    int64_t revision;
+    char *json;
+    size_t bytes;
+    struct launch_entry *next;
+} launch_entry;
+static launch_entry *launch_first, *launch_last;
+static size_t launch_count, launch_bytes;
 
 /* gui_launch.publish_gui_launch */
 static int publish(const jvalue *launch, jbuf *out, api_error *e)
@@ -655,9 +663,29 @@ static int publish(const jvalue *launch, jbuf *out, api_error *e)
     jb_free(&normalized);
     jb_free(&state);
     pthread_mutex_lock(&mailbox_lock);
+    /* Backpressure instead of silently dropping successful CLI launches. */
+    if (launch_count >= 128 || launch_bytes + prepared.used > 32 * 1024 * 1024) {
+        pthread_mutex_unlock(&mailbox_lock);
+        jb_free(&prepared);
+        return api_fail(e, "GUI launch queue is full; let the input window receive pending results before retrying");
+    }
+    launch_entry *entry = calloc(1, sizeof *entry);
+    if (!entry) {
+        pthread_mutex_unlock(&mailbox_lock);
+        jb_free(&prepared);
+        return api_fail(e, "could not allocate GUI launch");
+    }
+    entry->json = plat_strndup(prepared.data, prepared.used);
+    entry->bytes = prepared.used;
+    entry->revision = ++revision;
+    if (launch_last) launch_last->next = entry;
+    else launch_first = entry;
+    launch_last = entry;
+    launch_count++;
+    launch_bytes += entry->bytes;
     free(launch_json);
     launch_json = plat_strndup(prepared.data, prepared.used);
-    int64_t current = ++revision;
+    int64_t current = entry->revision;
     pthread_mutex_unlock(&mailbox_lock);
     jb_free(&prepared);
     char text[96];
@@ -668,13 +696,27 @@ static int publish(const jvalue *launch, jbuf *out, api_error *e)
     return 0;
 }
 
-static void read_mailbox(int64_t after, jbuf *out)
+static void read_mailbox(int64_t after, int next, jbuf *out)
 {
     pthread_mutex_lock(&mailbox_lock);
+    if (next) {
+        /* The browser acknowledges a launch only on its following poll. */
+        while (launch_first && launch_first->revision <= after) {
+            launch_entry *old = launch_first;
+            launch_first = old->next;
+            launch_count--;
+            launch_bytes -= old->bytes;
+            free(old->json);
+            free(old);
+        }
+        if (!launch_first) launch_last = 0;
+    }
+    const char *json = next ? (launch_first ? launch_first->json : 0) : launch_json;
+    int64_t current = next && launch_first ? launch_first->revision : revision;
     char text[64];
-    snprintf(text, sizeof text, "{\"revision\": %lld, \"launch\": ", (long long)revision);
+    snprintf(text, sizeof text, "{\"revision\": %lld, \"launch\": ", (long long)current);
     jb_lit(out, text);
-    if (launch_json && revision > after) jb_lit(out, launch_json);
+    if (json && current > after) jb_lit(out, json);
     else jb_lit(out, "null");
     jb_lit(out, "}");
     pthread_mutex_unlock(&mailbox_lock);
@@ -804,9 +846,10 @@ static int serve_examples(net_socket fd)
     return 1;
 }
 
-static int query_after(const char *query, int64_t *after, api_error *e)
+static int query_after(const char *query, int64_t *after, int *next, api_error *e)
 {
     *after = 0;
+    *next = 0;
     if (!query || !*query) return 0;
     if (strncmp(query, "after=", 6)) {
         char name[128];
@@ -817,7 +860,8 @@ static int query_after(const char *query, int64_t *after, api_error *e)
     char *end;
     long long n = strtoll(value, &end, 10);
     if (end == value || (*end && *end != '&') || n < 0) return api_fail(e, "gui_launch after must be one non-negative integer");
-    if (*end == '&') return api_fail(e, "gui_launch after must be one non-negative integer");
+    if (*end && strcmp(end, "&next=1")) return api_fail(e, "gui_launch only accepts after and next=1");
+    *next = *end != 0;
     *after = n;
     return 0;
 }
@@ -866,8 +910,9 @@ static void handle(net_socket fd)
         if (!strcmp(method, "GET")) {
             if (!strcmp(endpoint, "gui_launch")) {
                 int64_t after;
-                failed = query_after(query, &after, &e);
-                if (!failed) read_mailbox(after, &out);
+                int next;
+                failed = query_after(query, &after, &next, &e);
+                if (!failed) read_mailbox(after, next, &out);
             } else {
                 failed = api_fail(&e, "unknown endpoint: %s", endpoint);
             }

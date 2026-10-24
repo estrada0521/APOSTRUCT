@@ -1568,6 +1568,7 @@ export class ModeStructureViewer {
     this.momentsInput = momentsInput;
     this.bondsInput = bondsInput;
     this.polyhedraInput = polyhedraInput;
+    this.visible = true;
     this.payload = null;
     this.modes = [];
     this.amplitudes = new Map();
@@ -1580,6 +1581,7 @@ export class ModeStructureViewer {
     this.lastAnimationUpdate = 0;
     this.needsRender = true;
     this.fitted = false;
+    this.preserveViewOnResize = false;
     this.bondTopology = null;
     this.bondOptionsSuppressed = false;
     this.suppressedBondPreference = null;
@@ -1632,7 +1634,7 @@ export class ModeStructureViewer {
     this.resizeObserver = new ResizeObserver(() => {
       if (this.liveLayoutResize) return;
       const rect = this.canvas.getBoundingClientRect();
-      if (this.structure && rect.width > 10 && rect.height > 10) {
+      if (this.structure && !this.preserveViewOnResize && rect.width > 10 && rect.height > 10) {
         this.layoutFitPending = true;
       }
       this.layoutResizePending = true;
@@ -1737,6 +1739,7 @@ export class ModeStructureViewer {
     this.playing = false;
     this.masterAmplitude = 1;
     this.fitted = false;
+    this.preserveViewOnResize = false;
     this.bondTopology = null;
     this.modeControlLimit = MODE_CONTROL_BATCH_SIZE;
     const viewerAtomCount = Array.isArray(this.payload?.atoms)
@@ -1765,6 +1768,72 @@ export class ModeStructureViewer {
     }
     this.renderModeControls();
     this.updateScene();
+  }
+
+  captureState() {
+    this.preserveViewOnResize = true;
+    return {
+      amplitudes: [...this.amplitudes].map(([definition_id, value]) => ({ definition_id, value })),
+      masterAmplitude: this.masterAmplitude,
+      hiddenChildSites: [...this.hiddenChildSites],
+      modeControlLimit: this.modeControlLimit,
+      bonds: Boolean(this.bondsInput?.checked),
+      polyhedra: Boolean(this.polyhedraInput?.checked),
+      camera: {
+        position: this.camera.position.toArray(), up: this.camera.up.toArray(),
+        target: this.trackball.target.toArray(), zoom: this.camera.zoom,
+        viewHeight: this.camera.top - this.camera.bottom,
+      },
+      playing: this.playing,
+      phase: this.animationPhaseOffset + (performance.now() - this.animationStart) * (2 * Math.PI / 5000),
+    };
+  }
+
+  restoreState(state) {
+    if (!state) return;
+    this.preserveViewOnResize = true;
+    for (const row of state.amplitudes || []) if (this.amplitudes.has(row.definition_id)) {
+      this.amplitudes.set(row.definition_id, number(row.value));
+    }
+    this.masterAmplitude = number(state.masterAmplitude, 1);
+    this.hiddenChildSites = new Set(state.hiddenChildSites || []);
+    this.modeControlLimit = state.modeControlLimit || MODE_CONTROL_BATCH_SIZE;
+    if (this.bondsInput) this.bondsInput.checked = !this.bondOptionsSuppressed && Boolean(state.bonds);
+    if (this.polyhedraInput) this.polyhedraInput.checked = !this.bondOptionsSuppressed && Boolean(state.polyhedra);
+    this.syncDisplayControls();
+    this.renderModeControls();
+    this.updateScene();
+    const camera = state.camera;
+    if (camera) {
+      this.viewTween = null;
+      this.resize();
+      this.camera.position.fromArray(camera.position);
+      this.camera.up.fromArray(camera.up);
+      this.trackball.target.fromArray(camera.target);
+      this.camera.zoom = camera.zoom;
+      const rect = this.canvas.getBoundingClientRect();
+      const aspect = Math.max(rect.width, 1) / Math.max(rect.height, 1);
+      this.camera.top = camera.viewHeight / 2; this.camera.bottom = -camera.viewHeight / 2;
+      this.camera.left = -camera.viewHeight * aspect / 2; this.camera.right = camera.viewHeight * aspect / 2;
+      this.camera.updateProjectionMatrix();
+      this.trackball.update();
+      this.layoutFitPending = false;
+      this.fitted = true;
+    }
+    this.playing = Boolean(state.playing);
+    this.animationStart = performance.now();
+    this.animationPhaseOffset = state.phase || 0;
+    if (this.playButton) {
+      this.playButton.textContent = this.playing ? "Pause" : "Animate";
+      this.playButton.setAttribute("aria-pressed", String(this.playing));
+    }
+    this.needsRender = true;
+  }
+
+  setVisible(visible) {
+    this.visible = visible;
+    this.trackball.enabled = visible;
+    if (visible) { this.resize(); this.needsRender = true; }
   }
 
   setAmplitudes(rows) {
@@ -2664,6 +2733,7 @@ export class ModeStructureViewer {
 
   animate(time) {
     requestAnimationFrame(this.animate);
+    if (!this.visible) return;
     this.applyPendingLayout();
     if (this.liveLayoutResize) this.resize();
     this.applyViewTween();
