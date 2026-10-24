@@ -9,7 +9,7 @@ Local implementation of ISODISTORT
 </div>
 
 <p align="center">
-  <img src="media/APOSTRUCT.png" width="100%" alt="APOSTRUCT graphical interface">
+  <img src="https://media.githubusercontent.com/media/estrada0521/APOSTRUCT/b76ddd9/media/APOSTRUCT.png" width="100%" alt="APOSTRUCT graphical interface">
 </p>
 
 ---
