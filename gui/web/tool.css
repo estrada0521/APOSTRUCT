@@ -18,12 +18,12 @@ body {
 }
 
 .page {
-  padding: 14px;
+  padding: var(--space-layout);
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   width: 100%;
   box-sizing: border-box;
-  gap: 18px;
+  gap: var(--space-layout);
 }
 
 p {
@@ -44,10 +44,7 @@ section {
   max-width: 100%;
   min-width: 0;
   box-sizing: border-box;
-  padding: 18px 18px;
-  background: var(--color-panel);
-  border: 1px solid var(--color-panel-border);
-  border-radius: var(--radius-panel);
+  padding: var(--space-panel);
 }
 
 #parent-summary {
@@ -819,9 +816,9 @@ input[type="checkbox"]:disabled { opacity: 0.4; cursor: default; }
 input[type="checkbox"]:focus-visible { outline: 2px solid var(--check-ink, var(--color-control)); outline-offset: 1px; }
 
 .examples-panel {
-  padding: 18px;
+  padding: var(--space-panel);
   border: 1px dashed var(--color-border);
-  border-radius: 4px;
+  border-radius: var(--radius-panel);
 }
 
 .examples-toggle {
@@ -869,4 +866,13 @@ input[type="checkbox"]:focus-visible { outline: 2px solid var(--check-ink, var(-
 
 .examples-note {
   color: var(--color-muted);
+}
+
+/* Shared by input steps, output panels and the selected result tab. */
+.surface-panel {
+  box-sizing: border-box;
+  min-width: 0;
+  background: var(--color-panel);
+  border: 1px solid var(--color-panel-border);
+  border-radius: var(--radius-panel);
 }

@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>APOSTRUCT</title>
-  <link rel="stylesheet" href="theme.css?v=5">
-  <link rel="stylesheet" href="tool.css?v=102">
+  <link rel="stylesheet" href="theme.css?v=6">
+  <link rel="stylesheet" href="tool.css?v=103">
 </head>
 <body>
   <main class="page">
@@ -27,7 +27,7 @@
       </div>
     </section>
 
-    <section class="block">
+    <section class="block surface-panel">
       <div class="parent-source-heading">
         <span class="block-title">1. Parent structure:</span>
       </div>
@@ -43,14 +43,14 @@
 
     <div id="error" class="error" hidden></div>
 
-    <section class="block" id="distortion-section" hidden>
+    <section class="block surface-panel" id="distortion-section" hidden>
       <p class="block-title">2. Types of distortions to be considered <button class="primary-action" id="distortion-change" type="button">Change</button></p>
       <table id="distortion-table">
         <tbody></tbody>
       </table>
     </section>
 
-    <section class="block" id="k-section" hidden>
+    <section class="block surface-panel" id="k-section" hidden>
       <p class="block-title">3. search over specific k points : <button class="primary-action" id="k-ok" type="button">OK</button></p>
       <p>
         Change number of superposed IRs:
@@ -63,7 +63,7 @@
       </p>
     </section>
 
-    <section class="block" id="irrep-section" hidden>
+    <section class="block surface-panel" id="irrep-section" hidden>
       <p class="block-title">4. Choose an IR: <button class="primary-action" id="irrep-ok" type="button">OK</button><span id="irrep-calculating" class="step-calculating" aria-live="polite"></span></p>
       <p class="irrep-select-block">
         <span>IR:</span>
@@ -71,12 +71,12 @@
       </p>
     </section>
 
-    <section class="block" id="opd-section" hidden>
+    <section class="block surface-panel" id="opd-section" hidden>
       <p class="block-title">5. Finish selecting the distortion mode by choosing an order parameter direction: <button class="primary-action" id="opd-ok" type="button">OK</button><span id="opd-calculating" class="step-calculating" aria-live="polite"></span></p>
       <div id="opd-options"></div>
     </section>
 
-    <section class="block" id="mode-details-section" hidden>
+    <section class="block surface-panel" id="mode-details-section" hidden>
       <p class="block-title mode-details-heading">6. Output:
         <button class="primary-action" id="open-output" type="button">Open output ↗</button>
       </p>

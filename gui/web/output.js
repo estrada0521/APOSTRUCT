@@ -161,6 +161,7 @@ function renderTabs() {
     const [tab, close] = item.children;
     const active = entry.revision === tabs.activeRevision;
     item.classList.toggle("is-active", active);
+    item.classList.toggle("surface-panel", active);
     tab.setAttribute("aria-selected", String(active));
     tab.tabIndex = active ? 0 : -1;
     const title = entry.snapshot.title || "Result";

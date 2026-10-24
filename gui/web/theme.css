@@ -26,10 +26,15 @@
   --font-size-title: 14px;
   --font-size-small: 11px;
 
+  /* 画面の外周と、段・タブ・bar・viewer の間隔。入力も出力も .page がこれを使う。 */
+  --space-layout: 14px;
+  /* 段の内側。間隔とは別。 */
+  --space-panel: 18px;
+
   /* 余白・寸法 */
   --space-row: 5px;
   --space-md: 8px;
-  --space-lg: 14px;
+  --space-lg: var(--space-layout);
   --radius: 5px;
   --key-width: 82px;
   --content-width: 420px;
