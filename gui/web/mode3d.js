@@ -1596,7 +1596,7 @@ export class ModeStructureViewer {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     this.rendererSize = new THREE.Vector2();
-    const background = new THREE.Color(getComputedStyle(document.documentElement).getPropertyValue("--color-bg").trim());
+    const background = new THREE.Color(getComputedStyle(canvas).getPropertyValue("--mode-viewer-background").trim() || getComputedStyle(document.documentElement).getPropertyValue("--color-bg").trim());
     this.renderer.setClearColor(background, 1);
     this.renderer.autoClear = false;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
