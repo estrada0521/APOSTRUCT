@@ -703,7 +703,8 @@
         title,
         material,
         groupTransition: [parentGroup, childGroup].filter(Boolean).join(" → "),
-        heading: [material + (parentGroup ? "  " + parentGroup : "") + (childGroup ? " → " + childGroup : ""), irrepLabel + " | " + opdLabel],
+        heading: [material, [parentGroup, irrepLabel + "・" + opdLabel, childGroup].filter(Boolean).join(" → ")],
+        headingLayout: 2,
         text: backendState.selected?.mode_detail_text || "",
         viewer: {
           ...modeDetails,

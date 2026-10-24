@@ -1981,7 +1981,7 @@ export class ModeStructureViewer {
       <button class="secondary-action" type="button" data-mode-load-more>Show next ${Math.min(MODE_CONTROL_BATCH_SIZE, hiddenModeCount)}</button>
     </p>` : "";
     const topologyNote = this.bondOptionsSuppressed
-      ? `<p class="mode-viewer-note">Bonds and polyhedra are disabled for structures above ${MAX_AUTOMATIC_BOND_ATOMS} atoms.</p>`
+      ? `<p class="mode-viewer-note mode-viewer-topology-note">Bonds and polyhedra are disabled for structures above ${MAX_AUTOMATIC_BOND_ATOMS} atoms.</p>`
       : "";
     this.controlsNode.innerHTML = `${master}<div class="mode-controls-scroll">${topologyNote}${groups || '<p class="mode-viewer-note">No visualizable mode definitions.</p>'}${modeProgress}</div>`;
     const masterInput = this.controlsNode.querySelector("input[data-master-amplitude]");
@@ -2182,7 +2182,12 @@ export class ModeStructureViewer {
     const rgb = [0, 2, 4].map(offset => parseInt(hex.slice(offset, offset + 2), 16) / 255);
     const linear = rgb.map(value => value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4);
     const luminance = 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
-    return luminance > 0.179 ? "rgb(64, 64, 64)" : "#ffffff";
+    const grayChannel = 64 / 255;
+    const grayLuminance = ((grayChannel + 0.055) / 1.055) ** 2.4;
+    const grayContrast = (Math.max(luminance, grayLuminance) + 0.05)
+      / (Math.min(luminance, grayLuminance) + 0.05);
+    const whiteContrast = 1.05 / (luminance + 0.05);
+    return grayContrast >= whiteContrast ? "rgb(64, 64, 64)" : "#ffffff";
   }
 
   elementCheckColorCss(element) {

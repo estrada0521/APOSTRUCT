@@ -1,5 +1,5 @@
 import { OutputTabs } from "./output-tabs.js?v=1";
-import { ModeStructureViewer } from "./mode3d.js?v=68";
+import { ModeStructureViewer } from "./mode3d.js?v=70";
 
 const $ = id => document.getElementById(id);
 const modeViewer = new ModeStructureViewer({
@@ -204,16 +204,14 @@ function displayActive() {
     modeViewer.updateScene();
   }
   if (entry.ui?.sidebarWidth) modeWorkspace.style.setProperty("--mode-sidebar-width", entry.ui.sidebarWidth);
-  const heading = entry.snapshot.heading || [entry.snapshot.title || "APOSTRUCT — Output"];
+  let heading = entry.snapshot.heading || [entry.snapshot.title || "APOSTRUCT — Output"];
+  if (entry.snapshot.material && entry.snapshot.headingLayout !== 2) {
+    const groups = (entry.snapshot.groupTransition || "").split(" → ");
+    heading = [entry.snapshot.material, [groups[0], (heading[1] || "").replace(" | ", "・"), groups[1]].filter(Boolean).join(" → ")];
+  }
   $("result-title").replaceChildren(...heading.map((text, index) => {
     const line = document.createElement("span");
-    if (index === 0 && entry.snapshot.material) {
-      line.append(document.createTextNode(entry.snapshot.material + " "));
-      const groups = document.createElement("span");
-      groups.className = "result-heading-groups";
-      groups.textContent = entry.snapshot.groupTransition || "";
-      line.append(groups);
-    } else line.textContent = text;
+    line.textContent = text;
     if (index) line.className = "result-heading-detail";
     return line;
   }));
