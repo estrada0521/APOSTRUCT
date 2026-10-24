@@ -150,9 +150,9 @@ body.output-window { --mode-viewer-background: var(--color-panel); }
 .output-block .mode-group-properties { margin-left: 0; white-space: normal; }
 
 /* Fixed geometry: selection changes paint only, never font or dimensions. */
-.output-page { grid-template-rows: auto minmax(0, 1fr); gap: 0; }
-.output-tabs { display: flex; align-items: center; gap: 6px; overflow-x: auto; min-width: 0; margin: -12px -12px 6px; padding: 4px 12px; background: var(--color-bg); scrollbar-width: thin; }
-.output-tab { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 24px; flex: 0 0 clamp(150px, 20vw, 240px); align-items: center; height: 28px; min-width: 0; padding: 0 4px 0 0; border: 1px solid transparent; border-radius: var(--radius-panel); background: transparent; color: var(--color-control); }
+.output-page { grid-template-rows: auto minmax(0, 1fr); gap: 6px; }
+.output-tabs { display: flex; align-items: center; gap: 6px; overflow-x: auto; min-width: 0; margin: -6px 0 0; padding: 0; background: var(--color-bg); scrollbar-width: thin; }
+.output-tab { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 24px; flex: 0 0 clamp(150px, 20vw, 240px); align-items: center; height: 28px; min-width: 0; padding: 0 4px 0 0; border: 1px solid var(--color-panel-border); border-radius: var(--radius-panel); background: transparent; color: var(--color-control); }
 .output-tab.is-active { border-color: var(--color-panel-border); background: var(--color-panel); color: var(--color-text); }
 .output-tab:not(.is-active):hover { background: var(--color-hover); }
 .output-tab button { box-sizing: border-box; min-height: 0; min-width: 0; max-width: none; margin: 0; border: 0; background: transparent; color: inherit; font: inherit; font-weight: 400; cursor: pointer; appearance: none; }
@@ -163,8 +163,15 @@ body.output-window { --mode-viewer-background: var(--color-panel); }
 .output-tab button:focus-visible { outline: 2px solid var(--color-control); outline-offset: -2px; }
 .output-empty { color: #666; padding: 24px; margin: 0; }
 @media (max-width: 600px) {
-  .output-tabs { margin: -6px -6px 4px; padding: 4px 6px; }
+  .output-tabs { margin: 0; padding: 0; }
 }
 .output-page.single-result { grid-template-rows: minmax(0, 1fr); }
 
 .output-block .mode-viewer-canvas-wrap { background: var(--mode-viewer-background); }
+
+.output-block .mode-viewer-sidebar,
+.output-block .mode-viewer-canvas-wrap {
+  border: 1px solid var(--color-panel-border);
+  border-radius: var(--radius-panel);
+  overflow: hidden;
+}
