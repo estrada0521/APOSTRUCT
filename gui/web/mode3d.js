@@ -1596,13 +1596,14 @@ export class ModeStructureViewer {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     this.rendererSize = new THREE.Vector2();
-    this.renderer.setClearColor(0xf7f7f5, 1);
+    const background = new THREE.Color(getComputedStyle(document.documentElement).getPropertyValue("--color-bg").trim());
+    this.renderer.setClearColor(background, 1);
     this.renderer.autoClear = false;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.05;
     this.scene = new THREE.Scene();
-    this.scene.fog = new THREE.Fog(0xf7f7f5, 1e6, 1e6 + 1);
+    this.scene.fog = new THREE.Fog(background, 1e6, 1e6 + 1);
     this.lighting = addLights(this.scene);
     this.camera = new THREE.OrthographicCamera(-5, 5, 5, -5, -1000, 1000);
     this.camera.position.set(9, 8, 6);
