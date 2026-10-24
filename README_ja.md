@@ -2,7 +2,8 @@
 
 # APOSTRUCT
 
-Local implementation of ISODISTORT
+結晶対称性の解析エンジンです
+ISODISTORT相当の計算をローカルで実行します
 
 [CLIガイド](CLI_ja.md) · [検証](Validation.ja.md) · [English](README.md)
 
@@ -47,13 +48,13 @@ apo serve --open-browser
 
 | Path | 内容 |
 | --- | --- |
-| `core/` | 計算本体(C言語) |
+| `core/` | 計算エンジン(C言語) |
 | `cli/` | command line |
 | `gui/` | `apo serve` とbrowser画面 |
-| `source/` | apoが計算できない規約の表と、blob生成器 |
-| `verification/` | 検証器（Python）。Web版ISODISTORTの出力との比較と、Webから独立した数学検査。結果は[Validation.ja.md](Validation.ja.md) |
+| `source/` | 基本的な静的データとBYU規約の表 |
+| `verification/` | 検証器（Python）。本家ISODISTORTの出力との比較と、本家から独立した数学検査。結果は[Validation.ja.md](Validation.ja.md) |
 | `branches/` `assets/` | 判定記録とそのCIF |
 
 ## Notice
 
-元のISODISTORTと群論tableは、Harold T. Stokes、Dorian M. Hatch、Branton J. Campbell（Brigham Young University）によるものです。研究で使う場合は謝辞をお願いします。詳細は[NOTICE](NOTICE)。
+APOSTRUCTの出力はHarold T. Stokes、Dorian M. Hatch、Branton J. Campbell（Brigham Young University: 以下BYU）の規約に従います。研究で使う場合は謝辞をお願いします。詳細は[NOTICE](NOTICE)。

@@ -2,7 +2,8 @@
 
 # APOSTRUCT
 
-Local implementation of ISODISTORT
+An engine for crystal symmetry analysis.
+Runs ISODISTORT-equivalent calculations locally.
 
 [CLI Guide](CLI.md) · [Validation](Validation.md) · [日本語](README_ja.md)
 
@@ -47,13 +48,13 @@ apo serve --open-browser
 
 | Path | Content |
 | --- | --- |
-| `core/` | Computation (C) |
+| `core/` | Computation engine (C) |
 | `cli/` | Command line |
 | `gui/` | `apo serve` and the browser interface |
-| `source/` | the conventions apo cannot compute, as tables, and the blob generator |
+| `source/` | Basic static data and tables of BYU conventions |
 | `verification/` | Verifier (Python): comparison with the ISODISTORT Web application and mathematical checks independent of the Web. Results in [Validation.md](Validation.md) |
 | `branches/` `assets/` | Judgement records and their CIFs |
 
 ## Notice
 
-The original ISODISTORT software and group-theory tables are the work of Harold T. Stokes, Dorian M. Hatch and Branton J. Campbell (Brigham Young University). Please acknowledge them when using this in research. See [NOTICE](NOTICE).
+APOSTRUCT output follows the conventions of Harold T. Stokes, Dorian M. Hatch and Branton J. Campbell (Brigham Young University, hereafter BYU). Please acknowledge their work when using APOSTRUCT in research. See [NOTICE](NOTICE) for details.
