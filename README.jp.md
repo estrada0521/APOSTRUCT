@@ -5,7 +5,7 @@
 結晶対称性の解析エンジンです
 ISODISTORT相当の計算をローカルで実行します
 
-[CLIガイド](CLI_ja.md) · [検証](Validation.ja.md) · [English](README.md)
+[マニュアル](Manual.md) · [検証](Validation.jp.md) · [English](README.md)
 
 </div>
 
@@ -28,7 +28,7 @@ sh build.sh
 ln -s "$PWD/bin/apo" ~/.local/bin/apo
 ```
 
-CLIの例（SrTiO3、Sr(1a), Ti(1b), O(3c)）。詳細は[CLIガイド](CLI_ja.md)。
+CLIの例（SrTiO3、Sr(1a), Ti(1b), O(3c)）。詳細は[マニュアル](Manual.md)。
 
 ```sh
 apo info structure.cif
@@ -52,7 +52,7 @@ apo serve --open-browser
 | `cli/` | command line |
 | `gui/` | `apo serve` とbrowser画面 |
 | `source/` | 基本的な静的データとBYU規約の表 |
-| `verification/` | 検証器（Python）。本家ISODISTORTの出力との比較と、本家から独立した数学検査。結果は[Validation.ja.md](Validation.ja.md) |
+| `verification/` | 検証器（Python）。本家ISODISTORTの出力との比較と、本家から独立した数学検査。結果は[Validation.jp.md](Validation.jp.md) |
 | `branches/` `assets/` | 判定記録とそのCIF |
 
 ## Notice

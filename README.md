@@ -5,7 +5,7 @@
 An engine for crystal symmetry analysis.
 Runs ISODISTORT-equivalent calculations locally.
 
-[CLI Guide](CLI.md) · [Validation](Validation.md) · [日本語](README_ja.md)
+[Manual](Manual.md) · [Validation](Validation.md) · [日本語](README.jp.md)
 
 </div>
 
@@ -28,7 +28,7 @@ sh build.sh
 ln -s "$PWD/bin/apo" ~/.local/bin/apo
 ```
 
-CLI example (SrTiO3, Sr(1a), Ti(1b), O(3c)). See the [CLI Guide](CLI.md) for details.
+CLI example (SrTiO3, Sr(1a), Ti(1b), O(3c)). See the [Manual](Manual.md) for details.
 
 ```sh
 apo info structure.cif

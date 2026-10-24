@@ -10,7 +10,6 @@ import sys
 
 MATH_VERIFIER_SCHEMA = "mathematics.v4"
 _DATA_DEPENDENCIES = (
-    "verification/mathematics/data/README.md",
     "verification/mathematics/data/SPGLIB-LICENSE.txt",
     "verification/mathematics/data/magnetic_group_generators.json.gz",
     "verification/mathematics/data/upstream/spglib-2.7.0/magnetic_hall_symbols.yaml",
