@@ -2,36 +2,6 @@ import { OutputTabs } from "./output-tabs.js?v=1";
 import { ModeStructureViewer } from "./mode3d.js?v=65";
 
 const $ = id => document.getElementById(id);
-const state = { modeDetailText: null, modeDetailTextRendered: false };
-function renderModeDetailText(output, text) {
-  const fragment = document.createDocumentFragment();
-  const source = String(text || "");
-  const headingPattern = /^(Parent structure|Subgroup details|Undistorted superstructure|Displacive mode definitions|Magnetic mode definitions|Parent-cell strain mode definitions)$/gm;
-  let cursor = 0;
-  for (const match of source.matchAll(headingPattern)) {
-    appendModeText(fragment, source.slice(cursor, match.index));
-    const heading = document.createElement("span");
-    heading.className = "mode-details-section-heading";
-    heading.textContent = match[0];
-    fragment.append(heading);
-    cursor = match.index + match[0].length;
-  }
-  appendModeText(fragment, source.slice(cursor));
-  output.replaceChildren(fragment);
-}
-
-function ensureModeDetailText() {
-  if (state.modeDetailTextRendered) return;
-  const output = $("mode-details-output");
-  if (state.modeDetailText !== null) {
-    renderModeDetailText(output, state.modeDetailText);
-    state.modeDetailTextRendered = true;
-    return;
-  }
-  renderModeDetailText(output, "");
-  state.modeDetailTextRendered = true;
-}
-
 const modeViewer = new ModeStructureViewer({
   canvas: $("mode-viewer-canvas"),
   empty: $("mode-viewer-empty"),
@@ -113,46 +83,13 @@ new MutationObserver(() => {
   if (modeSidebar && !modeSidebar.closest("[hidden]")) setModeSidebarWidth(modeSidebar.getBoundingClientRect().width);
 }).observe($("mode-viewer-controls"), { childList: true });
 
-function setModeDetailsView(view) {
-  const showViewer = view === "viewer";
-  if (!showViewer) ensureModeDetailText();
-  $("mode-details-text-panel").hidden = showViewer;
-  $("mode-details-viewer-panel").hidden = !showViewer;
-  $("mode-viewer-controls").hidden = !showViewer;
-  $("mode-details-view-select").value = showViewer ? "viewer" : "text";
-  modeViewer.setVisible(showViewer && !document.hidden);
-  if (showViewer) requestAnimationFrame(() => {
+function showViewer() {
+  modeViewer.setVisible(!document.hidden);
+  requestAnimationFrame(() => {
     modeViewer.resize();
     if (!modeViewer.fitted) { modeViewer.fitView(); modeViewer.fitted = true; }
   });
 }
-
-$("mode-details-view-select").addEventListener("change", event => setModeDetailsView(event.target.value));
-
-const CHOICE_TITLE = "Depends on a choice (irrep basis, domain, subgroup frame or star arm), not on the subgroup itself";
-function choiceNode(text) {
-  const span = document.createElement("span");
-  span.className = "choice";
-  span.title = CHOICE_TITLE;
-  span.textContent = text;
-  return span;
-}
-
-// the subgroup line of the mode details text, with its basis, origin and k-active parts marked as choices
-function appendModeText(fragment, text) {
-  const line = /^(.*?)(, basis=\{[^}\n]*\})(, origin=\([^)\n]*\))(, s=\d+, i=\d+, )(k-active= [^\n]*)$/m;
-  const match = text.match(line);
-  if (!match) {
-    fragment.append(document.createTextNode(text));
-    return;
-  }
-  fragment.append(document.createTextNode(text.slice(0, match.index) + match[1]));
-  fragment.append(document.createTextNode(", "), choiceNode(match[2].slice(2)));
-  fragment.append(document.createTextNode(", "), choiceNode(match[3].slice(2)));
-  fragment.append(document.createTextNode(match[4]), choiceNode(match[5]));
-  fragment.append(document.createTextNode(text.slice(match.index + match[0].length)));
-}
-
 
 const channel = location.hash.slice(1);
 const source = window.opener;
@@ -173,13 +110,12 @@ function saveActive() {
   entry.ui = {
     viewer: modeViewer.captureState(),
     controlsScroll: scroll?.scrollTop || 0,
-    textScroll: [$("mode-details-output").scrollLeft, $("mode-details-output").scrollTop],
     pageScroll: [window.scrollX, window.scrollY],
     sidebarWidth: modeWorkspace.style.getPropertyValue("--mode-sidebar-width"),
   };
   entry.amplitudes = entry.ui.viewer.amplitudes;
   entry.masterAmplitude = entry.ui.viewer.masterAmplitude;
-  entry.view = $("mode-details-view-select").value;
+  entry.view = "viewer";
   send("result-state", { revision: entry.revision, state: {
     ui: entry.ui, amplitudes: entry.amplitudes, masterAmplitude: entry.masterAmplitude, view: entry.view,
   } });
@@ -246,17 +182,12 @@ function displayActive() {
   displayedRevision = entry?.revision ?? null;
   send("select", { revision: displayedRevision });
   if (!entry) {
-    state.modeDetailText = null; state.modeDetailTextRendered = false;
-    $("mode-details-output").replaceChildren();
     modeViewer.setVisible(false);
     modeViewer.setData(null);
     document.title = "APOSTRUCT — Output";
     return;
   }
   outputError(null);
-  state.modeDetailText = entry.snapshot.text || "";
-  state.modeDetailTextRendered = false;
-  $("mode-details-output").replaceChildren();
   modeWorkspace.style.removeProperty("--mode-sidebar-width");
   modeViewer.setVisible(false);
   modeViewer.setData(entry.snapshot.viewer);
@@ -276,7 +207,7 @@ function displayActive() {
   document.title = (entry.snapshot.title || "APOSTRUCT") + " — Output";
   $("mode-details-section").setAttribute("aria-labelledby", "result-tab-" + entry.revision);
   $("output-status").hidden = true;
-  setModeDetailsView(entry.view || "viewer");
+  showViewer();
   requestAnimationFrame(() => {
     if (displayedRevision !== entry.revision) return;
     if (entry.ui) {
@@ -284,7 +215,6 @@ function displayActive() {
       modeViewer.restoreState(entry.ui.viewer);
       const scroll = $("mode-viewer-controls").querySelector(".mode-controls-scroll");
       if (scroll) scroll.scrollTop = entry.ui.controlsScroll;
-      [$("mode-details-output").scrollLeft, $("mode-details-output").scrollTop] = entry.ui.textScroll;
       window.scrollTo(...entry.ui.pageScroll);
     }
     saveActive();
@@ -338,12 +268,12 @@ let wheelSave;
 $("mode-viewer-canvas").addEventListener("wheel", () => {
   clearTimeout(wheelSave); wheelSave = setTimeout(saveActive, 150);
 }, { passive: true });
-for (const id of ["mode-viewer-bonds", "mode-viewer-polyhedra", "mode-details-view-select"]) {
+for (const id of ["mode-viewer-bonds", "mode-viewer-polyhedra"]) {
   $(id).addEventListener("change", saveActive);
 }
 window.addEventListener("pagehide", saveActive);
 document.addEventListener("visibilitychange", () => {
-  modeViewer.setVisible(!document.hidden && Boolean(tabs.active) && $("mode-details-view-select").value === "viewer");
+  modeViewer.setVisible(!document.hidden && Boolean(tabs.active));
 });
 function disconnected() {
   $("output-status").hidden = false;

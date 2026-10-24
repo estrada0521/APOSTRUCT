@@ -25,12 +25,6 @@ html, body.output-window { height: 100%; overflow: hidden; }
 .output-heading { display: grid; gap: 6px; min-width: 0; margin-inline: 18px; }
 #result-title { margin: 0; font-size: var(--font-size-base); font-weight: 400; overflow-wrap: anywhere; }
 #output-status { color: #555; font-size: 13px; }
-.output-block .mode-details-view-switch {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  width: auto;
-}
-.output-block .mode-details-view-switch select { min-width: 0; width: 100%; }
 .output-block .mode-viewer-controls {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);

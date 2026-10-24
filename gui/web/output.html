@@ -6,7 +6,7 @@
   <title>APOSTRUCT — Output</title>
   <link rel="stylesheet" href="theme.css?v=5">
   <link rel="stylesheet" href="tool.css?v=102">
-  <link rel="stylesheet" href="output.css?v=39">
+  <link rel="stylesheet" href="output.css?v=40">
   <script type="importmap">
     {
       "imports": {
@@ -27,12 +27,6 @@
             <p id="result-title">APOSTRUCT — Output</p>
             <span id="output-status" role="status" hidden>Waiting for a calculated result from the input window…</span>
             <p id="output-error" class="error" role="alert" hidden></p>
-            <label class="block-title mode-details-view-switch">
-              <select id="mode-details-view-select" aria-label="Output view">
-                <option value="text">Complete mode details</option>
-                <option value="viewer">Interactive viewer</option>
-              </select>
-            </label>
             <div class="mode-viewer-display-options">
               <label><input id="mode-viewer-bonds" type="checkbox" checked> Bonds</label>
               <label><input id="mode-viewer-polyhedra" type="checkbox" checked> Polyhedra</label>
@@ -42,10 +36,7 @@
         </aside>
         <div class="mode-viewer-resizer" role="separator" aria-label="Resize mode controls" aria-orientation="vertical" tabindex="0"></div>
         <div class="output-results">
-          <div id="mode-details-text-panel" role="tabpanel">
-            <pre id="mode-details-output" class="mode-details-output"></pre>
-          </div>
-          <section id="mode-details-viewer-panel" class="mode-viewer-shell" role="tabpanel" aria-label="Interactive mode viewer" hidden>
+          <section id="mode-details-viewer-panel" class="mode-viewer-shell" role="tabpanel" aria-label="Interactive mode viewer">
             <div class="mode-viewer-stage">
               <div class="mode-viewer-canvas-wrap">
                 <canvas id="mode-viewer-canvas"></canvas>
@@ -60,6 +51,6 @@
       </div>
     </section>
   </main>
-  <script type="module" src="output.js?v=21"></script>
+  <script type="module" src="output.js?v=22"></script>
 </body>
 </html>
