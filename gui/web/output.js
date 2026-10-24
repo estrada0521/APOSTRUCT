@@ -204,7 +204,14 @@ function renderTabs() {
       tab.setAttribute("aria-controls", "mode-details-section");
       tab.addEventListener("click", () => activate(entry.revision));
       const close = document.createElement("button");
-      close.type = "button"; close.className = "output-tab-close"; close.textContent = "×";
+      close.type = "button"; close.className = "output-tab-close";
+      const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      icon.setAttribute("viewBox", "0 0 16 16"); icon.setAttribute("aria-hidden", "true");
+      const cross = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      cross.setAttribute("d", "M4 4 L12 12 M12 4 L4 12");
+      cross.setAttribute("fill", "none"); cross.setAttribute("stroke", "currentColor");
+      cross.setAttribute("stroke-width", "1.5"); cross.setAttribute("stroke-linecap", "round");
+      icon.appendChild(cross); close.appendChild(icon);
       close.addEventListener("click", () => {
         saveActive();
         tabs.close(entry.revision);
