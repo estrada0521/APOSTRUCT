@@ -987,7 +987,10 @@ static int family_matches(const sg_context *ctx, const q64 *vector, const prefer
                     q64 negated[3] = {qneg(arms[arm][0]), qneg(arms[arm][1]), qneg(arms[arm][2])};
                     holds = !key_cmp(arms[arm], vector) || !key_cmp(negated, vector);
                 }
-                if (holds) memcpy(match.kparam, standardized, sizeof standardized);
+                if (holds) {
+                    memcpy(match.kparam, standardized, sizeof standardized);
+                    memcpy(match.vector, vector, sizeof match.vector);
+                }
             }
         }
         out[count++] = match;
