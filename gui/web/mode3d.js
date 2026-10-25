@@ -2516,12 +2516,23 @@ export class ModeStructureViewer {
     const target = this.trackball.target.clone();
     const distance = this.camera.position.distanceTo(target);
     const direction = viewDirection.clone().normalize();
-    const targetUp = orthogonalViewUp(direction, up);
     const targetPosition = target.clone().addScaledVector(direction, distance);
     const fromMatrix = new THREE.Matrix4().lookAt(this.camera.position, target, this.camera.up);
-    const toMatrix = new THREE.Matrix4().lookAt(targetPosition, target, targetUp);
     const fromQuaternion = new THREE.Quaternion().setFromRotationMatrix(fromMatrix).normalize();
-    const toQuaternion = new THREE.Quaternion().setFromRotationMatrix(toMatrix).normalize();
+    const alignedUp = orthogonalViewUp(direction, up);
+    let toQuaternion;
+    let minimumAngle = Infinity;
+    // Keep the face aligned, choosing the nearest of its four in-plane orientations.
+    for (let quarter = 0; quarter < 4; quarter += 1) {
+      const targetUp = alignedUp.clone().applyAxisAngle(direction, quarter * Math.PI / 2);
+      const matrix = new THREE.Matrix4().lookAt(targetPosition, target, targetUp);
+      const candidate = new THREE.Quaternion().setFromRotationMatrix(matrix).normalize();
+      const angle = fromQuaternion.angleTo(candidate);
+      if (angle < minimumAngle) {
+        minimumAngle = angle;
+        toQuaternion = candidate;
+      }
+    }
     const angle = fromQuaternion.angleTo(toQuaternion);
     this.viewTween = {
       target,
