@@ -1856,7 +1856,7 @@ export class ModeStructureViewer {
         target: this.trackball.target.toArray(), zoom: this.camera.zoom,
         viewHeight: this.camera.top - this.camera.bottom,
       },
-      playing: this.playing,
+      playing: false,
       phase: this.animationPhaseOffset + (performance.now() - this.animationStart) * (2 * Math.PI / 5000),
     };
   }
@@ -1903,6 +1903,10 @@ export class ModeStructureViewer {
   }
 
   setVisible(visible) {
+    if (!visible) {
+      this.playing = false;
+      this.updatePlayButton();
+    }
     this.visible = visible;
     this.trackball.enabled = visible;
     if (visible) { this.resize(); this.needsRender = true; }

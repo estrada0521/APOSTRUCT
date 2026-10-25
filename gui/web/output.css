@@ -144,8 +144,9 @@ body.output-window { --color-bg: rgb(245, 245, 243); --color-panel: rgb(249, 249
 /* Fixed geometry: selection changes paint only, never font or dimensions. */
 .output-page { grid-template-rows: auto minmax(0, 1fr); }
 .output-tabs { display: flex; align-items: center; gap: 0; overflow-x: auto; min-width: 0; margin: 0; padding: 0; background: rgb(230, 230, 227); scrollbar-width: none; }
-.output-tabs { margin: calc(-1 * var(--space-layout)) calc(-1 * var(--space-layout)) 0; padding: var(--space-layout) 0 0 var(--space-layout); }
+.output-tabs { margin: calc(-1 * var(--space-layout)) calc(-1 * var(--space-layout)) 0; padding: var(--space-layout) var(--space-layout) 0; }
 .output-tabs::-webkit-scrollbar { display: none; }
+.output-tabs { overflow-anchor: none; }
 .output-tab { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 24px; flex: 0 0 clamp(150px, 20vw, 240px); align-items: center; height: 28px; min-width: 0; padding: 0 4px 0 0; border-radius: var(--radius-panel); color: var(--color-control); }
 .output-tab { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
 .output-tab { box-sizing: border-box; border: 0; background: transparent; }

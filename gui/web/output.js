@@ -1,6 +1,6 @@
 import { OutputTabs } from "./output-tabs.js?v=1";
 import { favoriteStorageKey, isFavorite, toggleFavorite } from "./favorites.js?v=1";
-import { ModeStructureViewer } from "./mode3d.js?v=80";
+import { ModeStructureViewer } from "./mode3d.js?v=81";
 
 const $ = id => document.getElementById(id);
 function syncFavorite() {
@@ -285,7 +285,10 @@ window.addEventListener("message", event => {
       else if (empty && message.activeRevision !== undefined) tabs.select(message.activeRevision);
       if (displayedRevision !== tabs.activeRevision) displayActive();
       else renderTabs();
-      if (fresh) $("result-tab-" + tabs.activeRevision)?.scrollIntoView({ block: "nearest", inline: "nearest" });
+      if (fresh || (empty && tabs.activeRevision === [...tabs.entries.keys()].at(-1))) {
+        const bar = $("output-tabs");
+        bar.scrollLeft = bar.scrollWidth;
+      }
     } else if (message.type === "amplitudes") {
       const entry = tabs.entries.get(message.revision);
       if (!entry) return;
