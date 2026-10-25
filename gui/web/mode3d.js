@@ -1150,6 +1150,58 @@ function makeModeAtomMesh(atom, fallbackRadius) {
   return new THREE.Mesh(atomGeometryCache.get(geometryKey), atomMaterialCache.get(color));
 }
 
+// Each site's solid angle represents its occupation fractions; radius is a display average.
+function makeOccupationSphere(parts, fallbackRadius, hiddenSites) {
+  const tolerance = 1e-7;
+  const total = parts.reduce((sum, part) => sum + part.occupancy, 0);
+  const invalid = parts.some(part => !Number.isFinite(part.occupancy)
+    || part.occupancy < -tolerance || part.occupancy > 1 + tolerance) || total > 1 + tolerance;
+  if (invalid) return { mesh: null, invalid: true };
+  if (total <= EPS) return { mesh: null, invalid: false };
+  const radius = parts.reduce((sum, part) => sum + Math.max(0, part.occupancy)
+    * atomRadius(part.atom, fallbackRadius), 0) / total;
+  const group = new THREE.Group();
+  group.userData.occupationParts = parts.map(part => ({
+    element: part.atom.element, occupancy: part.occupancy,
+  }));
+  group.userData.occupationRadius = radius;
+  group.userData.vacancy = Math.max(0, 1 - total);
+  let phi = 0;
+  for (const part of parts) {
+    const fraction = Math.max(0, part.occupancy);
+    const length = Math.min(2 * Math.PI - phi, fraction * 2 * Math.PI);
+    if (length > EPS && !hiddenSites?.has(part.atom.childSite)) {
+      const template = makeModeAtomMesh(part.atom, fallbackRadius);
+      if (fraction >= 1 - tolerance) {
+        template.scale.setScalar(radius / atomRadius(part.atom, fallbackRadius));
+        group.add(template);
+      } else {
+        const surface = new THREE.Mesh(
+          new THREE.SphereGeometry(radius, Math.max(4, Math.ceil(48 * fraction)), 24, phi, length),
+          template.material,
+        );
+        group.add(surface);
+        // Close the two meridian cuts, including exposed surfaces beside vacancies.
+        for (const [angle, reverse] of [[phi, true], [phi + length, false]]) {
+          const positions = [];
+          const point = theta => [-radius * Math.cos(angle) * Math.sin(theta),
+            radius * Math.cos(theta), radius * Math.sin(angle) * Math.sin(theta)];
+          for (let j = 0; j < 24; j += 1) {
+            const a = point(j * Math.PI / 24), b = point((j + 1) * Math.PI / 24);
+            positions.push(0, 0, 0, ...(reverse ? b : a), ...(reverse ? a : b));
+          }
+          const cap = new THREE.BufferGeometry();
+          cap.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+          cap.computeVertexNormals();
+          group.add(new THREE.Mesh(cap, template.material));
+        }
+      }
+    }
+    phi += length;
+  }
+  return { mesh: group.children.length ? group : null, invalid: false };
+}
+
 function makeBondMesh(leftPosition, rightPosition, radius, leftAtom, rightAtom) {
   const midpoint = leftPosition.clone().add(rightPosition).multiplyScalar(0.5);
   const group = new THREE.Group();
@@ -1727,13 +1779,16 @@ export class ModeStructureViewer {
     this.canvas.addEventListener("pointerup", event => {
       if (!this.cubeDownFace) return;
       const face = this.pickCubeFace(event.clientX, event.clientY);
-      if (face && face === this.cubeDownFace) this.goToCubeView(face.userData.viewDir, face.userData.up);
+      if (face && face.userData.cubeFaceIndex === this.cubeDownFace.userData.cubeFaceIndex) {
+        this.goToCubeView(face.userData.viewDir, face.userData.up);
+      }
       this.cubeDownFace = null;
       event.stopImmediatePropagation();
     }, true);
   }
 
   setData(payload) {
+    this.cubeDownFace = null;
     this.payload = payload && typeof payload === "object" ? payload : null;
     this.modes = [];
     this.amplitudes.clear();
@@ -2359,6 +2414,7 @@ export class ModeStructureViewer {
         childSite: atom.child_site,
         label,
         element: elementFromLabel(atom.element),
+        baseOccupancy: number(this.payload?.viewer_parent?.sites?.[atom.site_order]?.occupancy, 1),
         frac: vector3(xyz),
         sourceFrac: vector3(xyz),
       });
@@ -2429,8 +2485,9 @@ export class ModeStructureViewer {
       && this.viewCubeVectors?.length === vectors.length
       && this.viewCubeVectors.every((vector, index) => vector.equals(vectors[index]));
     if (unchanged) return;
+    const hoveredFaceIndex = this.hoveredCubeFace?.userData.cubeFaceIndex;
     if (this.viewCube) {
-      this.setCubeHover(null);
+      this.hoveredCubeFace = null;
       this.cubeScene.remove(this.viewCube);
       disposeObject(this.viewCube);
     }
@@ -2454,8 +2511,9 @@ export class ModeStructureViewer {
       { corners: [c(0, 0, 0), c(1, 0, 0), c(1, 0, 1), c(0, 0, 1)], up: sideUp },
       { corners: [c(0, 0, 1), c(1, 0, 1), c(1, 1, 1), c(0, 1, 1)], up: topUp },
       { corners: [c(0, 0, 0), c(0, 1, 0), c(1, 1, 0), c(1, 0, 0)], up: topUp },
-    ].forEach(({ corners, up }) => {
+    ].forEach(({ corners, up }, index) => {
       const face = cubeFace(corners, up);
+      face.userData.cubeFaceIndex = index;
       this.cubeFaceMeshes.push(face);
       group.add(face);
     });
@@ -2476,6 +2534,7 @@ export class ModeStructureViewer {
     this.viewCube = group;
     this.viewCubeVectors = vectors.map(vector => vector.clone());
     this.cubeScene.add(group);
+    if (hoveredFaceIndex !== undefined) this.setCubeHover(this.cubeFaceMeshes[hoveredFaceIndex]);
   }
 
   cubeNdc(clientX, clientY) {
@@ -2663,19 +2722,41 @@ export class ModeStructureViewer {
       hasCoordinationGeometry = coordinationGeometry.children.length > 0;
       group.add(coordinationGeometry);
     }
+    const occupationSites = new Map();
+    for (const atom of allAtoms) {
+      const position = combine(vectors, atom.frac)
+        .add(combine(vectors, displacements.get(atom.sourceKey) || [0, 0, 0]));
+      const key = position.toArray().map(value => Math.round(value * 1e7)).join(",");
+      if (!occupationSites.has(key)) occupationSites.set(key, { position, parts: [] });
+      occupationSites.get(key).parts.push({ atom,
+        occupancy: number(atom.baseOccupancy, 1) + (occupancies.get(atom.sourceKey) || 0),
+      });
+    }
+    let invalidOccupations = 0;
+    for (const { position, parts } of occupationSites.values()) {
+      const { mesh, invalid } = makeOccupationSphere(parts, visualScale * 0.045, this.hiddenChildSites);
+      if (invalid) invalidOccupations += 1;
+      if (mesh) {
+        mesh.position.copy(position);
+        group.add(mesh);
+      }
+    }
+    if (this.controlsNode) {
+      let warning = this.controlsNode.querySelector(".mode-occupation-warning");
+      if (invalidOccupations && !warning) {
+        warning = document.createElement("p");
+        warning.className = "mode-viewer-note mode-occupation-warning";
+        this.controlsNode.querySelector(".mode-controls-scroll")?.prepend(warning);
+      }
+      if (warning) {
+        warning.hidden = !invalidOccupations;
+        warning.textContent = "Occupancy outside 0–1 or site total above 1: affected atom spheres are not displayed.";
+      }
+    }
     for (const atom of atoms) {
       const basePosition = combine(vectors, atom.frac);
       const displacement = combine(vectors, displacements.get(atom.sourceKey) || [0, 0, 0]);
       const position = basePosition.clone().add(displacement);
-      const fallbackRadius = visualScale * 0.045;
-      const occupancy = Math.max(0, 1 + (occupancies.get(atom.sourceKey) || 0));
-      if (occupancy > EPS) {
-        const mesh = makeModeAtomMesh(atom, fallbackRadius);
-        mesh.position.copy(position);
-        mesh.scale.multiplyScalar(Math.cbrt(occupancy));
-        mesh.userData = { label: atom.label, fractional: atom.frac };
-        group.add(mesh);
-      }
       if (this.arrowsInput?.checked) {
         const displacementArrow = arrow(basePosition, displacement, 0x1677b8, visualScale);
         if (displacementArrow) group.add(displacementArrow);
