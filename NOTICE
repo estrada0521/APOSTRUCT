@@ -1,48 +1,29 @@
 NOTICE
 
-LICENSE (0BSD) applies to the source code of this repository. It does not
-apply to the bundled source/ tables described below, which are the
-distributed BYU ISOTROPY data, reorganized by entity, with the parts that apo
-computes left out; they are governed by this NOTICE. They hold the
-conventions apo's output is written in: standard crystallographic data and
-labels (International Tables for Crystallography Vol. A; Cracknell, Davies,
-Miller and Love; Kovalev; Bradley and Cracknell; the OG and BNS magnetic
-space-group notations) together with the choices of the ISOTROPY Software
-Suite, all as transcribed from its distribution.
+The source code is licensed under 0BSD. The bundled source/ tables are
+excluded from 0BSD. They contain data, labels, and conventions originating
+from International Tables for Crystallography, Cracknell-Davies-Miller-Love,
+Kovalev, Bradley-Cracknell, the OG and BNS magnetic space-group notations,
+and the BYU ISOTROPY Software Suite. The tables incorporate reorganization
+of these references and distributed data, computational derivations,
+corrections, and other changes; they are not verbatim redistributions of
+any single source.
 
-APOSTRUCT is an independent program built on the group-theoretical
-method and data tables originally distributed with ISODISTORT, part of the
-ISOTROPY Software Suite. It is not the original ISOTROPY Software Suite and is
-not affiliated with or endorsed by its authors.
+APOSTRUCT is an independent program developed on the basis of ISODISTORT,
+part of the ISOTROPY Software Suite, and is not endorsed by its original
+authors. The ISOTROPY documentation permits unrestricted redistribution;
+please acknowledge the original authors when publishing research results.
 
-The original ISODISTORT software and the group-theoretical data tables it uses
-are the work of:
-
+Original software authors:
     Harold T. Stokes, Dorian M. Hatch, and Branton J. Campbell
-    Department of Physics and Astronomy
     Brigham Young University
-    Provo, Utah, USA
-    ISOTROPY Software Suite: https://iso.byu.edu/
+    https://iso.byu.edu/
 
-The ISOTROPY documentation states that the software may be redistributed
-without restriction, but that research use resulting in publication should
-acknowledge H. T. Stokes, D. M. Hatch, and B. J. Campbell. Users of this
-package are asked to provide the same acknowledgement.
+Suggested citation:
+    B. J. Campbell et al., "ISODISPLACE: a web-based tool for exploring
+    structural distortions," J. Appl. Cryst. 39, 607-614 (2006).
 
-Suggested citations:
-
-  - H. T. Stokes, D. M. Hatch, and B. J. Campbell, ISOTROPY Software Suite,
-    https://iso.byu.edu/.
-  - B. J. Campbell, H. T. Stokes, D. E. Tanner, and D. M. Hatch,
-    "ISODISPLACE: a web-based tool for exploring structural distortions,"
-    Journal of Applied Crystallography 39, 607-614 (2006).
-
-The CIF files under Assets/ are parent structures used as Validation input,
-not part of APOSTRUCT itself. Most, including all of Assets/cif/ and the
-majority of Assets/magndata/cif/, are from the Materials Project
-(https://materialsproject.org), licensed CC BY 4.0; attribution is requested
-via their citation guidelines at
-https://next-gen.materialsproject.org/about/cite. A small remainder within
-Assets/magndata/cif/ is from the Crystallography Open Database
-(https://www.crystallography.net/cod/), dedicated to the public domain under
-CC0.
+The CIF files under Assets/ are validation data. Those from the Materials
+Project are licensed under CC BY 4.0; those from the Crystallography Open
+Database are provided under CC0.
+Citation guidelines: https://next-gen.materialsproject.org/about/cite
