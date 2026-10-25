@@ -1,5 +1,5 @@
-html, body.output-window { height: 100%; overflow: hidden; background: rgb(245, 245, 243); }
-body.output-window { --color-bg: rgb(245, 245, 243); --color-panel: rgb(249, 249, 247); --mode-viewer-background: var(--color-panel); --space-layout: 7px; }
+html, body.output-window { height: 100%; overflow: hidden; background: rgb(249, 249, 247); }
+body.output-window { --color-bg: rgb(249, 249, 247); --color-panel: rgb(245, 245, 243); --mode-viewer-background: var(--color-panel); }
 .output-page {
   height: 100vh;
   height: 100dvh;
@@ -143,15 +143,18 @@ body.output-window { --color-bg: rgb(245, 245, 243); --color-panel: rgb(249, 249
 
 /* Fixed geometry: selection changes paint only, never font or dimensions. */
 .output-page { grid-template-rows: auto minmax(0, 1fr); }
-.output-tabs { display: flex; align-items: center; gap: 0; overflow-x: auto; min-width: 0; margin: 0; padding: 0; background: rgb(230, 230, 227); scrollbar-width: none; }
-.output-tabs { margin: calc(-1 * var(--space-layout)) calc(-1 * var(--space-layout)) 0; padding: var(--space-layout) var(--space-layout) 0; }
+.output-page:not(.single-result) { padding: 0; gap: 0; background: rgb(230, 230, 227); }
+.output-page:not(.single-result) > .output-block { padding: var(--space-layout); background: var(--color-bg); border-radius: 0; }
+.output-tabs { display: flex; align-items: flex-end; gap: 8px; overflow-x: auto; min-width: 0; margin: 0; padding: 7px 12px 0; background: rgb(230, 230, 227); border-radius: 0; scrollbar-width: none; overflow-anchor: none; }
+.output-tabs { margin-inline: 0; }
 .output-tabs::-webkit-scrollbar { display: none; }
-.output-tabs { overflow-anchor: none; }
-.output-tab { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 24px; flex: 0 0 clamp(150px, 20vw, 240px); align-items: center; height: 28px; min-width: 0; padding: 0 4px 0 0; border-radius: var(--radius-panel); color: var(--color-control); }
-.output-tab { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
-.output-tab { box-sizing: border-box; border: 0; background: transparent; }
-.output-tab.is-active { background: var(--color-bg); color: var(--color-control); }
-.output-tab:not(.is-active):hover { background: var(--color-hover); }
+.output-tab { position: relative; isolation: isolate; display: grid; grid-template-columns: minmax(0, 1fr) 24px; flex: 0 0 clamp(150px, 20vw, 240px); align-items: center; box-sizing: border-box; height: 34px; min-width: 0; padding: 0 4px 6px 0; border: 0; border-radius: 12px 12px 0 0; background: transparent; color: var(--color-control); }
+.output-tab:not(.is-active)::before { content: ""; position: absolute; z-index: -1; inset: 0 0 6px; border-radius: 12px; background: var(--color-hover); }
+.output-tab.is-active { z-index: 1; background: var(--color-bg); }
+.output-tab.is-active::before,
+.output-tab.is-active::after { content: ""; position: absolute; bottom: 0; width: 12px; height: 12px; pointer-events: none; }
+.output-tab.is-active::before { left: -12px; background: radial-gradient(circle at 0 0, transparent 12px, var(--color-bg) 12.5px); }
+.output-tab.is-active::after { right: -12px; background: radial-gradient(circle at 100% 0, transparent 12px, var(--color-bg) 12.5px); }
 .output-tab button { box-sizing: border-box; min-height: 0; min-width: 0; max-width: none; margin: 0; border: 0; background: transparent; color: inherit; font: inherit; font-weight: 400; cursor: pointer; appearance: none; }
 .output-tab [role="tab"] { display: block; width: 100%; height: 26px; padding: 0 10px; border-radius: var(--radius-panel); line-height: 26px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
 .output-tab .output-tab-close { display: grid; place-items: center; justify-self: center; width: 20px; height: 20px; padding: 0; border-radius: 50%; line-height: 1; }
@@ -211,9 +214,9 @@ body.output-window { --color-bg: rgb(245, 245, 243); --color-panel: rgb(249, 249
 }
 
 
-body.output-window .surface-panel:not(.mode-viewer-canvas-wrap) { border: 0; }
 
-.output-block .mode-viewer-sidebar { background: transparent; }
+
+.output-block .mode-viewer-sidebar { background: var(--color-panel); }
 .output-block .mode-controls-scroll { background: transparent; }
 
 .output-block .mode-viewer-topology-note,
