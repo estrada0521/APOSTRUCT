@@ -38,6 +38,6 @@ Records with missing required information, ambiguous Source labels, or inputs an
 ## Reproducibility
 
 [`branches/`](branches/) contains each branch's canonical input, selected OPD, comparison result, and mathematical check status.
-[`verification/`](verification/) contains the verification tools needed to reproduce the results.
+Mathematical checks: [`verify_local_output.py`](verification/verify_local_output.py) · [`verify_web_text.py`](verification/verify_web_text.py). Comparison: [`verify_comparison.py`](verification/verify_comparison.py).
 
 See [`inputs.jsonl.gz`](branches/inputs.jsonl.gz) for inputs, [`results.jsonl.gz`](branches/results.jsonl.gz) for verdicts, and [`manifest.json`](branches/manifest.json) for counts and verifier versions.

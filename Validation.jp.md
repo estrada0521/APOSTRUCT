@@ -38,6 +38,6 @@ MAGNDATAに収録された実在磁気構造を基にした母集団です。親
 ## 再現性
 
 [`branches/`](branches/)には、各branchのcanonical input、選択OPD、比較結果、数学検査statusを収録しています。
-[`verification/`](verification/)には結果を再現する検証ツールが含まれます。
+数学検査：[`verify_local_output.py`](verification/verify_local_output.py)・[`verify_web_text.py`](verification/verify_web_text.py)。比較：[`verify_comparison.py`](verification/verify_comparison.py)。
 
 入力は[`inputs.jsonl.gz`](branches/inputs.jsonl.gz)、判定は[`results.jsonl.gz`](branches/results.jsonl.gz)、件数と検証器のバージョンは[`manifest.json`](branches/manifest.json)を参照してください。
