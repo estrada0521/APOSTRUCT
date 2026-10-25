@@ -148,7 +148,7 @@ body.output-window { --color-bg: rgb(245, 245, 243); --color-panel: rgb(249, 249
 .output-tabs::-webkit-scrollbar { display: none; }
 .output-tab { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 24px; flex: 0 0 clamp(150px, 20vw, 240px); align-items: center; height: 28px; min-width: 0; padding: 0 4px 0 0; border-radius: var(--radius-panel); color: var(--color-control); }
 .output-tab { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
-.output-tab:not(.surface-panel) { border: 1px solid transparent; background: transparent; }
+.output-tab { box-sizing: border-box; border: 0; background: transparent; }
 .output-tab.is-active { background: var(--color-bg); color: var(--color-control); }
 .output-tab:not(.is-active):hover { background: var(--color-hover); }
 .output-tab button { box-sizing: border-box; min-height: 0; min-width: 0; max-width: none; margin: 0; border: 0; background: transparent; color: inherit; font: inherit; font-weight: 400; cursor: pointer; appearance: none; }

@@ -9,12 +9,18 @@
 </head>
 <body>
   <main class="page">
+    <section class="examples-panel" id="recent-panel" hidden>
+      <label class="examples-toggle"><input id="recent-mode" type="checkbox"> Recently</label>
+      <div id="recent-controls" class="examples-controls" hidden>
+        <div class="examples-row"><select id="recent-case" aria-label="Recent input"></select><button class="primary-action" id="recent-use" type="button">Use input</button></div>
+      </div>
+    </section>
     <section class="examples-panel" id="examples-panel" hidden>
       <label class="examples-toggle"><input id="examples-mode" type="checkbox"> Examples</label>
       <div id="examples-controls" class="examples-controls" hidden>
         <div class="examples-grid">
-          <span>MP pool</span><span class="examples-row"><button class="primary-action" id="examples-open-mp" type="button">Random example</button><span class="examples-note" id="examples-note-mp"></span></span>
-          <span>MAGNDATA</span><span class="examples-row"><button class="primary-action" id="examples-open-magndata" type="button">Open example</button><span class="examples-note" id="examples-note-magndata"></span></span>
+          <span id="examples-label-mp">MP pool</span><span class="examples-row"><button class="primary-action" id="examples-open-mp" type="button">Random example</button><span class="examples-note" id="examples-note-mp"></span></span>
+          <span id="examples-label-magndata">MAGNDATA</span><span class="examples-row"><button class="primary-action" id="examples-open-magndata" type="button">Open example</button><span class="examples-note" id="examples-note-magndata"></span></span>
           <span></span><select id="examples-category"></select>
           <span></span><select id="examples-case"></select>
         </div>
@@ -107,6 +113,94 @@
     const $ = id => document.getElementById(id);
 
     const outputWindow = new OutputWindowHost($("output-window-status"));
+    const recentStorageKey = "apostruct.recent-inputs.v1";
+    let recentInputs = [];
+    try {
+      const saved = JSON.parse(localStorage.getItem(recentStorageKey) || "[]");
+      if (Array.isArray(saved)) recentInputs = saved.filter(entry =>
+        typeof entry?.launch?.state_request?.cif === "string" && typeof entry.title === "string"
+      ).slice(0, 20);
+    } catch {}
+    function renderRecentInputs() {
+      $("recent-case").replaceChildren(...recentInputs.map((entry, index) => {
+        const option = document.createElement("option");
+        option.value = String(index);
+        option.textContent = entry.title;
+        return option;
+      }));
+      $("recent-panel").hidden = !recentInputs.length;
+    }
+    renderRecentInputs();
+    $("recent-mode").addEventListener("change", () => {
+      $("recent-controls").hidden = !$("recent-mode").checked;
+    });
+    $("recent-use").addEventListener("click", async () => {
+      if (state.running) return;
+      const entry = recentInputs[Number($("recent-case").value)];
+      if (!entry) return;
+      setError("");
+      state.running = true;
+      $("recent-use").disabled = true;
+      try {
+        const launch = structuredClone(entry.launch);
+        launch.state = await postJSON("/api/APOSTRUCT/state", {
+          ...launch.state_request,
+          distortion_selection: distortionInput(launch.state_request.distortion_selection),
+          include_opd: true,
+          include_mode_details: true,
+        });
+        launch.stage = "modes";
+        await renderGuiLaunch(launch);
+        syncExampleActions();
+      } catch (error) {
+        setError(error.message || String(error));
+      } finally {
+        state.running = false;
+        $("recent-use").disabled = false;
+      }
+    });
+
+    function distortionInput(selection) {
+      if (!selection) return selection;
+      return Object.fromEntries(
+        ["strain", "displacive_sites", "magnetic_sites", "occupancy_sites"]
+          .filter(key => Object.hasOwn(selection, key))
+          .map(key => [key, selection[key]]),
+      );
+    }
+
+    function rememberInput(backendState, title) {
+      const selected = backendState.selected || {};
+      const irreps = selected.irreps_selected || (selected.irrep ? [selected.irrep] : []);
+      const request = {
+        cif: state.cif,
+        selections: (selected.kpoints || []).map((point, index) => ({
+          k_label: point.label,
+          k_params: point.parameters || {},
+          display_k_params: point.display_parameters || point.parameters || {},
+          irrep: irreps[index]?.symbol || irreps[index]?.label,
+          irrep_index: state.irrepSelections[index] || 1,
+        })),
+        orderparam: selected.orderparam?.isotropy?.opd_label || selected.orderparam?.direction?.label,
+        orderparam_index: state.orderparamIndex,
+        mode_set: backendState.mode_set,
+        distortion_selection: distortionInput(backendState.distortion_selection),
+      };
+      const key = JSON.stringify(request);
+      const prior = recentInputs.findIndex(entry => entry.key === key);
+      if (prior >= 0) recentInputs.splice(prior, 1);
+      recentInputs.unshift({ key, title, launch: structuredClone({
+        state_request: request, stage: "opds", source_name: state.sourceName,
+      }) });
+      recentInputs.length = Math.min(recentInputs.length, 20);
+      renderRecentInputs();
+      try {
+        localStorage.setItem(recentStorageKey, JSON.stringify(recentInputs));
+      } catch {
+        setError("Recent inputs could not be saved in this browser.");
+      }
+    }
+
     $("open-output").addEventListener("click", () => outputWindow.open());
 
     function esc(value) {
@@ -699,6 +793,7 @@
         (backendState.selected?.irreps_selected || (backendState.selected?.irrep ? [backendState.selected.irrep] : [])).map(ir => ir.symbol || ir.label).filter(Boolean).join(" + "),
         iso.opd_label || ("OPD " + state.orderparamIndex),
       ].filter(Boolean).join(" · ");
+      rememberInput(backendState, title);
       outputWindow.setData({
         title,
         material,
@@ -842,6 +937,9 @@
       if (!response.ok) throw new Error("The example index is not available");
       const text = await new Response(response.body.pipeThrough(new DecompressionStream("gzip"))).text();
       examples.index = JSON.parse(text);
+      $("examples-label-mp").textContent = `MP pool(${examples.index.mp.length})`;
+      const magneticCount = examples.index.magndata.reduce((total, category) => total + category.cases.length, 0);
+      $("examples-label-magndata").textContent = `MAGNDATA(${magneticCount})`;
       $("examples-category").replaceChildren(...examples.index.magndata.map(category => {
         const option = document.createElement("option");
         option.value = category.id;

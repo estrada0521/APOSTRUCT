@@ -120,11 +120,13 @@ function saveActive() {
     ui: entry.ui, amplitudes: entry.amplitudes, masterAmplitude: entry.masterAmplitude, view: entry.view,
   } });
 }
+let tabStripVisible = false;
 function renderTabs() {
   const bar = $("output-tabs");
-  const multiple = tabs.entries.size > 1;
-  bar.hidden = !multiple;
-  document.querySelector(".output-page").classList.toggle("single-result", !multiple);
+  if (tabs.entries.size > 1) tabStripVisible = true;
+  else if (tabs.entries.size === 0) tabStripVisible = false;
+  bar.hidden = !tabStripVisible;
+  document.querySelector(".output-page").classList.toggle("single-result", !tabStripVisible);
   for (const item of [...bar.children]) {
     if (!tabs.entries.has(Number(item.dataset.revision))) item.remove();
   }
@@ -161,7 +163,6 @@ function renderTabs() {
     const [tab, close] = item.children;
     const active = entry.revision === tabs.activeRevision;
     item.classList.toggle("is-active", active);
-    item.classList.toggle("surface-panel", active);
     tab.setAttribute("aria-selected", String(active));
     tab.tabIndex = active ? 0 : -1;
     const title = entry.snapshot.title || "Result";
