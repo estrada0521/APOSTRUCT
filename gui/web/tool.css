@@ -524,7 +524,7 @@ table {
 
 .mode-master-actions {
   display: inline-flex;
-  gap: 4px;
+  gap: 6px 10px;
 }
 
 .mode-atom-visibility {
