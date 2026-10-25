@@ -1,5 +1,5 @@
 import { OutputTabs } from "./output-tabs.js?v=1";
-import { ModeStructureViewer } from "./mode3d.js?v=70";
+import { ModeStructureViewer } from "./mode3d.js?v=72";
 
 const $ = id => document.getElementById(id);
 const modeViewer = new ModeStructureViewer({

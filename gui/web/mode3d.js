@@ -1293,7 +1293,7 @@ function buildBondGeometry(
   displayedAtoms,
   vectors,
   topology,
-  { showBonds, showPolyhedra, polyhedronOpacity, visualScale },
+  { showBonds, showPolyhedra, polyhedronOpacity, visualScale, hiddenChildSites },
 ) {
   const group = new THREE.Group();
   if (!showBonds && !showPolyhedra) return group;
@@ -1323,8 +1323,12 @@ function buildBondGeometry(
         entry.points.push(rightPosition);
         polyhedra.set(entryKey, entry);
       }
-      if (showBonds) group.add(makeBondMesh(leftPosition, rightPosition, radius, sourceLeft, right));
-      if (!isInsideUnit(shifted)) {
+      const endpointsVisible = !hiddenChildSites?.has(sourceLeft.childSite)
+        && !hiddenChildSites?.has(right.childSite);
+      if (showBonds && endpointsVisible) {
+        group.add(makeBondMesh(leftPosition, rightPosition, radius, sourceLeft, right));
+      }
+      if (!isInsideUnit(shifted) && endpointsVisible) {
         const rightKey = rightPosition.toArray().map(value => fixed(value, 5)).join(",");
         const outsideKey = `${right.element}|${rightKey}`;
         if (!outsideSeen.has(outsideKey)) {
@@ -2579,10 +2583,11 @@ export class ModeStructureViewer {
     });
     const distortedParentVectors = deformVectors(parentVectors);
     const vectors = deformVectors(baseVectors);
-    const atoms = this.buildAtoms().filter(
-      atom => !this.hiddenChildSites.has(atom.childSite),
-    );
-    const { displacements, moments, occupancies } = this.modeVectors(atoms, scale);
+    // Keep hidden atoms in the coordination structure so polyhedra retain
+    // their complete shape and deformation. Hide bonds at rendering time.
+    const allAtoms = this.buildAtoms();
+    const atoms = allAtoms.filter(atom => !this.hiddenChildSites.has(atom.childSite));
+    const { displacements, moments, occupancies } = this.modeVectors(allAtoms, scale);
     const showBonds = !this.bondOptionsSuppressed && Boolean(this.bondsInput?.checked);
     const showPolyhedra = !this.bondOptionsSuppressed && Boolean(this.polyhedraInput?.checked);
     const polyhedronOpacity = 0.7;
@@ -2602,9 +2607,10 @@ export class ModeStructureViewer {
       group.add(makeCellEdges(distortedParentVectors, PARENT_CELL_COLOR, parentOffset, 1, false, 2));
     }
     group.add(makeCellEdges(vectors, CHILD_CELL_COLOR, new THREE.Vector3(), 0.62));
+    let hasCoordinationGeometry = false;
     if (showBonds || showPolyhedra) {
       const sourceAtoms = new Map();
-      for (const atom of atoms) {
+      for (const atom of allAtoms) {
         if (sourceAtoms.has(atom.sourceKey)) continue;
         const displacement = displacements.get(atom.sourceKey) || [0, 0, 0];
         sourceAtoms.set(atom.sourceKey, {
@@ -2619,14 +2625,14 @@ export class ModeStructureViewer {
         }));
         this.bondTopology = buildBondTopology(referenceAtoms, baseVectors);
       }
-      const displayedAtoms = atoms.map(atom => {
+      const displayedAtoms = allAtoms.map(atom => {
         const displacement = displacements.get(atom.sourceKey) || [0, 0, 0];
         return {
           ...atom,
           frac: atom.frac.map((value, axis) => value + displacement[axis]),
         };
       });
-      group.add(buildBondGeometry(
+      const coordinationGeometry = buildBondGeometry(
         [...sourceAtoms.values()],
         displayedAtoms,
         vectors,
@@ -2636,8 +2642,11 @@ export class ModeStructureViewer {
           showPolyhedra,
           polyhedronOpacity,
           visualScale,
+          hiddenChildSites: this.hiddenChildSites,
         },
-      ));
+      );
+      hasCoordinationGeometry = coordinationGeometry.children.length > 0;
+      group.add(coordinationGeometry);
     }
     for (const atom of atoms) {
       const basePosition = combine(vectors, atom.frac);
@@ -2665,9 +2674,10 @@ export class ModeStructureViewer {
     this.structure = group;
     this.scene.add(group);
     this.needsRender = true;
-    this.empty.hidden = atoms.length > 0;
-    this.empty.textContent = atoms.length ? "" : "All atoms are hidden";
-    if (atoms.length && this.statusNode) {
+    const hasVisibleGeometry = atoms.length > 0 || hasCoordinationGeometry;
+    this.empty.hidden = hasVisibleGeometry;
+    this.empty.textContent = hasVisibleGeometry ? "" : "All atoms are hidden";
+    if (hasVisibleGeometry && this.statusNode) {
       this.statusNode.textContent = `${atoms.length} displayed atoms / ${this.modes.length} modes`;
     }
     const canvasRect = this.canvas.getBoundingClientRect();
