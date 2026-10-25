@@ -1369,7 +1369,7 @@ function buildBondGeometry(
       const leftPosition = combine(vectors, left.frac);
       const shifted = right.frac.map((value, axis) => value + connection.shift[axis] + displayShift[axis]);
       const rightPosition = combine(vectors, shifted);
-      if (connection.polyhedron) {
+      if (connection.polyhedron && !hiddenChildSites?.has(sourceLeft.childSite)) {
         const entryKey = left.visualKey || `${left.sourceKey}@${displayShift.join(",")}`;
         const entry = polyhedra.get(entryKey) || { atom: sourceLeft, points: [] };
         entry.points.push(rightPosition);
