@@ -304,8 +304,9 @@ table {
 
 .mode-viewer-home {
   position: absolute;
-  top: 6px;
-  right: 120px;
+  /* Keep HOME at the upper-left of the 148px orientation widget. */
+  bottom: calc(6px + 148px - 32px);
+  left: calc(6px + 2px);
   z-index: 2;
   display: grid;
   place-items: center;
@@ -317,17 +318,17 @@ table {
   border-radius: 0;
   background: transparent;
   box-shadow: none;
-  color: rgb(28 28 27 / 24%);
+  color: rgba(210, 210, 207, 0.50);
 }
 
 .mode-viewer-home:hover {
   background: transparent;
-  color: rgb(28 28 27 / 38%);
+  color: rgba(168, 168, 164, 0.55);
 }
 
 .mode-viewer-home svg {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   fill: currentcolor;
 }
 

@@ -1530,7 +1530,8 @@ function cubeFace(corners, up) {
 }
 
 function solidArrow(direction, color, length, shaftRadius, headLength, headRadius) {
-  const material = new THREE.MeshBasicMaterial({ color, depthTest: false, depthWrite: false, toneMapped: false });
+  // Use the transparent pass so translucent cube faces are drawn before the opaque axes.
+  const material = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 1, depthTest: false, depthWrite: false, toneMapped: false });
   const group = new THREE.Group();
   const shaftLength = Math.max(0.01, length - headLength);
   const shaft = new THREE.Mesh(new THREE.CylinderGeometry(shaftRadius, shaftRadius, shaftLength, 20), material);
@@ -1540,6 +1541,7 @@ function solidArrow(direction, color, length, shaftRadius, headLength, headRadiu
   group.add(shaft, head);
   group.quaternion.setFromUnitVectors(Y_AXIS, direction.clone().normalize());
   group.renderOrder = 10;
+  shaft.renderOrder = head.renderOrder = 10;
   return group;
 }
 
@@ -2479,11 +2481,12 @@ export class ModeStructureViewer {
     const rect = this.canvas.getBoundingClientRect();
     const x = clientX - rect.left;
     const y = clientY - rect.top;
-    const left = rect.width - CUBE_PX - CUBE_MARGIN;
-    if (x < left || x > left + CUBE_PX || y < CUBE_MARGIN || y > CUBE_MARGIN + CUBE_PX) return null;
+    const left = CUBE_MARGIN;
+    const top = rect.height - CUBE_PX - CUBE_MARGIN;
+    if (x < left || x > left + CUBE_PX || y < top || y > top + CUBE_PX) return null;
     return new THREE.Vector2(
       ((x - left) / CUBE_PX) * 2 - 1,
-      -(((y - CUBE_MARGIN) / CUBE_PX) * 2 - 1),
+      -(((y - top) / CUBE_PX) * 2 - 1),
     );
   }
 
@@ -2806,8 +2809,8 @@ export class ModeStructureViewer {
       this.cubeCamera.position.copy(this.cubeDirection);
       this.cubeCamera.up.copy(this.camera.up);
       this.cubeCamera.lookAt(0, 0, 0);
-      const x = width - CUBE_PX - CUBE_MARGIN;
-      const y = height - CUBE_PX - CUBE_MARGIN;
+      const x = CUBE_MARGIN;
+      const y = CUBE_MARGIN;
       this.renderer.setViewport(x, y, CUBE_PX, CUBE_PX);
       this.renderer.setScissor(x, y, CUBE_PX, CUBE_PX);
       this.renderer.setScissorTest(true);
