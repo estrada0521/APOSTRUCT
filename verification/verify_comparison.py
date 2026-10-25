@@ -1,4 +1,4 @@
-"""Independently reproduce an identical/equivalent/unproven verdict.
+"""Compare outputs as identical, equivalent or unproven.
 
 This is the actual comparator this project's identical and equivalent
 figures come from — not the independent math check verify_local_output.py
@@ -91,18 +91,20 @@ def main() -> int:
     parser.add_argument("--tol", type=float, default=DEFAULT_TOLERANCE)
     args = parser.parse_args()
 
-    local_apo_output = json.loads(args.local_output.read_text())
-    web_text = args.web_text.read_text(encoding="utf-8")
-    input_payload = json.loads(args.input.read_text())
-
-    result = verify(
-        local_apo_output,
-        web_text,
-        input_payload,
-        input_id=args.input_id,
-        opd_label=args.opd,
-        tol=args.tol,
-    )
+    try:
+        local_apo_output = json.loads(args.local_output.read_text())
+        web_text = args.web_text.read_text(encoding="utf-8")
+        input_payload = json.loads(args.input.read_text())
+        result = verify(
+            local_apo_output,
+            web_text,
+            input_payload,
+            input_id=args.input_id,
+            opd_label=args.opd,
+            tol=args.tol,
+        )
+    except (RuntimeError, ArithmeticError, OSError, ValueError, KeyError, TypeError) as error:
+        result = {"status": "error", "verdict": None, "error": str(error)}
     print(json.dumps(result, indent=2, sort_keys=True))
     return 0 if result.get("verdict") in ("identical", "equivalent") else 1
 

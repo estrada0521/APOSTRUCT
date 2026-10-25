@@ -11,7 +11,7 @@ import re
 from typing import Any, Iterable, Mapping
 
 
-COMPARATOR_VERSION = "validation.v9"
+COMPARATOR_VERSION = "validation.v10"
 DEFAULT_TOLERANCE = 5e-5
 KINDS = ("dsp", "mag", "occ", "strain")
 
@@ -730,9 +730,7 @@ def result_for_comparison(
         "mode": None,
     }
     if opd.get("exist") is not True:
-        return {**base, "verdict": "unproven"}
-    if opd.get("level") not in {"physical", "strict"}:
-        return {**base, "verdict": "unproven"}
+        return {**base, "status": "local_opd_absent"}
     if not isinstance(comparison, Mapping):
         raise ValueError("present OPD has no mode comparison payload")
     if comparison.get("status") in {"unsupported", "context_mismatch", "error", "timeout"}:
@@ -745,6 +743,8 @@ def result_for_comparison(
                 "detail": str(comparison.get("reason") or ""),
             },
         }
+    if opd.get("level") not in {"physical", "strict"}:
+        return {**base, "verdict": "unproven"}
     mode, mode_divergence, mode_physical, mode_strict = _mode_result(
         comparison, tol=tol
     )

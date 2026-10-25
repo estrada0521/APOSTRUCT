@@ -726,8 +726,8 @@ def _componentwise_minimax_quotient(
         return initial.copy()
     try:
         from scipy.optimize import linprog
-    except ImportError:
-        return None
+    except ImportError as error:
+        raise RuntimeError("mode-span comparison requires scipy") from error
     row_count, dimension = local.shape
     quotient = initial.copy()
     ones = np.ones(row_count, dtype=float)
@@ -749,16 +749,16 @@ def _componentwise_minimax_quotient(
             )
             success = solved.success
             if not isinstance(success, (bool, np.bool_)) or not bool(success):
-                return None
+                raise RuntimeError("mode-span optimization did not complete")
             solution = np.asarray(solved.x, dtype=float)
-        except (ArithmeticError, AttributeError, TypeError, ValueError):
-            return None
+        except (ArithmeticError, AttributeError, TypeError, ValueError) as error:
+            raise RuntimeError("mode-span optimization failed") from error
         if (
             solution.shape != (dimension + 1,)
             or not np.isfinite(solution).all()
             or solution[-1] < 0.0
         ):
-            return None
+            raise RuntimeError("mode-span optimization returned an invalid solution")
         quotient[:, column] = solution[:dimension]
     return quotient if np.isfinite(quotient).all() else None
 
@@ -914,8 +914,8 @@ def _family_span_proof(
             quotient, _, local_rank, singular_values = np.linalg.lstsq(
                 local, web, rcond=None
             )
-        except np.linalg.LinAlgError:
-            return None
+        except np.linalg.LinAlgError as error:
+            raise RuntimeError("mode-span comparison failed") from error
         if (
             int(local_rank) != dimension
             or quotient.shape != (dimension, dimension)
@@ -959,8 +959,8 @@ def _family_span_proof(
             componentwise_minimax_block_count += 1
         try:
             quotient_condition = float(np.linalg.cond(quotient))
-        except np.linalg.LinAlgError:
-            return None
+        except np.linalg.LinAlgError as error:
+            raise RuntimeError("mode-span comparison failed") from error
         condition = max(quotient_condition, local_condition)
         if not math.isfinite(condition) or condition > 1.0 / tol:
             return None
