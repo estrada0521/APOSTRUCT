@@ -9,10 +9,14 @@
 </head>
 <body>
   <main class="page">
-    <section class="examples-panel" id="recent-panel" hidden>
-      <label class="examples-toggle"><input id="recent-mode" type="checkbox"> Recently</label>
-      <div id="recent-controls" class="examples-controls" hidden>
-        <div class="examples-row"><select id="recent-case" aria-label="Recent input"></select><button class="primary-action" id="recent-use" type="button">Use input</button></div>
+    <section class="examples-panel" id="library-panel" hidden>
+      <label class="examples-toggle"><input id="library-mode" type="checkbox"> Library</label>
+      <div id="library-controls" class="examples-controls" hidden>
+        <div class="examples-row">
+          <select id="library-source" aria-label="Library collection"><option value="recent">Recent</option><option value="favorites">Favorites</option></select>
+          <select id="library-case" aria-label="Saved input"></select>
+          <button class="primary-action" id="library-use" type="button">Use input</button>
+        </div>
       </div>
     </section>
     <section class="examples-panel" id="examples-panel" hidden>
@@ -93,6 +97,8 @@
   <script type="module">
     import { OutputWindowHost } from "./output-window.js?v=7";
 
+    import { loadFavorites, favoriteStorageKey } from "./favorites.js?v=1";
+
     const state = {
       cif: "",
       backendState: null,
@@ -121,26 +127,44 @@
         typeof entry?.launch?.state_request?.cif === "string" && typeof entry.title === "string"
       ).slice(0, 20);
     } catch {}
+    function libraryEntries() {
+      return $("library-source").value === "favorites" ? loadFavorites() : recentInputs;
+    }
     function renderRecentInputs() {
-      $("recent-case").replaceChildren(...recentInputs.map((entry, index) => {
+      const entries = libraryEntries();
+      const select = $("library-case");
+      const selectedKey = select.selectedOptions[0]?.dataset.key;
+      select.replaceChildren(...entries.map((entry, index) => {
         const option = document.createElement("option");
         option.value = String(index);
+        option.dataset.key = entry.key;
         option.textContent = entry.title;
+        option.selected = entry.key === selectedKey;
         return option;
       }));
-      $("recent-panel").hidden = !recentInputs.length;
+      if (!entries.length) {
+        const option = document.createElement("option");
+        option.textContent = "No saved inputs";
+        select.append(option);
+      }
+      select.disabled = !entries.length;
+      $("library-use").disabled = !entries.length;
+      $("library-panel").hidden = !recentInputs.length && !loadFavorites().length;
     }
     renderRecentInputs();
-    $("recent-mode").addEventListener("change", () => {
-      $("recent-controls").hidden = !$("recent-mode").checked;
+    $("library-mode").addEventListener("change", () => {
+      $("library-controls").hidden = !$("library-mode").checked;
     });
-    $("recent-use").addEventListener("click", async () => {
+    $("library-source").addEventListener("change", renderRecentInputs);
+    window.addEventListener("storage", event => {
+      if (event.key === favoriteStorageKey || event.key === null) renderRecentInputs();
+    });
+    async function useSavedInput(entry, button) {
       if (state.running) return;
-      const entry = recentInputs[Number($("recent-case").value)];
       if (!entry) return;
       setError("");
       state.running = true;
-      $("recent-use").disabled = true;
+      button.disabled = true;
       try {
         const launch = structuredClone(entry.launch);
         launch.state = await postJSON("/api/APOSTRUCT/state", {
@@ -156,9 +180,10 @@
         setError(error.message || String(error));
       } finally {
         state.running = false;
-        $("recent-use").disabled = false;
+        button.disabled = false;
       }
-    });
+    }
+    $("library-use").addEventListener("click", () => useSavedInput(libraryEntries()[Number($("library-case").value)], $("library-use")));
 
     function distortionInput(selection) {
       if (!selection) return selection;
@@ -199,6 +224,7 @@
       } catch {
         setError("Recent inputs could not be saved in this browser.");
       }
+      return recentInputs[0];
     }
 
     $("open-output").addEventListener("click", () => outputWindow.open());
@@ -793,9 +819,10 @@
         (backendState.selected?.irreps_selected || (backendState.selected?.irrep ? [backendState.selected.irrep] : [])).map(ir => ir.symbol || ir.label).filter(Boolean).join(" + "),
         iso.opd_label || ("OPD " + state.orderparamIndex),
       ].filter(Boolean).join(" · ");
-      rememberInput(backendState, title);
+      const savedInput = rememberInput(backendState, title);
       outputWindow.setData({
         title,
+        savedInput,
         material,
         groupTransition: [parentGroup, childGroup].filter(Boolean).join(" → "),
         heading: [material, [parentGroup, irrepLabel + "・" + opdLabel, childGroup].filter(Boolean).join(" → ")],

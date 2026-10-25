@@ -6,7 +6,7 @@
   <title>APOSTRUCT — Output</title>
   <link rel="stylesheet" href="theme.css?v=6">
   <link rel="stylesheet" href="tool.css?v=118">
-  <link rel="stylesheet" href="output.css?v=86">
+  <link rel="stylesheet" href="output.css?v=92">
   <script type="importmap">
     {
       "imports": {
@@ -24,7 +24,8 @@
       <div class="mode-viewer-workspace">
         <aside class="mode-viewer-sidebar surface-panel" aria-label="Result and mode controls">
           <header class="output-heading">
-            <p id="result-title">APOSTRUCT — Output</p>
+            <button id="output-favorite" class="output-favorite" type="button" aria-label="Add to favorites" aria-pressed="false" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l-1 6 4 4v2H6v-2l4-4Z"/><path class="pin-stem" d="M12 15v6"/></svg></button>
+            <p id="result-title"><span><span class="result-material">APOSTRUCT — Output</span></span></p>
             <span id="output-status" role="status" hidden>Waiting for a calculated result from the input window…</span>
             <p id="output-error" class="error" role="alert" hidden></p>
             <div class="mode-viewer-display-options">
@@ -51,6 +52,6 @@
       </div>
     </section>
   </main>
-  <script type="module" src="output.js?v=41"></script>
+  <script type="module" src="output.js?v=47"></script>
 </body>
 </html>

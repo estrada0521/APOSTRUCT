@@ -1,7 +1,28 @@
 import { OutputTabs } from "./output-tabs.js?v=1";
+import { favoriteStorageKey, isFavorite, toggleFavorite } from "./favorites.js?v=1";
 import { ModeStructureViewer } from "./mode3d.js?v=79";
 
 const $ = id => document.getElementById(id);
+function syncFavorite() {
+  const entry = tabs.active?.snapshot.savedInput;
+  const saved = isFavorite(entry);
+  const button = $("output-favorite");
+  button.disabled = !entry;
+  button.setAttribute("aria-pressed", String(saved));
+  button.setAttribute("aria-label", saved ? "Remove from favorites" : "Add to favorites");
+}
+$("output-favorite").addEventListener("click", () => {
+  try {
+    toggleFavorite(tabs.active?.snapshot.savedInput);
+    syncFavorite();
+    outputError(null);
+  } catch {
+    outputError("Favorites could not be saved in this browser.");
+  }
+});
+window.addEventListener("storage", event => {
+  if (event.key === favoriteStorageKey || event.key === null) syncFavorite();
+});
 const modeViewer = new ModeStructureViewer({
   canvas: $("mode-viewer-canvas"),
   empty: $("mode-viewer-empty"),
@@ -179,6 +200,7 @@ function activate(revision) {
 function displayActive() {
   renderTabs();
   const entry = tabs.active;
+  syncFavorite();
   $("mode-details-section").hidden = !entry;
   $("output-empty").hidden = Boolean(entry);
   displayedRevision = entry?.revision ?? null;
@@ -212,8 +234,15 @@ function displayActive() {
   }
   $("result-title").replaceChildren(...heading.map((text, index) => {
     const line = document.createElement("span");
-    line.textContent = text;
-    if (index) line.className = "result-heading-detail";
+    if (index) {
+      line.textContent = text;
+      line.className = "result-heading-detail";
+    } else {
+      const material = document.createElement("span");
+      material.className = "result-material";
+      material.textContent = text;
+      line.append(material);
+    }
     return line;
   }));
   document.title = (entry.snapshot.title || "APOSTRUCT") + " — Output";

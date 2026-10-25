@@ -167,6 +167,34 @@ body.output-window { --color-bg: rgb(245, 245, 243); --color-panel: rgb(249, 249
 }
 
 #result-title > span { display: block; }
+#result-title > span:first-child { display: block; padding-right: 26px; }
+.output-heading { position: relative; }
+.result-material { line-height: 18px; }
+.output-favorite {
+  position: absolute;
+  top: var(--space-panel);
+  right: var(--space-panel);
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: 22px;
+  height: 18px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: inherit;
+  line-height: 1;
+  cursor: pointer;
+}
+.output-favorite svg { display: block; width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.output-favorite[aria-pressed="true"] svg path:not(.pin-stem) { fill: currentColor; }
+.output-favorite:hover { opacity: 0.65; }
+.output-favorite:focus-visible { outline: 2px solid currentColor; border-radius: var(--radius-panel); }
+.output-favorite:disabled { opacity: 0.35; cursor: default; }
 #result-title .result-heading-detail { margin-top: 6px; opacity: 0.65; }
 
 
