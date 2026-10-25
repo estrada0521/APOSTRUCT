@@ -1512,6 +1512,7 @@ function cubeFace(corners, up) {
   const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
     map: normalTexture,
     transparent: true,
+    depthWrite: false,
     side: THREE.DoubleSide,
     toneMapped: false,
   }));
@@ -1530,8 +1531,8 @@ function cubeFace(corners, up) {
 }
 
 function solidArrow(direction, color, length, shaftRadius, headLength, headRadius) {
-  // Use the transparent pass so translucent cube faces are drawn before the opaque axes.
-  const material = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 1, depthTest: false, depthWrite: false, toneMapped: false });
+  // Write axis depth before translucent faces: only faces in front may tint the axes.
+  const material = new THREE.MeshBasicMaterial({ color, depthTest: true, depthWrite: true, toneMapped: false });
   const group = new THREE.Group();
   const shaftLength = Math.max(0.01, length - headLength);
   const shaft = new THREE.Mesh(new THREE.CylinderGeometry(shaftRadius, shaftRadius, shaftLength, 20), material);
