@@ -1,7 +1,11 @@
 NOTICE
 
-The source code is licensed under 0BSD. The bundled source/ tables are
-excluded from 0BSD. They contain data, labels, and conventions originating
+The source code is licensed under MIT (see LICENSE). The APOSTRUCT
+contributors dedicate any copyright and related rights they hold in the
+bundled source/ tables under CC0 1.0 Universal (see LICENSE-CC0). This does
+not waive or relicense third-party rights.
+
+The tables contain data, labels, and conventions originating
 from International Tables for Crystallography, Cracknell-Davies-Miller-Love,
 Kovalev, Bradley-Cracknell, the OG and BNS magnetic space-group notations,
 and the BYU ISOTROPY Software Suite. The tables incorporate reorganization
