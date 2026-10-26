@@ -162,10 +162,27 @@ button {
   gap: 4px 6px;
 }
 
-.k-row .k-select {
+.k-select-display {
+  position: relative;
   flex: 0 1 180px;
   min-width: 120px;
 }
+.k-select-display .k-select { width: 100%; color: var(--color-text); -webkit-text-fill-color: transparent; }
+.k-select-display .k-select option { color: var(--color-text); -webkit-text-fill-color: var(--color-text); }
+.k-selected-text {
+  position: absolute;
+  inset: 0 22px 0 7px;
+  display: block;
+  align-content: center;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+.k-params { color: var(--color-muted); }
+.k-params input { color: var(--color-muted); }
+.identifier, .irrep-select { color: var(--color-identifier); }
+.mathematical { color: var(--color-mathematical); }
 
 .k-params {
   display: inline-flex;

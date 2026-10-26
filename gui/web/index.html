@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>APOSTRUCT</title>
-  <link rel="stylesheet" href="theme.css?v=6">
-  <link rel="stylesheet" href="tool.css?v=118">
+  <link rel="stylesheet" href="theme.css?v=19">
+  <link rel="stylesheet" href="tool.css?v=128">
 </head>
 <body>
   <main class="page">
@@ -598,7 +598,7 @@
       const lines = [
         [
           materialName ? `<span class="material-name">${esc(materialName)}</span>` : "",
-          `${esc(sg.number ?? input.parent?.number ?? "")} ${esc(symbol)}`.trim(),
+          `<span class="identifier">${esc(sg.number ?? input.parent?.number ?? "")} ${esc(symbol)}</span>`,
         ].filter(Boolean).join(" "),
         ...(hasLattice ? [
           `a=${esc(fmtNumber(lat.a))}, b=${esc(fmtNumber(lat.b))}, c=${esc(fmtNumber(lat.c))}`,
@@ -612,7 +612,10 @@
           const params = Object.entries(site.wyckoff_params || {})
             .map(([name, value]) => `${name}= ${fmtParam(value)}`)
             .join(", ");
-          return `${esc(site.label || site.type || "")} ${esc(wyckoff || site.multiplicity || "")} ${esc(formula)}${params ? ", " + esc(params) : ""}`;
+          const position = wyckoff
+            ? `<span class="mathematical">${esc(site.multiplicity || "")}</span><span class="identifier">${esc(site.wyckoff || "")}</span>`
+            : `<span class="mathematical">${esc(site.multiplicity || "")}</span>`;
+          return `${esc(site.label || site.type || "")} ${position} <span class="choice">${esc(formula)}${params ? ", " + esc(params) : ""}</span>`;
         }),
       ];
       $("parent-summary").innerHTML = lines.filter(Boolean).join("<br>");
@@ -678,12 +681,12 @@
       const count = normalizeIrrepCount();
       const optionsFor = selectedLabel => (backendState.kpoints || []).map(k => {
         const selected = k.label === selectedLabel ? " selected" : "";
-        return `<option value="${esc(k.label)}"${selected}>${esc(k.label)}, k${esc(k.kid ?? k.kslot)} ${esc(k.display_kvector || k.kvector)}</option>`;
+        return `<option value="${esc(k.label)}" data-vector="${esc(k.display_kvector || k.kvector)}" data-number="${esc(k.kid ?? k.kslot)}"${selected}>${esc(k.label)}, k${esc(k.kid ?? k.kslot)} ${esc(k.display_kvector || k.kvector)}</option>`;
       }).join("");
       $("k-selectors").innerHTML = state.kSelections.slice(0, count).map((selection, index) => {
         const params = selection.params || {};
         return `<span class="k-row" data-index="${index}">
-          <select class="k-select">${optionsFor(selection.label || backendState.selected?.kpoint?.label)}</select>
+          <span class="k-select-display"><select class="k-select">${optionsFor(selection.label || backendState.selected?.kpoint?.label)}</select><span class="k-selected-text" aria-hidden="true"></span></span>
           <span class="k-params">
             <label>a=<input class="tiny-input k-param" data-param="a" value="${esc(params.a || "")}"></label>
             <label>b=<input class="tiny-input k-param" data-param="b" value="${esc(params.b || "")}"></label>
@@ -701,7 +704,13 @@
         $("mode-details-section").hidden = true;
       };
       document.querySelectorAll(".k-select").forEach(node => {
-        node.addEventListener("change", onKInput);
+        const updateText = () => {
+          const option = node.selectedOptions[0];
+          node.nextElementSibling.innerHTML = option
+            ? `<span class="identifier">${esc(option.value)}, k${esc(option.dataset.number)}</span> <span class="choice">${esc(option.dataset.vector)}</span>` : "";
+        };
+        updateText();
+        node.addEventListener("change", () => { updateText(); onKInput(); });
       });
       document.querySelectorAll(".k-param").forEach(node => {
         node.addEventListener("input", onKInput);
@@ -748,9 +757,9 @@
         const vector = iso.display_opd ?? iso.source_opd ?? dir.opd ?? iso.direction_opd ?? "";
         const [invariant, chosen] = opdParts(iso);
         const first = [
-          esc(dir.label ?? iso.direction_label ?? ""),
-          subgroupNumber ? esc(`#${subgroupNumber} ${subgroup.symbol}`) : "",
-        ].filter(Boolean).join(" ") + (invariant.length ? `, ${invariant.join(", ")}` : "");
+          `<span class="identifier">${esc(dir.label ?? iso.direction_label ?? "")}</span>`,
+          subgroupNumber ? `<span class="identifier">${esc(`#${subgroupNumber} ${subgroup.symbol}`)}</span>` : "",
+        ].filter(Boolean).join(" ") + (invariant.length ? `, ${invariant.map(text => `<span class="mathematical">${text}</span>`).join(", ")}` : "");
         const second = [vector, ...chosen].filter(Boolean).join(", ");
         return `<label class="opd-option"><input type="radio" name="orderparam" value="${index + 1}"${checked}>` +
           `<span class="opd-lines"><span>${first}</span>${second ? choice(second) : ""}</span></label>`;
