@@ -20,7 +20,7 @@
       </div>
     </section>
     <section class="examples-panel" id="examples-panel" hidden>
-      <label class="examples-toggle"><input id="examples-mode" type="checkbox"> Examples</label>
+      <label class="examples-toggle"><input id="examples-mode" type="checkbox" autocomplete="off"> Examples</label>
       <div id="examples-controls" class="examples-controls" hidden>
         <div class="examples-grid">
           <span id="examples-label-mp">MP pool</span><span class="examples-row"><button class="primary-action" id="examples-open-mp" type="button">Random example</button><span class="examples-note" id="examples-note-mp"></span></span>
@@ -1069,6 +1069,10 @@
       $("examples-copy").disabled = !state.backendState?.selected?.mode_details;
     }
 
+    window.addEventListener("pageshow", () => {
+      $("examples-mode").checked = false;
+      $("examples-controls").hidden = true;
+    });
     loadExamples().then(() => { $("examples-panel").hidden = false; }).catch(() => {});
     $("examples-mode").addEventListener("change", () => {
       $("examples-controls").hidden = !$("examples-mode").checked;

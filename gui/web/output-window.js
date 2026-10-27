@@ -33,7 +33,7 @@ export class OutputWindowHost {
   setData(snapshot, view = "viewer") {
     const entry = this.tabs.add({ revision: ++this.revision, snapshot, view: view || "viewer" });
     this.tabs.select(entry.revision);
-    if (entry.revision === 1 && (!this.popup || this.popup.closed)) this.open();
+    if (!this.popup || this.popup.closed) this.open();
     else this.send("result", { entry });
   }
   setAmplitudes(amplitudes) {
