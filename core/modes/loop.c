@@ -1335,9 +1335,82 @@ static int same_k_point(const md_spec *a, const md_spec *b)
     return lattice_shift(a, b, 1) || lattice_shift(a, b, -1);
 }
 
-/* definition_table.independent_child_mode_union over the ordered mode list; with same_k, over the specs whose k
- * points differ by a reciprocal lattice vector (one k point under two labels gives the same modes twice) */
-static int independent_union(md_request *r, md_state *st, int *list, int *count, int same_k)
+/* One physically irreducible representation listed under two k labels (k points equal or opposite up to a reciprocal
+ * lattice vector, different k parameters) gives the same modes twice: on each site, a mode of such a spec that lies in
+ * the span of the modes before it is dropped. The span is tested in floating point, since the two labels give vectors
+ * proportional by irrational factors. */
+static int same_k_union(md_request *r, md_state *st, int *list, int *count)
+{
+    int n = *count, ns = r->nspecs;
+    const md_spec **spec_of = calloc((size_t)ns + 1, sizeof *spec_of);
+    unsigned char *partner = calloc((size_t)ns + 1, 1);
+    if (!spec_of || !partner) return md_fail(MDE_MEMORY, "out of memory");
+    for (int i = 0; i < n; i++) {
+        const md_block *b = st->blocks + st->modes[list[i]].block;
+        if (b->spec_order >= 0 && b->spec_order < ns) spec_of[b->spec_order] = b->spec;
+    }
+    int any = 0;
+    for (int a = 0; a < ns; a++)
+        for (int c = a + 1; c < ns; c++)
+            if (spec_of[a] && spec_of[c] && same_k_point(spec_of[a], spec_of[c])) partner[a] = partner[c] = 1, any = 1;
+    if (!any) {
+        free(spec_of);
+        free(partner);
+        return 0;
+    }
+    unsigned char *done = calloc((size_t)n + 1, 1), *dependent = calloc((size_t)n + 1, 1);
+    int *members = malloc(sizeof(int) * (size_t)(n + 1));
+    if (!done || !dependent || !members) return md_fail(MDE_MEMORY, "out of memory");
+    for (int i = 0; i < n; i++) {
+        const md_block *b = st->blocks + st->modes[list[i]].block;
+        if (done[i] || !partner[b->spec_order]) continue;
+        int nmembers = 0;
+        for (int j = i; j < n; j++) {
+            const md_block *o = st->blocks + st->modes[list[j]].block;
+            if (!done[j] && partner[o->spec_order] && o->site_order == b->site_order && o->magnetic == b->magnetic) {
+                members[nmembers++] = j;
+                done[j] = 1;
+            }
+        }
+        int width = 3 * st->plans[st->modes[list[members[0]]].plan].natoms, kept = 0;
+        double *basis = malloc(sizeof(double) * (size_t)(nmembers * width + 1));
+        if (!basis) return md_fail(MDE_MEMORY, "out of memory");
+        for (int m = 0; m < nmembers; m++) {
+            const md_mode *mode = st->modes + list[members[m]];
+            if (3 * st->plans[mode->plan].natoms != width) return md_fail(MDE_VALUE, "mode definition vectors do not match its atoms");
+            double *w = basis + (size_t)kept * width, norm = 0, rest = 0;
+            for (int k = 0; k < width; k++) w[k] = mode->vectors[k], norm += w[k] * w[k];
+            for (int q = 0; q < kept; q++) {
+                const double *u = basis + (size_t)q * width;
+                double dot = 0;
+                for (int k = 0; k < width; k++) dot += w[k] * u[k];
+                for (int k = 0; k < width; k++) w[k] -= dot * u[k];
+            }
+            for (int k = 0; k < width; k++) rest += w[k] * w[k];
+            if (norm > 0 && rest > 1e-12 * norm) {
+                double scale = 1 / sqrt(rest);
+                for (int k = 0; k < width; k++) w[k] *= scale;
+                kept++;
+            } else {
+                dependent[members[m]] = 1;
+            }
+        }
+        free(basis);
+    }
+    int kept = 0;
+    for (int i = 0; i < n; i++)
+        if (!dependent[i]) list[kept++] = list[i];
+    *count = kept;
+    free(spec_of);
+    free(partner);
+    free(done);
+    free(dependent);
+    free(members);
+    return 0;
+}
+
+/* definition_table.independent_child_mode_union over the ordered mode list */
+static int independent_union(md_request *r, md_state *st, int *list, int *count)
 {
     int n = *count;
     int *affected = calloc((size_t)n + 1, sizeof(int));
@@ -1345,15 +1418,14 @@ static int independent_union(md_request *r, md_state *st, int *list, int *count,
     int any = 0;
     for (int i = 0; i < n; i++) {
         const md_block *b = st->blocks + st->modes[list[i]].block;
-        if (!same_k && (!b->subspace_replaced || !b->spec->nocc)) continue;
+        if (!b->subspace_replaced || !b->spec->nocc) continue;
         int specs = 0;
         int *seen = calloc((size_t)r->nspecs + 1, sizeof(int));
         if (!seen) return md_fail(MDE_MEMORY, "out of memory");
         for (int j = 0; j < n; j++) {
             const md_block *o = st->blocks + st->modes[list[j]].block;
-            int related = same_k ? o->spec_order == b->spec_order || same_k_point(o->spec, b->spec)
-                                 : o->spec->nocc && occurrences_equal(o->spec, b->spec);
-            if (o->site_order == b->site_order && o->magnetic == b->magnetic && related && !seen[o->spec_order]) {
+            if (o->site_order == b->site_order && o->magnetic == b->magnetic && o->spec->nocc && occurrences_equal(o->spec, b->spec) &&
+                !seen[o->spec_order]) {
                 seen[o->spec_order] = 1;
                 specs++;
             }
@@ -1411,34 +1483,9 @@ static int independent_union(md_request *r, md_state *st, int *list, int *count,
             offsets[m + 1] = used;
         }
         int pivot_count = 0;
-        if (same_k) {
-            /* the same representation under two labels gives vectors proportional by irrational factors, which the
-             * quantized exact rank does not see */
-            double *kept = malloc(sizeof(double) * (size_t)(nmembers * 3 * natoms + 1));
-            if (!kept) return md_fail(MDE_MEMORY, "out of memory");
-            for (int m = 0; m < nmembers; m++) {
-                const double *v = st->modes[list[members[m]]].vectors;
-                double *w = kept + (size_t)pivot_count * 3 * natoms, norm = 0, rest = 0;
-                for (int k = 0; k < 3 * natoms; k++) w[k] = v[k], norm += v[k] * v[k];
-                for (int q = 0; q < pivot_count; q++) {
-                    const double *u = kept + (size_t)q * 3 * natoms;
-                    double dot = 0;
-                    for (int k = 0; k < 3 * natoms; k++) dot += w[k] * u[k];
-                    for (int k = 0; k < 3 * natoms; k++) w[k] -= dot * u[k];
-                }
-                for (int k = 0; k < 3 * natoms; k++) rest += w[k] * w[k];
-                if (norm > 0 && rest > 1e-12 * norm) {
-                    double scale = 1 / sqrt(rest);
-                    for (int k = 0; k < 3 * natoms; k++) w[k] *= scale;
-                    pivots[pivot_count++] = m;
-                }
-            }
-            free(kept);
-        } else {
-            int status = independent_columns((int)nrows, nmembers, offsets, rows, values, pivots, &pivot_count);
-            if (status) return status == 1 ? md_fail(MDE_MEMORY, "independent mode columns are out of range")
-                                           : md_fail(MDE_ARITH, "independent mode columns are out of range");
-        }
+        int status = independent_columns((int)nrows, nmembers, offsets, rows, values, pivots, &pivot_count);
+        if (status) return status == 1 ? md_fail(MDE_MEMORY, "independent mode columns are out of range")
+                                       : md_fail(MDE_ARITH, "independent mode columns are out of range");
         int *is_pivot = calloc((size_t)nmembers + 1, sizeof(int));
         if (!is_pivot) return md_fail(MDE_MEMORY, "out of memory");
         for (int p = 0; p < pivot_count; p++) is_pivot[pivots[p]] = 1;
@@ -2114,11 +2161,11 @@ static int build(md_request *r, jbuf *b, md_owned *o)
     jb_reset(&o->factors);
     MD_TRY(secondary_factors(r, &o->st, o->emitted, &o->factors));
     if (r->coupled) {
-        MD_TRY(independent_union(r, &o->st, o->lists[0], &counts[0], 0));
-        MD_TRY(independent_union(r, &o->st, o->lists[1], &counts[1], 0));
-        MD_TRY(independent_union(r, &o->st, o->lists[2], &counts[2], 0));
+        MD_TRY(independent_union(r, &o->st, o->lists[0], &counts[0]));
+        MD_TRY(independent_union(r, &o->st, o->lists[1], &counts[1]));
+        MD_TRY(independent_union(r, &o->st, o->lists[2], &counts[2]));
     }
-    for (int kind = 0; kind < 3; kind++) MD_TRY(independent_union(r, &o->st, o->lists[kind], &counts[kind], 1));
+    for (int kind = 0; kind < 3; kind++) MD_TRY(same_k_union(r, &o->st, o->lists[kind], &counts[kind]));
     jb_reset(&o->strain);
     if (jtruthy(jget(r->request, "include_strain"))) MD_TRY(md_strain_definitions(r, o->strain_list, o->strain_orders, o->nstrain, &o->strain));
     else jb_lit(&o->strain, "[]");
