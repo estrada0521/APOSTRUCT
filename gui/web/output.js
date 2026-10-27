@@ -142,8 +142,17 @@ function saveActive() {
   } });
 }
 let tabStripVisible = false;
+const tabReflowAnimations = new WeakMap();
 function renderTabs() {
   const bar = $("output-tabs");
+  const closing = [...bar.children].some(item => !tabs.entries.has(Number(item.dataset.revision)));
+  const previousPositions = new Map();
+  if (closing && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    for (const item of bar.children) {
+      previousPositions.set(item, item.getBoundingClientRect().left);
+      tabReflowAnimations.get(item)?.cancel();
+    }
+  }
   if (tabs.entries.size > 1) tabStripVisible = true;
   else if (tabs.entries.size === 0) tabStripVisible = false;
   bar.hidden = !tabStripVisible;
@@ -190,6 +199,17 @@ function renderTabs() {
     if (tab.textContent !== title) tab.textContent = title;
     tab.title = title;
     close.setAttribute("aria-label", "Close " + title);
+  }
+  for (const item of bar.children) {
+    const previousLeft = previousPositions.get(item);
+    if (previousLeft === undefined) continue;
+    const offset = previousLeft - item.getBoundingClientRect().left;
+    if (Math.abs(offset) < 0.5) continue;
+    const animation = item.animate([
+      { transform: `translateX(${offset}px)` },
+      { transform: "translateX(0)" },
+    ], { duration: 180, easing: "cubic-bezier(0.2, 0, 0, 1)" });
+    tabReflowAnimations.set(item, animation);
   }
 }
 function activate(revision) {
