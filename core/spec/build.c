@@ -239,11 +239,9 @@ struct builder {
     int64_t selected_kp[4];
     const double *sel_dir;
     int sel_dim, sel_count;
-    const sp_rows *rows;
     /* coupled */
     struct cpl *cpl;
     int mode_kind;
-    int dropped; /* 1 + index of a sibling row the magnetic primary replaces, 0 for none */
 };
 
 static void spec_from_row(sp_spec *spec, const sp_row *row)
@@ -303,40 +301,7 @@ static int build_memb(builder *b, const sp_row *row, sp_spec **out)
     return 0;
 }
 
-static int duplicates_sibling(builder *b, const sp_row *row, int index, int *out)
-{
-    *out = 0;
-    if (!row->nocc) return 0;
-    int selected_rank;
-    SP_TRY(sp_matrix_rank(b->sel_dir, b->sel_dim, b->sel_count, 1e-10, &selected_rank));
-    for (int i = 0; i < b->rows->count; i++) {
-        const sp_row *other = &b->rows->items[i];
-        if (i == index || !occs_eq(other->occ, other->nocc, row->occ, row->nocc)) continue;
-        if (!other->dim || other->dim != b->sel_dim || other->count != b->sel_count) continue;
-        int width = b->sel_count + other->count;
-        double *stacked = sp_alloc(sizeof(double) * (size_t)(b->sel_dim * width + 1));
-        if (!stacked) return 1;
-        for (int r = 0; r < b->sel_dim; r++) {
-            for (int c = 0; c < b->sel_count; c++) stacked[r * width + c] = b->sel_dir[r * b->sel_count + c];
-            for (int c = 0; c < other->count; c++) stacked[r * width + b->sel_count + c] = other->dir[r * other->count + c];
-        }
-        int rank;
-        SP_TRY(sp_matrix_rank(stacked, b->sel_dim, width, 1e-10, &rank));
-        if (rank == selected_rank) {
-            *out = 1;
-            if (row->dim != b->sel_dim || row->count != other->count) return 0;
-            for (int r = 0; r < b->sel_dim; r++)
-                for (int c = 0; c < other->count; c++) stacked[r * width + b->sel_count + c] = row->dir[r * row->count + c];
-            SP_TRY(sp_matrix_rank(stacked, b->sel_dim, width, 1e-10, &rank));
-            *out = rank == selected_rank;
-            if (!*out) b->dropped = i + 1;
-            return 0;
-        }
-    }
-    return 0;
-}
-
-static int mag_spec(builder *b, const sp_row *row, int index, sp_spec **out)
+static int mag_spec(builder *b, const sp_row *row, sp_spec **out)
 {
     sp_spec *spec = spec_new();
     if (!spec) return 1;
@@ -350,9 +315,7 @@ static int mag_spec(builder *b, const sp_row *row, int index, sp_spec **out)
     spec->has_req = 1;
     SP_TRY(request_params(row->gid, row->pml, &spec->req_none, &spec->req_n, spec->req));
     int primary = row->gid == b->selected_gid && sp_kp_identity_eq(row->kp, b->selected_kp);
-    int duplicate = 0;
-    if (primary) SP_TRY(duplicates_sibling(b, row, index, &duplicate));
-    if (primary && !duplicate) {
+    if (primary) {
         if (b->sel_dim != row->dim) return sp_fail(PY_VALUE, "selected Stokes direction has the wrong dimension");
         spec->dir = b->sel_dir;
         spec->dim = b->sel_dim;
@@ -371,13 +334,7 @@ static int mag_spec(builder *b, const sp_row *row, int index, sp_spec **out)
     return 0;
 }
 
-static int build_mag(builder *b, const sp_row *row, sp_spec **out)
-{
-    int index = -1;
-    for (int i = 0; i < b->rows->count && index < 0; i++)
-        if (&b->rows->items[i] == row) index = i;
-    return mag_spec(b, row, index, out);
-}
+static int build_mag(builder *b, const sp_row *row, sp_spec **out) { return mag_spec(b, row, out); }
 
 /* ------------------------------------------------------------ stored occurrence aliases */
 
@@ -961,7 +918,32 @@ static int promote_magnetic(const sp_frame *frame, const sp_rows *rows, const ma
         int snapshot = out->count;
         for (int r = 0; r < snapshot; r++) {
             const sp_row row = out->items[r];
-            if (claimed[r] || row.gid != c->gid || !row.kp[3]) continue;
+            if (claimed[r] || row.gid <= 0 || !row.kp[3]) continue;
+            int same;
+            SP_TRY(sp_same_irrep(frame->sg, row.gid, row.kp, c->gid, c->kp, &same));
+            if (!same) continue;
+            if (row.gid != c->gid) {
+                int64_t standard[4];
+                int ok, raised;
+                SP_TRY(sp_standard_kparam(frame->sg, c->gid, c->kp, standard, &ok, &raised));
+                if (ok && !sp_kp_identity_eq(standard, c->kp)) {
+                    claimed[r] = 1;
+                    break;
+                }
+                sp_row replaced;
+                int found;
+                SP_TRY(sp_row_at(frame, &row, c->gid, c->kp, &replaced, &found));
+                if (!found) continue;
+                replaced.occ = row.occ;
+                replaced.nocc = row.nocc;
+                replaced.source_gid = row.gid;
+                replaced.source_name = row.irrep_name;
+                replaced.has_carrier = 1;
+                memcpy(replaced.carrier, row.kp, sizeof replaced.carrier);
+                out->items[r] = replaced;
+                claimed[r] = 1;
+                break;
+            }
             sp_rows aliases = {0};
             if (sp_aliases(frame, &row, c->kp, &aliases)) {
                 if (!caught(BIT(PY_INDEX) | BIT(PY_KEY) | BIT(PY_TYPE) | BIT(PY_VALUE) | BIT(PY_ZERO))) return 1;
@@ -1299,7 +1281,7 @@ int spec_ordinary_dynamic(int sg, int child_sg, const int64_t *basis, const int6
     } else if (rows_copy(&raw, &rows)) {
         return finish(1);
     }
-    builder b = {build_dyn, selected_gid, has_kp, {0}, 0, {0}, 0, 0, 0, 0, 0, 1};
+    builder b = {build_dyn, selected_gid, has_kp, {0}, 0, {0}, 0, 0, 0, 0, 1};
     if (has_kp) memcpy(b.primary_kp, selected_kp, sizeof b.primary_kp);
     sp_specs specs = {0}, canonical = {0};
     for (int r = 0; r < rows.count; r++) {
@@ -1502,7 +1484,7 @@ int spec_magnetic_embedding_ordinary(int sg, const int64_t *basis, int nops, con
     memcpy(frame.basis, basis, sizeof frame.basis);
     sp_rows rows = {0};
     if (sp_frame_rows(&frame, 0, 0, &rows)) return finish(1);
-    builder b = {build_memb, 0, 0, {0}, 0, {0}, 0, 0, 0, 0, 0, 1};
+    builder b = {build_memb, 0, 0, {0}, 0, {0}, 0, 0, 0, 0, 1};
     sp_specs specs = {0}, aliases = {0}, merged = {0};
     for (int r = 0; r < rows.count; r++) {
         sp_spec *spec;
@@ -1536,16 +1518,12 @@ int spec_magnetic(int sg, const int64_t *basis, int nops, const int64_t *ops, in
     double *sel = sp_alloc(sizeof(double) * (size_t)(sel_dim * sel_count + 1));
     if (!sel) return finish(1);
     memcpy(sel, selected_direction, sizeof(double) * (size_t)(sel_dim * sel_count));
-    builder b = {build_mag, 0, 0, {0}, selected_gid, {0}, sel, sel_dim, sel_count, &rows, 0, 2};
+    builder b = {build_mag, 0, 0, {0}, selected_gid, {0}, sel, sel_dim, sel_count, 0, 2};
     memcpy(b.selected_kp, selected_kp, sizeof b.selected_kp);
     sp_specs specs = {0}, aliases = {0}, merged = {0}, canonical = {0};
     for (int r = 0; r < rows.count; r++) {
         sp_spec *spec;
-        if (mag_spec(&b, &rows.items[r], r, &spec) || specs_push(&specs, spec)) return finish(1);
-    }
-    if (b.dropped) {
-        for (int i = b.dropped; i < specs.count; i++) specs.items[i - 1] = specs.items[i];
-        specs.count--;
+        if (mag_spec(&b, &rows.items[r], &spec) || specs_push(&specs, spec)) return finish(1);
     }
     alias_mode mode = {&frame, 0};
     if (stored_alias_specs(&mode, &raw, &rows, &b, &aliases)) return finish(1);
@@ -1582,20 +1560,17 @@ static int primary_slot_for_row(struct cpl *c, const sp_row *row, int magnetic, 
     *out = 0;
     for (int i = 0; i < c->nslots; i++) {
         const cpl_slot *slot = &c->slots[i];
-        if (slot->magnetic != magnetic || slot->gid != row->gid) continue;
-        if (same_source_kparam(slot->kp, row->kp)) {
+        if (slot->magnetic == magnetic && slot->gid == row->gid && same_source_kparam(slot->kp, row->kp)) {
             *out = slot;
             return 0;
         }
-        int64_t standard[4];
-        int ok, raised;
-        SP_TRY(sp_standard_kparam(c->sg, row->gid, slot->kp, standard, &ok, &raised));
-        if (!ok) {
-            if (raised && !(BIT(raised) & (BIT(PY_INDEX) | BIT(PY_KEY) | BIT(PY_TYPE) | BIT(PY_VALUE) | BIT(PY_ZERO))))
-                return sp_fail(raised, sp_standard_message());
-            continue;
-        }
-        if (same_source_kparam(standard, row->kp)) {
+    }
+    for (int i = 0; i < c->nslots; i++) {
+        const cpl_slot *slot = &c->slots[i];
+        if (slot->magnetic != magnetic || !slot->kp[3] || !row->kp[3] || row->gid <= 0) continue;
+        int same;
+        SP_TRY(sp_same_irrep(c->sg, row->gid, row->kp, slot->gid, slot->kp, &same));
+        if (same) {
             *out = slot;
             return 0;
         }
@@ -1665,7 +1640,7 @@ static int cpl_spec(builder *b, const sp_row *row, sp_spec **out)
             return sp_fail(PY_VALUE, "coupled Source direction has the wrong shape");
         int same;
         SP_TRY(same_subspace(row, slot, &same));
-        if (!same && (!row->has_carrier || magnetic)) {
+        if (!same && slot->gid == row->gid && (!row->has_carrier || magnetic)) {
             spec->dir = slot->dir;
             spec->dim = slot->dim;
             spec->count = slot->count;
@@ -1703,7 +1678,8 @@ static int append_specs(struct cpl *c, const sp_specs *specs, int magnetic)
             for (int s = 0; s < c->nslots && !primary; s++) {
                 const cpl_slot *slot = &c->slots[s];
                 int spec_n = spec->case_none ? 0 : spec->case_n;
-                if (slot->magnetic == magnetic && slot->gid == spec->gid && !params_cmp(slot->case_k, slot->ncase, spec->case_k, spec_n))
+                if (slot->magnetic == magnetic && (slot->gid == spec->gid || slot->order == spec->slot_order) &&
+                    !params_cmp(slot->case_k, slot->ncase, spec->case_k, spec_n))
                     primary = slot;
             }
         spec->primary = spec->primary && primary;
@@ -1757,7 +1733,7 @@ int spec_coupled(int sg, const int64_t *basis, int nops, const int64_t *ops, int
         slot->count = (int)w[23];
         slot->dir = directions + w[24];
     }
-    builder b = {cpl_spec, 0, 0, {0}, 0, {0}, 0, 0, 0, 0, &c, 1};
+    builder b = {cpl_spec, 0, 0, {0}, 0, {0}, 0, 0, 0, &c, 1};
     if (include_displacive) {
         int64_t (*ord_ops)[5] = (int64_t (*)[5])ops;
         if (magnetic_embedding && ordinary_ops(ops, nops, &ord_ops)) return finish(1);

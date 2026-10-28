@@ -323,7 +323,6 @@ int exact_record_matrix(int gid, int dim, int arms, const int64_t *k, int subtra
 
 #include "irreps.h"
 int irrep_context_current(int gid, irrep_context *out);
-int irrep_context_k(int gid, int param_count, const int64_t *kparam, irrep_context *out);
 
 int exact_kernel(const cy_field *f, int rows, int cols, const cy *a, int *count, cy *kernel, unsigned char *pivots_out);
 

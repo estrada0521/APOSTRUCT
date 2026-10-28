@@ -23,6 +23,7 @@ typedef struct {
 /* kparam: the little irrep's k parameters (x, y, z, den), any shorter tuple
  * meaning none; the context stays valid until the next call for this gid. */
 int irrep_context_for(int gid, int param_count, const int64_t *kparam, irrep_context *out);
+int irrep_context_k(int gid, int param_count, const int64_t *kparam, irrep_context *out);
 /* The space group of an old (data_irreps) irrep, 0 when out of range, and the number of old irreps. */
 int old_irrep_space_group(int old_id);
 int old_irrep_count(void);

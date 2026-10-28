@@ -31,6 +31,8 @@ const double *subduction_rows_directions(void);
 void subduction_rows_failure(int64_t *gid, int64_t *status);
 int subduction_directions(int gid, int mode_case, int point_mode, int param_count, const int64_t *params,
                           int record_count, const int *records, double *directions_out);
+int irrep_matrix_stack(int gid, int param_count, const int64_t *kparam, int record_count, const int *records,
+                       int capacity, double *out);
 
 sp_error sp_err;
 
@@ -565,13 +567,8 @@ static void star_vectors(int gid, const int64_t *kp, rat (*out)[3], int *count)
     *count = n;
 }
 
-int sp_same_physical_star(int gid, const int64_t *a, const int64_t *b)
+static int stars_match(rat (*sa)[3], int na, rat (*sb)[3], int nb)
 {
-    if (load()) return 0;
-    rat sa[48][3], sb[48][3];
-    int na, nb;
-    star_vectors(gid, a, sa, &na);
-    star_vectors(gid, b, sb, &nb);
     if (na != nb || na > 48) return 0;
     for (int i = 0; i < na; i++) {
         int any = 0;
@@ -587,6 +584,143 @@ int sp_same_physical_star(int gid, const int64_t *a, const int64_t *b)
         if (!any) return 0;
     }
     return 1;
+}
+
+int sp_same_physical_star(int gid, const int64_t *a, const int64_t *b)
+{
+    if (load()) return 0;
+    rat sa[48][3], sb[48][3];
+    int na, nb;
+    star_vectors(gid, a, sa, &na);
+    star_vectors(gid, b, sb, &nb);
+    return stars_match(sa, na, sb, nb);
+}
+
+/* The characters of a little irrep at kp on every space-group record shifted by each of count
+ * lattice translations: out[record * count + t]. */
+static int irrep_characters(int sg, int gid, const int64_t *kp, const int64_t (*shifts)[3], int count, double *out)
+{
+    irrep_context c;
+    if (irrep_context_for(gid, 4, kp, &c)) return sp_fail(PY_VALUE, "little irrep context failed");
+    int64_t records[256][5];
+    int nrec = geo_sg_records(sg, records), dim = c.dim;
+    int *chunk = sp_alloc(sizeof(int) * 5 * (size_t)count);
+    double *matrices = sp_alloc(sizeof(double) * (size_t)count * dim * dim + 1);
+    if (!chunk || !matrices) return 1;
+    for (int r = 0; r < nrec; r++) {
+        int d = (int)records[r][3];
+        for (int t = 0; t < count; t++) {
+            int *x = chunk + 5 * t;
+            for (int axis = 0; axis < 3; axis++) x[axis] = (int)records[r][axis] + d * (int)shifts[t][axis];
+            x[3] = d;
+            x[4] = (int)records[r][4];
+        }
+        if (irrep_matrix_stack(gid, 4, kp, count, chunk, count * dim * dim, matrices))
+            return sp_fail(PY_VALUE, "little irrep matrices failed");
+        for (int t = 0; t < count; t++) {
+            double trace = 0;
+            for (int i = 0; i < dim; i++) trace += matrices[(size_t)t * dim * dim + i * dim + i];
+            out[(size_t)r * count + t] = trace;
+        }
+    }
+    return 0;
+}
+
+static int context_star(int gid, const int64_t *kp, rat (*out)[3], int *count)
+{
+    irrep_context c;
+    if (irrep_context_k(gid, 4, kp, &c) || c.arms > 48) return sp_fail(PY_VALUE, "little irrep context failed");
+    for (int arm = 0; arm < c.arms; arm++)
+        for (int axis = 0; axis < 3; axis++) out[arm][axis] = rat_make(c.k[6 * arm + 2 * axis], c.k[6 * arm + 2 * axis + 1]);
+    *count = c.arms;
+    return 0;
+}
+
+/* Lattice translations, as many as the distinct k (mod 1) of the nodes, on which the phase vectors
+ * exp(2 pi i k.t) are independent: the characters there fix the part carried by each k. */
+static int separating_translations(rat (*nodes)[3], int count, int64_t den, int64_t (*shifts)[3])
+{
+    double (*basis)[96][2] = sp_alloc(sizeof *basis * (size_t)count);
+    if (!basis) return -1;
+    int found = 0;
+    for (int64_t cell = 0; cell < den * den * den && found < count; cell++) {
+        int64_t t[3] = {cell / (den * den), cell / den % den, cell % den};
+        double w[96][2];
+        for (int j = 0; j < count; j++) {
+            double phase = 0;
+            for (int axis = 0; axis < 3; axis++) phase += (double)nodes[j][axis].n / (double)nodes[j][axis].d * (double)t[axis];
+            w[j][0] = cos(2 * M_PI * phase);
+            w[j][1] = sin(2 * M_PI * phase);
+        }
+        for (int b = 0; b < found; b++) {
+            double re = 0, im = 0;
+            for (int j = 0; j < count; j++) {
+                re += basis[b][j][0] * w[j][0] + basis[b][j][1] * w[j][1];
+                im += basis[b][j][0] * w[j][1] - basis[b][j][1] * w[j][0];
+            }
+            for (int j = 0; j < count; j++) {
+                w[j][0] -= re * basis[b][j][0] - im * basis[b][j][1];
+                w[j][1] -= re * basis[b][j][1] + im * basis[b][j][0];
+            }
+        }
+        double norm = 0;
+        for (int j = 0; j < count; j++) norm += w[j][0] * w[j][0] + w[j][1] * w[j][1];
+        if (norm < 1e-6) continue;
+        norm = sqrt(norm);
+        for (int j = 0; j < count; j++) {
+            basis[found][j][0] = w[j][0] / norm;
+            basis[found][j][1] = w[j][1] / norm;
+        }
+        memcpy(shifts[found++], t, sizeof t);
+    }
+    return found == count;
+}
+
+int sp_same_irrep(int sg, int gid_a, const int64_t *kp_a, int gid_b, const int64_t *kp_b, int *same)
+{
+    *same = 0;
+    if (!kp_a[3] || !kp_b[3]) return 0;
+    if (gid_a == gid_b && sp_kp_exact_eq(kp_a, kp_b)) {
+        *same = 1;
+        return 0;
+    }
+    rat sa[48][3], sb[48][3], nodes[96][3];
+    int na, nb, count = 0;
+    SP_TRY(context_star(gid_a, kp_a, sa, &na));
+    SP_TRY(context_star(gid_b, kp_b, sb, &nb));
+    if (!stars_match(sa, na, sb, nb) || !stars_match(sb, nb, sa, na)) return 0;
+    int64_t den = 1;
+    for (int i = 0; i < na; i++)
+        for (int sign = 0; sign < 2; sign++) {
+            rat node[3];
+            for (int axis = 0; axis < 3; axis++) {
+                node[axis] = rat_mod1(sign ? rat_neg(sa[i][axis]) : sa[i][axis]);
+                int64_t g = den, h = (int64_t)node[axis].d;
+                while (h) {
+                    int64_t t = g % h;
+                    g = h;
+                    h = t;
+                }
+                den = den / g * (int64_t)node[axis].d;
+            }
+            int seen = 0;
+            for (int j = 0; j < count && !seen; j++) seen = sp_pml_eq(nodes[j], node);
+            if (!seen) memcpy(nodes[count++], node, sizeof node);
+        }
+    int64_t shifts[96][3];
+    int separated = separating_translations(nodes, count, den, shifts);
+    if (separated < 0) return 1;
+    if (!separated) return sp_fail(PY_VALUE, "no lattice translations separate the k star");
+    size_t n = (size_t)256 * count;
+    double *a = sp_alloc(sizeof(double) * n), *b = sp_alloc(sizeof(double) * n);
+    if (!a || !b) return 1;
+    memset(a, 0, sizeof(double) * n);
+    memset(b, 0, sizeof(double) * n);
+    SP_TRY(irrep_characters(sg, gid_a, kp_a, (const int64_t (*)[3])shifts, count, a));
+    SP_TRY(irrep_characters(sg, gid_b, kp_b, (const int64_t (*)[3])shifts, count, b));
+    *same = 1;
+    for (size_t i = 0; i < n && *same; i++) *same = fabs(a[i] - b[i]) < 1e-8;
+    return 0;
 }
 
 static void column_major(const int64_t *values, int64_t (*out)[3])

@@ -103,6 +103,7 @@ const char *sp_standard_message(void);
 int sp_row_at(const sp_frame *frame, const sp_row *row, int gid, const int64_t *kp, sp_row *out, int *found);
 /* 1 when the stars of gid at a and at b agree up to sign and reciprocal lattice vectors. */
 int sp_same_physical_star(int gid, const int64_t *a, const int64_t *b);
+int sp_same_irrep(int sg, int gid_a, const int64_t *kp_a, int gid_b, const int64_t *kp_b, int *same);
 int sp_equivalent_gid(int sg, int gid, const int64_t *kp, const int64_t *standard);
 
 int sp_little_old_id(int gid);
