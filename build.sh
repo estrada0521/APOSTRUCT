@@ -21,5 +21,6 @@ $HOSTCC -O2 $INC -o bin/source_blob_build source/blob_build.c -lm
 $CC $FLAGS -o bin/source_dump$EXE source/source_dump.c $SRC $LIBS
 [ -z "$EXE" ] && $CC $FLAGS -fPIC -shared -o bin/_apostruct.so $SRC -lm
 [ -z "$EXE" ] && $CC -O2 -fPIC -shared -o bin/_mathcheck.so verification/mathematics/native/checks.c -lm
+[ -z "$EXE" ] && $CC -O2 -ffp-contract=off -fPIC -shared -o bin/_definitions.so verification/compare/native/definitions.c -lm
 $CC $FLAGS -o bin/apo$EXE $SRC cli/apo_main.c gui/server.c $LIBS
 cat $( (find core -name '*.[ch]'; echo source/blob_build.c) | LC_ALL=C sort) | { command -v shasum >/dev/null && shasum -a 256 || sha256sum; } | cut -d' ' -f1 > bin/_apostruct.source

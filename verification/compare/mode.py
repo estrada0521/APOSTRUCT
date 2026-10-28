@@ -15,11 +15,12 @@ from verification.compare.structure import (
     _spacegroup_payload,
     _subgroup_payload,
 )
-from verification.compare.vectors import (
-    _basis_equivalent_mode_payload,
-    _strain_modes_payload,
-    _vector_modes_probe,
-    _vector_modes_payload,
+from verification.compare.basis_mode import basis_equivalent_mode_frame
+from verification.compare.definitions import Definitions
+from verification.compare.structure import (
+    _exact_integer_value,
+    _validated_basis_equivalent_atom_result,
+    _validated_basis_equivalent_lattice_result,
 )
 from verification.web.text import CompleteModeDetails
 
@@ -49,7 +50,7 @@ def _input_standardization_payload(preview: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _has_complete_mode_payload(web: CompleteModeDetails) -> bool:
+def _has_complete_mode_payload(web: CompleteModeDetails, definitions: Definitions) -> bool:
     return any(
         (
             web.parent is not None,
@@ -58,34 +59,62 @@ def _has_complete_mode_payload(web: CompleteModeDetails) -> bool:
             web.undistorted_lattice is not None,
             bool(web.parent_atoms),
             bool(web.undistorted_atoms),
-            bool(web.displacive_definitions),
-            bool(web.magnetic_definitions),
-            bool(web.occupancy_definitions),
-            bool(web.strain_definitions),
+            any(definitions.web_count(kind) for kind in ("dsp", "mag", "occ", "strain")),
         )
     )
 
 
-def _local_modes_in_exact_web_order(
-    web_modes: tuple[Any, ...],
-    local_modes: list[dict[str, Any]],
-) -> list[dict[str, Any]]:
-    """Use complete unique labels as the row-comparison identity."""
+_SECTION_NAMES = {"dsp": "displacive", "mag": "magnetic", "occ": "occupancy", "strain": "strain"}
 
-    if len(web_modes) != len(local_modes):
-        return local_modes
-    web_labels = tuple(getattr(mode, "label", None) for mode in web_modes)
-    local_labels = tuple(mode.get("label") for mode in local_modes)
+
+def _mode_frame(
+    *,
+    selected_state: object,
+    subgroup: dict[str, Any],
+    lattice: dict[str, Any],
+    atoms: dict[str, Any],
+):
+    """The request child frame of a closed equivalent-frame proof, or None."""
+
+    proof_result = {
+        "selected_state": selected_state,
+        "subgroup": subgroup,
+        "undistorted_lattice": lattice,
+    }
+    if not _validated_basis_equivalent_lattice_result(proof_result) or not isinstance(selected_state, dict):
+        return None
+    request = selected_state.get("request")
+    local_selected = selected_state.get("local")
     if (
-        any(not isinstance(label, str) or not label for label in web_labels)
-        or any(not isinstance(label, str) or not label for label in local_labels)
-        or len(set(web_labels)) != len(web_labels)
-        or len(set(local_labels)) != len(local_labels)
-        or set(web_labels) != set(local_labels)
+        not isinstance(request, (tuple, list))
+        or not isinstance(local_selected, (tuple, list))
+        or len(request) != 4
+        or len(local_selected) != 4
+        or request[0] != local_selected[0]
+        or (
+            request[3] != local_selected[3]
+            and selected_state.get("status") != "equivalent_embedding"
+        )
     ):
-        return local_modes
-    by_label = dict(zip(local_labels, local_modes, strict=True))
-    return [by_label[label] for label in web_labels]
+        return None
+    request_child = _exact_integer_value(request[1])
+    local_child = _exact_integer_value(local_selected[1])
+    if request_child is None or local_child is None:
+        return None
+    if not _validated_basis_equivalent_atom_result(
+        atoms,
+        basis_change=lattice.get("basis_change"),
+        child_space_group=request_child,
+    ):
+        return None
+    return basis_equivalent_mode_frame(
+        basis_change=lattice.get("basis_change"),
+        request_origin=request[3],
+        local_origin=local_selected[3],
+        request_child_space_group=request_child,
+        local_child_space_group=local_child,
+        request_basis=request[2],
+    )
 
 
 def compare_mode_details(
@@ -94,12 +123,12 @@ def compare_mode_details(
     cif: Path,
     web: CompleteModeDetails,
     preview: dict[str, Any],
+    definitions: Definitions,
     tol: float,
     meta: dict[str, Any] | None = None,
-    structure_only: bool = False,
 ) -> dict[str, Any]:
     input_standardization = _input_standardization_payload(preview)
-    if not _has_complete_mode_payload(web):
+    if not _has_complete_mode_payload(web, definitions):
         return {
             "case": case,
             "status": "context_mismatch",
@@ -155,9 +184,7 @@ def compare_mode_details(
         and lattice.get("status") == "basis_equivalent"
     )
     transported_atoms = None
-    if atoms.get("status") not in accepted_atom_statuses or (
-        not structure_only and basis_transport_context
-    ):
+    if atoms.get("status") not in accepted_atom_statuses or basis_transport_context:
         transported_atoms = _basis_equivalent_atom_payload(
             web,
             local,
@@ -172,118 +199,19 @@ def compare_mode_details(
         ):
             atoms = transported_atoms
     mode_transport_atoms = transported_atoms or atoms
-    accepted_mode_statuses = {"ok", "sign", "signed_permutation", "family_basis"}
-    local_displacive = _local_modes_in_exact_web_order(
-        web.displacive_definitions,
-        list(local.get("displacive_definitions") or []),
-    )
-    local_magnetic = _local_modes_in_exact_web_order(
-        web.magnetic_definitions,
-        list(local.get("magnetic_definitions") or []),
-    )
-    use_transport_probe = (
-        not structure_only
-        and basis_transport_context
-    )
-    modes_probe = (
-        _vector_modes_probe(
-            web.displacive_definitions,
-            local_displacive,
-            tol,
-            vector_kind="dsp",
-        )
-        if use_transport_probe
-        else None
-    )
-    magnetic_probe = (
-        _vector_modes_probe(
-            web.magnetic_definitions,
-            local_magnetic,
-            tol,
-            vector_kind="mag",
-        )
-        if use_transport_probe
-        else None
-    )
-    modes = None if structure_only else (
-        modes_probe
-        if modes_probe is not None
-        and modes_probe.get("status") not in accepted_mode_statuses
-        else _vector_modes_payload(
-            web.displacive_definitions,
-            local_displacive,
-            tol,
-            vector_kind="dsp",
-        )
-    )
-    magnetic_modes = None if structure_only else (
-        magnetic_probe
-        if magnetic_probe is not None
-        and magnetic_probe.get("status") not in accepted_mode_statuses
-        else _vector_modes_payload(
-            web.magnetic_definitions,
-            local_magnetic,
-            tol,
-            vector_kind="mag",
-        )
-    )
-    if modes is not None and modes.get("status") not in accepted_mode_statuses:
-        transported_modes = _basis_equivalent_mode_payload(
-            web.displacive_definitions,
-            local_displacive,
-            vector_kind="dsp",
-            selected_state=selected_state,
-            subgroup=subgroup,
-            lattice=lattice,
-            atoms=mode_transport_atoms,
-            tol=tol,
-        )
-        if transported_modes is not None:
-            modes = transported_modes
-        elif modes_probe is not None:
-            modes = _vector_modes_payload(
-                web.displacive_definitions,
-                local_displacive,
-                tol,
-                vector_kind="dsp",
-            )
-    if (
-        magnetic_modes is not None
-        and magnetic_modes.get("status") not in accepted_mode_statuses
-    ):
-        transported_magnetic_modes = _basis_equivalent_mode_payload(
-            web.magnetic_definitions,
-            local_magnetic,
-            vector_kind="mag",
-            selected_state=selected_state,
-            subgroup=subgroup,
-            lattice=lattice,
-            atoms=mode_transport_atoms,
-            tol=tol,
-        )
-        if transported_magnetic_modes is not None:
-            magnetic_modes = transported_magnetic_modes
-        elif magnetic_probe is not None:
-            magnetic_modes = _vector_modes_payload(
-                web.magnetic_definitions,
-                local_magnetic,
-                tol,
-                vector_kind="mag",
-            )
-    occupancy_modes = None if structure_only else _vector_modes_payload(
-        web.occupancy_definitions,
-        _local_modes_in_exact_web_order(
-            web.occupancy_definitions,
-            list(local.get("occupancy_definitions") or []),
-        ),
-        tol,
-        vector_kind="occ",
-    )
-    strain_modes = None if structure_only else _strain_modes_payload(
-        web.strain_definitions,
-        list(local.get("strain_definitions") or []),
-        tol,
-    )
+    frame = None
+    for kind in ("dsp", "mag"):
+        if definitions.accepted(kind):
+            continue
+        if frame is None:
+            frame = _mode_frame(
+                selected_state=selected_state,
+                subgroup=subgroup,
+                lattice=lattice,
+                atoms=mode_transport_atoms,
+            ) or ()
+        if frame:
+            definitions.transport(kind, *frame)
     if isinstance(selected_state, dict) and selected_state.get("status") == "diff":
         status = "context_mismatch"
     elif input_standardization["status"] != "ok":
@@ -304,18 +232,16 @@ def compare_mode_details(
         status = "undistorted_lattice"
     elif atoms["status"] not in accepted_atom_statuses:
         status = "undistorted_atoms"
-    elif structure_only:
-        status = "ok"
     else:
-        assert modes is not None and magnetic_modes is not None and occupancy_modes is not None and strain_modes is not None
-        kind_statuses = (
-            ("displacive", modes),
-            ("magnetic", magnetic_modes),
-            ("occupancy", occupancy_modes),
-            ("strain", strain_modes),
+        failed_kind = next(
+            (kind for kind in ("dsp", "mag", "occ", "strain") if definitions.payload(kind)["strict_status"] != "ok"),
+            None,
         )
-        failed_kind = next((kind for kind, payload in kind_statuses if payload["strict_status"] != "ok"), None)
-        status = "ok" if failed_kind is None else f"definitions_{failed_kind}_{dict(kind_statuses)[failed_kind]['strict_status']}"
+        status = (
+            "ok"
+            if failed_kind is None
+            else f"definitions_{_SECTION_NAMES[failed_kind]}_{definitions.payload(failed_kind)['strict_status']}"
+        )
     result = {
         "case": case,
         "status": status,
@@ -329,11 +255,7 @@ def compare_mode_details(
         "undistorted_atoms": atoms,
         **(meta or {}),
     }
-    if modes is not None:
-        result["definitions"] = modes
-        result["magnetic_definitions"] = magnetic_modes
-        result["occupancy_definitions"] = occupancy_modes
-        result["strain_definitions"] = strain_modes
+    result["definitions"] = definitions
     return result
 
 

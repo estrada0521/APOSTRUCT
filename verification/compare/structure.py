@@ -34,19 +34,6 @@ def _close(a: float, b: float, tol: float) -> bool:
     return math.isfinite(a) and math.isfinite(b) and abs(a - b) <= tol
 
 
-def _vec_close(a: tuple[float, ...] | list[float], b: tuple[float, ...] | list[float], tol: float) -> bool:
-    return len(a) == len(b) and all(_close(float(x), float(y), tol) for x, y in zip(a, b, strict=True))
-
-
-def _frac_close(a: float, b: float, tol: float) -> bool:
-    diff = abs((float(a) - float(b)) % 1.0)
-    return min(diff, abs(diff - 1.0)) <= tol
-
-
-def _frac_vec_close(a: tuple[float, ...] | list[float], b: tuple[float, ...] | list[float], tol: float) -> bool:
-    return len(a) == len(b) and all(_frac_close(float(x), float(y), tol) for x, y in zip(a, b, strict=True))
-
-
 def _periodic_orbit_candidate_indices(
     web_items: list[tuple[str, str, tuple[float, float, float]]],
     local_items: list[tuple[str, str, Any, Any]],
@@ -326,29 +313,6 @@ def _parent_lattice_payload(web: CompleteModeDetails, preview: dict[str, Any], t
 def _atom_kind(label: str | None) -> str:
     text = str(label or "")
     return re.sub(r"_\d+$", "", text)
-
-
-def _atom_key_from_web(row: StructureAtom, tol: float) -> tuple[str, str, tuple[int, int, int]]:
-    scale = max(1, int(round(1 / tol)))
-    xyz = tuple(int(round((float(value) % 1.0) * scale)) % scale for value in row.xyz)
-    return (_atom_kind(row.label), str(row.site), xyz)
-
-
-def _atom_key_from_local(row: dict[str, Any], tol: float) -> tuple[str, str, tuple[int, int, int]] | None:
-    if row.get("xyz"):
-        xyz = row.get("xyz")
-    elif row.get("fract"):
-        xyz = parent_display_xyz(row)
-    else:
-        return None
-    scale = max(1, int(round(1 / tol)))
-    key_xyz = tuple(int(round((float(value) % 1.0) * scale)) % scale for value in xyz)
-    site = str(row.get("site") or "")
-    if not site and row.get("wyckoff"):
-        mult = str(row.get("wyckoff_multiplicity") or row.get("multiplicity") or "")
-        wyckoff = str(row.get("wyckoff") or "")
-        site = wyckoff if wyckoff[:1].isdigit() else f"{mult}{wyckoff}"
-    return (_atom_kind(row.get("label")), site, key_xyz)
 
 
 def _quantized_xyz(xyz: tuple[float, float, float] | list[float], tol: float) -> tuple[int, int, int]:

@@ -36,7 +36,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from verification.compare import compare_local_to_web  # noqa: E402
-from verification.compare.local_output import comparison_preview, request_selections  # noqa: E402
+from verification.compare.local_output import request_selections  # noqa: E402
 from verification.compare.result import (  # noqa: E402
     DEFAULT_TOLERANCE,
     result_for_comparison,
@@ -46,6 +46,7 @@ from verification.version import comparator_version  # noqa: E402
 
 def verify(
     local_apo_output: dict[str, Any],
+    local_json: bytes,
     web_text: str,
     input_payload: dict[str, Any],
     *,
@@ -58,15 +59,16 @@ def verify(
         raise ValueError(
             f"local mode details are not complete (status={mode_details.get('status')!r})"
         )
-    preview = comparison_preview({
+    preview = {
         "space_group": local_apo_output.get("space_group") or {},
         "input": local_apo_output.get("input") or {},
         "selected": local_apo_output["selected"],
-    })
+    }
 
     opd, comparison = compare_local_to_web(
         opd_exists=True,
         preview=preview,
+        local_json=local_json,
         mode_text=web_text,
         opd_label=opd_label,
         k_selections=request_selections(input_payload),
@@ -92,11 +94,13 @@ def main() -> int:
     args = parser.parse_args()
 
     try:
-        local_apo_output = json.loads(args.local_output.read_text())
+        local_json = args.local_output.read_bytes()
+        local_apo_output = json.loads(local_json)
         web_text = args.web_text.read_text(encoding="utf-8")
         input_payload = json.loads(args.input.read_text())
         result = verify(
             local_apo_output,
+            local_json,
             web_text,
             input_payload,
             input_id=args.input_id,

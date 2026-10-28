@@ -16,11 +16,12 @@ _JUDGE_DISTRIBUTIONS = ("gemmi", "numpy", "scipy", "sympy")
 
 
 def _comparator_sources(project_root: Path) -> tuple[Path, ...]:
-    root = Path(project_root).resolve()
     verification = PACKAGE
     candidates = []
     for directory in ("compare", "web", "symmetry"):
-        candidates.extend((verification / directory).rglob("*.py"))
+        for pattern in ("*.py", "*.c"):
+            candidates.extend((verification / directory).rglob(pattern))
+    candidates.append(verification / "json.h")
     missing = tuple(path for path in candidates if not path.is_file())
     if missing:
         names = ", ".join(path.relative_to(PACKAGE.parent).as_posix() for path in missing)
@@ -49,7 +50,6 @@ def _environment_identity() -> tuple[str, ...]:
 def comparator_version(project_root: Path) -> str:
     """Return a path-independent identity for all executable judge sources."""
 
-    root = Path(project_root).resolve()
     verification = PACKAGE
     sources = _comparator_sources(project_root)
     if not sources:

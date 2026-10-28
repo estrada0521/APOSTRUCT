@@ -16,6 +16,7 @@ from __future__ import annotations
 
 from typing import Any, Mapping, Sequence
 
+from verification.compare.definitions import Definitions
 from verification.compare.mode import compare_mode_details
 from verification.compare.opd import compare_opd, local_opd
 from verification.compare.selected_state import compare_selected_state
@@ -28,6 +29,7 @@ def compare_local_to_web(
     *,
     opd_exists: bool,
     preview: Mapping[str, Any] | None,
+    local_json: bytes,
     mode_text: str,
     opd_label: str,
     k_selections: Sequence[Mapping[str, Any]],
@@ -36,7 +38,11 @@ def compare_local_to_web(
     comparison_source: str,
     tol: float,
 ) -> tuple[dict[str, Any], dict[str, Any] | None]:
-    """Return (opd, comparison) — exactly what ComputedCase.opd/.comparison hold."""
+    """Return (opd, comparison) — exactly what ComputedCase.opd/.comparison hold.
+
+    local_json is the text the preview was read from: the native definition comparison reads the
+    mode definitions from it in place.
+    """
 
     if opd_exists is False:
         if preview is not None:
@@ -116,6 +122,7 @@ def compare_local_to_web(
         cif=cif_label,
         web=web,
         preview=preview,
+        definitions=Definitions(mode_text, local_json, tol),
         tol=tol,
         meta={"opd": opd_label, "opd_comparison": opd, "selected_state": selected_state},
     )

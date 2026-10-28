@@ -6,13 +6,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "../../json.h"
+
 #define PSCALE 100000
 
 enum { SAT = 0, REF = 1, IND = 2, NA = 3 };
-
-typedef struct {
-    const char *p, *end;
-} cur;
 
 typedef struct {
     int n, cap;
@@ -59,144 +57,6 @@ static int fail(mc_t *m, const char *msg)
     if (!m->failed) snprintf(m->err, sizeof m->err, "%s", msg);
     m->failed = 1;
     return -1;
-}
-
-static void ws(cur *c)
-{
-    while (c->p < c->end && (*c->p == ' ' || *c->p == '\n' || *c->p == '\r' || *c->p == '\t')) c->p++;
-}
-
-static int skip(cur *c);
-
-static int skip_string(cur *c)
-{
-    if (c->p >= c->end || *c->p != '"') return -1;
-    for (c->p++; c->p < c->end; c->p++) {
-        if (*c->p == '\\') c->p++;
-        else if (*c->p == '"') {
-            c->p++;
-            return 0;
-        }
-    }
-    return -1;
-}
-
-static int skip(cur *c)
-{
-    ws(c);
-    if (c->p >= c->end) return -1;
-    char ch = *c->p;
-    if (ch == '"') return skip_string(c);
-    if (ch == '{' || ch == '[') {
-        char close = ch == '{' ? '}' : ']';
-        c->p++;
-        ws(c);
-        if (c->p < c->end && *c->p == close) {
-            c->p++;
-            return 0;
-        }
-        for (;;) {
-            if (ch == '{') {
-                if (skip_string(c)) return -1;
-                ws(c);
-                if (c->p >= c->end || *c->p != ':') return -1;
-                c->p++;
-            }
-            if (skip(c)) return -1;
-            ws(c);
-            if (c->p >= c->end) return -1;
-            if (*c->p == ',') {
-                c->p++;
-                ws(c);
-                continue;
-            }
-            if (*c->p == close) {
-                c->p++;
-                return 0;
-            }
-            return -1;
-        }
-    }
-    while (c->p < c->end && !strchr(",]} \n\r\t", *c->p)) c->p++;
-    return 0;
-}
-
-/* object iteration: key and klen set, c at the value; returns 1 per member, 0 at the end, -1 on error */
-static int obj_begin(cur *c)
-{
-    ws(c);
-    if (c->p >= c->end || *c->p != '{') return -1;
-    c->p++;
-    return 0;
-}
-
-static int obj_next(cur *c, const char **key, int *klen, int *first)
-{
-    ws(c);
-    if (c->p < c->end && *c->p == '}') {
-        c->p++;
-        return 0;
-    }
-    if (!*first) {
-        if (c->p >= c->end || *c->p != ',') return -1;
-        c->p++;
-        ws(c);
-    }
-    *first = 0;
-    const char *s = c->p + 1;
-    if (skip_string(c)) return -1;
-    *key = s;
-    *klen = (int)(c->p - 1 - s);
-    ws(c);
-    if (c->p >= c->end || *c->p != ':') return -1;
-    c->p++;
-    ws(c);
-    return 1;
-}
-
-static int arr_begin(cur *c)
-{
-    ws(c);
-    if (c->p >= c->end || *c->p != '[') return -1;
-    c->p++;
-    return 0;
-}
-
-static int arr_next(cur *c, int *first)
-{
-    ws(c);
-    if (c->p < c->end && *c->p == ']') {
-        c->p++;
-        return 0;
-    }
-    if (!*first) {
-        if (c->p >= c->end || *c->p != ',') return -1;
-        c->p++;
-        ws(c);
-    }
-    *first = 0;
-    return 1;
-}
-
-static int keyis(const char *key, int klen, const char *want) { return (int)strlen(want) == klen && !memcmp(key, want, klen); }
-
-static int is_null(cur *c)
-{
-    ws(c);
-    return c->end - c->p >= 4 && !memcmp(c->p, "null", 4);
-}
-
-static int number(cur *c, double *out)
-{
-    ws(c);
-    char buf[64];
-    int n = 0;
-    while (c->p < c->end && n < 63 && strchr("+-0123456789.eE", *c->p)) buf[n++] = *c->p++;
-    if (!n) return -1;
-    buf[n] = 0;
-    char *e;
-    *out = strtod(buf, &e);
-    return *e || !isfinite(*out) ? -1 : 0;
 }
 
 /* round-to-display as Python format(x, f".{digits}f"), read back as an integer */
@@ -251,16 +111,6 @@ static int intern(strtab *t, const char *s, int len)
     t->s[t->n][len] = 0;
     t->len[t->n] = len;
     return t->n++;
-}
-
-static int string_value(cur *c, const char **s, int *len)
-{
-    ws(c);
-    const char *start = c->p + 1;
-    if (skip_string(c)) return -1;
-    *s = start;
-    *len = (int)(c->p - 1 - start);
-    return 0;
 }
 
 /* the one [atom:site:kind] block of a mode label, as re.finditer(r"\[([^:\]]+):([^:\]]+):(dsp|mag|occ)]") */

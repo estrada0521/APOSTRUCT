@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from collections.abc import Sequence
 from fractions import Fraction
 import math
 
@@ -18,42 +17,7 @@ IntMatrix3 = tuple[
     tuple[int, int, int],
     tuple[int, int, int],
 ]
-FloatVector3 = tuple[float, float, float]
 FractionVector3 = tuple[Fraction, Fraction, Fraction]
-
-
-@dataclass(frozen=True)
-class BasisEquivalentModeRow:
-    """One mode row transported without changing its Source ordinal."""
-
-    source_row_index: int
-    xyz: FloatVector3
-    dxyz: FloatVector3
-
-
-@dataclass(frozen=True)
-class BasisEquivalentMode:
-    """One complete mode column transported and normalized as a unit."""
-
-    source_mode_index: int
-    label: str
-    normfactor: float | None
-    scale: float
-    rows: tuple[BasisEquivalentModeRow, ...]
-
-
-@dataclass(frozen=True)
-class BasisEquivalentModeFrameTransport:
-    """A complete definition sequence expressed in the request child basis."""
-
-    basis_change: IntMatrix3
-    determinant: int
-    condition_number: float
-    request_origin: FractionVector3
-    child_space_group: int
-    vector_kind: str
-    modes: tuple[BasisEquivalentMode, ...]
-    provenance: str = "M:exact_gl3z_fractional_mode_transport"
 
 
 def _fraction_vector3(value: object) -> FractionVector3 | None:
@@ -72,18 +36,6 @@ def _fraction_vector3(value: object) -> FractionVector3 | None:
     except (OverflowError, TypeError, ValueError, ZeroDivisionError):
         return None
     return tuple(out)  # type: ignore[return-value]
-
-
-def _float_vector3(value: object) -> FloatVector3 | None:
-    if isinstance(value, (str, bytes, bytearray)):
-        return None
-    try:
-        if not isinstance(value, Sequence) or len(value) != 3 or any(isinstance(item, bool) for item in value):
-            return None
-        out = tuple(float(item) for item in value)
-    except (OverflowError, TypeError, ValueError):
-        return None
-    return out if all(math.isfinite(item) for item in out) else None  # type: ignore[return-value]
 
 
 def _exact_integer(value: object) -> int | None:
@@ -137,32 +89,21 @@ def _condition_upper_bound(matrix: IntMatrix3, determinant: int) -> float | None
     return condition if math.isfinite(condition) else None
 
 
-def _row_multiply(vector: FloatVector3, matrix: IntMatrix3) -> FloatVector3:
-    return tuple(
-        sum(vector[row] * matrix[row][column] for row in range(3))
-        for column in range(3)
-    )  # type: ignore[return-value]
-
-
-def basis_equivalent_mode_frame_transport(
-    local_modes: object,
+def basis_equivalent_mode_frame(
     *,
     basis_change: object,
     request_origin: object,
     local_origin: object,
     request_child_space_group: object,
     local_child_space_group: object,
-    vector_kind: str,
     condition_limit: float = 1e10,
     request_basis: object = None,
-) -> BasisEquivalentModeFrameTransport | None:
-    """Express complete local mode columns in the request child frame.
+) -> tuple[IntMatrix3, FractionVector3] | None:
+    """The frame that expresses local mode columns in the request child frame.
 
     Provenance: M.  ``B_local = U B_request`` gives both
-    ``x_request = x_local U`` and ``d_request = d_local U``.  Unit-max
-    normalization is applied once across every row in a mode column.  The
-    Source order, labels, signs, and all nonnumeric metadata remain owned by
-    the caller and are never inferred here.
+    ``x_request = x_local U + shift`` and ``d_request = d_local U``; the
+    columns themselves are carried and renormalized by the native comparison.
     """
 
     matrix = exact_unimodular_matrix3(basis_change)
@@ -188,13 +129,7 @@ def basis_equivalent_mode_frame_transport(
             return None
     else:
         return None
-    if (
-        matrix is None
-        or vector_kind not in {"dsp", "mag"}
-        or isinstance(local_modes, (str, bytes, bytearray))
-        or not isinstance(local_modes, Sequence)
-        or not local_modes
-    ):
+    if matrix is None:
         return None
     determinant = _determinant(matrix)
     # The current direct binary/Web anchors all preserve orientation.  Keep
@@ -222,75 +157,4 @@ def basis_equivalent_mode_frame_transport(
         or request_child != local_child
     ):
         return None
-
-    transformed_modes: list[BasisEquivalentMode] = []
-    for mode_index, mode in enumerate(local_modes):
-        if not isinstance(mode, Mapping):
-            return None
-        label = mode.get("label")
-        rows = mode.get("rows")
-        if (
-            not isinstance(label, str)
-            or not label
-            or isinstance(rows, (str, bytes, bytearray))
-            or not isinstance(rows, Sequence)
-            or not rows
-        ):
-            return None
-        raw_rows: list[tuple[FloatVector3, FloatVector3]] = []
-        for row in rows:
-            if not isinstance(row, Mapping):
-                return None
-            xyz = _float_vector3(row.get("xyz"))
-            dxyz = _float_vector3(row.get("dxyz"))
-            if xyz is None or dxyz is None:
-                return None
-            rotated_xyz = _row_multiply(xyz, matrix)
-            request_xyz = tuple(
-                (rotated_xyz[index] + float(origin_shift[index])) % 1.0
-                for index in range(3)
-            )
-            request_dxyz = _row_multiply(dxyz, matrix)
-            if not all(math.isfinite(value) for value in (*request_xyz, *request_dxyz)):
-                return None
-            raw_rows.append((request_xyz, request_dxyz))
-        scale = max(abs(value) for _, dxyz in raw_rows for value in dxyz)
-        if not math.isfinite(scale) or scale <= 0.0:
-            return None
-        normfactor_value = mode.get("normfactor")
-        if normfactor_value is None:
-            normfactor = None
-        else:
-            if isinstance(normfactor_value, bool):
-                return None
-            try:
-                normfactor = float(normfactor_value) * scale
-            except (OverflowError, TypeError, ValueError):
-                return None
-            if not math.isfinite(normfactor):
-                return None
-        transformed_modes.append(
-            BasisEquivalentMode(
-                source_mode_index=mode_index,
-                label=label,
-                normfactor=normfactor,
-                scale=scale,
-                rows=tuple(
-                    BasisEquivalentModeRow(
-                        source_row_index=row_index,
-                        xyz=xyz,
-                        dxyz=tuple(value / scale for value in dxyz),  # type: ignore[arg-type]
-                    )
-                    for row_index, (xyz, dxyz) in enumerate(raw_rows)
-                ),
-            )
-        )
-    return BasisEquivalentModeFrameTransport(
-        basis_change=matrix,
-        determinant=determinant,
-        condition_number=condition,
-        request_origin=request_origin_value,
-        child_space_group=request_child,
-        vector_kind=vector_kind,
-        modes=tuple(transformed_modes),
-    )
+    return matrix, origin_shift
