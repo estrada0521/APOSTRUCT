@@ -7,21 +7,10 @@ from importlib import metadata
 from pathlib import Path
 import sys
 
-from verification.result import COMPARATOR_VERSION as COMPARATOR_SCHEMA
+from verification.compare.result import COMPARATOR_VERSION as COMPARATOR_SCHEMA
 
 PACKAGE = Path(__file__).resolve().parent
 
-
-_DIRECT_JUDGE_DEPENDENCIES = (
-    "verification/backend/exactmath.py",
-    "verification/backend/fraction_expression.py",
-    "verification/backend/source/iso_data.py",
-    "verification/backend/source/tables.py",
-    "verification/backend/source/magnetic.py",
-    "verification/backend/modes/engine/decoder.py",
-    "verification/backend/modes/engine/subgroup_structure/presentation_transport.py",
-    "verification/backend/modes/structure/magnetic_wyckoff.py",
-)
 
 _JUDGE_DISTRIBUTIONS = ("gemmi", "numpy", "scipy", "sympy")
 
@@ -29,10 +18,9 @@ _JUDGE_DISTRIBUTIONS = ("gemmi", "numpy", "scipy", "sympy")
 def _comparator_sources(project_root: Path) -> tuple[Path, ...]:
     root = Path(project_root).resolve()
     verification = PACKAGE
-    candidates = [verification / "compare.py", verification / "result.py"]
-    for directory in ("comparison", "parsers"):
+    candidates = []
+    for directory in ("compare", "web", "symmetry"):
         candidates.extend((verification / directory).rglob("*.py"))
-    candidates.extend(PACKAGE.parent / relative for relative in _DIRECT_JUDGE_DEPENDENCIES)
     missing = tuple(path for path in candidates if not path.is_file())
     if missing:
         names = ", ".join(path.relative_to(PACKAGE.parent).as_posix() for path in missing)

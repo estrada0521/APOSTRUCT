@@ -9,7 +9,7 @@ store, no Records/, no network.
 
 The `apo modes ... --full-state -o output.json` CLI writes mode-detail data
 at `selected.mode_details`. Its vector definitions are expanded into per-atom
-rows (verification.local_output, the same expansion the private Validation
+rows (verification.compare.local_output, the same expansion the private Validation
 harness uses) and wrapped as `{"preview": {"selected": ...}}`, the shape the
 theorem parsers expect; a non-"ok" mode_details.status is rejected.
 
@@ -30,7 +30,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from verification.local_output import with_definition_rows  # noqa: E402
+from verification.compare.local_output import with_definition_rows  # noqa: E402
 from verification.mathematics.group_invariance import (  # noqa: E402
     GROUP_INVARIANCE_THEOREM,
     assess_group_invariance,

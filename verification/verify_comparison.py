@@ -8,7 +8,7 @@ never what "equivalent" concretely means for one branch; this makes that
 opaque.
 
 This calls the same `verification.compare.compare_local_to_web` and
-`verification.result.result_for_comparison` functions used by the private
+`verification.compare.result.result_for_comparison` functions used by the private
 monorepo Validation operation. Nothing about either is reimplemented here.
 The only thing this file adds is building their plain arguments from an `apo`
 CLI output and a saved Web text export directly, instead of from private
@@ -36,8 +36,8 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from verification.compare import compare_local_to_web  # noqa: E402
-from verification.local_output import comparison_preview, request_selections  # noqa: E402
-from verification.result import (  # noqa: E402
+from verification.compare.local_output import comparison_preview, request_selections  # noqa: E402
+from verification.compare.result import (  # noqa: E402
     DEFAULT_TOLERANCE,
     result_for_comparison,
 )

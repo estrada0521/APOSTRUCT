@@ -557,12 +557,12 @@ def _source_setting_rows() -> dict[int, tuple[dict[str, Any], ...]]:
     coverage from turning into a 742-way runtime scan.
     """
 
-    from verification.backend.exactmath import fraction_matrix_inverse3
-    from verification.backend.source.magnetic_operations import (
+    from verification.symmetry.exactmath import fraction_matrix_inverse3
+    from verification.symmetry.magnetic_operations import (
         _pml_point_operation_matrix,
         fraction_values,
     )
-    from verification.backend.source.tables import source_tables
+    from verification.symmetry.tables import source_tables
 
     require_tables(SOURCE_SPACE_TABLES, SOURCE_SPACE_SHA256)
     tables = source_tables()
@@ -739,7 +739,7 @@ def _fraction_token(token: str) -> Fraction:
 def _transform_setting_operations(
     operations: frozenset[Operation], row: Mapping[str, Any]
 ) -> frozenset[Operation]:
-    from verification.backend.exactmath import fraction_matrix_inverse3
+    from verification.symmetry.exactmath import fraction_matrix_inverse3
 
     matrix = tuple(
         tuple(_fraction_token(str(value)) for value in raw_row)
