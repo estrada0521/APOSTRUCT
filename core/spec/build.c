@@ -788,6 +788,18 @@ static int promote_dynamic(const sp_frame *frame, const sp_rows *rows, const int
     for (int s = 0; s < ncases; s++) {
         if (listed(out, gids[s], kps[s])) continue;
         int snapshot = out->count;
+        if (preserve) {
+            int64_t standard[4];
+            int ok, raised, kept = 0;
+            SP_TRY(sp_standard_kparam(frame->sg, gids[s], kps[s], standard, &ok, &raised));
+            for (int r = 0; r < snapshot && ok && !sp_kp_identity_eq(standard, kps[s]) && !kept; r++) {
+                const sp_row *row = &out->items[r];
+                if (claimed[r] || row->gid <= 0 || !row->kp[3] || row->gid == gids[s]) continue;
+                SP_TRY(sp_same_irrep(frame->sg, row->gid, row->kp, gids[s], kps[s], &kept));
+                if (kept) claimed[r] = 1;
+            }
+            if (kept) continue;
+        }
         int64_t standard[4];
         int ok, raised;
         SP_TRY(sp_standard_kparam(frame->sg, gids[s], kps[s], standard, &ok, &raised));
@@ -1560,7 +1572,7 @@ static int primary_slot_for_row(struct cpl *c, const sp_row *row, int magnetic, 
     *out = 0;
     for (int i = 0; i < c->nslots; i++) {
         const cpl_slot *slot = &c->slots[i];
-        if (slot->magnetic == magnetic && slot->gid == row->gid && same_source_kparam(slot->kp, row->kp)) {
+        if (slot->magnetic == magnetic && slot->gid == row->gid && sp_kp_exact_eq(slot->kp, row->kp)) {
             *out = slot;
             return 0;
         }
@@ -1646,12 +1658,14 @@ static int cpl_spec(builder *b, const sp_row *row, sp_spec **out)
             spec->count = slot->count;
             spec->replaced = 1;
         }
-        spec->case_none = 0;
-        spec->case_n = slot->ncase;
-        memcpy(spec->case_k, slot->case_k, sizeof spec->case_k);
-        spec->dcase_none = 0;
-        spec->dcase_n = slot->ndcase;
-        memcpy(spec->dcase_k, slot->dcase_k, sizeof spec->dcase_k);
+        if (slot->gid == row->gid) {
+            spec->case_none = 0;
+            spec->case_n = slot->ncase;
+            memcpy(spec->case_k, slot->case_k, sizeof spec->case_k);
+            spec->dcase_none = 0;
+            spec->dcase_n = slot->ndcase;
+            memcpy(spec->dcase_k, slot->dcase_k, sizeof spec->dcase_k);
+        }
         spec->slot_order = slot->order;
     }
     spec->has_free = 1;
@@ -1678,8 +1692,8 @@ static int append_specs(struct cpl *c, const sp_specs *specs, int magnetic)
             for (int s = 0; s < c->nslots && !primary; s++) {
                 const cpl_slot *slot = &c->slots[s];
                 int spec_n = spec->case_none ? 0 : spec->case_n;
-                if (slot->magnetic == magnetic && (slot->gid == spec->gid || slot->order == spec->slot_order) &&
-                    !params_cmp(slot->case_k, slot->ncase, spec->case_k, spec_n))
+                if (slot->magnetic == magnetic && (slot->order == spec->slot_order ||
+                                                   (slot->gid == spec->gid && !params_cmp(slot->case_k, slot->ncase, spec->case_k, spec_n))))
                     primary = slot;
             }
         spec->primary = spec->primary && primary;
