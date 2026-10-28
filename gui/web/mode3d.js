@@ -1936,12 +1936,15 @@ export class ModeStructureViewer {
       if (this.statusNode) this.statusNode.textContent = this.payload?.reason || "Mode data is not available.";
       return;
     }
+    const occupancyRanges = this.occupancyRanges();
     const renderModes = modes => modes.map(mode => {
       const value = this.amplitudes.get(mode.id) || 0;
       const limit = Math.max(this.modeAmplitudeLimit(mode), Math.abs(value));
-      const step = Math.max(limit / 500, 0.001);
+      const range = occupancyRanges.get(mode.id);
+      const [min, max] = range || [-limit, limit];
+      const step = range ? "any" : Math.max(limit / 500, 0.001);
       return `<label class="mode-slider" title="${this.escape(mode.label)}">
-        <input type="range" min="${-limit}" max="${limit}" step="${step}" value="${value}" data-mode-id="${mode.id}">
+        <input type="range" min="${min}" max="${max}" step="${step}" value="${value}" data-mode-id="${mode.id}"${range && max - min < EPS ? " disabled" : ""}>
         <output>${value.toFixed(3)}</output>
         <span class="mode-slider-label">${this.escape(this.modeControlLabel(mode))}</span>
       </label>`;
@@ -2167,12 +2170,69 @@ export class ModeStructureViewer {
     if (masterInput) masterInput.value = String(this.masterAmplitude);
     const masterOutput = masterInput?.closest(".mode-master")?.querySelector("output");
     if (masterOutput) masterOutput.textContent = this.masterAmplitude.toFixed(2);
+    const occupancyRanges = this.occupancyRanges();
     this.controlsNode.querySelectorAll("input[data-mode-id]").forEach(input => {
       const amplitude = this.amplitudes.get(input.dataset.modeId) || 0;
+      const range = occupancyRanges.get(input.dataset.modeId);
+      if (range) {
+        [input.min, input.max] = range.map(String);
+        input.disabled = range[1] - range[0] < EPS;
+      }
       input.value = String(amplitude * this.masterAmplitude);
       const output = input.closest(".mode-slider")?.querySelector("output");
       if (output) output.textContent = (amplitude * this.masterAmplitude).toFixed(3);
     });
+  }
+
+  // Checked at master 1 only: the parent is feasible and the constraints are convex, so every master in 0–1 is too.
+  occupancyRanges() {
+    const ranges = new Map();
+    const modes = this.modes.filter(mode => mode.kind === "occupancy");
+    if (!modes.length) return ranges;
+    const atoms = new Map();
+    for (const atom of this.buildAtoms()) if (!atoms.has(atom.sourceKey)) atoms.set(atom.sourceKey, atom);
+    const weights = new Map(modes.map(mode => {
+      const norm = Math.abs(number(mode.definition?.normfactor, 1)) || 1;
+      const w = new Map();
+      for (const row of modeRows(mode.definition, this.payload)) {
+        if (atoms.has(row?.atom_id)) w.set(row.atom_id, (w.get(row.atom_id) || 0) + number(row.dxyz) * norm);
+      }
+      return [mode.id, w];
+    }));
+    const occupancy = new Map([...atoms].map(([key, atom]) => [key, number(atom.baseOccupancy, 1)]));
+    for (const mode of modes) {
+      const amplitude = this.amplitudes.get(mode.id) || 0;
+      for (const [key, w] of weights.get(mode.id)) occupancy.set(key, occupancy.get(key) + amplitude * w);
+    }
+    const sites = new Map();
+    for (const [key, atom] of atoms) {
+      const site = atom.sourceFrac.map(value => Math.round(value * 1e7)).join(",");
+      if (!sites.has(site)) sites.set(site, []);
+      sites.get(site).push(key);
+    }
+    for (const mode of modes) {
+      const amplitude = this.amplitudes.get(mode.id) || 0;
+      const w = weights.get(mode.id);
+      let lo = -Infinity, hi = Infinity;
+      const bound = (c, slope, upper) => {
+        if (Math.abs(slope) < EPS) return;
+        const a = -c / slope, b = (upper - c) / slope;
+        lo = Math.max(lo, Math.min(a, b));
+        hi = Math.min(hi, Math.max(a, b));
+      };
+      for (const [key, slope] of w) bound(occupancy.get(key) - amplitude * slope, slope, 1);
+      for (const keys of sites.values()) {
+        const slope = keys.reduce((sum, key) => sum + (w.get(key) || 0), 0);
+        const total = keys.reduce((sum, key) => sum + occupancy.get(key), 0);
+        if (keys.length < 2 || Math.abs(slope) < EPS) continue;
+        const edge = amplitude + (1 - total) / slope;
+        if (slope > 0) hi = Math.min(hi, edge);
+        else lo = Math.max(lo, edge);
+      }
+      if (!Number.isFinite(lo) || !Number.isFinite(hi)) lo = hi = 0;
+      ranges.set(mode.id, [Math.min(lo, amplitude), Math.max(hi, amplitude)]);
+    }
+    return ranges;
   }
 
   modeAmplitudeLimit(mode) {

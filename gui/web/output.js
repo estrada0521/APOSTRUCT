@@ -1,6 +1,6 @@
 import { OutputTabs } from "./output-tabs.js?v=1";
 import { favoriteStorageKey, isFavorite, toggleFavorite } from "./favorites.js?v=1";
-import { ModeStructureViewer } from "./mode3d.js?v=81";
+import { ModeStructureViewer } from "./mode3d.js?v=82";
 
 const $ = id => document.getElementById(id);
 function syncFavorite() {
