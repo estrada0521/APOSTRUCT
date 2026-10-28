@@ -376,7 +376,7 @@ static int inter_match(int sg, const jvalue *site, const images_t *im, int setti
     int *rows = malloc(sizeof(int) * (size_t)n), *masks = malloc(sizeof(int) * 3 * (size_t)n);
     if (!fracts || !params || !reps || !rows || !masks) return md_fail(MDE_MEMORY, "out of memory");
     for (int i = 0; i < n; i++) memcpy(fracts + 3 * i, im->items[i].fract, sizeof(double) * 3);
-    int status = match_inter_wyckoff_images(sg, setting_id, n, fracts, source, wanted_multiplicity(site), 1e-5, rows, params, masks, reps);
+    int status = match_inter_wyckoff_images(sg, setting_id, n, fracts, source, wanted_multiplicity(site), 1e-3, rows, params, masks, reps);
     if (status < 0) status = md_fail(MDE_VALUE, "Wyckoff site match failed (%d)", status);
     int start, count;
     geo_wyckoff_row_range(sg, &start, &count);
@@ -438,7 +438,7 @@ static int legacy_match(int sg, const jvalue *site, const double *fract, match_t
         }
         double params[3];
         int mask[3];
-        int found = solve_wyckoff_formula(base, cols, fract, 1e-5, 1, params, mask);
+        int found = solve_wyckoff_formula(base, cols, fract, 1e-3, 1, params, mask);
         if (found < 0) return md_fail(MDE_VALUE, "Wyckoff formula solve failed (%d)", found);
         if (!found) continue;
         out->found = 1;
@@ -526,7 +526,7 @@ static void canonical_mapping(const jvalue *site, const jvalue *ops, match_t *m)
         for (int a = 0; a < 3 && ok; a++) {
             double translation = applied[a] - m->representative[a];
             integer[a] = (int64_t)nearbyint(translation);
-            ok = fabs(translation - (double)integer[a]) <= 2e-5;
+            ok = fabs(translation - (double)integer[a]) <= 2e-3;
         }
         if (ok) {
             m->has_image = 1;

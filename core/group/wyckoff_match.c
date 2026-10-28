@@ -208,11 +208,11 @@ static int modular_solve(const double m[3][3], const double *rhs, double tol, do
     for (int i = 0; i < 3; i++) {
         double d = diag[i][i];
         double value = pymod1(transformed[i]);
-        if (fabs(value - 1.0) <= tol) value = 0.0;
         if (fabs(d) <= tol) {
-            if (fabs(value) > tol) return 0;
+            if (mod_distance(value) > tol) return 0;
             continue;
         }
+        if (fabs(value - 1.0) <= 1e-5) value = 0.0;
         y[i] = value / d;
     }
     for (int i = 0; i < 3; i++) solution[i] = dot3(right[i], y);
@@ -245,7 +245,7 @@ static int solve(const formula *f, const double *target, double tol, int modulo,
         double wrapped[3];
         for (int a = 0; a < 3; a++) {
             double w = pymod1(rhs[a]);
-            wrapped[a] = fabs(w - 1.0) <= tol + 1e-05 ? 0.0 : w;
+            wrapped[a] = fabs(w - 1.0) <= 2e-5 ? 0.0 : w;
         }
         int status = least_squares((const double (*)[3])m, wrapped, solution);
         if (status) return status;
@@ -305,7 +305,7 @@ int match_inter_wyckoff(int sg, int setting_id, const double *fract, const doubl
             if (hit < 0) return hit;
             if (!hit) continue;
             for (int i = 0; i < 3; i++)
-                values[i] = row->branches[b].nonzero[i] ? source_param_value(branch_values[i], tol) : values[i];
+                values[i] = row->branches[b].nonzero[i] ? source_param_value(branch_values[i], 1e-5) : values[i];
             break;
         }
         for (int i = 0; i < 3; i++) {
