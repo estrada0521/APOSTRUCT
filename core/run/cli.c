@@ -651,7 +651,8 @@ static void kpoint_result(jbuf *b, const jvalue *row)
 static void irrep_result(jbuf *b, const jvalue *row)
 {
     static const char *const fields[] = {"symbol",      "gid",      "k_label",  "kov_label",           "type",
-                                         "little_dim", "full_dim", "displacive_mode_total", "magnetic_mode_total"};
+                                         "little_dim", "full_dim", "displacive_mode_total", "occupancy_mode_total",
+                                         "magnetic_mode_total"};
     jb_lit(b, "{");
     int first = 1;
     put_fields(b, row, fields, (int)(sizeof fields / sizeof fields[0]), &first);
