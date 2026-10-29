@@ -733,7 +733,7 @@ static int setting_keys(int sg, int setting_id, op_key *keys, int capacity)
 
 /* The candidate settings whose operation set equals the CIF's, written to out; returns their number, or -1 when the
  * CIF gives no operations or they cannot be read. */
-static int matching_settings(int sg, const jvalue *ops, const int *candidates, int ncand, int *out)
+static int matching_settings(const jvalue *ops, const int *candidates, int ncand, int *out)
 {
     int64_t n = jis(ops, J_ARRAY) ? ops->count : 0;
     if (!n || n > 4096) return -1;
@@ -756,13 +756,52 @@ static int matching_settings(int sg, const jvalue *ops, const int *candidates, i
     if (ok) {
         nwant = unique_keys(want, nwant);
         for (int c = 0; c < ncand; c++) {
-            int nhave = setting_keys(sg, candidates[c], have, 4096);
+            int nhave = setting_keys((int)section_int(&T.inter_number, candidates[c] - 1), candidates[c], have, 4096);
             if (nhave == nwant && !memcmp(have, want, sizeof *have * (size_t)nwant)) out[matches++] = candidates[c];
         }
     }
     free(want);
     free(have);
     return ok ? matches : -1;
+}
+
+/* The CIF summary with the parent number of the Source settings whose operation set equals the CIF's operations: the
+ * operations decide the group and the declared number is kept only when they cannot be read or match nothing. The
+ * declared symbol is replaced by the matched setting's short symbol when the number changes. */
+static int64_t member_int(const jvalue *object, const char *key);
+
+int par_identify_parent(const char *summary, size_t length, jbuf *out)
+{
+    if (par_tables()) return md_fail(MDE_VALUE, "parent Source tables are inconsistent");
+    jdoc *doc = jdoc_parse(summary, length);
+    if (!doc) return md_fail(MDE_VALUE, "unreadable CIF summary");
+    const jvalue *root = jdoc_root(doc), *parent = member(root, "parent");
+    int64_t total = section_count(&T.inter_number);
+    int *all = malloc(sizeof(int) * (size_t)(2 * total + 1));
+    if (!all) {
+        jdoc_free(doc);
+        return md_fail(MDE_MEMORY, "out of memory");
+    }
+    for (int64_t i = 0; i < total; i++) all[i] = (int)i + 1;
+    int nmatched = matching_settings(member(root, "symmetry_operations"), all, (int)total, all + total);
+    int sg = nmatched > 0 ? (int)section_int(&T.inter_number, all[total] - 1) : 0;
+    int declared = (int)member_int(parent, "number");
+    if (!sg || sg == declared) jb_raw(out, summary, length);
+    else {
+        jbuf object = {0};
+        jb_reset(&object);
+        jb_lit(&object, "{\"number\": ");
+        jb_int(&object, sg);
+        jb_lit(&object, ", \"symbol\": ");
+        par_put_stripped(&object, &T.inter_label_short, all[total] - 1);
+        jb_lit(&object, "}");
+        kv item = {"parent", object.data, object.used};
+        sel_merge(out, root, &item, 1);
+        jb_free(&object);
+    }
+    free(all);
+    jdoc_free(doc);
+    return 0;
 }
 
 static int select_setting(int sg, const jvalue *sites, const jvalue *ops, scored_t *chosen)
@@ -773,7 +812,7 @@ static int select_setting(int sg, const jvalue *sites, const jvalue *ops, scored
     for (int64_t i = 0; i < total && ncand < 64; i++)
         if (section_int(&T.inter_number, i) == sg) candidates[ncand++] = (int)i + 1;
     if (!ncand) candidates[ncand++] = geo_default_setting(sg);
-    int matched[64], nmatched = matching_settings(sg, ops, candidates, ncand, matched);
+    int matched[64], nmatched = matching_settings(ops, candidates, ncand, matched);
     if (nmatched == 0)
         return md_fail(MDE_VALUE, "the CIF's symmetry operations match no setting of space group %d in the Source", sg);
     if (nmatched > 0) {
@@ -1026,6 +1065,8 @@ int par_parent_state(const jvalue *cif_info, jbuf *out)
 {
     if (par_tables()) return md_fail(MDE_VALUE, "parent Source tables are inconsistent");
     int sg = (int)member_int(member(cif_info, "parent"), "number");
+    if (sg < 1 || sg > 230)
+        return md_fail(MDE_VALUE, "the CIF's symmetry operations match no setting in the Source and it declares no IT space-group number");
     const jvalue *sites = member(cif_info, "atom_sites"), *ops = member(cif_info, "symmetry_operations");
     jdoc *empty = 0;
     if (!jis(sites, J_ARRAY)) {

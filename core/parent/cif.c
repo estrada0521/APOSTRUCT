@@ -9,6 +9,7 @@
 
 #include "json.h"
 #include "pyconv.h"
+#include "par.h"
 
 typedef struct {
     const char *s;
@@ -334,14 +335,11 @@ static int summary(jbuf *b, const block *blk, int has_path, span path, char *err
 {
     static const char *number_tags[] = {"_symmetry_Int_Tables_number", "_space_group_IT_number", "_space_group.it_number",
                                         "_space_group_IT_number"};
-    span number_text;
-    if (!cif_value(blk, number_tags, 4, &number_text)) {
-        snprintf(error, error_size, "CIF does not contain an explicit IT space-group number");
-        return 1;
-    }
+    span number_text = {"", 0};
+    int has_number = cif_value(blk, number_tags, 4, &number_text);
     size_t digit = 0;
     while (digit < number_text.n && !isdigit((unsigned char)number_text.s[digit])) digit++;
-    if (digit == number_text.n) {
+    if (has_number && digit == number_text.n) {
         jbuf r = {0};
         jb_reset(&r);
         py_repr_text(&r, number_text.s, (int64_t)number_text.n);
@@ -395,7 +393,8 @@ static int summary(jbuf *b, const block *blk, int has_path, span path, char *err
     jb_lit(b, ", \"formula\": ");
     put_optional(b, has_formula, formula);
     jb_lit(b, ", \"parent\": {\"number\": ");
-    jb_raw(b, digits.s, digits.n);
+    if (has_number) jb_raw(b, digits.s, digits.n);
+    else jb_lit(b, "null");
     jb_lit(b, ", \"symbol\": ");
     put_span(b, has_symbol ? symbol : (span){"", 0});
     jb_lit(b, "}, \"explicit_parent_preference\": ");
@@ -539,6 +538,16 @@ const char *cif_summary_json(const char *data, int64_t length, int from_file)
     char error[512] = {0};
     if (parse(&lx, &blk)) put_error(1, lx.error);
     else if (summary(&out, &blk, from_file, path, error, sizeof error)) put_error(1, error);
+    else {
+        jbuf identified = {0};
+        jb_reset(&identified);
+        if (par_identify_parent(out.data, out.used, &identified)) put_error(1, md_err.message);
+        else {
+            jb_reset(&out);
+            jb_raw(&out, identified.data, identified.used);
+        }
+        jb_free(&identified);
+    }
     block_free(&blk);
     free(text);
     return out.failed ? 0 : out.data;

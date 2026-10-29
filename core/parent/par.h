@@ -19,6 +19,7 @@ void par_wyckoff_label(jbuf *b, int row_id);
 void par_site_pg_label(jbuf *b, int site_pg);
 /* the formula as a JSON string; used[i] for x, y, z */
 void par_formula(const rat (*v)[3], jbuf *formula, int *used);
+int par_identify_parent(const char *summary, size_t length, jbuf *out);
 int par_inter_vectors(int sg, int offset0, int setting_id, rat (*out)[3]);
 double par_mod1(double x);
 int par_distortion(const jvalue *state, const jvalue *mode_set, const jvalue *requested, int allow_empty, jbuf *out);
