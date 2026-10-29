@@ -213,12 +213,9 @@ typedef struct {
 static int rows_for(int sg, const jvalue *irrep, const sel_params *k, const sel_params *display, const jvalue *selected, const sel_context *c,
                     jbuf *out)
 {
-    int64_t old_id = member_int(irrep, "old_id"), gid = member_int(irrep, "gid");
+    int64_t gid = member_int(irrep, "gid");
     int magnetic = jtruthy(member(irrep, "magnetic"));
-    if (old_id <= 0) return sel_dynamic_rows(magnetic, sg, gid, k, display, selected, c->has_setting, c->setting_id, c->has_cell, c->cell, out);
-    if (magnetic)
-        return sel_magnetic_static_rows((int)old_id, 1, sg, 1, gid, display, selected, c->has_setting, c->setting_id, c->has_cell, c->cell, out);
-    return sel_static_rows((int)old_id, k, display, c->has_setting, c->setting_id, c->has_cell, c->cell, out);
+    return sel_dynamic_rows(magnetic, sg, gid, k, display, selected, c->has_setting, c->setting_id, c->has_cell, c->cell, out);
 }
 
 static void repr_value(jbuf *b, const jvalue *v)

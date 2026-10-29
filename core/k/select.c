@@ -6,6 +6,7 @@
 
 #include "geometry.h"
 #include "sel.h"
+int little_old_id(int gid);
 #include "tables.h"
 
 const char *k_catalog_json(int sg);
@@ -345,13 +346,13 @@ static int strain_visible(int sg, const jvalue *kpoint, const jvalue *candidate)
     int gm1 = (symbol.used == 3 && !memcmp(symbol.data, "GM1", 3)) || (symbol.used == 4 && !memcmp(symbol.data, "GM1+", 4));
     jb_free(&symbol);
     if (gm1) return 1;
-    int64_t old_id = member_int(candidate, "old_id");
+    int64_t old_id = little_old_id((int)member_int(candidate, "gid"));
     return old_id > 0 && strain_irrep(sg, (int)member_int(candidate, "gid"));
 }
 
 static int has_magnetic_variant(const jvalue *candidate)
 {
-    int64_t old_id = member_int(candidate, "old_id");
+    int64_t old_id = little_old_id((int)member_int(candidate, "gid"));
     if (old_id <= 0) return 1;
     if (old_id >= section_count(&T.mag_pointer)) return 0;
     return section_int(&T.mag_pointer, old_id) > section_int(&T.mag_pointer, old_id - 1);

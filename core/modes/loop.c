@@ -1478,8 +1478,11 @@ static int secondary_factors(md_request *r, md_state *st, const int *emitted, jb
     int count = 0;
     for (int i = 0; i < r->nspecs; i++) {
         const md_spec *s = r->specs + i;
-        if (!emitted[i] || s->primary || s->old_id <= 0) continue;
-        if (s->gid_state != MD_SET || s->gid <= 0) return md_fail(MDE_VALUE, "rendered static secondary lost its Source irrep identity");
+        if (!emitted[i] || s->primary) continue;
+        if (s->gid_state != MD_SET || s->gid <= 0) {
+            if (s->old_id <= 0) continue;
+            return md_fail(MDE_VALUE, "rendered static secondary lost its Source irrep identity");
+        }
         if (count) jb_lit(b, ", ");
         jb_lit(b, "{\"slot\": ");
         jb_int(b, slot_count + count + 1);

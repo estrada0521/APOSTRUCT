@@ -2,6 +2,7 @@
 
 #include <math.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -55,6 +56,10 @@ static int strip_bounds(const char *raw, const char **a, const char **e)
 /* 1 with out, 0 when absent */
 static int dynamic_kparam(int64_t gid, const sel_params *p, int64_t *out)
 {
+    if (!p->count) {
+        out[0] = out[1] = out[2] = 0, out[3] = 1;
+        return 1;
+    }
     if (!p->count) return 0;
     static const char *keys[3] = {"_source_kparam", "source_kparam", "kparam"};
     for (int k = 0; k < 3; k++) {
@@ -169,6 +174,8 @@ typedef struct {
     char ***matrix;
     int *widths;
     char label[16];
+    double *numeric;   /* free x dim */
+    int64_t table_row; /* the isotropy table row naming it, 0 when none */
 } dyn_row;
 
 static void label_of(int64_t free, int64_t index, char *out)
@@ -236,6 +243,9 @@ static int generate(int64_t gid, const int64_t *kparam, int magnetic, int occurr
         r->matrix = calloc((size_t)free, sizeof(char **));
         r->widths = calloc((size_t)free, sizeof(int));
         if (!r->matrix || !r->widths) return md_fail(MDE_MEMORY, "out of memory");
+        r->numeric = malloc(sizeof(double) * (size_t)(free * dim + 1));
+        if (!r->numeric) return md_fail(MDE_MEMORY, "out of memory");
+        memcpy(r->numeric, doubles + mcursor, sizeof(double) * (size_t)(free * dim));
         for (int64_t row = 0; row < free; row++) {
             r->matrix[row] = calloc((size_t)dim + 1, sizeof(char *));
             if (!r->matrix[row]) return md_fail(MDE_MEMORY, "out of memory");
@@ -260,8 +270,53 @@ static void rows_free(dyn_row *rows, int n)
         free(rows[i].widths);
         free(rows[i].flat);
         free(rows[i].kept);
+        free(rows[i].numeric);
     }
     free(rows);
+}
+
+int opd_table_row(int gid, int magnetic, int64_t free_count, int64_t subgroup, const double *space);
+int ferroic_codes(int sg, int subgroup, const int64_t *basis, const int64_t *origin, int gid, int *fe, int *fa);
+int little_old_id(int gid);
+
+/* the rows of an irrep with tabulated rows take the table's names and order (opd_names.c) */
+static int name_from_table(int64_t gid, int magnetic, dyn_row *rows, int n)
+{
+    section_view label;
+    if (section_find(magnetic ? "isotropy.magnetic.label" : "isotropy.ordinary.label", &label)) return md_fail(MDE_VALUE, "isotropy Source tables are inconsistent");
+    for (int i = 0; i < n; i++) {
+        int64_t row = opd_table_row((int)gid, magnetic, rows[i].free, rows[i].subgroup, rows[i].numeric);
+        if (row < 0) return md_fail(MDE_VALUE, "isotropy row of %lld cannot be named", (long long)gid);
+        rows[i].table_row = row;
+        const char *s;
+        int64_t len;
+        if (row > 0 && !section_string(&label, row - 1, &s, &len) && len < 16) {
+            memcpy(rows[i].label, s, (size_t)len);
+            rows[i].label[len] = 0;
+        }
+    }
+    return 0;
+}
+
+/* by free count, then by the number of the table's name (P1, P3, P4, ...), unnamed rows last */
+static int64_t name_number(const dyn_row *r)
+{
+    if (!r->table_row) return INT64_MAX;
+    const char *s = r->label;
+    while (*s && (*s < '0' || *s > '9')) s++;
+    if (r->free > 3)
+        while (*s && *s != 'D') s++;
+    while (*s && (*s < '0' || *s > '9')) s++;
+    return atoll(s);
+}
+
+static int by_table_order(const void *a, const void *b)
+{
+    const dyn_row *x = a, *y = b;
+    if (x->free != y->free) return x->free < y->free ? -1 : 1;
+    int64_t p = name_number(x), q = name_number(y);
+    if (p != q) return p < q ? -1 : 1;
+    return (x->index > y->index) - (x->index < y->index);
 }
 
 static int by_file_order(const void *a, const void *b)
@@ -388,7 +443,20 @@ static int dynamic_row(jbuf *b, int magnetic, int parent_sg, int64_t gid, int64_
         status = sel_mag_ferroic(b, group);
         jb_lit(b, "}}");
     } else {
-        jb_lit(b, "], \"ferroic\": null, \"ferroic_properties\": []}}");
+        int fe, fa;
+        if (ferroic_codes(parent_sg, subgroup, r->basis, r->origin, (int)gid, &fe, &fa))
+            return md_fail(MDE_VALUE, "ferroic classes of the isotropy subgroup cannot be computed");
+        jb_lit(b, "], \"ferroic\": {\"ferroelectric\": ");
+        jb_int(b, fe);
+        jb_lit(b, ", \"ferroelastic\": ");
+        jb_int(b, fa);
+        jb_lit(b, "}, \"ferroic_properties\": [");
+        if (fe) jb_lit(b, fe == 1 ? "\"proper ferroelectric\"" : "\"improper ferroelectric\"");
+        if (fa) {
+            if (fe) jb_lit(b, ", ");
+            jb_lit(b, fa == 1 ? "\"proper ferroelastic\"" : "\"improper ferroelastic\"");
+        }
+        jb_lit(b, "]}}");
     }
     strings_free(&active);
     jb_free(&opd);
@@ -423,7 +491,8 @@ int sel_dynamic_rows(int magnetic, int parent_sg, int64_t gid, const sel_params 
         return 0;
     }
     const sel_params *active_params = display ? display : k_params;
-    int occurrence = point_occurrence(selected_orderparam);
+    int named = little_old_id((int)gid) > 0;
+    int occurrence = named ? 0 : point_occurrence(selected_orderparam);
     dyn_row *rows = 0;
     int n = 0, status = 0, selected = -1;
     if (occurrence) {
@@ -440,7 +509,8 @@ int sel_dynamic_rows(int magnetic, int parent_sg, int64_t gid, const sel_params 
     }
     if (!status && selected < 0) {
         status = generate(gid, kparam, magnetic, 0, &rows, &n);
-        if (!status) qsort(rows, (size_t)n, sizeof *rows, by_file_order);
+        if (!status && named) status = name_from_table(gid, magnetic, rows, n);
+        if (!status) qsort(rows, (size_t)n, sizeof *rows, named ? by_table_order : by_file_order);
     }
     jb_lit(out, "[");
     int first = 1;

@@ -347,14 +347,13 @@ static int put_slot(buffer *b, int sg, int kslot, int lattice, int extra)
         int gid = gids[i];
         int64_t idx = gid - 1;
         int full_dim = (int)section_int(&T.full_dim, idx), type = (int)section_int(&T.irr_type, idx);
-        int old_id = (int)section_int(&T.irr_old, idx);
         str symbol = {irrep_full_label(gid), (int64_t)strlen(irrep_full_label(gid))}, kov_label = strip(&T.full_kov_label, idx);
         int64_t k_length = 0;
         while (k_length < symbol.length &&
                ((symbol.text[k_length] >= 'A' && symbol.text[k_length] <= 'Z') || (symbol.text[k_length] >= 'a' && symbol.text[k_length] <= 'z')))
             k_length++;
         if (i) put(b, ", ");
-        put(b, "{\"gid\": %d, \"old_id\": %d, \"symbol\": ", gid, old_id);
+        put(b, "{\"gid\": %d, \"symbol\": ", gid);
         put_json_str(b, symbol.text, symbol.length);
         put(b, ", \"kov_label\": ");
         put_json_str(b, kov_label.text, kov_label.length);
