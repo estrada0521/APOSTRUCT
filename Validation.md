@@ -18,6 +18,7 @@ Each APOSTRUCT and ISODISTORT output is checked for:
 
 - Exact rational linear independence of the displayed mode basis
 - Invariance of the displayed mode fields under the reported subgroup operations
+- APOSTRUCT outputs only: each mode lies in the Bloch components of the star of its labelled k, and the symmetry of the primary distortion is exactly the reported subgroup (proved, or indeterminate when the displacements do not resolve the order parameter). Both take the parent operations from the atoms, without tables
 
 ## Output comparison
 

@@ -39,6 +39,9 @@ def _library() -> ctypes.CDLL:
     lib.mc_invariance.restype = ctypes.c_int
     lib.mc_fixed.argtypes = (ctypes.c_void_p, words, ctypes.POINTER(ctypes.c_int))
     lib.mc_fixed.restype = ctypes.c_int
+    for name in ("mc_kstar", "mc_isotropy"):
+        getattr(lib, name).argtypes = (ctypes.c_void_p,)
+        getattr(lib, name).restype = ctypes.c_int
     lib.mc_close.argtypes = (ctypes.c_void_p,)
     return lib
 
@@ -57,7 +60,7 @@ def _encode(settings) -> ctypes.Array:
 
 
 def assess_payload(text: bytes) -> dict[str, object]:
-    """Statuses of the three theorems for one payload holding `preview.selected.mode_details` or
+    """Statuses of the Local theorems for one payload holding `preview.selected.mode_details` or
     `selected.mode_details`; raises ValueError where the Python checks reject the payload."""
 
     lib = _library()
@@ -103,7 +106,9 @@ def assess_payload(text: bytes) -> dict[str, object]:
             if found >= 0:
                 fixed = "refuted" if refuted.value else "satisfied"
                 break
+        statuses = ("satisfied", "refuted", "indeterminate", "not_applicable")
         return {"basis": ("satisfied", "refuted")[basis], "invariance": invariance, "fixed": fixed,
+                "kstar": statuses[lib.mc_kstar(handle)], "isotropy": statuses[lib.mc_isotropy(handle)],
                 "definitions": lib.mc_definitions(handle)}
     finally:
         lib.mc_close(handle)
