@@ -1,6 +1,7 @@
 /* The Local theorems on one apo mode-details payload: mode basis, group invariance and fixed-space dimension at the
- * display precision of the Python checks in verification/mathematics; the k-star sector and the isotropy index, which
- * take the parent structure's operations from the child cell's atoms and read no tables. Shares no code with core/. */
+ * display precision of the Python checks in verification/mathematics; the k-star sector, the isotropy index and the
+ * isotypic orthogonality of different irreps, which take the parent structure's operations from the child cell's atoms
+ * and read no tables. Shares no code with core/. */
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -25,7 +26,7 @@ typedef struct {
 } block_t;
 
 typedef struct {
-    int kind, label_atom, nf_zero, block, nrows, has_k, primary;
+    int kind, label_atom, nf_zero, block, nrows, has_k, primary, irrep;
     int *vec;
     double k[3];
 } def_t;
@@ -44,7 +45,7 @@ typedef struct {
     int64_t (*strain)[6];
     int *strain_zero;
     orbit_t *orbits;
-    strtab markers, label_atoms;
+    strtab markers, label_atoms, irreps;
     char *subgroup;
     int has_basis, has_origin, has_cell, index;
     double basis[9], origin[3], cell[6];
@@ -441,6 +442,14 @@ static int read_definitions(mc_t *m, cur *c, int kind, int *blocks_raw, int nblo
                 if (label_atom(s, len, kind, &a, &alen) || !alen) return fail(m, "mode label must contain one atom/site/kind block");
                 d->label_atom = intern(&m->label_atoms, s + a, alen);
                 d->has_k = !triple(s, s + a, '[', d->k);
+                d->irrep = -1;
+                for (int q = 0; q < a; q++)
+                    if (s[q] == ']') {
+                        int e = q + 1;
+                        while (e < a && s[e] != '(') e++;
+                        if (e > q + 1) d->irrep = intern(&m->irreps, s + q + 1, e - q - 1);
+                        break;
+                    }
                 has_label = 1;
             } else if (keyis(key, klen, "role")) {
                 const char *s;
@@ -708,7 +717,7 @@ void mc_close(void *h)
     }
     for (int i = 0; i < m->ndefs; i++) free(m->defs[i].vec);
     for (int i = 0; i < m->norbits; i++) free(m->orbits[i].exp);
-    for (strtab *t = &m->markers; t <= &m->label_atoms; t++) {
+    for (strtab *t = &m->markers; t <= &m->irreps; t++) {
         for (int i = 0; i < t->n; i++) free(t->s[i]);
         free(t->s);
         free(t->len);
@@ -1735,12 +1744,15 @@ int mc_isotropy(void *h)
         mat_mul(g.B, Q, T1);
         mat_mul(T1, g.Binv, Qc);
         double det = Q[0] * (Q[4] * Q[8] - Q[5] * Q[7]) - Q[1] * (Q[3] * Q[8] - Q[5] * Q[6]) + Q[2] * (Q[3] * Q[7] - Q[4] * Q[6]);
+        /* an operation that does not keep the child lattice cannot fix a field of that period (the declared group keeps it) */
+        int keeps = 1;
+        for (int e = 0; e < 9 && keeps; e++) keeps = fabs(Qc[e] - round(Qc[e])) <= 1e-6;
         for (int r = 0; r < g.nreps; r++) {
             double tau[3];
             row_mul(g.reps[r], g.B, tau);
             for (int theta = 0; theta <= magnetic; theta++) {
                 total++;
-                int ok = 1;
+                int ok = keeps;
                 for (int i = 0; i < g.natoms && ok; i++) {
                     double x[3], xq[3], y[3];
                     row_mul(g.y + 3 * i, g.B, x);
@@ -1767,6 +1779,223 @@ int mc_isotropy(void *h)
     verdict = !stab ? IND : total == stab * m->index ? SAT : total < stab * m->index ? IND : REF;
 done:
     free(disp), free(mag), free(u);
+    sg_free(&g);
+    return verdict;
+}
+
+/* (g w)(x_j) = R w(g^-1 x_j) on a Bloch field of k (w(x + tau) = exp(-2 pi i k.tau) w(x) for every parent translation
+ * tau), reduced to the child atoms: g^-1 x_j = x_i + tau with x_i a child atom. 0, or -1 when a preimage is missing. */
+static int bloch_act(const mc_t *m, const sg_t *g, const double *xs, int q, const double *k, int axial, const double *w, double *out)
+{
+    const double *Q = g->ops[q], *t = g->ops[q] + 9;
+    double Qinv[9], Qc[9], T1[9];
+    if (inverse3(Q, Qinv)) return -1;
+    mat_mul(g->B, Q, T1);
+    mat_mul(T1, g->Binv, Qc);
+    double sign = 1;
+    if (axial) sign = Q[0] * (Q[4] * Q[8] - Q[5] * Q[7]) - Q[1] * (Q[3] * Q[8] - Q[5] * Q[6]) + Q[2] * (Q[3] * Q[7] - Q[4] * Q[6]) > 0 ? 1 : -1;
+    for (int j = 0; j < g->natoms; j++) {
+        double d[3], x[3];
+        for (int a = 0; a < 3; a++) d[a] = xs[3 * j + a] - t[a];
+        row_mul(d, Qinv, x);
+        int found = -1;
+        double tau[3] = {0};
+        for (int c = -1; c < g->ncent && found < 0; c++) {
+            double y[3], shifted[3];
+            for (int a = 0; a < 3; a++) shifted[a] = x[a] - m->origin[a] - (c >= 0 ? g->cent[c][a] : 0);
+            row_mul(shifted, g->Binv, y);
+            int i = atom_at(g, g->kind[j], y);
+            if (i < 0) continue;
+            found = i;
+            for (int a = 0; a < 3; a++) tau[a] = x[a] - xs[3 * i + a];
+        }
+        if (found < 0) return -1;
+        double phase = -2 * M_PI * (k[0] * tau[0] + k[1] * tau[1] + k[2] * tau[2]), c = cos(phase), s = sin(phase);
+        double re[3], im[3];
+        double wr[3] = {w[6 * found], w[6 * found + 2], w[6 * found + 4]}, wi[3] = {w[6 * found + 1], w[6 * found + 3], w[6 * found + 5]};
+        row_mul(wr, Qc, re);
+        row_mul(wi, Qc, im);
+        for (int a = 0; a < 3; a++) {
+            out[6 * j + 2 * a] = sign * (c * re[a] - s * im[a]);
+            out[6 * j + 2 * a + 1] = sign * (s * re[a] + c * im[a]);
+        }
+    }
+    return 0;
+}
+
+/* within each k star, the little-group images of the k-Bloch part of every mode of one irrep label are orthogonal to the
+ * k-Bloch parts of the modes of every other label (distinct irreps have orthogonal isotypic components under the
+ * invariant, Cartesian, inner product) */
+int mc_isotypic(void *h)
+{
+    mc_t *m = h;
+    sg_t g;
+    int status = structure(m, &g);
+    if (status) {
+        sg_free(&g);
+        return status;
+    }
+    int N = g.nreps, n6 = 6 * g.natoms, verdict = NA;
+    double G[9], L[9] = {0};
+    cell_metric(m->cell, G);
+    L[0] = sqrt(G[0]);
+    L[3] = G[3] / L[0], L[4] = sqrt(G[4] - L[3] * L[3]);
+    L[6] = G[6] / L[0], L[7] = (G[7] - L[6] * L[3]) / L[4], L[8] = sqrt(G[8] - L[6] * L[6] - L[7] * L[7]);
+    double *xs = malloc(sizeof(double) * 3 * g.natoms), *tp = malloc(sizeof(double) * 3 * N), *u = malloc(sizeof(double) * 3 * g.natoms);
+    for (int i = 0; i < g.natoms; i++) {
+        row_mul(g.y + 3 * i, g.B, xs + 3 * i);
+        for (int a = 0; a < 3; a++) xs[3 * i + a] += m->origin[a];
+    }
+    for (int r = 0; r < N; r++) row_mul(g.reps[r], g.B, tp + 3 * r);
+    int *kind_count = calloc(g.nkinds + 1, sizeof(int)), *kind_start = calloc(g.nkinds + 2, sizeof(int)), *kind_atoms = malloc(sizeof(int) * (g.natoms + 1));
+    for (int i = 0; i < g.natoms; i++) kind_count[g.kind[i]]++;
+    for (int s = 0; s < g.nkinds; s++) kind_start[s + 1] = kind_start[s] + kind_count[s];
+    for (int i = 0, *fill = calloc(g.nkinds + 1, sizeof(int)); i < g.natoms || (free(fill), 0); i++) kind_atoms[kind_start[g.kind[i]] + fill[g.kind[i]]++] = i;
+    int *done = calloc(m->ndefs + 1, sizeof(int));
+    for (int d0 = 0; d0 < m->ndefs && verdict != REF && verdict != IND; d0++) {
+        const def_t *a0 = &m->defs[d0];
+        if (done[d0] || !a0->has_k || a0->irrep < 0 || a0->kind > 1) continue;
+        /* the definitions of this k and kind */
+        int *members = malloc(sizeof(int) * m->ndefs), nm = 0, labels = 0;
+        for (int d = d0; d < m->ndefs; d++) {
+            const def_t *x = &m->defs[d];
+            if (done[d] || !x->has_k || x->irrep < 0 || x->kind != a0->kind) continue;
+            if (fabs(x->k[0] - a0->k[0]) > 1e-9 || fabs(x->k[1] - a0->k[1]) > 1e-9 || fabs(x->k[2] - a0->k[2]) > 1e-9) continue;
+            done[d] = 1;
+            members[nm++] = d;
+        }
+        for (int i = 0; i < nm; i++) {
+            int fresh = 1;
+            for (int j = 0; j < i; j++) fresh &= m->defs[members[j]].irrep != m->defs[members[i]].irrep;
+            labels += fresh;
+        }
+        if (labels < 2) {
+            free(members);
+            continue;
+        }
+        /* one arm of the star periodic in the child cell, and its little group */
+        double k[3];
+        int have = 0;
+        for (int q = 0; q < g.nrot && !have; q++) {
+            double Qinv[9];
+            if (inverse3(g.rot[q], Qinv)) continue;
+            for (int j = 0; j < 3; j++) k[j] = a0->k[0] * Qinv[3 * j] + a0->k[1] * Qinv[3 * j + 1] + a0->k[2] * Qinv[3 * j + 2];
+            have = 1;
+            for (int r = 0; r < 3 && have; r++) {
+                double v = g.B[3 * r] * k[0] + g.B[3 * r + 1] * k[1] + g.B[3 * r + 2] * k[2];
+                have = fabs(v - round(v)) <= 1e-6;
+            }
+        }
+        if (!have) {
+            free(members);
+            continue;
+        }
+        int *little = malloc(sizeof(int) * (g.nrot + 1)), nl = 0;
+        for (int q = 0; q < g.nrot; q++) {
+            double Qinv[9], kk[3];
+            if (inverse3(g.rot[q], Qinv)) continue;
+            for (int j = 0; j < 3; j++) kk[j] = k[0] * Qinv[3 * j] + k[1] * Qinv[3 * j + 1] + k[2] * Qinv[3 * j + 2] - k[j];
+            int in = 1;
+            for (int gen = 0; gen < 3 + g.ncent && in; gen++) {
+                double v[3] = {gen == 0, gen == 1, gen == 2};
+                if (gen >= 3) memcpy(v, g.cent[gen - 3], sizeof v);
+                double dot = kk[0] * v[0] + kk[1] * v[1] + kk[2] * v[2];
+                in = fabs(dot - round(dot)) <= 1e-6;
+            }
+            if (in) little[nl++] = q;
+        }
+
+        /* k-Bloch parts (interleaved complex, Cartesian for the products) and their little-group images */
+        double *w = calloc((size_t)nm * n6, sizeof(double)), *img = malloc(sizeof(double) * (size_t)nm * nl * n6), *tmp = malloc(sizeof(double) * n6);
+        double *norm = calloc(nm, sizeof(double)), *unorm = calloc(nm, sizeof(double));
+        int failed = 0;
+        for (int a = 0; a < nm && !failed; a++) {
+            if (def_field(m, &g, &m->defs[members[a]], u)) {
+                failed = 1;
+                break;
+            }
+            for (int i = 0; i < g.natoms; i++) {
+                double c[3];
+                row_mul(u + 3 * i, L, c);
+                unorm[a] += c[0] * c[0] + c[1] * c[1] + c[2] * c[2];
+            }
+            double *wa = w + (size_t)a * n6;
+            for (int r = 0; r < N; r++) {
+                double ph = -2 * M_PI * (k[0] * tp[3 * r] + k[1] * tp[3 * r + 1] + k[2] * tp[3 * r + 2]), c = cos(ph) / N, s = sin(ph) / N;
+                const int *perm = g.perm + (size_t)r * g.natoms;
+                for (int i = 0; i < g.natoms; i++)
+                    for (int x = 0; x < 3; x++) {
+                        wa[6 * perm[i] + 2 * x] += c * u[3 * i + x];
+                        wa[6 * perm[i] + 2 * x + 1] += s * u[3 * i + x];
+                    }
+            }
+            for (int l = 0; l < nl && !failed; l++) failed = bloch_act(m, &g, xs, little[l], k, a0->kind == 1, wa, img + ((size_t)a * nl + l) * n6);
+        }
+        /* to Cartesian: each atom's row vector times L */
+        for (size_t v = 0; v < (size_t)nm * (nl + 1) && !failed; v++) {
+            double *x = v < (size_t)nm ? w + v * n6 : img + (v - nm) * n6;
+            for (int i = 0; i < g.natoms; i++)
+                for (int part = 0; part < 2; part++) {
+                    double r[3] = {x[6 * i + part], x[6 * i + 2 + part], x[6 * i + 4 + part]}, c[3];
+                    row_mul(r, L, c);
+                    for (int a = 0; a < 3; a++) x[6 * i + 2 * a + part] = c[a];
+                }
+        }
+        /* a Bloch part below the display precision of its mode is zero; the parent sites it lives on (operations keep
+         * each site, so two parts meet only on their common sites) */
+        unsigned char *present = calloc((size_t)nm * g.nkinds + 1, 1);
+        for (int a = 0; a < nm && !failed; a++) {
+            for (int e = 0; e < n6; e++) norm[a] += w[(size_t)a * n6 + e] * w[(size_t)a * n6 + e];
+            norm[a] = sqrt(norm[a]);
+            if (norm[a] < 1e-3 * sqrt(unorm[a])) norm[a] = 0;
+            for (int i = 0; i < g.natoms; i++) {
+                const double *x = w + (size_t)a * n6 + 6 * i;
+                double s = 0;
+                for (int e = 0; e < 6; e++) s += x[e] * x[e];
+                if (norm[a] > 0 && sqrt(s) > 1e-4 * norm[a]) present[(size_t)a * g.nkinds + g.kind[i]] = 1;
+            }
+        }
+        double work = 0;
+        for (int a = 0; a < nm; a++)
+            for (int b = 0; b < nm; b++)
+                for (int s = 0; s < g.nkinds; s++)
+                    if (present[(size_t)a * g.nkinds + s] && present[(size_t)b * g.nkinds + s]) work += (double)nl * kind_count[s];
+        if (work > 4e9) failed = 1;
+        if (failed) {
+            verdict = IND;
+            free(members), free(little), free(w), free(img), free(tmp), free(norm), free(unorm), free(present);
+            break;
+        }
+        for (int a = 0; a < nm && verdict != REF; a++)
+            for (int b = 0; b < nm && verdict != REF; b++) {
+                if (m->defs[members[a]].irrep == m->defs[members[b]].irrep || norm[a] < 1e-9 || norm[b] < 1e-9) continue;
+                const double *wb = w + (size_t)b * n6;
+                int shared = 0;
+                for (int s = 0; s < g.nkinds; s++) shared |= present[(size_t)a * g.nkinds + s] && present[(size_t)b * g.nkinds + s];
+                if (!shared) continue;
+                for (int l = 0; l < nl; l++) {
+                    const double *v = img + ((size_t)a * nl + l) * n6;
+                    double re = 0, im = 0;
+                    for (int s = 0; s < g.nkinds; s++) {
+                        if (!present[(size_t)a * g.nkinds + s] || !present[(size_t)b * g.nkinds + s]) continue;
+                        for (int q = kind_start[s]; q < kind_start[s + 1]; q++) {
+                            int e0 = 6 * kind_atoms[q];
+                            for (int e = e0; e < e0 + 6; e += 2) {
+                                re += v[e] * wb[e] + v[e + 1] * wb[e + 1];
+                                im += v[e] * wb[e + 1] - v[e + 1] * wb[e];
+                            }
+                        }
+                    }
+                    if (verdict == NA) verdict = SAT;
+                    if (sqrt(re * re + im * im) > 1e-2 * norm[a] * norm[b]) {
+                        verdict = REF;
+                        break;
+                    }
+                }
+            }
+        free(members), free(little), free(w), free(img), free(tmp), free(norm), free(unorm), free(present);
+    }
+    free(done), free(kind_count), free(kind_start), free(kind_atoms), free(xs), free(tp), free(u);
     sg_free(&g);
     return verdict;
 }
