@@ -229,7 +229,18 @@ static int site_fract(const jvalue *site, double *out)
     return 1;
 }
 
-static int wanted_multiplicity(const jvalue *site)
+typedef struct {
+    double fract[3];
+    char *operation;
+    int index; /* -1 when absent */
+} image_t;
+
+typedef struct {
+    int n, from_operations;
+    image_t *items;
+} images_t;
+
+static int declared_multiplicity(const jvalue *site)
 {
     const jvalue *m = member(site, "multiplicity");
     if (!jtruthy(m)) return 0;
@@ -249,16 +260,29 @@ static int wanted_multiplicity(const jvalue *site)
     return value;
 }
 
-typedef struct {
-    double fract[3];
-    char *operation;
-    int index; /* -1 when absent */
-} image_t;
-
-typedef struct {
-    int n;
-    image_t *items;
-} images_t;
+/* The multiplicity a Wyckoff match must have: the number of the site's images under the CIF operations, images closer
+ * than twice the Wyckoff tolerance (periodic, per coordinate) counting once, since a site within the tolerance of a
+ * special position is that far from its own images. A CIF whose operations cannot all be read is taken at its
+ * declarations, as for its space group: the declared multiplicity, or none. */
+static int orbit_size(const jvalue *site, const images_t *im)
+{
+    if (!im->from_operations) return declared_multiplicity(site);
+    int count = 0, *kept = malloc(sizeof(int) * (size_t)(im->n + 1));
+    if (!kept) return 0;
+    for (int i = 0; i < im->n; i++) {
+        int known = 0;
+        for (int j = 0; j < count && !known; j++) {
+            known = 1;
+            for (int a = 0; a < 3 && known; a++) {
+                double d = fabs(im->items[i].fract[a] - im->items[kept[j]].fract[a]);
+                known = fmin(d, 1.0 - d) <= 2e-3;
+            }
+        }
+        if (!known) kept[count++] = i;
+    }
+    free(kept);
+    return count;
+}
 
 static void images_free(images_t *im)
 {
@@ -272,6 +296,7 @@ static int site_images(const jvalue *site, const jvalue *ops, images_t *out)
     double v[3];
     if (!site_fract(site, v)) return 0;
     int64_t nops = jis(ops, J_ARRAY) ? ops->count : 0;
+    out->from_operations = nops > 0;
     out->items = calloc((size_t)nops + 1, sizeof(image_t));
     if (!out->items) return md_fail(MDE_MEMORY, "out of memory");
     double fract[3] = {par_mod1(v[0]), par_mod1(v[1]), par_mod1(v[2])};
@@ -291,6 +316,7 @@ static int site_images(const jvalue *site, const jvalue *ops, images_t *out)
         int rot[3][3], tran[3];
         char notation;
         if (gemmi_parse_triplet(text.data, (int64_t)text.used, rot, tran, &notation)) {
+            out->from_operations = 0;
             jb_free(&text);
             continue;
         }
@@ -365,7 +391,7 @@ static void set_image(match_t *m, const jvalue *site, const image_t *im)
 }
 
 /* _match_inter_wyckoff_site_with_symmetry */
-static int inter_match(int sg, const jvalue *site, const images_t *im, int setting_id, match_t *best)
+static int inter_match(int sg, const jvalue *site, const images_t *im, int setting_id, int wanted, match_t *best)
 {
     memset(best, 0, sizeof *best);
     double source[3];
@@ -376,7 +402,7 @@ static int inter_match(int sg, const jvalue *site, const images_t *im, int setti
     int *rows = malloc(sizeof(int) * (size_t)n), *masks = malloc(sizeof(int) * 3 * (size_t)n);
     if (!fracts || !params || !reps || !rows || !masks) return md_fail(MDE_MEMORY, "out of memory");
     for (int i = 0; i < n; i++) memcpy(fracts + 3 * i, im->items[i].fract, sizeof(double) * 3);
-    int status = match_inter_wyckoff_images(sg, setting_id, n, fracts, source, wanted_multiplicity(site), 1e-3, rows, params, masks, reps);
+    int status = match_inter_wyckoff_images(sg, setting_id, n, fracts, source, wanted, 1e-3, rows, params, masks, reps);
     if (status < 0) status = md_fail(MDE_VALUE, "Wyckoff site match failed (%d)", status);
     int start, count;
     geo_wyckoff_row_range(sg, &start, &count);
@@ -419,12 +445,11 @@ static int inter_match(int sg, const jvalue *site, const images_t *im, int setti
 }
 
 /* the Wyckoff match in the Source frame */
-static int legacy_match(int sg, const jvalue *site, const double *fract, match_t *out)
+static int legacy_match(int sg, int wanted, const double *fract, match_t *out)
 {
     memset(out, 0, sizeof *out);
     int start, count;
     geo_wyckoff_row_range(sg, &start, &count);
-    int wanted = wanted_multiplicity(site);
     for (int k = 0; k < count; k++) {
         int row_id = start + k;
         int64_t mult = par_wyckoff_multiplicity(sg, row_id);
@@ -461,7 +486,7 @@ static int legacy_symmetry_match(int sg, const jvalue *site, const jvalue *ops, 
     memset(best, 0, sizeof *best);
     images_t im;
     MD_TRY(site_images(site, ops, &im));
-    int best_index = -1, status = 0;
+    int wanted = orbit_size(site, &im), best_index = -1, status = 0;
     for (int i = 0; i < im.n && !status; i++) {
         double fract[3];
         for (int a = 0; a < 3; a++) {
@@ -470,7 +495,7 @@ static int legacy_symmetry_match(int sg, const jvalue *site, const jvalue *ops, 
             py_float_of_text(text, (int64_t)strlen(text), fract + a);
         }
         match_t m;
-        status = legacy_match(sg, site, fract, &m);
+        status = legacy_match(sg, wanted, fract, &m);
         if (status || !m.found) {
             match_free(&m);
             continue;
@@ -491,7 +516,7 @@ static int legacy_symmetry_match(int sg, const jvalue *site, const jvalue *ops, 
         double x = par_mod1(v[0]), y = par_mod1(v[1]), z = par_mod1(v[2]);
         double swapped[3] = {x, z, y};
         match_t m;
-        MD_TRY(legacy_match(sg, site, swapped, &m));
+        MD_TRY(legacy_match(sg, wanted, swapped, &m));
         if (m.found) {
             image_t image = {{x, z, y}, "x,z,y", -1};
             set_image(&m, site, &image);
@@ -556,38 +581,13 @@ static int setting_score(int sg, const jvalue *sites, int drop_multiplicity, ima
     memset(out->score, 0, sizeof out->score);
     out->matches = calloc((size_t)n + 1, sizeof(match_t));
     if (!out->matches) return md_fail(MDE_MEMORY, "out of memory");
-    jdoc *stripped_doc = 0;
     for (int64_t i = 0; i < n; i++) {
         const jvalue *site = jat(sites, i);
         if (!jtruthy(member(site, "fract"))) continue;
-        const jvalue *probe = site;
-        if (drop_multiplicity && member(site, "multiplicity")) {
-            jbuf t = {0};
-            jb_reset(&t);
-            jb_lit(&t, "{");
-            int first = 1;
-            for (int64_t k = 0; k < site->count; k++) {
-                const jvalue *key = site->u.members + 2 * k;
-                if (key->count == 12 && !memcmp(key->u.s, "multiplicity", 12)) continue;
-                if (!first) jb_lit(&t, ", ");
-                first = 0;
-                jb_string(&t, key->u.s, (size_t)key->count);
-                jb_lit(&t, ": ");
-                jb_value(&t, key + 1);
-            }
-            jb_lit(&t, "}");
-            jdoc_free(stripped_doc);
-            stripped_doc = jdoc_parse(t.data, t.used);
-            jb_free(&t);
-            probe = jdoc_root(stripped_doc);
-        }
         match_t *m = out->matches + i;
-        int status = inter_match(sg, probe, images + i, setting_id, m);
+        int status = inter_match(sg, site, images + i, setting_id, drop_multiplicity ? 0 : orbit_size(site, images + i), m);
         if (m->found) m->source_site = site;
-        if (status) {
-            jdoc_free(stripped_doc);
-            return status;
-        }
+        if (status) return status;
         if (m->found && m->operation_index < 0) out->score[3]++;
         if (m->found) {
             out->score[0]++;
@@ -595,7 +595,6 @@ static int setting_score(int sg, const jvalue *sites, int drop_multiplicity, ima
             out->score[1] += c > 0 ? c : 0;
         }
     }
-    jdoc_free(stripped_doc);
     int default_id = geo_default_setting(sg);
     out->score[4] = setting_id == default_id;
     int same = section_int(&T.inter_cell, setting_id - 1) == section_int(&T.inter_cell, default_id - 1);
