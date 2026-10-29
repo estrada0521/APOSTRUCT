@@ -2474,27 +2474,3 @@ int exact_coupled_orbit(int gid, int dim, int arms, const int64_t *k, int subtra
     return status;
 }
 
-int exact_const_words(int64_t code, int64_t *words);
-
-/* Register rows read from Source constants (the doubles a later stage will
- * hold, and their codes) so the coupled orbit can take them exactly. */
-void exact_register_codes(int rows, int cols, const double *doubles, const int64_t *codes)
-{
-    const cy_field *saved = F, *f = cy_field_for(24);
-    if (!f) return;
-    size_t cells = (size_t)rows * cols;
-    cy *values = malloc(sizeof(cy) * (cells + 1));
-    if (!values) return;
-    int ok = 1;
-    for (size_t i = 0; i < cells && ok; i++) {
-        int64_t words[8];
-        ok = !exact_const_words(codes[i], words);
-        if (ok) cy_from_sqrt23(f, words, &values[i]);
-    }
-    if (ok && !cy_overflow) {
-        F = f;
-        row_cache_put(rows, cols, doubles, values, 0);
-        F = saved;
-    }
-    free(values);
-}

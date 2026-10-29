@@ -24,7 +24,6 @@ int parent_operation_records(int parent_sg, int child_sg, const int64_t *basis, 
 
 enum {
     SK_DYN = 1,
-    SK_STATIC,
     SK_MEMB,
     SK_MAG,
     SK_CPL,
@@ -69,7 +68,6 @@ typedef struct {
     int replaced;
     int row_id;
     int use_selected_rows;
-    int static_updated;
 } sp_spec;
 
 typedef struct {
@@ -1181,7 +1179,7 @@ static int emit(const sp_specs *specs)
                             s->has_pml, s->has_req, s->req_none, s->has_occ, s->has_dir, s->has_free, s->free_count, s->obs,
                             s->has_anchor, s->anchor_gid, s->has_cand, s->has_heading, s->heading_gid, s->stokes, s->case_none,
                             s->dcase_none, s->slot_order, s->replaced, s->row_id,
-                            s->use_selected_rows, s->static_updated};
+                            s->use_selected_rows};
         SP_TRY(put_int((int64_t)(sizeof header / sizeof header[0])));
         for (size_t k = 0; k < sizeof header / sizeof header[0]; k++) SP_TRY(put_int(header[k]));
         SP_TRY(put_str(s->label));
@@ -1351,123 +1349,6 @@ static sp_str k_label_from_irrep_label(sp_str label)
     while (n < text.length && ((text.text[n] >= 'A' && text.text[n] <= 'Z') || (text.text[n] >= 'a' && text.text[n] <= 'z'))) n++;
     if (!n) return text;
     return (sp_str){text.text, n};
-}
-
-static int upper_prefix(sp_str label, sp_str *out)
-{
-    int64_t n = 0;
-    while (n < label.length && label.text[n] >= 'A' && label.text[n] <= 'Z') n++;
-    *out = (sp_str){label.text, n};
-    return n > 0;
-}
-
-/* The canonical little gid of an old irrep among little_records_for_k(sg, k_label), 0 for none. */
-static int canonical_little(int sg, sp_str k_label, int old_id, int *gid_out, sp_str *label_out)
-{
-    int64_t total = section_count(&T.irr_sg);
-    int *seen_old = sp_alloc(sizeof(int) * 2048);
-    if (!seen_old) return 1;
-    int nseen = 0;
-    *gid_out = 0;
-    for (int64_t index = 0; index < total; index++) {
-        if (section_int(&T.irr_sg, index) != sg) continue;
-        int gid = (int)index + 1;
-        int old = (int)section_int(&T.old, index);
-        int key = old > 0 ? old : -gid;
-        int dup = 0;
-        for (int i = 0; i < nseen && !dup; i++) dup = seen_old[i] == key;
-        if (dup) continue;
-        sp_str label = sp_irrep_full_label(gid), prefix;
-        if (!upper_prefix(label, &prefix)) {
-            char message[160];
-            snprintf(message, sizeof message, "cannot infer k label from irrep label '%.*s'", (int)label.length, label.text);
-            return sp_fail(PY_VALUE, message);
-        }
-        if (!sp_str_eq(prefix, k_label)) continue;
-        if (nseen < 2048) seen_old[nseen++] = key;
-        if (old == old_id && !*gid_out) {
-            *gid_out = gid;
-            *label_out = label;
-        }
-    }
-    return 0;
-}
-
-/* Old-compatible render specs; secondary membership and rank come from the
- * fixed subspaces of the child frame, not the isotropy_subduce tables. */
-int spec_static(int sg, int selected_old_id, int selected_row_id, int has_frame, int child_sg, const int64_t *basis,
-                const int64_t *origin)
-{
-    sp_reset();
-    result.items = 0;
-    result.count = result.cap = 0;
-    if (load()) return finish(1);
-    if (selected_old_id < 1 || selected_old_id > old_irrep_count() ||
-        selected_row_id < 1 || selected_row_id > isotropy_row_count())
-        return finish(sp_fail(PY_INDEX, "selected isotropy row is out of range"));
-    int64_t default_basis[9], default_origin[4];
-    if (!has_frame) {
-        if (section_find("isotropy.ordinary.basis", &T.iso_basis) ||
-            section_find("isotropy.ordinary.origin", &T.iso_origin))
-            return finish(sp_fail(PY_VALUE, "selected isotropy frame is missing"));
-        child_sg = isotropy_row_subgroup(selected_row_id);
-        for (int j = 0; j < 9; j++) default_basis[j] = section_int(&T.iso_basis, 9 * (selected_row_id - 1) + j);
-        for (int j = 0; j < 4; j++) default_origin[j] = section_int(&T.iso_origin, 4 * (selected_row_id - 1) + j);
-        basis = default_basis;
-        origin = default_origin;
-    }
-    sp_frame frame;
-    if (frame_operations(sg, child_sg, basis, origin, &frame)) return finish(1);
-    sp_rows rows = {0};
-    if (sp_frame_rows(&frame, 0, 0, &rows)) return finish(1);
-    int nold = old_irrep_count();
-    const sp_row **last = sp_alloc(sizeof *last * (size_t)(nold + 1));
-    if (!last) return finish(1);
-    memset(last, 0, sizeof *last * (size_t)(nold + 1));
-    for (int r = 0; r < rows.count; r++) {
-        int old = sp_little_old_id(rows.items[r].gid);
-        if (old > 0 && old <= nold) last[old] = &rows.items[r];
-    }
-    /* Primary first, then old secondaries in ascending catalog order. */
-    for (int pass = 0; pass < 2; pass++)
-        for (int old = 1; old <= nold; old++) {
-            int primary = old == selected_old_id;
-            if ((pass == 0) != primary || (!primary && !last[old]) || old_irrep_space_group(old) != sg) continue;
-            sp_str entry_label = {irrep_old_label(old), (int64_t)strlen(irrep_old_label(old))}, label = entry_label;
-            sp_str k_label = k_label_from_irrep_label(entry_label);
-            int gid;
-            if (canonical_little(sg, k_label, old, &gid, &label)) return finish(1);
-            sp_spec *spec = spec_new();
-            if (!spec) return finish(1);
-            spec->kind = SK_STATIC;
-            spec->mode_kind = 1;
-            spec->old_id = old;
-            spec->gid = gid;
-            spec->label = gid ? label : entry_label;
-            spec->k_label = k_label;
-            spec->primary = primary;
-            spec->row_id = primary ? selected_row_id : 0;
-            spec->has_free = 1;
-            spec->free_count = primary ? isotropy_row_free(selected_row_id) : last[old]->count;
-            if (!primary) {
-                const sp_row *row = last[old];
-                spec->static_updated = 1;
-                spec->gid = row->gid;
-                spec->has_kp = spec->has_pml = spec->has_dir = 1;
-                memcpy(spec->kp, row->kp, sizeof spec->kp);
-                memcpy(spec->pml, row->pml, sizeof spec->pml);
-                spec->dir = row->dir;
-                spec->dim = row->dim;
-                spec->count = row->count;
-            }
-            if (specs_push(&result, spec)) return finish(1);
-        }
-    for (int r = 0; r < rows.count; r++) {
-        if (sp_little_old_id(rows.items[r].gid) != 0) continue;
-        sp_spec *spec;
-        if (dyn_spec(&rows.items[r], 0, 0, &spec) || specs_push(&result, spec)) return finish(1);
-    }
-    return finish(0);
 }
 
 /* ------------------------------------------------------------ entry C: ordinary from a magnetic embedding */

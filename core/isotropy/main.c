@@ -19,41 +19,6 @@ static void put_error(void)
     jb_lit(&out, "}}");
 }
 
-static int opd_rows(const jvalue *request, jbuf *b)
-{
-    int64_t old_id;
-    if (py_int_of(jget(request, "old_id"), &old_id)) return md_fail(MDE_TYPE, "old_id must be an integer");
-    sel_params k_params, display;
-    sel_params_of(jget(request, "k_params"), &k_params);
-    const jvalue *display_value = jget(request, "display_k_params");
-    int has_display = jis(display_value, J_OBJECT);
-    if (has_display) sel_params_of(display_value, &display);
-    const jvalue *setting = jget(request, "parent_setting_id");
-    const jvalue *cell_value = jget(request, "parent_cell");
-    double cell[6];
-    int has_cell = jis(cell_value, J_ARRAY) && cell_value->count == 6;
-    for (int i = 0; has_cell && i < 6; i++)
-        if (py_float_of(jat(cell_value, i), cell + i)) return md_fail(MDE_TYPE, "parent cell must be numeric");
-    jb_lit(b, "{\"rows\": ");
-    const jvalue *parent_sg = jget(request, "parent_sg"), *gid = jget(request, "gid");
-    int magnetic = jtruthy(jget(request, "magnetic"));
-    if (old_id <= 0 && (!jis(parent_sg, J_INT) || !jis(gid, J_INT))) {
-        jb_lit(b, "[]");
-    } else if (old_id <= 0) {
-        MD_TRY(sel_dynamic_rows(magnetic, (int)parent_sg->u.i, gid->u.i, &k_params, has_display ? &display : 0, jget(request, "selected_orderparam"),
-                                jis(setting, J_INT), jis(setting, J_INT) ? setting->u.i : 0, has_cell, cell, b));
-    } else if (magnetic) {
-        MD_TRY(sel_magnetic_static_rows((int)old_id, jis(parent_sg, J_INT), jis(parent_sg, J_INT) ? (int)parent_sg->u.i : 0, jis(gid, J_INT),
-                                        jis(gid, J_INT) ? gid->u.i : 0, has_display ? &display : 0, jget(request, "selected_orderparam"),
-                                        jis(setting, J_INT), jis(setting, J_INT) ? setting->u.i : 0, has_cell, cell, b));
-    } else {
-        MD_TRY(sel_static_rows((int)old_id, &k_params, has_display ? &display : 0, jis(setting, J_INT), jis(setting, J_INT) ? setting->u.i : 0,
-                               has_cell, cell, b));
-    }
-    jb_lit(b, "}");
-    return 0;
-}
-
 /* pipeline.build_state_from_parent_state's selection steps */
 int sel_stage(const jvalue *state, const jvalue *opts, jbuf *b)
 {
@@ -92,9 +57,7 @@ const char *selection_json(const char *text, int64_t length)
     const jvalue *request = jdoc_root(doc);
     jb_reset(&out);
     int status;
-    if (jstr_is(jget(request, "call"), "opd_rows")) {
-        status = opd_rows(request, &out);
-    } else if (jstr_is(jget(request, "call"), "coupled_opd_rows")) {
+    if (jstr_is(jget(request, "call"), "coupled_opd_rows")) {
         jb_lit(&out, "{\"rows\": ");
         status = sel_coupled_rows(request, &out);
         jb_lit(&out, "}");

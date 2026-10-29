@@ -1,5 +1,5 @@
-/* The OPD rows of an irrep at a k point without parameters: the image directions and the isotropy table rows in
- * their displayed settings. */
+/* What the OPD rows share: k parameters, OPD text, the displayed setting and basis of a subgroup, and the active k
+ * vectors. */
 
 #include <math.h>
 #include <stdio.h>
@@ -10,11 +10,6 @@
 #include "sel.h"
 #include "irreps.h"
 #include "tables.h"
-int isotropy_row_subgroup(int64_t row_id);
-
-int64_t isotropy_row_count(void);
-int isotropy_row_dim(int64_t row_id);
-int isotropy_row_free(int64_t row_id);
 
 int opd_basis_presentation(int subgroup, const int64_t *basis, const double *cell, int parametric, int coupled, int magnetic_group,
                            int64_t *out);
@@ -24,10 +19,7 @@ const char *k_display_star_json(int sg, int kslot, int dim);
 int k_coordinate_map_words(int sg, int kslot, int64_t *out);
 
 static struct {
-    section_view image_label, image_dimension, image_subgroup, image_subgroup_count, image_subgroup_pointer,
-        dir_label, dir_dimension, dir_subduction, dir_pointer, dir, irrep_image,
-        iso_pointer, iso_basis, iso_origin, iso_direction, iso_label, iso_op_pointer, iso_op, const_values, point_group, group_order, gen_count, gen,
-        irr_old, irr_sg, irr_k, k_dim;
+    section_view point_group, group_order, irr_sg, irr_k, k_dim;
     int ready;
 } T;
 
@@ -37,30 +29,8 @@ int sel_tables(void)
     struct {
         const char *name;
         section_view *view;
-    } list[] = {{"images.images.label", &T.image_label},
-                {"images.images.dimension", &T.image_dimension},
-                {"images.image_subgroups.subgroup", &T.image_subgroup},
-                {"images.images.subgroup_count", &T.image_subgroup_count},
-                {"images.images.subgroup_start", &T.image_subgroup_pointer},
-                {"images.image_directions.label", &T.dir_label},
-                {"images.image_directions.dimension", &T.dir_dimension},
-                {"images.image_directions.subduction", &T.dir_subduction},
-                {"images.image_directions.vector_start", &T.dir_pointer},
-                {"images.image_directions.vector", &T.dir},
-                {"irreps.old.image", &T.irrep_image},
-                {"isotropy.ordinary.by_old_start", &T.iso_pointer},
-                {"isotropy.ordinary.basis", &T.iso_basis},
-                {"isotropy.ordinary.origin", &T.iso_origin},
-                {"isotropy.ordinary.image_direction", &T.iso_direction},
-                {"isotropy.ordinary.label", &T.iso_label},
-                {"isotropy.ordinary.direction_codes_start", &T.iso_op_pointer},
-                {"isotropy.ordinary.direction_codes", &T.iso_op},
-                {"const.values", &T.const_values},
-                {"group.space_groups.point_group", &T.point_group},
+    } list[] = {{"group.space_groups.point_group", &T.point_group},
                 {"group.point_groups.order", &T.group_order},
-                {"group.point_groups.generator_count", &T.gen_count},
-                {"group.point_groups.generators", &T.gen},
-                {"irreps.little.old", &T.irr_old},
                 {"irreps.little.sg", &T.irr_sg},
                 {"irreps.little.k", &T.irr_k},
                 {"k.slots.dim", &T.k_dim}};
@@ -69,24 +39,6 @@ int sel_tables(void)
         if (section_find(list[i].name, list[i].view)) return 1;
     T.ready = 1;
     return 0;
-}
-
-void exact_register_codes(int rows, int cols, const double *doubles, const int64_t *codes);
-
-static double constant(int64_t code) { return const_ref_value(code); }
-
-static void strip_view(const section_view *view, int64_t index, const char **s, int64_t *n)
-{
-    if (section_string(view, index, s, n)) {
-        *s = "";
-        *n = 0;
-        return;
-    }
-    while (*n && ((*s)[0] == ' ' || (*s)[0] == '\t')) {
-        (*s)++;
-        (*n)--;
-    }
-    while (*n && ((*s)[*n - 1] == ' ' || (*s)[*n - 1] == '\t')) (*n)--;
 }
 
 /* ------------------------------------------------------------ k params */
@@ -113,35 +65,6 @@ const char *sel_param(const sel_params *p, const char *name)
 }
 
 /* ------------------------------------------------------------ formatting */
-
-static double py_round(double value, int digits)
-{
-    char text[512];
-    snprintf(text, sizeof text, "%.*f", digits, value);
-    return strtod(text, 0);
-}
-
-void sel_fmt_complex(jbuf *b, double real)
-{
-    double re = py_round(real, 8);
-    double nearest = nearbyint(re);
-    char text[64];
-    if (fabs(re - nearest) < 1e-8) snprintf(text, sizeof text, "%lld", (long long)nearest);
-    else snprintf(text, sizeof text, "%g", re);
-    jb_lit(b, text);
-}
-void sel_fmt_display_value(jbuf *b, double value)
-{
-    char text[64];
-    if (fabs(value) < 1e-8) {
-        jb_lit(b, "0");
-        return;
-    }
-    double rounded = nearbyint(value);
-    if (fabs(value - rounded) < 1e-8) snprintf(text, sizeof text, "%lld", (long long)rounded);
-    else snprintf(text, sizeof text, "%.3f", value);
-    jb_lit(b, text);
-}
 
 void sel_opd_from_rows(jbuf *b, char ***rows, int nrows, const int *widths)
 {
@@ -245,22 +168,10 @@ void sel_display_opd(jbuf *b, const char *opd)
 
 char *sel_default_symbol(int sg) { return md_default_symbol(sg); }
 
-int ferroic_codes(int sg, int subgroup, const int64_t *basis, const int64_t *origin, int gid, int *fe, int *fa);
-
 int64_t sel_point_group_order(int sg)
 {
     int64_t pg = section_int(&T.point_group, sg - 1);
     return section_int(&T.group_order, pg - 1);
-}
-
-int sel_has_inversion(int sg)
-{
-    int64_t pg = section_int(&T.point_group, sg - 1), count = section_int(&T.gen_count, pg - 1);
-    for (int64_t i = 0; i < count; i++) {
-        int64_t g = section_int(&T.gen, (pg - 1) * 5 + i);
-        if (g == 25 || g == 61) return 1;
-    }
-    return 0;
 }
 
 static void mat4_mul(const int64_t *a, const int64_t *b, int64_t *out)
@@ -367,101 +278,6 @@ typedef struct {
     char ***rows;
     int *widths;
 } direction;
-
-static void direction_free(direction *d)
-{
-    for (int r = 0; r < d->nrows; r++) {
-        for (int c = 0; c < d->widths[r]; c++) free(d->rows[r][c]);
-        free(d->rows[r]);
-    }
-    free(d->rows);
-    free(d->widths);
-    memset(d, 0, sizeof *d);
-}
-
-char *sel_complex_text(double value)
-{
-    jbuf b = {0};
-    jb_reset(&b);
-    sel_fmt_complex(&b, value);
-    return b.data;
-}
-static int direction_of(int64_t did, direction *d)
-{
-    memset(d, 0, sizeof *d);
-    d->id = did;
-    int64_t count = section_count(&T.dir_label);
-    if (did <= 0 || did > count) return 0;
-    d->valid = 1;
-    int64_t i = did - 1;
-    d->dimension = section_int(&T.dir_dimension, i);
-    d->subduction = section_int(&T.dir_subduction, i);
-    int64_t pointer = section_int(&T.dir_pointer, i);
-    strip_view(&T.dir_label, i, &d->label, &d->label_length);
-    if (pointer > 0 && d->dimension > 0) {
-        int64_t start = pointer - 1, end = -1;
-        for (int64_t j = i + 1; j < section_count(&T.dir_pointer); j++)
-            if (section_int(&T.dir_pointer, j) > 0) {
-                end = section_int(&T.dir_pointer, j) - 1;
-                break;
-            }
-        if (end < 0) {
-            int64_t sub = d->subduction > 1 ? d->subduction : 1;
-            end = start + (d->dimension * sub > d->dimension ? d->dimension * sub : d->dimension);
-        }
-        int64_t total = section_count(&T.dir);
-        if (end > total) end = total;
-        if (start > end) start = end;
-        int64_t length = end - start, dim = d->dimension;
-        int nrows = (int)((length + dim - 1) / dim);
-        d->rows = calloc((size_t)nrows + 1, sizeof(char **));
-        d->widths = calloc((size_t)nrows + 1, sizeof(int));
-        if (!d->rows || !d->widths) return md_fail(MDE_MEMORY, "out of memory");
-        for (int r = 0; r < nrows; r++) {
-            int64_t w = length - (int64_t)r * dim < dim ? length - (int64_t)r * dim : dim;
-            d->rows[r] = calloc((size_t)w + 1, sizeof(char *));
-            if (!d->rows[r]) return md_fail(MDE_MEMORY, "out of memory");
-            d->widths[r] = (int)w;
-            for (int64_t c = 0; c < w; c++) d->rows[r][c] = sel_complex_text(constant(section_int(&T.dir, start + (int64_t)r * dim + c)));
-            d->nrows++;
-        }
-    }
-    return 0;
-}
-
-static void put_direction(jbuf *b, const direction *d, int image_entry)
-{
-    jb_lit(b, "{\"id\": ");
-    jb_int(b, d->id);
-    if (!d->valid) {
-        jb_lit(b, ", \"label\": \"?\", \"opd\": \"\", \"vectors\": []");
-    } else {
-        jb_lit(b, ", \"label\": ");
-        jb_string(b, d->label, (size_t)d->label_length);
-        jb_lit(b, ", \"dimension\": ");
-        jb_int(b, d->dimension);
-        jb_lit(b, ", \"subduction\": ");
-        jb_int(b, d->subduction);
-        jb_lit(b, ", \"opd\": ");
-        jbuf opd = {0};
-        jb_reset(&opd);
-        sel_opd_from_rows(&opd, d->rows, d->nrows, d->widths);
-        jb_string(b, opd.data, opd.used);
-        jb_free(&opd);
-        jb_lit(b, ", \"vectors\": [");
-        for (int r = 0; r < d->nrows; r++) {
-            if (r) jb_lit(b, ", ");
-            jb_lit(b, "[");
-            for (int c = 0; c < d->widths[r]; c++) {
-                if (c) jb_lit(b, ", ");
-                jb_cstring(b, d->rows[r][c]);
-            }
-            jb_lit(b, "]");
-        }
-        jb_lit(b, "]");
-    }
-    jb_lit(b, "}");
-}
 
 /* ------------------------------------------------------------ active k vectors */
 
@@ -742,14 +558,6 @@ int sel_active_k_vectors_by(int parent_sg, int64_t gid, int64_t full_dim, int nr
 
 /* ------------------------------------------------------------ isotropy rows */
 
-int64_t sel_first_little_gid(int64_t old_id, int sg)
-{
-    int64_t total = section_count(&T.irr_old);
-    for (int64_t i = 0; i < total; i++)
-        if (section_int(&T.irr_old, i) == old_id && section_int(&T.irr_sg, i) == sg) return i + 1;
-    return 0;
-}
-
 typedef struct {
     int64_t row_id, direction_id, subgroup, free, size, s;
     int has_index;
@@ -919,303 +727,4 @@ int sel_display(int parent_sg, int subgroup, const int64_t *basis, const int64_t
     int same = has_setting && parent_sg == subgroup;
     MD_TRY(sel_change_setting(parent_sg, subgroup, basis, origin, has_setting, setting_id, same, setting_id, displayed));
     return sel_present_basis(subgroup, displayed, has_cell, cell, parametric, coupled, magnetic_group, rows);
-}
-
-/* one isotropy row; *key for canonical_isotropy_row_id */
-static int isotropy_row(int64_t old_id, int64_t row_id, int parent_sg, int64_t full_dim, const sel_params *k_params,
-                        const sel_params *active_params, int has_setting, int64_t setting_id, int has_cell, const double *cell,
-                        jbuf *b, iso_key *key)
-{
-    int64_t idx = row_id - 1;
-    int64_t basis[9], origin[4];
-    for (int i = 0; i < 9; i++) basis[i] = section_int(&T.iso_basis, idx * 9 + i);
-    for (int i = 0; i < 4; i++) origin[i] = section_int(&T.iso_origin, idx * 4 + i);
-    int64_t dim = isotropy_row_dim(row_id), free_count = isotropy_row_free(row_id);
-    int64_t pointer = section_int(&T.iso_op_pointer, idx) - 1, total = section_count(&T.iso_op);
-    /* stored orderparam */
-    int sn = (int)dim;
-    char ***stored = calloc((size_t)sn + 1, sizeof(char **));
-    int *stored_w = calloc((size_t)sn + 1, sizeof(int));
-    if (!stored || !stored_w) return md_fail(MDE_MEMORY, "out of memory");
-    for (int r = 0; r < sn; r++) {
-        int64_t start = pointer + r * free_count, end = start + free_count, limit = pointer + dim * free_count;
-        if (end > limit) end = limit;
-        if (end > total) end = total;
-        int w = end > start ? (int)(end - start) : 0;
-        stored[r] = calloc((size_t)w + 1, sizeof(char *));
-        stored_w[r] = w;
-        for (int c = 0; c < w; c++) stored[r][c] = sel_complex_text(constant(section_int(&T.iso_op, start + c)));
-    }
-    /* source orderparam */
-    int64_t limit = pointer + dim * full_dim;
-    if (limit > total) limit = total;
-    int rn = (int)dim;
-    double **numeric = calloc((size_t)rn + 1, sizeof(double *));
-    char ***matrix = calloc((size_t)rn + 1, sizeof(char **));
-    int *matrix_w = calloc((size_t)rn + 1, sizeof(int));
-    if (!numeric || !matrix || !matrix_w) return md_fail(MDE_MEMORY, "out of memory");
-    for (int r = 0; r < rn; r++) {
-        int64_t start = pointer + r * full_dim, end = start + full_dim;
-        if (end > limit) end = limit;
-        int w = end > start ? (int)(end - start) : 0;
-        numeric[r] = calloc((size_t)w + 1, sizeof(double));
-        matrix[r] = calloc((size_t)w + 1, sizeof(char *));
-        matrix_w[r] = w;
-        for (int c = 0; c < w; c++) {
-            numeric[r][c] = constant(section_int(&T.iso_op, start + c));
-            jbuf t = {0};
-            jb_reset(&t);
-            sel_fmt_display_value(&t, numeric[r][c]);
-            matrix[r][c] = t.data;
-        }
-    }
-    {
-        /* the exact numeric rows, for the coupled orbit (rows of full_dim entries) */
-        int complete = rn > 0;
-        for (int r = 0; r < rn && complete; r++) complete = pointer + r * full_dim + full_dim <= limit;
-        if (complete) {
-            double *flat = malloc(sizeof(double) * ((size_t)rn * full_dim + 1));
-            int64_t *codes = malloc(sizeof(int64_t) * ((size_t)rn * full_dim + 1));
-            if (flat && codes) {
-                for (int r = 0; r < rn; r++)
-                    for (int c = 0; c < full_dim; c++) {
-                        flat[(size_t)r * full_dim + c] = numeric[r][c];
-                        codes[(size_t)r * full_dim + c] = section_int(&T.iso_op, pointer + r * full_dim + c);
-                    }
-                for (int rows = 1; rows <= rn; rows++) exact_register_codes(rows, (int)full_dim, flat, codes);
-            }
-            free(flat);
-            free(codes);
-        }
-    }
-    int display_n = (int)(free_count < rn ? free_count : rn);
-    if (display_n < 0) display_n = 0;
-    int64_t direction_id = section_int(&T.iso_direction, idx);
-    direction d;
-    MD_TRY(direction_of(direction_id, &d));
-    int subgroup = isotropy_row_subgroup(idx + 1);
-    sel_setting displayed;
-    rat rows[3][3];
-    MD_TRY(sel_display(parent_sg, subgroup, basis, origin, has_setting, setting_id, has_cell, cell, k_params->count > 0, 0, 0, &displayed, rows));
-    int64_t s0 = basis[0] * (basis[4] * basis[8] - basis[5] * basis[7]) - basis[1] * (basis[3] * basis[8] - basis[5] * basis[6]) +
-                 basis[2] * (basis[3] * basis[7] - basis[4] * basis[6]);
-    int64_t supercell = s0 < 0 ? -s0 : s0;
-    int has_index;
-    int64_t index = sel_subgroup_index(parent_sg, subgroup, supercell, &has_index);
-    strings active = {0};
-    int64_t gid = sel_first_little_gid(old_id, parent_sg);
-    if (gid) {
-        if (display_n > 0) MD_TRY(sel_active_k_vectors(parent_sg, gid, full_dim, matrix, display_n, matrix_w, active_params, &active));
-        else MD_TRY(sel_active_k_vectors(parent_sg, gid, full_dim, matrix, rn, matrix_w, active_params, &active));
-    }
-    int fe, fa;
-    if (ferroic_codes(parent_sg, subgroup, basis, origin, (int)gid, &fe, &fa))
-        return md_fail(MDE_VALUE, "ferroic classes of the isotropy subgroup cannot be computed");
-    const char *label;
-    int64_t label_length;
-    strip_view(&T.iso_label, idx, &label, &label_length);
-    jb_lit(b, "{\"row_id\": ");
-    jb_int(b, row_id);
-    jb_lit(b, ", \"opd_label\": ");
-    jb_string(b, label, (size_t)label_length);
-    jb_lit(b, ", \"direction_label\": ");
-    if (d.valid) jb_string(b, d.label, (size_t)d.label_length);
-    else jb_lit(b, "\"?\"");
-    jbuf text = {0};
-    jb_reset(&text);
-    if (d.valid) sel_opd_from_rows(&text, d.rows, d.nrows, d.widths);
-    jb_lit(b, ", \"direction_opd\": ");
-    jb_string(b, text.data, text.used);
-    jb_reset(&text);
-    sel_opd_from_rows(&text, stored, sn, stored_w);
-    jb_lit(b, ", \"stored_opd\": ");
-    jb_string(b, text.data, text.used);
-    jb_reset(&text);
-    sel_opd_from_rows(&text, matrix, display_n, matrix_w);
-    jbuf display = {0};
-    jb_reset(&display);
-    sel_display_opd(&display, text.data);
-    jb_lit(b, ", \"display_opd\": ");
-    jb_string(b, display.data, display.used);
-    jb_lit(b, ", \"source_opd\": ");
-    jb_string(b, text.data, text.used);
-    jb_free(&display);
-    jb_free(&text);
-    for (int pass = 0; pass < 2; pass++) {
-        jb_lit(b, pass ? ", \"source_display_rows\": [" : ", \"source_matrix\": [");
-        int n = pass ? display_n : rn;
-        for (int r = 0; r < n; r++) {
-            if (r) jb_lit(b, ", ");
-            jb_lit(b, "[");
-            for (int c = 0; c < matrix_w[r]; c++) {
-                if (c) jb_lit(b, ", ");
-                jb_cstring(b, matrix[r][c]);
-            }
-            jb_lit(b, "]");
-        }
-        jb_lit(b, "]");
-    }
-    jb_lit(b, ", \"source_numeric_rows\": [");
-    for (int r = 0; r < display_n; r++) {
-        if (r) jb_lit(b, ", ");
-        jb_lit(b, "[");
-        for (int c = 0; c < matrix_w[r]; c++) {
-            if (c) jb_lit(b, ", ");
-            jb_float(b, numeric[r][c]);
-        }
-        jb_lit(b, "]");
-    }
-    jb_lit(b, "], \"op_rows\": ");
-    jb_int(b, dim);
-    jb_lit(b, ", \"free\": ");
-    jb_int(b, free_count);
-    jb_lit(b, ", \"arms\": ");
-    jb_int(b, displayed.size);
-    jb_lit(b, ", \"s\": ");
-    jb_int(b, supercell);
-    jb_lit(b, ", \"i\": ");
-    if (has_index) jb_int(b, index);
-    else jb_lit(b, "null");
-    jb_lit(b, ", \"k_active_vectors\": ");
-    sel_put_strings(b, &active);
-    jb_lit(b, ", \"k_active\": ");
-    sel_put_joined(b, &active);
-    sel_put_subgroup(b, parent_sg, subgroup, basis, origin, &displayed, (const rat (*)[3])rows, displayed.size, 0, 0);
-    jb_lit(b, ", \"ferroic\": {\"ferroelectric\": ");
-    jb_int(b, fe);
-    jb_lit(b, ", \"ferroelastic\": ");
-    jb_int(b, fa);
-    jb_lit(b, "}, \"ferroic_properties\": [");
-    if (fe) jb_lit(b, fe == 1 ? "\"proper ferroelectric\"" : "\"improper ferroelectric\"");
-    if (fa) {
-        if (fe) jb_lit(b, ", ");
-        jb_lit(b, fa == 1 ? "\"proper ferroelastic\"" : "\"improper ferroelastic\"");
-    }
-    jb_lit(b, "]}");
-    key->row_id = row_id;
-    key->direction_id = direction_id;
-    key->subgroup = subgroup;
-    key->free = free_count;
-    key->size = displayed.size;
-    strings_free(&active);
-    direction_free(&d);
-    for (int r = 0; r < sn; r++) {
-        for (int c = 0; c < stored_w[r]; c++) free(stored[r][c]);
-        free(stored[r]);
-    }
-    free(stored);
-    free(stored_w);
-    for (int r = 0; r < rn; r++) {
-        for (int c = 0; c < matrix_w[r]; c++) free(matrix[r][c]);
-        free(matrix[r]);
-        free(numeric[r]);
-    }
-    free(matrix);
-    free(matrix_w);
-    free(numeric);
-    return 0;
-}
-
-/* the OPD rows of old irrep old_id (> 0) as a JSON array */
-int sel_static_rows(int old_id, const sel_params *k_params, const sel_params *display, int has_setting, int64_t setting_id,
-                    int has_cell, const double *cell, jbuf *out)
-{
-    if (sel_tables()) return md_fail(MDE_VALUE, "isotropy Source tables are inconsistent");
-    int parent_sg = old_irrep_space_group(old_id);
-    int64_t image_id = section_int(&T.irrep_image, old_id - 1);
-    int64_t full_dim = section_int(&T.image_dimension, image_id - 1);
-    int64_t start = 0, end = 0;
-    if (old_id >= 1 && old_id < section_count(&T.iso_pointer)) {
-        start = section_int(&T.iso_pointer, old_id - 1);
-        end = section_int(&T.iso_pointer, old_id);
-    }
-    int n = (int)(end - start);
-    jbuf *rows = calloc((size_t)n + 1, sizeof(jbuf));
-    iso_key *keys = calloc((size_t)n + 1, sizeof(iso_key));
-    if (!rows || !keys) return md_fail(MDE_MEMORY, "out of memory");
-    const sel_params *active_params = display ? display : k_params;
-    for (int i = 0; i < n; i++) {
-        jb_reset(&rows[i]);
-        MD_TRY(isotropy_row(old_id, start + i, parent_sg, full_dim, k_params, active_params, has_setting, setting_id, has_cell, cell,
-                            &rows[i], &keys[i]));
-    }
-    /* group by direction id in the image's direction order */
-    int64_t image_ptr = section_int(&T.image_subgroup_pointer, image_id - 1) - 1, image_count = section_int(&T.image_subgroup_count, image_id - 1);
-    if (image_id < 1 || image_id > section_count(&T.image_label)) image_count = 0;
-    int *used = calloc((size_t)n + 1, sizeof(int));
-    if (!used) return md_fail(MDE_MEMORY, "out of memory");
-    jb_lit(out, "[");
-    int first = 1;
-    int64_t *seen = calloc((size_t)image_count + 1, sizeof(int64_t));
-    for (int64_t k = 0; k < image_count; k++) {
-        int64_t entry = image_ptr + k, did = section_int(&T.image_subgroup, entry);
-        seen[k] = did;
-        direction d;
-        MD_TRY(direction_of(did, &d));
-        jbuf dtext = {0};
-        jb_reset(&dtext);
-        put_direction(&dtext, &d, (int)entry);
-        direction_free(&d);
-        int any = 0;
-        for (int i = 0; i < n; i++)
-            if (keys[i].direction_id == did) {
-                any = 1;
-                used[i] = 1;
-                if (!first) jb_lit(out, ", ");
-                first = 0;
-                jb_lit(out, "{\"direction\": ");
-                jb_raw(out, dtext.data, dtext.used);
-                jb_lit(out, ", \"isotropy\": ");
-                jb_raw(out, rows[i].data, rows[i].used);
-                jb_lit(out, "}");
-            }
-        if (!any) {
-            if (!first) jb_lit(out, ", ");
-            first = 0;
-            jb_lit(out, "{\"direction\": ");
-            jb_raw(out, dtext.data, dtext.used);
-            jb_lit(out, ", \"isotropy\": null}");
-        }
-        jb_free(&dtext);
-    }
-    /* directions without an image entry, ascending */
-    for (;;) {
-        int64_t low = -1;
-        for (int i = 0; i < n; i++) {
-            if (used[i]) continue;
-            int listed = 0;
-            for (int64_t k = 0; k < image_count && !listed; k++) listed = seen[k] == keys[i].direction_id;
-            if (listed) {
-                used[i] = 1;
-                continue;
-            }
-            if (low < 0 || keys[i].direction_id < low) low = keys[i].direction_id;
-        }
-        if (low < 0) break;
-        direction d;
-        MD_TRY(direction_of(low, &d));
-        jbuf dtext = {0};
-        jb_reset(&dtext);
-        put_direction(&dtext, &d, -1);
-        direction_free(&d);
-        for (int i = 0; i < n; i++)
-            if (!used[i] && keys[i].direction_id == low) {
-                used[i] = 1;
-                if (!first) jb_lit(out, ", ");
-                first = 0;
-                jb_lit(out, "{\"direction\": ");
-                jb_raw(out, dtext.data, dtext.used);
-                jb_lit(out, ", \"isotropy\": ");
-                jb_raw(out, rows[i].data, rows[i].used);
-                jb_lit(out, "}");
-            }
-        jb_free(&dtext);
-    }
-    jb_lit(out, "]");
-    for (int i = 0; i < n; i++) jb_free(&rows[i]);
-    free(rows);
-    free(keys);
-    free(used);
-    free(seen);
-    return out->failed ? md_fail(MDE_MEMORY, "out of memory") : 0;
 }

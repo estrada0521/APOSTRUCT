@@ -34,8 +34,6 @@ void sel_params_of(const jvalue *object, sel_params *out);
 const char *sel_param(const sel_params *p, const char *name);
 
 int sel_tables(void);
-void sel_fmt_complex(jbuf *b, double real);
-void sel_fmt_display_value(jbuf *b, double value);
 void sel_opd_from_rows(jbuf *b, char ***rows, int nrows, const int *widths);
 void sel_display_opd(jbuf *b, const char *opd);
 typedef struct {
@@ -45,7 +43,6 @@ int sel_change_setting(int parent_sg, int subgroup, const int64_t *basis, const 
                        int64_t parent_setting, int has_subgroup_setting, int64_t subgroup_setting, sel_setting *out);
 char *sel_default_symbol(int sg);
 int64_t sel_point_group_order(int sg);
-int sel_has_inversion(int sg);
 
 typedef struct {
     int count;
@@ -55,8 +52,6 @@ void strings_free(strings *s);
 void sel_put_strings(jbuf *b, const strings *s);
 void sel_put_joined(jbuf *b, const strings *s);
 int sel_is_space(char c);
-char *sel_complex_text(double value);
-int64_t sel_first_little_gid(int64_t old_id, int sg);
 int sel_active_k_vectors(int parent_sg, int64_t gid, int64_t full_dim, char ***rows, int nrows, const int *widths, const sel_params *p,
                          strings *out);
 int sel_active_k_vectors_by(int parent_sg, int64_t gid, int64_t full_dim, int nrows, const int *widths,
@@ -91,14 +86,10 @@ void sel_mag_subgroup_json(jbuf *b, int group);
 int64_t sel_mag_index(int parent_group, int subgroup_group, int64_t size, int *has);
 int sel_mag_ferroic(jbuf *b, int group);
 void sel_put_records(jbuf *b, const int64_t *records, int64_t count);
-int sel_magnetic_static_rows(int old_id, int has_parent, int parent_sg, int has_gid, int64_t gid, const sel_params *display,
-                             const jvalue *selected_orderparam, int has_setting, int64_t setting_id, int has_cell, const double *cell, jbuf *out);
 /* 1 with words (n, d) x3, 0 when absent, -kind on error. */
 int sel_visible_k_vector(int sg, int kslot, const sel_params *p, int64_t *words);
 
-/* the OPD rows of an old irrep (old_id > 0) or of a parametric gid, as a JSON array */
-int sel_static_rows(int old_id, const sel_params *k_params, const sel_params *display, int has_setting, int64_t setting_id,
-                    int has_cell, const double *cell, jbuf *out);
+/* the OPD rows of an irrep, as a JSON array */
 int sel_dynamic_rows(int magnetic, int parent_sg, int64_t gid, const sel_params *k_params, const sel_params *display, const jvalue *selected_orderparam,
                      int has_setting, int64_t setting_id, int has_cell, const double *cell, jbuf *out);
 

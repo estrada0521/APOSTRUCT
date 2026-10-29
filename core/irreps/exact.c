@@ -288,7 +288,6 @@ static int record_phase(int dim, int arms, const int64_t *k, int subtract_genera
     return status;
 }
 
-
 int exact_record_matrix(int gid, int dim, int arms, const int64_t *k, int subtract_generated, int element_count,
                         const int *elements, int position, const int *record, int want_m, const cy_field **field_out, cy *w)
 {
@@ -403,9 +402,6 @@ out:
     free(positions);
     return status ? status : kcount;
 }
-
-/* const.exact words (8) of a Source constant code; nonzero without an exact form */
-int exact_const_words(int64_t code, int64_t *words) { return const_ref_exact(code, words); }
 
 /* ---- the little irrep matrices from those at a generating set ---- */
 

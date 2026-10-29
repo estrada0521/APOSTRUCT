@@ -16,8 +16,6 @@ int spec_result_occurrence_label(int index, const char **text, int64_t *length);
 const char *spec_error(int *kind);
 int spec_ordinary_dynamic(int sg, int child_sg, const int64_t *basis, const int64_t *origin, int selected_gid, int has_kp,
                           const int64_t *selected_kp, int has_fallback_direction);
-int spec_static(int sg, int selected_old_id, int selected_row_id, int has_frame, int child_sg, const int64_t *basis,
-                const int64_t *origin);
 int spec_magnetic_embedding_ordinary(int sg, const int64_t *basis, int nops, const int64_t *magnetic_ops);
 int spec_magnetic(int sg, const int64_t *basis, int nops, const int64_t *ops, int selected_gid, const int64_t *selected_kp,
                   const char *k_label, int64_t k_label_length, int sel_dim, int sel_count, const double *selected_direction);
@@ -30,7 +28,7 @@ int orderparam_to_subgroup_rows(int gid, int param_count, const int64_t *kparam,
                                 int row_count, int candidate_count, const int64_t *candidates, const int *candidate_matrix_ops,
                                 const int *candidate_signs, int max_iter, int64_t *basis_out, int64_t *kept_out, int *kept_count);
 
-enum { K_DYN = 1, K_STATIC, K_MEMB, K_MAG, K_CPL, K_FALLBACK };
+enum { K_DYN = 1, K_MEMB, K_MAG, K_CPL, K_FALLBACK };
 
 static struct {
     section_view old, full_dim;
@@ -297,7 +295,7 @@ enum {
     H_KIND, H_MODE_KIND, H_OLD_ID, H_GID, H_LITTLE_TYPE, H_MAGNETIC, H_PRIMARY, H_HAS_KP, H_HAS_CARRIER, H_HAS_PML, H_HAS_REQ,
     H_REQ_NONE, H_HAS_OCC, H_HAS_DIR, H_HAS_FREE, H_FREE_COUNT, H_OBS, H_HAS_ANCHOR, H_ANCHOR_GID, H_HAS_CAND, H_HAS_HEADING,
     H_HEADING_GID, H_STOKES, H_CASE_NONE, H_DCASE_NONE, H_SLOT_ORDER, H_REPLACED, H_ROW_ID,
-    H_USE_SELECTED_ROWS, H_STATIC_UPDATED, H_COUNT
+    H_USE_SELECTED_ROWS, H_COUNT
 };
 
 typedef struct {
@@ -451,33 +449,6 @@ static int decode_specs(md_request *r, const spec_context *ctx)
                 if (ctx->has_selected_rows) MD_TRY(matrix_copy(&spec->rows, ctx->selected_rows));
                 spec->dir_state = ctx->selected_dir_state;
                 if (ctx->selected_dir_state == MD_SET) MD_TRY(matrix_copy(&spec->dir, ctx->selected_dir));
-            }
-            break;
-        case K_STATIC:
-            spec->carrier_state = MD_ABSENT;
-            spec->req_state = MD_ABSENT;
-            spec->occ_state = MD_ABSENT;
-            spec->kp_state = MD_ABSENT;
-            spec->pml_state = MD_ABSENT;
-            spec->gid_state = h[H_GID] ? MD_SET : MD_NONE;
-            spec->row_id_state = h[H_ROW_ID] > 0 ? MD_SET : MD_NONE;
-            spec->row_id = h[H_ROW_ID];
-            has_dir_rows = 0;
-            if (h[H_USE_SELECTED_ROWS]) {
-                spec->rows_state = MD_SET;
-                if (ctx->has_selected_rows) MD_TRY(matrix_copy(&spec->rows, ctx->selected_rows));
-                spec->dir_state = ctx->selected_dir_state;
-                if (ctx->selected_dir_state == MD_SET) MD_TRY(matrix_copy(&spec->dir, ctx->selected_dir));
-            }
-            spec->free_state = MD_SET;
-            spec->free_count = h[H_FREE_COUNT];
-            if (h[H_STATIC_UPDATED]) {
-                spec->gid_state = MD_SET;
-                spec->kp_state = MD_SET;
-                spec->pml_state = MD_SET;
-                matrix_free(&spec->dir);
-                matrix_free(&spec->rows);
-                has_dir_rows = 1;
             }
             break;
         case K_MEMB:
@@ -1069,28 +1040,16 @@ static int subduced_mode_specs(md_request *r)
         int has_basis = md_integer_source_basis(r, basis), has_origin = source_split_origin(r, origin);
         int has_child = r->has_child_sg;
         spec_context ctx = {&fallback, fallback.free_count, 1, &selected_rows, dir_state, &selected_dir};
-        if (fallback.old_id <= 0) {
-            if (!has_child || !has_basis || !has_origin) {
-                md_spec *spec = push_spec(r);
-                status = spec ? copy_spec(spec, &fallback) : MDE_MEMORY;
-            } else {
-                int64_t kp[4] = {0, 0, 0, 1};
-                int has_kp = fallback.kp_state == MD_SET;
-                if (has_kp) memcpy(kp, fallback.kp, sizeof kp);
-                int code = spec_ordinary_dynamic(r->sg, r->child_sg, basis, origin, fallback.gid_state == MD_SET ? (int)fallback.gid : 0,
-                                                 has_kp, kp, dir_state == MD_SET);
-                status = code ? spec_error_of(code) : decode_specs(r, &ctx);
-            }
+        if (!has_child || !has_basis || !has_origin) {
+            md_spec *spec = push_spec(r);
+            status = spec ? copy_spec(spec, &fallback) : MDE_MEMORY;
         } else {
-            if (fallback.row_id_state != MD_SET) {
-                status = md_fail(MDE_TYPE, "int() argument must be a string, a bytes-like object or a real number, not 'NoneType'");
-            } else {
-                int has_frame = has_child && has_basis && has_origin;
-                int64_t zero_basis[9] = {0}, zero_origin[4] = {0, 0, 0, 1};
-                int code = spec_static(r->sg, (int)fallback.old_id, (int)fallback.row_id, has_frame, has_frame ? r->child_sg : 0,
-                                       has_frame ? basis : zero_basis, has_frame ? origin : zero_origin);
-                status = code ? spec_error_of(code) : decode_specs(r, &ctx);
-            }
+            int64_t kp[4] = {0, 0, 0, 1};
+            int has_kp = fallback.kp_state == MD_SET;
+            if (has_kp) memcpy(kp, fallback.kp, sizeof kp);
+            int code = spec_ordinary_dynamic(r->sg, r->child_sg, basis, origin, fallback.gid_state == MD_SET ? (int)fallback.gid : 0,
+                                             has_kp, kp, dir_state == MD_SET);
+            status = code ? spec_error_of(code) : decode_specs(r, &ctx);
         }
     }
     md_spec_free(&fallback);
