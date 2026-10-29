@@ -236,7 +236,7 @@ typedef struct {
 } image_t;
 
 typedef struct {
-    int n, from_operations;
+    int n, from_operations, orbit; /* orbit: orbit_size, 0 until computed */
     image_t *items;
 } images_t;
 
@@ -264,9 +264,10 @@ static int declared_multiplicity(const jvalue *site)
  * than twice the Wyckoff tolerance (periodic, per coordinate) counting once, since a site within the tolerance of a
  * special position is that far from its own images. A CIF whose operations cannot all be read is taken at its
  * declarations, as for its space group: the declared multiplicity, or none. */
-static int orbit_size(const jvalue *site, const images_t *im)
+static int orbit_size(const jvalue *site, images_t *im)
 {
     if (!im->from_operations) return declared_multiplicity(site);
+    if (im->orbit) return im->orbit;
     int count = 0, *kept = malloc(sizeof(int) * (size_t)(im->n + 1));
     if (!kept) return 0;
     for (int i = 0; i < im->n; i++) {
@@ -281,7 +282,7 @@ static int orbit_size(const jvalue *site, const images_t *im)
         if (!known) kept[count++] = i;
     }
     free(kept);
-    return count;
+    return im->orbit = count;
 }
 
 static void images_free(images_t *im)

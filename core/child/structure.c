@@ -47,7 +47,7 @@ static int md_kernel(int kind, int status)
 }
 
 static struct {
-    section_view inter_number, inter_choice, label_short, wyckoff_label, wyckoff_pointer, wyckoff_count, wyckoff_pg,
+    section_view inter_number, inter_choice, label_short, wyckoff_label, wyckoff_pointer, wyckoff_count,
         inter_wyckoff_pointer, inter_wyckoff_fract, mag_type4_pointer, mag_type4_supergroup, mag_nlabel;
     int ready;
 } T;
@@ -58,7 +58,7 @@ int md_tables(void)
     if (geo_load() || section_find("settings.inter_settings.number", &T.inter_number) ||
         section_find("group.space_groups.inter_choice", &T.inter_choice) || section_find("settings.inter_settings.short", &T.label_short) ||
         section_find("settings.wyckoff.label", &T.wyckoff_label) || section_find("settings.wyckoff.by_sg_start", &T.wyckoff_pointer) ||
-        section_find("settings.wyckoff.by_sg_count", &T.wyckoff_count) || section_find("settings.wyckoff.site_pg", &T.wyckoff_pg) ||
+        section_find("settings.wyckoff.by_sg_count", &T.wyckoff_count) ||
         section_find("settings.inter_settings.wyckoff_start", &T.inter_wyckoff_pointer) ||
         section_find("settings.inter_settings.wyckoff", &T.inter_wyckoff_fract) || mag_tables() ||
         section_find("group.magnetic_groups.type4", &T.mag_type4_pointer) ||
@@ -478,7 +478,7 @@ static int wyckoff_row_of(int sg, const char *label, int64_t label_length, int *
         if (strip_equal(&T.wyckoff_label, start + k - 1, label, label_length)) {
             (*matches)++;
             *row_id = (int)(start + k);
-            *site_pg = (int)section_int(&T.wyckoff_pg, start + k - 1);
+            *site_pg = geo_wyckoff_site_pg(start + k);
             *offset0 = (int)k;
         }
     return 0;
