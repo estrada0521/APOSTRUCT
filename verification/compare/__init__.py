@@ -17,6 +17,7 @@ from __future__ import annotations
 from typing import Any, Mapping, Sequence
 
 from verification.compare.definitions import Definitions
+from verification.compare.frame import domain_frames, transported_k
 from verification.compare.mode import compare_mode_details
 from verification.compare.opd import compare_opd, local_opd
 from verification.compare.selected_state import compare_selected_state
@@ -117,6 +118,12 @@ def compare_local_to_web(
         },
         operation_set_equivalent=opd.get("origin_equivalence") == "operation_set",
     )
+    if selected_state.get("status") == "diff" or opd.get("level") == "present_nonphysical":
+        frames = _domain_candidates(web, preview, opd)
+        if frames:
+            opd = {**opd, "level": "physical", "physical": {**opd["physical"], "sublattice": True, "origin_coset": True,
+                   "k_active": True}, "origin_equivalence": "domain"}
+            selected_state = {**selected_state, "status": "equivalent_domain", "frames": frames}
     comparison = compare_mode_details(
         case=case_label,
         cif=cif_label,
@@ -127,6 +134,47 @@ def compare_local_to_web(
         meta={"opd": opd_label, "opd_comparison": opd, "selected_state": selected_state},
     )
     return opd, comparison
+
+
+def _domain_candidates(web: Any, preview: Mapping[str, Any], opd: Mapping[str, Any]) -> list[dict[str, Any]]:
+    """Frames to another domain of the same subgroup type: the other physical fields hold, the undistorted atoms map,
+    and the active k arms are carried by the frame's parent rotation."""
+
+    physical = opd.get("physical") or {}
+    if not all(physical.get(field) for field in ("child_sg", "dir", "s", "i")) or web.parent_lattice is None:
+        return []
+    details = ((preview.get("selected") or {}).get("mode_details") or {})
+    frame = details.get("subgroup_details") or {}
+    if not isinstance(frame, Mapping) or not frame.get("presentation_basis") or not frame.get("origin"):
+        return []
+    lattice = web.parent_lattice
+    frames = domain_frames(
+        parent_cell=(lattice.a, lattice.b, lattice.c, lattice.alpha, lattice.beta, lattice.gamma),
+        web_basis=web.subgroup.basis,
+        web_origin=web.subgroup.origin,
+        local_basis=frame["presentation_basis"],
+        local_origin=frame["origin"],
+        local_atoms=details.get("undistorted_atoms") or [],
+        web_atoms=web.undistorted_atoms,
+    )
+    web_k = _k_vectors(web.subgroup.k_active)
+    local_k = _k_vectors(((opd.get("local") or {}).get("k_active")))
+    if web_k is None or local_k is None:
+        return []
+    target = transported_k(web_k, ((1, 0, 0), (0, 1, 0), (0, 0, 1)))
+    return [f for f in frames if transported_k(local_k, f["rotation"]) == target]
+
+
+def _k_vectors(text: object) -> list[tuple] | None:
+    import re
+    from fractions import Fraction
+
+    if not isinstance(text, str):
+        return None
+    try:
+        return [tuple(Fraction(x) for x in row.split(",")) for row in re.findall(r"\(([^()]*)\)", text)]
+    except (ValueError, ZeroDivisionError):
+        return None
 
 
 __all__ = ["compare_local_to_web"]

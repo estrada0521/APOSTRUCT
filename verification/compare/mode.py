@@ -199,6 +199,12 @@ def compare_mode_details(
         ):
             atoms = transported_atoms
     mode_transport_atoms = transported_atoms or atoms
+    if isinstance(selected_state, dict) and selected_state.get("status") == "equivalent_domain":
+        lattice, atoms, chosen = _domain_payloads(web, local, selected_state["frames"], definitions, tol)
+        if chosen is not None:
+            selected_state["frame"] = chosen
+        return _assembled(case, cif, web, preview, definitions, tol, meta, input_standardization, parent, parent_lattice,
+                          parent_atoms, subgroup, lattice, atoms, selected_state)
     frame = None
     for kind in ("dsp", "mag"):
         if definitions.accepted(kind):
@@ -212,6 +218,13 @@ def compare_mode_details(
             ) or ()
         if frame:
             definitions.transport(kind, *frame)
+    return _assembled(case, cif, web, preview, definitions, tol, meta, input_standardization, parent, parent_lattice,
+                      parent_atoms, subgroup, lattice, atoms, selected_state)
+
+
+def _assembled(case, cif, web, preview, definitions, tol, meta, input_standardization, parent, parent_lattice,
+               parent_atoms, subgroup, lattice, atoms, selected_state) -> dict[str, Any]:
+    accepted_atom_statuses = {"ok", "site_gauge"}
     if isinstance(selected_state, dict) and selected_state.get("status") == "diff":
         status = "context_mismatch"
     elif input_standardization["status"] != "ok":
@@ -226,7 +239,7 @@ def compare_mode_details(
         "ok",
         "basis_equivalent",
         "embedding_equivalent",
-    }:
+    } and selected_state_status(selected_state) != "equivalent_domain":
         status = "subgroup"
     elif lattice["status"] not in {"ok", "basis_equivalent"}:
         status = "undistorted_lattice"
@@ -258,5 +271,40 @@ def compare_mode_details(
     result["definitions"] = definitions
     return result
 
+
+
+def selected_state_status(selected_state: object) -> object:
+    return selected_state.get("status") if isinstance(selected_state, dict) else None
+
+
+def _domain_payloads(web, local, frames, definitions, tol):
+    """The lattice, atoms and mode frame of a local subgroup in another domain: the first frame under which the mode
+    definitions of every kind that needs it are proved equivalent."""
+
+    keys = ("a", "b", "c", "alpha", "beta", "gamma")
+    cell = local.get("lattice") or {}
+    chosen = None
+    for frame in frames:
+        if all(definitions.accepted(kind) or not definitions.web_count(kind) or definitions.transport(kind, frame["basis_change"], frame["shift"])
+               for kind in ("dsp", "mag")):
+            chosen = frame
+            break
+    frame = chosen or frames[0]
+    import math as _m
+    def metric(c):
+        a, b, cc = c[0], c[1], c[2]
+        ca, cb, cg = (_m.cos(_m.radians(x)) for x in c[3:])
+        return ((a * a, a * b * cg, a * cc * cb), (a * b * cg, b * b, b * cc * ca), (a * cc * cb, b * cc * ca, cc * cc))
+    try:
+        local_metric = metric([float(cell[k]) for k in keys])
+        web_metric = metric([float(getattr(web.undistorted_lattice, k)) for k in keys])
+    except (KeyError, TypeError, ValueError, AttributeError):
+        return {"status": "fail"}, {"status": "fail"}, None
+    U = frame["basis_change"]
+    carried = tuple(tuple(sum(U[i][a] * web_metric[a][b] * U[j][b] for a in range(3) for b in range(3)) for j in range(3)) for i in range(3))
+    same = all(abs(carried[i][j] - local_metric[i][j]) <= 1e-4 * _m.sqrt(local_metric[i][i] * local_metric[j][j]) for i in range(3) for j in range(3))
+    lattice = {"status": "basis_equivalent" if same else "fail", "frame": "domain", "basis_change": U}
+    atoms = {"status": "basis_equivalent", "frame": "domain", "basis_change": U, "shift": list(frame["shift"])}
+    return lattice, atoms, chosen
 
 __all__ = ["compare_mode_details"]
