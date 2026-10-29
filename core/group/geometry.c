@@ -10,7 +10,7 @@
 static struct {
     section_view sg_point_group, point_group_order, generators, lattice, lattice_ml,
         lattice_ml_denom, point_op, inter_choice, settings_inter, label_bc, inter_label_short,
-        point_op_code, point_group_code, wyckoff_pointer, wyckoff_count, wyckoff_pg, wyckoff_fract,
+        point_op_code, point_group_code, wyckoff_pointer, wyckoff_count, wyckoff_fract,
         inter_wyckoff_pointer, inter_wyckoff_fract,
         pg_elements_pointer, pg_settings_count, pg_elements, settings,
         group_gen_count, group_gen, inter_number;
@@ -419,13 +419,9 @@ int geo_wyckoff_row_range(int sg, int *start, int *count)
     return geo_bad;
 }
 
-/* settings.wyckoff.site_pg is derived from the formulas and the groups (tables/wyckoff_derived.c), so it is found on
- * first use, after the sections it is built from */
-int geo_wyckoff_site_pg(int row_id)
-{
-    if (!G.wyckoff_pg.entry && section_find("settings.wyckoff.site_pg", &G.wyckoff_pg)) return 0;
-    return (int)at(&G.wyckoff_pg, row_id - 1);
-}
+int wyckoff_site_pg(int row_id);
+
+int geo_wyckoff_site_pg(int row_id) { return wyckoff_site_pg(row_id); }
 
 static void vectors_from(const section_view *view, int64_t base, rat (*out)[3])
 {

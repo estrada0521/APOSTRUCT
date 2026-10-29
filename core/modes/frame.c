@@ -58,7 +58,7 @@ static int fail(int kind, const char *message)
 }
 
 static struct {
-    section_view w_pointer, w_count, w_label, w_pg, vector_reps, irr_sg, irr_old, full_dim, irr_type, irr_k, k_label,
+    section_view w_pointer, w_count, w_label, vector_reps, irr_sg, irr_old, full_dim, irr_type, irr_k, k_label,
         iso_irrep_pointer, iso_direction, iso_basis, iso_origin,
         iso_op_pointer, iso_op, const_values, sg_point_group, pg_order, pg_gen_count, pg_gen, lattice;
     int ready;
@@ -68,7 +68,7 @@ static int load(void)
 {
     if (T.ready) return 0;
     if (geo_load() || section_find("settings.wyckoff.by_sg_start", &T.w_pointer) || section_find("settings.wyckoff.by_sg_count", &T.w_count) ||
-        section_find("settings.wyckoff.label", &T.w_label) || section_find("settings.wyckoff.site_pg", &T.w_pg) ||
+        section_find("settings.wyckoff.label", &T.w_label) ||
         section_find("settings.site_point_groups.vector_reps", &T.vector_reps) ||
         section_find("irreps.little.sg", &T.irr_sg) || section_find("irreps.little.old", &T.irr_old) ||
         section_find("irreps.little.dim", &T.full_dim) ||
@@ -563,7 +563,7 @@ int mode_frame(int sg, const char *wyckoff, int64_t wyckoff_length, const char *
         snprintf(message, sizeof message, "expected one Wyckoff row for SG%d %.*s, got %d", sg, (int)wyckoff_length, wyckoff, matches);
         return fail(PY_KEY, message), fail_kind;
     }
-    int row_id = w_start + offset0, site_pg = (int)section_int(&T.w_pg, row_id - 1);
+    int row_id = w_start + offset0, site_pg = geo_wyckoff_site_pg(row_id);
     R.site_pg = site_pg;
     const k_family *family;
     if (k_family_of(sg, k_label, k_label_length, &family)) return fail_kind;
