@@ -26,8 +26,10 @@ Each APOSTRUCT and ISODISTORT output is checked for:
 APOSTRUCT and ISODISTORT outputs are compared.
 
 - **Identical**: Display settings, child structures, mode types and counts, atom correspondence, normalization factors and vectors match, including conventions such as ordering.
-- **Equivalent**: Equivalence of the child structures and mode spaces is established through setting or mode-basis transformations. Includes Identical results.
+- **Equivalent**: Equivalence of the child structures and mode spaces is established through setting or mode-basis transformations. Names (space groups, irreps, k points, Wyckoff letters, OPD labels) must match. Includes Identical results.
 - **Unproven**: Equivalence could not be established.
+
+APOSTRUCT aims at Equivalent, not Identical. Names follow ISODISTORT, but choices inside an equivalence class (which domain, the basis and origin within the standard setting, signs and bases of modes) follow APOSTRUCT's own short rules and may differ. Where the ISODISTORT output fails the mathematical checks, APOSTRUCT does not follow it; `web_math` in the records marks these branches.
 
 Execution failures are recorded separately from comparison verdicts.
 

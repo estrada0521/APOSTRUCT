@@ -24,8 +24,10 @@ APOSTRUCTとISODISTORTの各出力について、次を検査します。
 APOSTRUCTとISODISTORTの出力を比較します。
 
 - **Identical**：表示設定、子構造、モードの種類・本数・原子対応・正規化係数・ベクトルが、順序等の規約も含めて一致。
-- **Equivalent**：設定やモード基底の変換によって、子構造とモード空間の同値を確認。Identicalを含みます。
+- **Equivalent**：設定やモード基底の変換によって、子構造とモード空間の同値を確認。名前（空間群、既約表現、k点、Wyckoff文字、OPDのラベル）は一致が必要です。Identicalを含みます。
 - **Unproven**：同値を確認できなかったもの。
+
+APOSTRUCTが目指すのはIdenticalではなくEquivalentです。名前はISODISTORTに合わせますが、同値なものの中での選択（どのdomainを取るか、標準設定の中での基底と原点、モードの符号と基底）はAPOSTRUCT自身の短い規則に従い、異なることがあります。ISODISTORTの出力が数学検査に反する場合は、それに合わせません。該当する枝は記録の`web_math`でわかります。
 
 実行失敗は比較判定と分けて記録します。
 
