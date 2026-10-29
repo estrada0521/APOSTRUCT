@@ -1017,9 +1017,7 @@ int md_coupled_specs(md_request *r, int include_displacive, int include_magnetic
 static int fallback_spec(md_request *r, md_spec *fallback, md_matrix *selected_rows, int *dir_state, md_matrix *selected_dir)
 {
     memset(fallback, 0, sizeof *fallback);
-    const jvalue *old = jget(r->irrep, "old_id");
     int64_t old_id = 0;
-    if (jtruthy(old) && py_int_of(old, &old_id)) return md_fail(MDE_VALUE, "invalid literal for int()");
     const char *keys[3] = {"ordinary_symbol", "symbol", "label"};
     const jvalue *label = 0;
     for (int i = 0; i < 3 && !label; i++)

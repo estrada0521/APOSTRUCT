@@ -353,7 +353,7 @@ static int put_slot(buffer *b, int sg, int kslot, int lattice, int extra)
                ((symbol.text[k_length] >= 'A' && symbol.text[k_length] <= 'Z') || (symbol.text[k_length] >= 'a' && symbol.text[k_length] <= 'z')))
             k_length++;
         if (i) put(b, ", ");
-        put(b, "{\"gid\": %d, \"symbol\": ", gid);
+        put(b, "{\"gid\": %d, \"old_id\": %d, \"symbol\": ", gid, (int)section_int(&T.irr_old, idx));
         put_json_str(b, symbol.text, symbol.length);
         put(b, ", \"kov_label\": ");
         put_json_str(b, kov_label.text, kov_label.length);

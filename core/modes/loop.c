@@ -2226,9 +2226,8 @@ int md_preflight(md_request *r, jbuf *b, int *done)
     }
     const jvalue *coupled = r->iso ? jget(r->iso, "coupled") : 0;
     int is_coupled = jtruthy(coupled) && jtruthy(r->slots);
+    /* every irrep is computed through the search (opds_dynamic.c); the tabulated old irrep id only names */
     int64_t old_id = 0;
-    const jvalue *old = jget(r->irrep, "old_id");
-    if (jtruthy(old) && py_int_of(old, &old_id)) return md_fail(MDE_VALUE, "invalid literal for int()");
     int has_gid;
     int64_t gid;
     MD_TRY(md_dynamic_gid(r, &has_gid, &gid));
