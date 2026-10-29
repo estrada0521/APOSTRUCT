@@ -43,7 +43,6 @@ settings.wyckoff.by_sg_count                 settings/wyckoff.txt               
 settings.wyckoff.by_sg_start                 settings/wyckoff.txt                 sg group_start keys=230 byu=wyckoff.iwyckoff_pointer
 settings.wyckoff.label                       settings/wyckoff.txt                 label text byu=wyckoff.wyckoff_label
 settings.wyckoff.fract                       settings/wyckoff.txt                 fract flat byu=wyckoff.iwyckoff_fract
-settings.wyckoff.site_pg                     settings/wyckoff.txt                 site_pg each byu=wyckoff.iwyckoff_pg
 settings.site_settings.by_pg_count           settings/site_settings.txt           pg group_count keys=32 byu=wyckoff.iwyckoff_pg_settings_count
 settings.site_settings.by_pg_start           settings/site_settings.txt           pg group_start keys=32 byu=wyckoff.iwyckoff_pg_elements_pointer
 settings.site_settings.elements              settings/site_settings.txt           elements flat pad=48 byu=wyckoff.iwyckoff_pg_elements
@@ -105,6 +104,7 @@ images.image_directions.dimension            images/image_directions.txt        
 images.image_directions.subduction           images/image_directions.txt          vector count per=dimension byu=images.image_dir_subduction
 images.image_directions.vector               images/image_directions.txt          vector flat byu=images.image_dir
 images.image_directions.vector_start         images/image_directions.txt          vector start zero_empty byu=images.image_dir_pointer
+settings.wyckoff.site_pg                     -                                    - derived byu=wyckoff.iwyckoff_pg
 k.star.arms                                  -                                    - derived byu=little.little_k_star
 k.star.special_arms                          -                                    - derived byu=little.little_k_star_special
 k.star.arm_start                             -                                    - derived byu=little.little_k_star_ml_pointer

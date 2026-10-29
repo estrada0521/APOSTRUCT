@@ -108,6 +108,8 @@ def _load() -> ctypes.CDLL:
     library.irrep_full_label.restype = ctypes.c_char_p
     library.irrep_old_label.argtypes = (ctypes.c_int,)
     library.irrep_old_label.restype = ctypes.c_char_p
+    library.geo_wyckoff_site_pg.argtypes = (ctypes.c_int,)
+    library.geo_wyckoff_site_pg.restype = ctypes.c_int
     return library
 
 
@@ -127,6 +129,11 @@ def magnetic_point_op_product(left: int, right: int) -> int:
 def little_old_id(gid: int) -> int:
     """The old (data_irreps) id of a little irrep, 0 when it has none."""
     return int(_LIBRARY.little_old_id(int(gid)))
+
+
+def wyckoff_site_pg(row_id: int) -> int:
+    """The point group of a Wyckoff position, derived from its formula and space group."""
+    return int(_LIBRARY.geo_wyckoff_site_pg(int(row_id)))
 
 
 def little_full_dim(gid: int) -> int:

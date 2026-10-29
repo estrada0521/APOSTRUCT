@@ -22,6 +22,7 @@ static const char *const derived[] = {
     "irreps.little.position_start", "irreps.little.number", "irreps.little.type", "isotropy.ordinary.label",
     "isotropy.magnetic.label", "group.magnetic_ops.code", "group.point_groups.code", "group.point_groups.order",
     "group.point_ops.code", "settings.inter_settings.wyckoff_start", "settings.inter_settings.wyckoff",
+    "settings.wyckoff.site_pg",
 };
 
 /* sections whose entries are constant references: every `stride` entries, the ones flagged in `mask` */

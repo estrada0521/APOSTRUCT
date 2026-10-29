@@ -49,7 +49,6 @@ int geo_load(void)
         {"group.point_groups.generators", &G.group_gen, 0},
         {"settings.wyckoff.by_sg_start", &G.wyckoff_pointer, 0},
         {"settings.wyckoff.by_sg_count", &G.wyckoff_count, 0},
-        {"settings.wyckoff.site_pg", &G.wyckoff_pg, 0},
         {"settings.wyckoff.fract", &G.wyckoff_fract, 0},
         {"settings.site_settings.by_pg_start", &G.pg_elements_pointer, 0},
         {"settings.site_settings.by_pg_count", &G.pg_settings_count, 0},
@@ -420,7 +419,13 @@ int geo_wyckoff_row_range(int sg, int *start, int *count)
     return geo_bad;
 }
 
-int geo_wyckoff_site_pg(int row_id) { return (int)at(&G.wyckoff_pg, row_id - 1); }
+/* settings.wyckoff.site_pg is derived from the formulas and the groups (tables/wyckoff_derived.c), so it is found on
+ * first use, after the sections it is built from */
+int geo_wyckoff_site_pg(int row_id)
+{
+    if (!G.wyckoff_pg.entry && section_find("settings.wyckoff.site_pg", &G.wyckoff_pg)) return 0;
+    return (int)at(&G.wyckoff_pg, row_id - 1);
+}
 
 static void vectors_from(const section_view *view, int64_t base, rat (*out)[3])
 {

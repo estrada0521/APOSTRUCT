@@ -525,7 +525,7 @@ class SourceTables:
                 offset0=offset0,
                 row_id=start + offset0,
                 label=str(self.wyckoff["wyckoff_label"][start + offset0 - 1]).strip(),
-                site_pg=int(self.wyckoff["iwyckoff_pg"][start + offset0 - 1]),
+                site_pg=native.wyckoff_site_pg(start + offset0),
             )
             for offset0 in range(count)
         ]
