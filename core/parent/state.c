@@ -755,8 +755,12 @@ static int matching_settings(const jvalue *ops, const int *candidates, int ncand
     }
     if (ok) {
         nwant = unique_keys(want, nwant);
+        int64_t order = 0;
+        for (int i = 0; i < nwant; i++) order += !i || memcmp(want[i].v, want[i - 1].v, sizeof(int64_t) * 9);
         for (int c = 0; c < ncand; c++) {
-            int nhave = setting_keys((int)section_int(&T.inter_number, candidates[c] - 1), candidates[c], have, 4096);
+            int64_t sg = section_int(&T.inter_number, candidates[c] - 1);
+            if (section_int(&T.group_order, section_int(&T.point_group, sg - 1) - 1) != order) continue;
+            int nhave = setting_keys((int)sg, candidates[c], have, 4096);
             if (nhave == nwant && !memcmp(have, want, sizeof *have * (size_t)nwant)) out[matches++] = candidates[c];
         }
     }
