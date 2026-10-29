@@ -150,6 +150,7 @@ body.output-window { --color-bg: rgb(249, 249, 247); --color-panel: rgb(245, 245
 .output-tabs::-webkit-scrollbar { display: none; }
 .output-tab { position: relative; isolation: isolate; display: grid; grid-template-columns: minmax(0, 1fr) 24px; flex: 0 0 clamp(150px, 20vw, 240px); align-items: center; box-sizing: border-box; height: 34px; min-width: 0; padding: 0 4px 6px 0; border: 0; border-radius: 12px 12px 0 0; background: transparent; color: var(--color-control); }
 .output-tab:not(.is-active)::before { content: ""; position: absolute; z-index: -1; inset: 0 0 6px; border-radius: 12px; background: var(--color-hover); }
+.output-tab:not(.is-active):hover::before { background: var(--color-panel); }
 .output-tab.is-active { z-index: 1; background: var(--color-bg); }
 .output-tab.is-active::before,
 .output-tab.is-active::after { content: ""; position: absolute; bottom: 0; width: 12px; height: 12px; pointer-events: none; }
