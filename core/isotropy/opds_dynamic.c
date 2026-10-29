@@ -279,7 +279,64 @@ int opd_table_row(int gid, int magnetic, int64_t free_count, int64_t subgroup, c
 int ferroic_codes(int sg, int subgroup, const int64_t *basis, const int64_t *origin, int gid, int *fe, int *fa);
 int little_old_id(int gid);
 
-/* the rows of an irrep with tabulated rows take the table's names and order (opd_names.c) */
+int orderparam_to_subgroup_rows(int gid, int param_count, const int64_t *kparam, const double *values, int64_t value_count, int row_count,
+                                int candidate_count, const int64_t *candidates, const int *candidate_matrix_ops, const int *candidate_signs,
+                                int max_iter, int64_t *basis_out, int64_t *kept_out, int *kept_count);
+int id_subgroup_identify(int parent, const int64_t *basis, int op_count, const int64_t *ops, int flag, int64_t *out);
+int id_subgroup_magnetic_identify(int parent, const int64_t *basis, int op_count, const int64_t *ops, int flag, int64_t capacity, int64_t *out);
+
+/* row r moved to the table's representative of its orbit: the table's direction rows, and the subgroup they fix,
+ * found and identified as the search does for its own nodes. *moved 0 when the table's direction does not give the
+ * row's subgroup (the row keeps the search's representative). */
+static int table_representative(int64_t gid, int magnetic, int64_t table_row, dyn_row *r, int *moved_out)
+{
+    section_view opp, op;
+    if (section_find(magnetic ? "isotropy.magnetic.direction_codes_start" : "isotropy.ordinary.direction_codes_start", &opp) ||
+        section_find(magnetic ? "isotropy.magnetic.direction_codes" : "isotropy.ordinary.direction_codes", &op))
+        return md_fail(MDE_VALUE, "isotropy Source tables are inconsistent");
+    int64_t dim = section_int(&T.irr_full_dim, gid - 1), f = r->free, pointer = section_int(&opp, table_row - 1) - 1;
+    int sg = (int)section_int(&T.irr_sg, gid - 1);
+    double *values = calloc((size_t)f * 48 + 1, sizeof(double)), *numeric = malloc(sizeof(double) * (size_t)(f * dim + 1));
+    int64_t (*candidates)[5] = malloc(sizeof(int64_t) * 5 * 192), (*kept)[5] = malloc(sizeof(int64_t) * 5 * 193), *flat = malloc(sizeof(int64_t) * 8192);
+    int *ops = malloc(sizeof(int) * 192), *signs = malloc(sizeof(int) * 192), moved = 0, kept_count = 0;
+    if (!values || !numeric || !candidates || !kept || !flat || !ops || !signs) return md_fail(MDE_MEMORY, "out of memory");
+    for (int64_t row = 0; row < f; row++)
+        for (int64_t col = 0; col < dim; col++)
+            values[row * 48 + col] = numeric[row * dim + col] = const_ref_value(section_int(&op, pointer + row * dim + col));
+    int count = magnetic ? magnetic_records_iso(mag_orderparam_group(sg), 192, &candidates[0][0]) : geo_sg_records(sg, candidates);
+    for (int i = 0; i < count; i++) ops[i] = mag_point_action(magnetic, (int)candidates[i][4], signs + i);
+    int64_t basis[9], none = 0, ordinary[14];
+    if (count > 0 && !orderparam_to_subgroup_rows((int)gid, 0, &none, values, f * 48, (int)f, count, &candidates[0][0], ops, signs, 256, basis,
+                                                  &kept[0][0], &kept_count)) {
+        int64_t length = magnetic ? id_subgroup_magnetic_identify(sg, basis, kept_count, &kept[0][0], 0, 8192, flat)
+                                  : id_subgroup_identify(sg, basis, kept_count, &kept[0][0], 0, ordinary);
+        const int64_t *payload = magnetic ? flat : ordinary;
+        if (length > 0 && payload[0] == r->subgroup) {
+            memcpy(r->basis, payload + 1 + magnetic, sizeof r->basis);
+            memcpy(r->origin, payload + 10 + magnetic, sizeof r->origin);
+            if (magnetic) {
+                free(r->flat), free(r->kept);
+                r->flat = malloc(sizeof(int64_t) * (size_t)length);
+                r->kept = malloc(sizeof(int64_t) * 5 * (size_t)(kept_count ? kept_count : 1));
+                memcpy(r->flat, flat, sizeof(int64_t) * (size_t)length);
+                memcpy(r->kept, kept, sizeof(int64_t) * 5 * (size_t)kept_count);
+                r->nkept = kept_count;
+            }
+            for (int64_t row = 0; row < f; row++)
+                for (int64_t col = 0; col < dim; col++) {
+                    free(r->matrix[row][col]);
+                    r->matrix[row][col] = matrix_value(numeric[row * dim + col]);
+                }
+            memcpy(r->numeric, numeric, sizeof(double) * (size_t)(f * dim));
+            moved = 1;
+        }
+    }
+    free(values), free(numeric), free(candidates), free(kept), free(flat), free(ops), free(signs);
+    *moved_out = moved;
+    return 0;
+}
+
+/* the rows of an irrep with tabulated rows take the table's names, order and representatives (opd_names.c) */
 static int name_from_table(int64_t gid, int magnetic, dyn_row *rows, int n)
 {
     section_view label;
@@ -294,6 +351,9 @@ static int name_from_table(int64_t gid, int magnetic, dyn_row *rows, int n)
             memcpy(rows[i].label, s, (size_t)len);
             rows[i].label[len] = 0;
         }
+        int moved = 0;
+        if (row > 0) MD_TRY(table_representative(gid, magnetic, row, rows + i, &moved));
+        if (row > 0 && !moved && getenv("APO_NAME_TRACE")) fprintf(stderr, "kept the search representative: gid %lld row %lld\n", (long long)gid, (long long)row);
     }
     return 0;
 }
