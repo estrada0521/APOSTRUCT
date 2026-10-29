@@ -156,6 +156,7 @@ def _domain_candidates(web: Any, preview: Mapping[str, Any], opd: Mapping[str, A
         local_origin=frame["origin"],
         local_atoms=details.get("undistorted_atoms") or [],
         web_atoms=web.undistorted_atoms,
+        limit=48,
     )
     web_k = _k_vectors(web.subgroup.k_active)
     local_k = _k_vectors(((opd.get("local") or {}).get("k_active")))

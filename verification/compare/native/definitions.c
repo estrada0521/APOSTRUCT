@@ -2236,7 +2236,7 @@ static void strain_payload(vm_t *v)
 static int accepted(int status) { return status == S_OK || status == S_SIGN || status == S_SIGNED_PERMUTATION || status == S_FAMILY_BASIS; }
 
 /* the definitions expressed in the request child frame (x U + shift, d U, unit max per column), adopted only when they close */
-static int transport(vm_t *v, int kind, const int *U, const double *shift)
+static int transport_try(vm_t *v, int kind, const int *U, const double *shift)
 {
     int n = v->nlocal[kind];
     const def_t *L = v->local[kind];
@@ -2288,6 +2288,17 @@ static int transport(vm_t *v, int kind, const int *U, const double *shift)
     Q.validated = 1;
     v->P[kind] = Q;
     return 1;
+}
+
+/* a failed try leaves nothing behind (a domain search tries many frames) */
+static int transport(vm_t *v, int kind, const int *U, const double *shift)
+{
+    int mark = v->nowned, ok = transport_try(v, kind, U, shift);
+    if (!ok) {
+        for (int i = mark; i < v->nowned; i++) free(v->owned[i]);
+        v->nowned = mark;
+    }
+    return ok;
 }
 
 /* ---- the mode_definition layers ---- */
